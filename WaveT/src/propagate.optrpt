@@ -4,280 +4,169 @@ Begin optimization report for: PROPAGATE::OUTPUT
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at propagate.f90(451,34)
+LOOP BEGIN at propagate.f90(344,33)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at propagate.f90(451,34)
+   LOOP BEGIN at propagate.f90(344,33)
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at propagate.f90(451,34)
+   LOOP BEGIN at propagate.f90(344,33)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(451,34)
+LOOP BEGIN at propagate.f90(344,33)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at propagate.f90(451,34)
+   LOOP BEGIN at propagate.f90(344,33)
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at propagate.f90(451,34)
+   LOOP BEGIN at propagate.f90(344,33)
    <Remainder>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(451,34)
+   LOOP BEGIN at propagate.f90(344,33)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(451,13)
+LOOP BEGIN at propagate.f90(344,12)
    remark #17102: loop was not parallelized: not a parallelization candidate
 LOOP END
 
-LOOP BEGIN at propagate.f90(451,13)
+LOOP BEGIN at propagate.f90(344,12)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at propagate.f90(451,13)
+LOOP BEGIN at propagate.f90(344,12)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at propagate.f90(468,9)
-   remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.21_2upper_.27 } private={ } firstprivate={ 1595 c ctmp 1708 } lastprivate={ } firstlastprivate={ } reduction={ }
-LOOP END
-
-LOOP BEGIN at propagate.f90(468,9)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(469,9)
-   remark #17108: loop was not parallelized: insufficient computational work
-LOOP END
-
-LOOP BEGIN at propagate.f90(469,9)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(469,9)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(473,9)
-   remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.21_2upper_.31 } private={ } firstprivate={ 1595 c 1733 1731 } lastprivate={ } firstlastprivate={ } reduction={ }
-LOOP END
-
-LOOP BEGIN at propagate.f90(473,9)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(575,9) inlined into propagate.f90(475,14)
-   remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.21_2upper_.33 } private={ } firstprivate={ 1946 R 1944 n_ci } lastprivate={ } firstlastprivate={ } reduction={ }
-
-   LOOP BEGIN at propagate.f90(575,9) inlined into propagate.f90(475,14)
-      remark #25460: No loop optimizations reported
-
-      LOOP BEGIN at propagate.f90(575,9) inlined into propagate.f90(475,14)
-      <Peeled>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(575,9) inlined into propagate.f90(475,14)
-         remark #25460: No loop optimizations reported
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(575,9) inlined into propagate.f90(475,14)
-      <Remainder>
-      LOOP END
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(576,9) inlined into propagate.f90(475,14)
-   remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.21_2upper_.35 } private={ } firstprivate={ 1954 P 1952 n_ci } lastprivate={ } firstlastprivate={ } reduction={ }
-
-   LOOP BEGIN at propagate.f90(576,9) inlined into propagate.f90(475,14)
-      remark #25460: No loop optimizations reported
-
-      LOOP BEGIN at propagate.f90(576,9) inlined into propagate.f90(475,14)
-      <Peeled>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(576,9) inlined into propagate.f90(475,14)
-         remark #25460: No loop optimizations reported
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(576,9) inlined into propagate.f90(475,14)
-      <Remainder>
-      LOOP END
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(578,9) inlined into propagate.f90(475,14)
+LOOP BEGIN at propagate.f90(462,9) inlined into propagate.f90(361,13)
 <Peeled>
 LOOP END
 
-LOOP BEGIN at propagate.f90(578,9) inlined into propagate.f90(475,14)
+LOOP BEGIN at propagate.f90(462,9) inlined into propagate.f90(361,13)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.21_2upper_.37 } private={ } firstprivate={ TMP RTMP ITMP c 1946 R 1954 P 1960 CC K n_ci } lastprivate={ } firstlastprivate={ } reduction={ }
+   remark #17101: parallel loop shared={ .2.25_2upper_.19 } private={ } firstprivate={ c 1225 CC K n_ci } lastprivate={ } firstlastprivate={ } reduction={ }
 LOOP END
 
-LOOP BEGIN at propagate.f90(578,9) inlined into propagate.f90(475,14)
+LOOP BEGIN at propagate.f90(462,9) inlined into propagate.f90(361,13)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at propagate.f90(590,12) inlined into propagate.f90(475,14)
-   remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.21_2upper_.39 } private={ } firstprivate={ TMP RTMP ITMP c 1946 R 1954 P 1960 CC n_ci J } lastprivate={ } firstlastprivate={ } reduction={ }
+LOOP BEGIN at propagate.f90(462,9) inlined into propagate.f90(361,13)
+<Remainder>
+LOOP END
 
-   LOOP BEGIN at propagate.f90(591,15) inlined into propagate.f90(475,14)
+LOOP BEGIN at propagate.f90(468,12) inlined into propagate.f90(361,13)
+   remark #17109: LOOP WAS AUTO-PARALLELIZED
+   remark #17101: parallel loop shared={ .2.25_2upper_.21 } private={ } firstprivate={ c 1225 CC n_ci J } lastprivate={ } firstlastprivate={ } reduction={ }
+
+   LOOP BEGIN at propagate.f90(469,15) inlined into propagate.f90(361,13)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(591,15) inlined into propagate.f90(475,14)
+   LOOP BEGIN at propagate.f90(469,15) inlined into propagate.f90(361,13)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at propagate.f90(591,15) inlined into propagate.f90(475,14)
+   LOOP BEGIN at propagate.f90(469,15) inlined into propagate.f90(361,13)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(469,15) inlined into propagate.f90(361,13)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(605,12) inlined into propagate.f90(475,14)
+LOOP BEGIN at propagate.f90(477,12) inlined into propagate.f90(361,13)
    remark #17104: loop was not parallelized: existence of parallel dependence
 LOOP END
 
-LOOP BEGIN at propagate.f90(606,12) inlined into propagate.f90(475,14)
-   remark #17104: loop was not parallelized: existence of parallel dependence
+LOOP BEGIN at propagate.f90(362,8)
+   remark #17109: LOOP WAS AUTO-PARALLELIZED
+   remark #17101: parallel loop shared={ .2.25_2upper_.23 } private={ } firstprivate={ 920 c 1030 1028 } lastprivate={ } firstlastprivate={ } reduction={ }
 LOOP END
 
-LOOP BEGIN at propagate.f90(607,12) inlined into propagate.f90(475,14)
-   remark #17104: loop was not parallelized: existence of parallel dependence
+LOOP BEGIN at propagate.f90(362,8)
+<Remainder>
 LOOP END
 
-LOOP BEGIN at propagate.f90(479,9)
+LOOP BEGIN at propagate.f90(366,8)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at propagate.f90(479,9)
+   LOOP BEGIN at propagate.f90(366,8)
    <Multiversioned v2>
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at propagate.f90(479,9)
+   LOOP BEGIN at propagate.f90(366,8)
    <Remainder, Multiversioned v2>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(482,9)
+LOOP BEGIN at propagate.f90(369,8)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at propagate.f90(482,9)
+   LOOP BEGIN at propagate.f90(369,8)
    <Peeled, Multiversioned v2>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(482,9)
+   LOOP BEGIN at propagate.f90(369,8)
    <Multiversioned v2>
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at propagate.f90(482,9)
+   LOOP BEGIN at propagate.f90(369,8)
    <Remainder, Multiversioned v2>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(468,9)
+LOOP BEGIN at propagate.f90(462,9) inlined into propagate.f90(361,13)
 <Peeled>
 LOOP END
 
-LOOP BEGIN at propagate.f90(468,9)
+LOOP BEGIN at propagate.f90(462,9) inlined into propagate.f90(361,13)
    remark #25460: No loop optimizations reported
 LOOP END
 
-LOOP BEGIN at propagate.f90(468,9)
+LOOP BEGIN at propagate.f90(462,9) inlined into propagate.f90(361,13)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at propagate.f90(473,9)
-<Peeled>
-LOOP END
-
-LOOP BEGIN at propagate.f90(473,9)
-   remark #25460: No loop optimizations reported
-LOOP END
-
-LOOP BEGIN at propagate.f90(473,9)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(575,9) inlined into propagate.f90(475,14)
+LOOP BEGIN at propagate.f90(468,12) inlined into propagate.f90(361,13)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at propagate.f90(575,9) inlined into propagate.f90(475,14)
-      remark #25460: No loop optimizations reported
-
-      LOOP BEGIN at propagate.f90(575,9) inlined into propagate.f90(475,14)
-      <Peeled>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(575,9) inlined into propagate.f90(475,14)
-         remark #25460: No loop optimizations reported
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(575,9) inlined into propagate.f90(475,14)
-      <Remainder>
-      LOOP END
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(576,9) inlined into propagate.f90(475,14)
-   remark #25460: No loop optimizations reported
-
-   LOOP BEGIN at propagate.f90(576,9) inlined into propagate.f90(475,14)
-      remark #25460: No loop optimizations reported
-
-      LOOP BEGIN at propagate.f90(576,9) inlined into propagate.f90(475,14)
-      <Peeled>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(576,9) inlined into propagate.f90(475,14)
-         remark #25460: No loop optimizations reported
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(576,9) inlined into propagate.f90(475,14)
-      <Remainder>
-      LOOP END
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(578,9) inlined into propagate.f90(475,14)
-<Peeled>
-LOOP END
-
-LOOP BEGIN at propagate.f90(578,9) inlined into propagate.f90(475,14)
-   remark #25460: No loop optimizations reported
-LOOP END
-
-LOOP BEGIN at propagate.f90(578,9) inlined into propagate.f90(475,14)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(590,12) inlined into propagate.f90(475,14)
-   remark #25460: No loop optimizations reported
-
-   LOOP BEGIN at propagate.f90(591,15) inlined into propagate.f90(475,14)
+   LOOP BEGIN at propagate.f90(469,15) inlined into propagate.f90(361,13)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(591,15) inlined into propagate.f90(475,14)
+   LOOP BEGIN at propagate.f90(469,15) inlined into propagate.f90(361,13)
       remark #17107: loop was not parallelized: inner loop
    LOOP END
 
-   LOOP BEGIN at propagate.f90(591,15) inlined into propagate.f90(475,14)
+   LOOP BEGIN at propagate.f90(469,15) inlined into propagate.f90(361,13)
    <Remainder>
    LOOP END
+
+   LOOP BEGIN at propagate.f90(469,15) inlined into propagate.f90(361,13)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(362,8)
+<Peeled>
+LOOP END
+
+LOOP BEGIN at propagate.f90(362,8)
+   remark #25460: No loop optimizations reported
+LOOP END
+
+LOOP BEGIN at propagate.f90(362,8)
+<Remainder>
 LOOP END
 ===========================================================================
 
@@ -286,201 +175,201 @@ Begin optimization report for: PROPAGATE::DO_MU
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at propagate.f90(428,30)
+LOOP BEGIN at propagate.f90(320,30)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at propagate.f90(428,30)
+   LOOP BEGIN at propagate.f90(320,30)
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at propagate.f90(428,30)
+   LOOP BEGIN at propagate.f90(320,30)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(428,30)
+LOOP BEGIN at propagate.f90(320,30)
    remark #17100: PERMUTED LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.22_2upper_.3 } private={ } firstprivate={ 1545 readio_mp_mut_ c 1547 1541 1545 } lastprivate={ } firstlastprivate={ } reduction={ }
+   remark #17101: parallel loop shared={ .2.26_2upper_.3 } private={ } firstprivate={ 870 readio_mp_mut_ c 872 866 870 } lastprivate={ } firstlastprivate={ } reduction={ }
 
-   LOOP BEGIN at propagate.f90(428,30)
+   LOOP BEGIN at propagate.f90(320,30)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(428,30)
+   LOOP BEGIN at propagate.f90(320,30)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at propagate.f90(428,30)
+   LOOP BEGIN at propagate.f90(320,30)
    <Remainder>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(428,30)
+   LOOP BEGIN at propagate.f90(320,30)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(428,16)
+LOOP BEGIN at propagate.f90(320,16)
    remark #17102: loop was not parallelized: not a parallelization candidate
 LOOP END
 
-LOOP BEGIN at propagate.f90(428,16)
+LOOP BEGIN at propagate.f90(320,16)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at propagate.f90(429,30)
+LOOP BEGIN at propagate.f90(321,30)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at propagate.f90(429,30)
+   LOOP BEGIN at propagate.f90(321,30)
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at propagate.f90(429,30)
+   LOOP BEGIN at propagate.f90(321,30)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(429,30)
+LOOP BEGIN at propagate.f90(321,30)
    remark #17100: PERMUTED LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.22_2upper_.7 } private={ } firstprivate={ 1545 readio_mp_mut_ c 1561 1555 1559 } lastprivate={ } firstlastprivate={ } reduction={ }
+   remark #17101: parallel loop shared={ .2.26_2upper_.7 } private={ } firstprivate={ 870 readio_mp_mut_ c 886 880 884 } lastprivate={ } firstlastprivate={ } reduction={ }
 
-   LOOP BEGIN at propagate.f90(429,30)
+   LOOP BEGIN at propagate.f90(321,30)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(429,30)
+   LOOP BEGIN at propagate.f90(321,30)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at propagate.f90(429,30)
+   LOOP BEGIN at propagate.f90(321,30)
    <Remainder>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(429,30)
+   LOOP BEGIN at propagate.f90(321,30)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(429,16)
+LOOP BEGIN at propagate.f90(321,16)
    remark #17102: loop was not parallelized: not a parallelization candidate
 LOOP END
 
-LOOP BEGIN at propagate.f90(429,16)
+LOOP BEGIN at propagate.f90(321,16)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at propagate.f90(430,30)
+LOOP BEGIN at propagate.f90(322,30)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at propagate.f90(430,30)
+   LOOP BEGIN at propagate.f90(322,30)
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at propagate.f90(430,30)
+   LOOP BEGIN at propagate.f90(322,30)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(430,30)
+LOOP BEGIN at propagate.f90(322,30)
    remark #17100: PERMUTED LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.22_2upper_.11 } private={ } firstprivate={ 1545 readio_mp_mut_ c 1575 1569 1573 } lastprivate={ } firstlastprivate={ } reduction={ }
+   remark #17101: parallel loop shared={ .2.26_2upper_.11 } private={ } firstprivate={ 870 readio_mp_mut_ c 900 894 898 } lastprivate={ } firstlastprivate={ } reduction={ }
 
-   LOOP BEGIN at propagate.f90(430,30)
+   LOOP BEGIN at propagate.f90(322,30)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(430,30)
+   LOOP BEGIN at propagate.f90(322,30)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at propagate.f90(430,30)
+   LOOP BEGIN at propagate.f90(322,30)
    <Remainder>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(430,30)
+   LOOP BEGIN at propagate.f90(322,30)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(430,16)
+LOOP BEGIN at propagate.f90(322,16)
    remark #17102: loop was not parallelized: not a parallelization candidate
 LOOP END
 
-LOOP BEGIN at propagate.f90(430,16)
+LOOP BEGIN at propagate.f90(322,16)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at propagate.f90(432,8)
+LOOP BEGIN at propagate.f90(324,8)
    remark #17108: loop was not parallelized: insufficient computational work
 LOOP END
 
-LOOP BEGIN at propagate.f90(433,8)
+LOOP BEGIN at propagate.f90(325,8)
 LOOP END
 
-LOOP BEGIN at propagate.f90(434,8)
+LOOP BEGIN at propagate.f90(326,8)
 LOOP END
 
-LOOP BEGIN at propagate.f90(435,8)
+LOOP BEGIN at propagate.f90(327,8)
 LOOP END
 
-LOOP BEGIN at propagate.f90(436,8)
+LOOP BEGIN at propagate.f90(328,8)
 LOOP END
 
-LOOP BEGIN at propagate.f90(428,30)
+LOOP BEGIN at propagate.f90(320,30)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at propagate.f90(428,30)
+   LOOP BEGIN at propagate.f90(320,30)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(428,30)
+   LOOP BEGIN at propagate.f90(320,30)
       remark #17107: loop was not parallelized: inner loop
    LOOP END
 
-   LOOP BEGIN at propagate.f90(428,30)
+   LOOP BEGIN at propagate.f90(320,30)
    <Remainder>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(428,30)
+   LOOP BEGIN at propagate.f90(320,30)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(429,30)
+LOOP BEGIN at propagate.f90(321,30)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at propagate.f90(429,30)
+   LOOP BEGIN at propagate.f90(321,30)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(429,30)
+   LOOP BEGIN at propagate.f90(321,30)
       remark #17107: loop was not parallelized: inner loop
    LOOP END
 
-   LOOP BEGIN at propagate.f90(429,30)
+   LOOP BEGIN at propagate.f90(321,30)
    <Remainder>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(429,30)
+   LOOP BEGIN at propagate.f90(321,30)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(430,30)
+LOOP BEGIN at propagate.f90(322,30)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at propagate.f90(430,30)
+   LOOP BEGIN at propagate.f90(322,30)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(430,30)
+   LOOP BEGIN at propagate.f90(322,30)
       remark #17107: loop was not parallelized: inner loop
    LOOP END
 
-   LOOP BEGIN at propagate.f90(430,30)
+   LOOP BEGIN at propagate.f90(322,30)
    <Remainder>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(430,30)
+   LOOP BEGIN at propagate.f90(322,30)
    <Remainder>
    LOOP END
 LOOP END
@@ -491,85 +380,85 @@ Begin optimization report for: PROPAGATE::ADD_INT_RAD
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at propagate.f90(507,8)
+LOOP BEGIN at propagate.f90(396,8)
    remark #17100: FUSED LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ } private={ } firstprivate={ dt mu_prev5 mu_prev4 mu_prev3 mu_prev2 mu_prev 1817 1821 1819 } lastprivate={ } firstlastprivate={ } reduction={ }
+   remark #17101: parallel loop shared={ } private={ } firstprivate={ dt mu_prev5 mu_prev4 mu_prev3 mu_prev2 mu_prev 1114 1118 1116 } lastprivate={ } firstlastprivate={ } reduction={ }
 LOOP END
 
-LOOP BEGIN at propagate.f90(517,8)
+LOOP BEGIN at propagate.f90(406,8)
 LOOP END
 
-LOOP BEGIN at propagate.f90(518,8)
+LOOP BEGIN at propagate.f90(407,8)
 LOOP END
 
-LOOP BEGIN at propagate.f90(527,8)
+LOOP BEGIN at propagate.f90(416,8)
    remark #17108: loop was not parallelized: insufficient computational work
 LOOP END
 
-LOOP BEGIN at propagate.f90(528,11)
+LOOP BEGIN at propagate.f90(417,11)
 LOOP END
 
-LOOP BEGIN at propagate.f90(507,8)
+LOOP BEGIN at propagate.f90(396,8)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at propagate.f90(529,20)
+LOOP BEGIN at propagate.f90(418,20)
    remark #17108: loop was not parallelized: insufficient computational work
 LOOP END
 
-LOOP BEGIN at propagate.f90(529,20)
+LOOP BEGIN at propagate.f90(418,20)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at propagate.f90(533,22)
+LOOP BEGIN at propagate.f90(422,22)
    remark #17108: loop was not parallelized: insufficient computational work
 LOOP END
 
-LOOP BEGIN at propagate.f90(535,8)
+LOOP BEGIN at propagate.f90(424,8)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.23_2upper_.1 } private={ } firstprivate={ n_ci 1853 readio_mp_mut_ 1839 h_int 1837 1845 1849 1853 } lastprivate={ } firstlastprivate={ } reduction={ }
+   remark #17101: parallel loop shared={ .2.27_2upper_.1 } private={ } firstprivate={ n_ci 1150 readio_mp_mut_ 1136 h_int 1134 1142 1146 1150 } lastprivate={ } firstlastprivate={ } reduction={ }
 
-   LOOP BEGIN at propagate.f90(535,8)
+   LOOP BEGIN at propagate.f90(424,8)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(535,8)
+   LOOP BEGIN at propagate.f90(424,8)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at propagate.f90(535,8)
+   LOOP BEGIN at propagate.f90(424,8)
    <Remainder>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(535,8)
+   LOOP BEGIN at propagate.f90(424,8)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(507,8)
+LOOP BEGIN at propagate.f90(396,8)
    remark #25460: No loop optimizations reported
 LOOP END
 
-LOOP BEGIN at propagate.f90(507,8)
+LOOP BEGIN at propagate.f90(396,8)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at propagate.f90(535,8)
+LOOP BEGIN at propagate.f90(424,8)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at propagate.f90(535,8)
+   LOOP BEGIN at propagate.f90(424,8)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(535,8)
+   LOOP BEGIN at propagate.f90(424,8)
       remark #17107: loop was not parallelized: inner loop
    LOOP END
 
-   LOOP BEGIN at propagate.f90(535,8)
+   LOOP BEGIN at propagate.f90(424,8)
    <Remainder>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(535,8)
+   LOOP BEGIN at propagate.f90(424,8)
    <Remainder>
    LOOP END
 LOOP END
@@ -580,45 +469,2127 @@ Begin optimization report for: PROPAGATE::ADD_INT_VAC
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at propagate.f90(492,8)
+LOOP BEGIN at propagate.f90(381,8)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.24_2upper_.1 } private={ } firstprivate={ 1763 1789 readio_mp_mut_ 1775 h_int 1773 1781 1785 1789 } lastprivate={ } firstlastprivate={ } reduction={ }
+   remark #17101: parallel loop shared={ .2.28_2upper_.1 } private={ } firstprivate={ 1060 1086 readio_mp_mut_ 1072 h_int 1070 1078 1082 1086 } lastprivate={ } firstlastprivate={ } reduction={ }
 
-   LOOP BEGIN at propagate.f90(492,8)
+   LOOP BEGIN at propagate.f90(381,8)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(492,8)
+   LOOP BEGIN at propagate.f90(381,8)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at propagate.f90(492,8)
+   LOOP BEGIN at propagate.f90(381,8)
    <Remainder>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(492,8)
+   LOOP BEGIN at propagate.f90(381,8)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(492,8)
+LOOP BEGIN at propagate.f90(381,8)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at propagate.f90(492,8)
+   LOOP BEGIN at propagate.f90(381,8)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(492,8)
+   LOOP BEGIN at propagate.f90(381,8)
       remark #17107: loop was not parallelized: inner loop
    LOOP END
 
-   LOOP BEGIN at propagate.f90(492,8)
+   LOOP BEGIN at propagate.f90(381,8)
    <Remainder>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(492,8)
+   LOOP BEGIN at propagate.f90(381,8)
    <Remainder>
    LOOP END
+LOOP END
+===========================================================================
+
+Begin optimization report for: PROPAGATE::FULL_EULER_PROP
+
+    Report from: Auto-parallelization optimizations [par]
+
+
+LOOP BEGIN at propagate.f90(647,36)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(647,36)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(647,36)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(647,36)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(647,36)
+      remark #25460: No loop optimizations reported
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(647,36)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(647,36)
+<Remainder>
+
+   LOOP BEGIN at propagate.f90(647,36)
+      remark #25460: No loop optimizations reported
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(647,36)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(647,36)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(647,8)
+   remark #17109: LOOP WAS AUTO-PARALLELIZED
+   remark #17101: parallel loop shared={ .2.29_2upper_.5 } private={ } firstprivate={ 1731 1717 readio_mp_e_ci_ 1729 propagate_mp_c_prev_ dt 1713 propagate_mp_c_ 1711 1713 1715 1717 1719 } lastprivate={ } firstlastprivate={ } reduction={ }
+LOOP END
+
+LOOP BEGIN at propagate.f90(647,8)
+<Remainder>
+LOOP END
+
+LOOP BEGIN at propagate.f90(649,11)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+LOOP END
+
+LOOP BEGIN at propagate.f90(654,18)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(654,18)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(654,18)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(654,18)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(654,18)
+      remark #25460: No loop optimizations reported
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(654,18)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(654,18)
+<Remainder>
+
+   LOOP BEGIN at propagate.f90(654,18)
+      remark #25460: No loop optimizations reported
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(654,18)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(654,18)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(654,11)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+LOOP END
+
+LOOP BEGIN at propagate.f90(654,11)
+<Remainder>
+LOOP END
+
+LOOP BEGIN at propagate.f90(657,29)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(657,29)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(657,29)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(657,29)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(657,29)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(657,29)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(657,53)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(657,53)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(657,53)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(657,53)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(657,53)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(657,53)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(657,13)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+LOOP END
+
+LOOP BEGIN at propagate.f90(660,35)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(660,35)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(660,35)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(660,35)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(660,35)
+      remark #25460: No loop optimizations reported
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(660,35)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(660,35)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(660,35)
+<Remainder>
+
+   LOOP BEGIN at propagate.f90(660,35)
+      remark #25460: No loop optimizations reported
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(660,35)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(660,59)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(660,59)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(660,59)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(660,59)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(660,59)
+      remark #25460: No loop optimizations reported
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(660,59)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(660,59)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(660,59)
+<Remainder>
+
+   LOOP BEGIN at propagate.f90(660,59)
+      remark #25460: No loop optimizations reported
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(660,59)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(660,13)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+LOOP END
+
+LOOP BEGIN at propagate.f90(663,17)
+<Peeled>
+LOOP END
+
+LOOP BEGIN at propagate.f90(663,17)
+   remark #17102: loop was not parallelized: not a parallelization candidate
+LOOP END
+
+LOOP BEGIN at propagate.f90(663,17)
+<Remainder>
+LOOP END
+
+LOOP BEGIN at propagate.f90(663,17)
+<Remainder>
+LOOP END
+
+LOOP BEGIN at propagate.f90(663,8)
+<Peeled, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(663,8)
+<Multiversioned v1>
+   remark #17109: LOOP WAS AUTO-PARALLELIZED
+   remark #17101: parallel loop shared={ .2.29_2upper_.27 } private={ } firstprivate={ 1817 1815 1813 propagate_mp_c_ 1825 } lastprivate={ } firstlastprivate={ } reduction={ }
+LOOP END
+
+LOOP BEGIN at propagate.f90(663,8)
+<Remainder, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(663,8)
+<Peeled, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(663,8)
+<Multiversioned v1>
+   remark #17109: LOOP WAS AUTO-PARALLELIZED
+   remark #17101: parallel loop shared={ .2.29_2upper_.29 } private={ } firstprivate={ 1825 propagate_mp_c_ 1813 1815 1817 } lastprivate={ } firstlastprivate={ } reduction={ }
+LOOP END
+
+LOOP BEGIN at propagate.f90(663,8)
+<Remainder, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(663,8)
+<Multiversioned v3>
+   remark #17104: loop was not parallelized: existence of parallel dependence
+LOOP END
+
+LOOP BEGIN at propagate.f90(663,8)
+<Remainder, Multiversioned v3>
+LOOP END
+
+LOOP BEGIN at propagate.f90(664,8)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(664,8)
+   <Peeled, Multiversioned v2>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(664,8)
+   <Multiversioned v2>
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(664,8)
+   <Remainder, Multiversioned v2>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(679,11)
+   remark #17102: loop was not parallelized: not a parallelization candidate
+
+   LOOP BEGIN at propagate.f90(682,13)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(682,13)
+         remark #17104: loop was not parallelized: existence of parallel dependence
+
+         LOOP BEGIN at propagate.f90(682,13)
+         <Peeled>
+         LOOP END
+
+         LOOP BEGIN at propagate.f90(682,13)
+            remark #17108: loop was not parallelized: insufficient computational work
+         LOOP END
+
+         LOOP BEGIN at propagate.f90(682,13)
+         <Remainder>
+         LOOP END
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(691,44)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(691,44)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(691,44)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(691,44)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(691,44)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(691,44)
+      <Remainder>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(691,44)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(691,69)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(691,69)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(691,69)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(691,69)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(691,69)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(691,69)
+      <Remainder>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(691,69)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(691,16)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(691,16)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(693,50)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(693,50)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(693,50)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(693,50)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(693,50)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(693,50)
+      <Remainder>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(693,50)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(693,80)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(693,80)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(693,80)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(693,80)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(693,80)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(693,80)
+      <Remainder>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(693,80)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(693,16)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(693,16)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(706,16)
+   <Peeled>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(706,16)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(706,16)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(708,26)
+   <Peeled>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(708,26)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(708,26)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(708,26)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(708,17)
+   <Peeled>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(708,17)
+      remark #17109: LOOP WAS AUTO-PARALLELIZED
+      remark #17101: parallel loop shared={ .2.29_2upper_.57 } private={ } firstprivate={ 1947 1945 propagate_mp_c_ 1935 1937 1939 } lastprivate={ } firstlastprivate={ } reduction={ }
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(708,17)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(709,17)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(709,17)
+      <Peeled, Multiversioned v2>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(709,17)
+      <Multiversioned v2>
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(709,17)
+      <Remainder, Multiversioned v2>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(710,17)
+   <Peeled>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(710,17)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(710,17)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(680,13)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(681,13)
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(717,11)
+   remark #17102: loop was not parallelized: not a parallelization candidate
+
+   LOOP BEGIN at propagate.f90(720,13)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(720,13)
+         remark #17104: loop was not parallelized: existence of parallel dependence
+
+         LOOP BEGIN at propagate.f90(720,13)
+         <Peeled>
+         LOOP END
+
+         LOOP BEGIN at propagate.f90(720,13)
+            remark #17108: loop was not parallelized: insufficient computational work
+         LOOP END
+
+         LOOP BEGIN at propagate.f90(720,13)
+         <Remainder>
+         LOOP END
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(731,43)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(731,43)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(731,43)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(731,43)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(731,43)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(731,43)
+      <Remainder>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(731,43)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(732,17)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(732,17)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(732,17)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(732,17)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(732,17)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(732,17)
+      <Remainder>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(732,17)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(732,50)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(732,50)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(732,50)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(732,50)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(732,50)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(732,50)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(733,20)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(733,20)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(733,20)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(733,20)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(733,20)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(733,20)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(731,15)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(731,15)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(735,43)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(735,43)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(735,43)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(735,43)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(735,43)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(735,43)
+      <Remainder>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(735,43)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(736,17)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(736,17)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(736,17)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(736,17)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(736,17)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(736,17)
+      <Remainder>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(736,17)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(737,17)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(737,17)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(737,17)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(737,17)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(737,17)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(737,17)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(737,41)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(737,41)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(737,41)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(737,41)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(737,41)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(737,41)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(735,15)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(735,15)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(740,13)
+   <Peeled>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(740,13)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(740,13)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(718,13)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(719,13)
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(746,11)
+   remark #17102: loop was not parallelized: not a parallelization candidate
+
+   LOOP BEGIN at propagate.f90(749,13)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(749,13)
+         remark #17104: loop was not parallelized: existence of parallel dependence
+
+         LOOP BEGIN at propagate.f90(749,13)
+         <Peeled>
+         LOOP END
+
+         LOOP BEGIN at propagate.f90(749,13)
+            remark #17108: loop was not parallelized: insufficient computational work
+         LOOP END
+
+         LOOP BEGIN at propagate.f90(749,13)
+         <Remainder>
+         LOOP END
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(755,47)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(755,47)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(755,47)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(755,47)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(755,47)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(755,47)
+      <Remainder>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(755,47)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(755,13)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(755,13)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(757,16)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(761,22)
+   <Peeled>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(761,22)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(761,22)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(761,22)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(761,13)
+   <Peeled, Multiversioned v1>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(761,13)
+   <Multiversioned v1>
+      remark #17109: LOOP WAS AUTO-PARALLELIZED
+      remark #17101: parallel loop shared={ .2.29_2upper_.111 } private={ } firstprivate={ 2147 2145 2143 propagate_mp_c_ 2155 } lastprivate={ } firstlastprivate={ } reduction={ }
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(761,13)
+   <Remainder, Multiversioned v1>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(761,13)
+   <Peeled, Multiversioned v1>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(761,13)
+   <Multiversioned v1>
+      remark #17109: LOOP WAS AUTO-PARALLELIZED
+      remark #17101: parallel loop shared={ .2.29_2upper_.113 } private={ } firstprivate={ 2155 propagate_mp_c_ 2143 2145 2147 } lastprivate={ } firstlastprivate={ } reduction={ }
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(761,13)
+   <Remainder, Multiversioned v1>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(761,13)
+   <Multiversioned v3>
+      remark #17104: loop was not parallelized: existence of parallel dependence
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(761,13)
+   <Remainder, Multiversioned v3>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(762,13)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(762,13)
+      <Peeled, Multiversioned v2>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(762,13)
+      <Multiversioned v2>
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(762,13)
+      <Remainder, Multiversioned v2>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(763,13)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(763,13)
+      <Peeled, Multiversioned v2>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(763,13)
+      <Multiversioned v2>
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(763,13)
+      <Remainder, Multiversioned v2>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(747,13)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(748,13)
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(647,8)
+<Peeled>
+LOOP END
+
+LOOP BEGIN at propagate.f90(647,8)
+   remark #25460: No loop optimizations reported
+LOOP END
+
+LOOP BEGIN at propagate.f90(647,8)
+<Remainder>
+LOOP END
+
+LOOP BEGIN at propagate.f90(647,8)
+<Remainder>
+LOOP END
+
+LOOP BEGIN at propagate.f90(663,8)
+<Peeled, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(663,8)
+<Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(663,8)
+<Remainder, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(663,8)
+<Peeled, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(663,8)
+<Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(663,8)
+<Remainder, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(708,17)
+<Peeled>
+LOOP END
+
+LOOP BEGIN at propagate.f90(708,17)
+   remark #25460: No loop optimizations reported
+LOOP END
+
+LOOP BEGIN at propagate.f90(708,17)
+<Remainder>
+LOOP END
+
+LOOP BEGIN at propagate.f90(761,13)
+<Peeled, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(761,13)
+<Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(761,13)
+<Remainder, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(761,13)
+<Peeled, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(761,13)
+<Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(761,13)
+<Remainder, Multiversioned v1>
+LOOP END
+===========================================================================
+
+Begin optimization report for: PROPAGATE::EXP_EULER_PROP
+
+    Report from: Auto-parallelization optimizations [par]
+
+
+LOOP BEGIN at propagate.f90(506,30)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(506,30)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(506,30)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(506,30)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(506,30)
+      remark #25460: No loop optimizations reported
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(506,30)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(506,30)
+<Remainder>
+
+   LOOP BEGIN at propagate.f90(506,30)
+      remark #25460: No loop optimizations reported
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(506,30)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(506,30)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(506,8)
+   remark #17109: LOOP WAS AUTO-PARALLELIZED
+   remark #17101: parallel loop shared={ .2.30_2upper_.5 } private={ } firstprivate={ 1289 dt 1287 propagate_mp_c_prev_ ccexp 1275 propagate_mp_c_ 1273 1275 1277 } lastprivate={ } firstlastprivate={ } reduction={ }
+LOOP END
+
+LOOP BEGIN at propagate.f90(506,8)
+<Remainder>
+LOOP END
+
+LOOP BEGIN at propagate.f90(508,11)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+LOOP END
+
+LOOP BEGIN at propagate.f90(513,24)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(513,24)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(513,24)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(513,24)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(513,24)
+      remark #25460: No loop optimizations reported
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(513,24)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(513,24)
+<Remainder>
+
+   LOOP BEGIN at propagate.f90(513,24)
+      remark #25460: No loop optimizations reported
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(513,24)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(513,24)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(513,11)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+LOOP END
+
+LOOP BEGIN at propagate.f90(516,36)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(516,36)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(516,36)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(516,36)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(516,36)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(516,36)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(516,60)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(516,60)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(516,60)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(516,60)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(516,60)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(516,60)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(516,13)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+LOOP END
+
+LOOP BEGIN at propagate.f90(519,42)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(519,42)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(519,42)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(519,42)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(519,42)
+      remark #25460: No loop optimizations reported
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(519,42)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(519,42)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(519,42)
+<Remainder>
+
+   LOOP BEGIN at propagate.f90(519,42)
+      remark #25460: No loop optimizations reported
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(519,42)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(519,66)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(519,66)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(519,66)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(519,66)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(519,66)
+      remark #25460: No loop optimizations reported
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(519,66)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(519,66)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(519,66)
+<Remainder>
+
+   LOOP BEGIN at propagate.f90(519,66)
+      remark #25460: No loop optimizations reported
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(519,66)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(519,13)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+LOOP END
+
+LOOP BEGIN at propagate.f90(522,17)
+<Peeled>
+LOOP END
+
+LOOP BEGIN at propagate.f90(522,17)
+   remark #17102: loop was not parallelized: not a parallelization candidate
+LOOP END
+
+LOOP BEGIN at propagate.f90(522,17)
+<Remainder>
+LOOP END
+
+LOOP BEGIN at propagate.f90(522,17)
+<Remainder>
+LOOP END
+
+LOOP BEGIN at propagate.f90(522,8)
+<Peeled, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(522,8)
+<Multiversioned v1>
+   remark #17109: LOOP WAS AUTO-PARALLELIZED
+   remark #17101: parallel loop shared={ .2.30_2upper_.27 } private={ } firstprivate={ 1375 1373 1371 propagate_mp_c_ 1383 } lastprivate={ } firstlastprivate={ } reduction={ }
+LOOP END
+
+LOOP BEGIN at propagate.f90(522,8)
+<Remainder, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(522,8)
+<Peeled, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(522,8)
+<Multiversioned v1>
+   remark #17109: LOOP WAS AUTO-PARALLELIZED
+   remark #17101: parallel loop shared={ .2.30_2upper_.29 } private={ } firstprivate={ 1383 propagate_mp_c_ 1371 1373 1375 } lastprivate={ } firstlastprivate={ } reduction={ }
+LOOP END
+
+LOOP BEGIN at propagate.f90(522,8)
+<Remainder, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(522,8)
+<Multiversioned v3>
+   remark #17104: loop was not parallelized: existence of parallel dependence
+LOOP END
+
+LOOP BEGIN at propagate.f90(522,8)
+<Remainder, Multiversioned v3>
+LOOP END
+
+LOOP BEGIN at propagate.f90(523,8)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at propagate.f90(523,8)
+   <Peeled, Multiversioned v2>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(523,8)
+   <Multiversioned v2>
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(523,8)
+   <Remainder, Multiversioned v2>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(537,11)
+   remark #17102: loop was not parallelized: not a parallelization candidate
+
+   LOOP BEGIN at propagate.f90(540,13)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(540,13)
+         remark #17104: loop was not parallelized: existence of parallel dependence
+
+         LOOP BEGIN at propagate.f90(540,13)
+         <Peeled>
+         LOOP END
+
+         LOOP BEGIN at propagate.f90(540,13)
+            remark #17108: loop was not parallelized: insufficient computational work
+         LOOP END
+
+         LOOP BEGIN at propagate.f90(540,13)
+         <Remainder>
+         LOOP END
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(549,38)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(549,38)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(549,38)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(549,38)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(549,38)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(549,38)
+      <Remainder>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(549,38)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(549,62)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(549,62)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(549,62)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(549,62)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(549,62)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(549,62)
+      <Remainder>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(549,62)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(549,16)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(549,16)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(551,50)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(551,50)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(551,50)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(551,50)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(551,50)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(551,50)
+      <Remainder>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(551,50)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(551,79)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(551,79)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(551,79)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(551,79)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(551,79)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(551,79)
+      <Remainder>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(551,79)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(551,16)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(551,16)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(564,16)
+   <Peeled>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(564,16)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(564,16)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(566,26)
+   <Peeled>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(566,26)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(566,26)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(566,26)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(566,17)
+   <Peeled>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(566,17)
+      remark #17109: LOOP WAS AUTO-PARALLELIZED
+      remark #17101: parallel loop shared={ .2.30_2upper_.57 } private={ } firstprivate={ 1497 1495 propagate_mp_c_ 1485 1487 1489 } lastprivate={ } firstlastprivate={ } reduction={ }
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(566,17)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(567,17)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(567,17)
+      <Peeled, Multiversioned v2>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(567,17)
+      <Multiversioned v2>
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(567,17)
+      <Remainder, Multiversioned v2>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(568,17)
+   <Peeled>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(568,17)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(568,17)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(538,13)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(539,13)
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(575,11)
+   remark #17102: loop was not parallelized: not a parallelization candidate
+
+   LOOP BEGIN at propagate.f90(578,13)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(578,13)
+         remark #17104: loop was not parallelized: existence of parallel dependence
+
+         LOOP BEGIN at propagate.f90(578,13)
+         <Peeled>
+         LOOP END
+
+         LOOP BEGIN at propagate.f90(578,13)
+            remark #17108: loop was not parallelized: insufficient computational work
+         LOOP END
+
+         LOOP BEGIN at propagate.f90(578,13)
+         <Remainder>
+         LOOP END
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(589,39)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(589,39)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(589,39)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(589,39)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(589,39)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(589,39)
+      <Remainder>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(589,39)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(590,17)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(590,17)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(590,17)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(590,17)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(590,17)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(590,17)
+      <Remainder>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(590,17)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(590,50)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(590,50)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(590,50)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(590,50)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(590,50)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(590,50)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(591,20)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(591,20)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(591,20)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(591,20)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(591,20)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(591,20)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(589,17)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(589,17)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(593,39)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(593,39)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(593,39)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(593,39)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(593,39)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(593,39)
+      <Remainder>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(593,39)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(594,17)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(594,17)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(594,17)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(594,17)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(594,17)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(594,17)
+      <Remainder>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(594,17)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(595,17)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(595,17)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(595,17)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(595,17)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(595,17)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(595,17)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(595,41)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(595,41)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(595,41)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(595,41)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(595,41)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(595,41)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(593,17)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(593,17)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(598,13)
+   <Peeled>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(598,13)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(598,13)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(576,13)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(577,13)
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(604,11)
+   remark #17102: loop was not parallelized: not a parallelization candidate
+
+   LOOP BEGIN at propagate.f90(607,13)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(607,13)
+         remark #17104: loop was not parallelized: existence of parallel dependence
+
+         LOOP BEGIN at propagate.f90(607,13)
+         <Peeled>
+         LOOP END
+
+         LOOP BEGIN at propagate.f90(607,13)
+            remark #17108: loop was not parallelized: insufficient computational work
+         LOOP END
+
+         LOOP BEGIN at propagate.f90(607,13)
+         <Remainder>
+         LOOP END
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(614,47)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(614,47)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(614,47)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(614,47)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(614,47)
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(614,47)
+      <Remainder>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(614,47)
+      <Remainder>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(614,13)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(614,13)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(614,13)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(616,16)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(620,22)
+   <Peeled>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(620,22)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(620,22)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(620,22)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(620,13)
+   <Peeled, Multiversioned v1>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(620,13)
+   <Multiversioned v1>
+      remark #17109: LOOP WAS AUTO-PARALLELIZED
+      remark #17101: parallel loop shared={ .2.30_2upper_.111 } private={ } firstprivate={ 1685 1683 1681 propagate_mp_c_ 1693 } lastprivate={ } firstlastprivate={ } reduction={ }
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(620,13)
+   <Remainder, Multiversioned v1>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(620,13)
+   <Peeled, Multiversioned v1>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(620,13)
+   <Multiversioned v1>
+      remark #17109: LOOP WAS AUTO-PARALLELIZED
+      remark #17101: parallel loop shared={ .2.30_2upper_.113 } private={ } firstprivate={ 1693 propagate_mp_c_ 1681 1683 1685 } lastprivate={ } firstlastprivate={ } reduction={ }
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(620,13)
+   <Remainder, Multiversioned v1>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(620,13)
+   <Multiversioned v3>
+      remark #17104: loop was not parallelized: existence of parallel dependence
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(620,13)
+   <Remainder, Multiversioned v3>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(621,13)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(621,13)
+      <Peeled, Multiversioned v2>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(621,13)
+      <Multiversioned v2>
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(621,13)
+      <Remainder, Multiversioned v2>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(622,13)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at propagate.f90(622,13)
+      <Peeled, Multiversioned v2>
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(622,13)
+      <Multiversioned v2>
+         remark #17108: loop was not parallelized: insufficient computational work
+      LOOP END
+
+      LOOP BEGIN at propagate.f90(622,13)
+      <Remainder, Multiversioned v2>
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(605,13)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(606,13)
+   LOOP END
+LOOP END
+
+LOOP BEGIN at propagate.f90(506,8)
+<Peeled>
+LOOP END
+
+LOOP BEGIN at propagate.f90(506,8)
+   remark #25460: No loop optimizations reported
+LOOP END
+
+LOOP BEGIN at propagate.f90(506,8)
+<Remainder>
+LOOP END
+
+LOOP BEGIN at propagate.f90(522,8)
+<Peeled, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(522,8)
+<Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(522,8)
+<Remainder, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(522,8)
+<Peeled, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(522,8)
+<Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(522,8)
+<Remainder, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(566,17)
+<Peeled>
+LOOP END
+
+LOOP BEGIN at propagate.f90(566,17)
+   remark #25460: No loop optimizations reported
+LOOP END
+
+LOOP BEGIN at propagate.f90(566,17)
+<Remainder>
+LOOP END
+
+LOOP BEGIN at propagate.f90(620,13)
+<Peeled, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(620,13)
+<Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(620,13)
+<Remainder, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(620,13)
+<Peeled, Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(620,13)
+<Multiversioned v1>
+LOOP END
+
+LOOP BEGIN at propagate.f90(620,13)
+<Remainder, Multiversioned v1>
 LOOP END
 ===========================================================================
 
@@ -627,1080 +2598,141 @@ Begin optimization report for: PROPAGATE::PROP
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at propagate.f90(83,8)
+LOOP BEGIN at propagate.f90(77,11)
 <Peeled>
 LOOP END
 
-LOOP BEGIN at propagate.f90(83,8)
-   remark #17108: loop was not parallelized: insufficient computational work
-LOOP END
-
-LOOP BEGIN at propagate.f90(83,8)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(83,8)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(84,8)
-<Peeled>
-LOOP END
-
-LOOP BEGIN at propagate.f90(84,8)
-   remark #17108: loop was not parallelized: insufficient computational work
-LOOP END
-
-LOOP BEGIN at propagate.f90(84,8)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(84,8)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(85,8)
-<Peeled>
-LOOP END
-
-LOOP BEGIN at propagate.f90(85,8)
-   remark #17108: loop was not parallelized: insufficient computational work
-LOOP END
-
-LOOP BEGIN at propagate.f90(85,8)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(85,8)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(88,8)
-   remark #17108: loop was not parallelized: insufficient computational work
-LOOP END
-
-LOOP BEGIN at propagate.f90(89,8)
-LOOP END
-
-LOOP BEGIN at propagate.f90(88,8)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(90,8)
+LOOP BEGIN at propagate.f90(77,11)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.25_2upper_.49 } private={ } firstprivate={ H_INT 738 742 } lastprivate={ } firstlastprivate={ } reduction={ }
-
-   LOOP BEGIN at propagate.f90(90,8)
-      remark #25460: No loop optimizations reported
-
-      LOOP BEGIN at propagate.f90(90,8)
-      <Peeled>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(90,8)
-         remark #25460: No loop optimizations reported
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(90,8)
-      <Remainder>
-      LOOP END
-   LOOP END
+   remark #17101: parallel loop shared={ .2.31_2upper_.4 } private={ } firstprivate={ 467 readio_mp_e_ci_ dt CCEXP 463 465 467 } lastprivate={ } firstlastprivate={ } reduction={ }
 LOOP END
 
-LOOP BEGIN at propagate.f90(91,8)
+LOOP BEGIN at propagate.f90(77,11)
+<Remainder>
+LOOP END
+
+LOOP BEGIN at propagate.f90(92,8)
+<Peeled>
+LOOP END
+
+LOOP BEGIN at propagate.f90(92,8)
    remark #17108: loop was not parallelized: insufficient computational work
 LOOP END
 
 LOOP BEGIN at propagate.f90(92,8)
+<Remainder>
+LOOP END
+
+LOOP BEGIN at propagate.f90(92,8)
+<Remainder>
 LOOP END
 
 LOOP BEGIN at propagate.f90(93,8)
+<Peeled>
+LOOP END
+
+LOOP BEGIN at propagate.f90(93,8)
+   remark #17108: loop was not parallelized: insufficient computational work
+LOOP END
+
+LOOP BEGIN at propagate.f90(93,8)
+<Remainder>
+LOOP END
+
+LOOP BEGIN at propagate.f90(93,8)
+<Remainder>
 LOOP END
 
 LOOP BEGIN at propagate.f90(94,8)
-LOOP END
-
-LOOP BEGIN at propagate.f90(95,8)
-LOOP END
-
-LOOP BEGIN at propagate.f90(91,8)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(132,36)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-
-   LOOP BEGIN at propagate.f90(132,36)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(132,36)
-   <Remainder>
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(132,36)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-
-   LOOP BEGIN at propagate.f90(132,36)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(132,36)
-   <Remainder>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(132,36)
-   <Remainder>
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(132,8)
-   remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.25_2upper_.55 } private={ } firstprivate={ 775 761 readio_mp_e_ci_ 773 C_PREV dt C 755 757 759 761 763 } lastprivate={ } firstlastprivate={ } reduction={ }
-LOOP END
-
-LOOP BEGIN at propagate.f90(132,8)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(135,11)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-LOOP END
-
-LOOP BEGIN at propagate.f90(141,18)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-
-   LOOP BEGIN at propagate.f90(141,18)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(141,18)
-   <Remainder>
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(141,18)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-
-   LOOP BEGIN at propagate.f90(141,18)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(141,18)
-   <Remainder>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(141,18)
-   <Remainder>
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(141,11)
-   remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.25_2upper_.61 } private={ } firstprivate={ 795 dt C 779 781 783 } lastprivate={ } firstlastprivate={ } reduction={ }
-LOOP END
-
-LOOP BEGIN at propagate.f90(141,11)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(146,29)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-
-   LOOP BEGIN at propagate.f90(146,29)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(146,29)
-   <Remainder>
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(146,29)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-
-   LOOP BEGIN at propagate.f90(146,29)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(146,29)
-   <Remainder>
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(146,53)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-
-   LOOP BEGIN at propagate.f90(146,53)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(146,53)
-   <Remainder>
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(146,53)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-
-   LOOP BEGIN at propagate.f90(146,53)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(146,53)
-   <Remainder>
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(146,13)
-   remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.25_2upper_.71 } private={ } firstprivate={ 825 dt 813 C 797 799 801 } lastprivate={ } firstlastprivate={ } reduction={ }
-LOOP END
-
-LOOP BEGIN at propagate.f90(146,13)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(150,35)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-
-   LOOP BEGIN at propagate.f90(150,35)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(150,35)
-   <Remainder>
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(150,35)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-
-   LOOP BEGIN at propagate.f90(150,35)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(150,35)
-   <Remainder>
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(150,59)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-
-   LOOP BEGIN at propagate.f90(150,59)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(150,59)
-   <Remainder>
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(150,59)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-
-   LOOP BEGIN at propagate.f90(150,59)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(150,59)
-   <Remainder>
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(150,13)
-   remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.25_2upper_.81 } private={ } firstprivate={ 855 dt 843 C 827 829 831 } lastprivate={ } firstlastprivate={ } reduction={ }
-LOOP END
-
-LOOP BEGIN at propagate.f90(150,13)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(153,17)
 <Peeled>
 LOOP END
 
-LOOP BEGIN at propagate.f90(153,17)
-   remark #17102: loop was not parallelized: not a parallelization candidate
+LOOP BEGIN at propagate.f90(94,8)
+   remark #17108: loop was not parallelized: insufficient computational work
 LOOP END
 
-LOOP BEGIN at propagate.f90(153,17)
+LOOP BEGIN at propagate.f90(94,8)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at propagate.f90(153,17)
+LOOP BEGIN at propagate.f90(94,8)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at propagate.f90(153,8)
-<Peeled>
+LOOP BEGIN at propagate.f90(97,8)
+   remark #17108: loop was not parallelized: insufficient computational work
 LOOP END
 
-LOOP BEGIN at propagate.f90(153,8)
+LOOP BEGIN at propagate.f90(98,8)
+LOOP END
+
+LOOP BEGIN at propagate.f90(99,8)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.25_2upper_.83 } private={ } firstprivate={ 869 C 857 859 861 } lastprivate={ } firstlastprivate={ } reduction={ }
-LOOP END
+   remark #17101: parallel loop shared={ .2.31_2upper_.12 } private={ } firstprivate={ propagate_mp_h_int_ 519 523 } lastprivate={ } firstlastprivate={ } reduction={ }
 
-LOOP BEGIN at propagate.f90(153,8)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(154,8)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-
-   LOOP BEGIN at propagate.f90(154,8)
-   <Peeled, Multiversioned v2>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(154,8)
-   <Multiversioned v2>
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(154,8)
-   <Remainder, Multiversioned v2>
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(180,13)
-   remark #17102: loop was not parallelized: not a parallelization candidate
-
-   LOOP BEGIN at propagate.f90(172,13)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(172,13)
-         remark #17104: loop was not parallelized: existence of parallel dependence
-
-         LOOP BEGIN at propagate.f90(172,13)
-         <Peeled>
-         LOOP END
-
-         LOOP BEGIN at propagate.f90(172,13)
-            remark #17108: loop was not parallelized: insufficient computational work
-         LOOP END
-
-         LOOP BEGIN at propagate.f90(172,13)
-         <Remainder>
-         LOOP END
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(181,44)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(181,44)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(181,44)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(181,44)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(181,44)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(181,44)
-      <Remainder>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(181,44)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(181,69)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(181,69)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(181,69)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(181,69)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(181,69)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(181,69)
-      <Remainder>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(181,69)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(181,16)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(181,16)
-   <Remainder>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(183,50)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(183,50)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(183,50)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(183,50)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(183,50)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(183,50)
-      <Remainder>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(183,50)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(183,80)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(183,80)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(183,80)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(183,80)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(183,80)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(183,80)
-      <Remainder>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(183,80)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(183,16)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(183,16)
-   <Remainder>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(196,16)
-   <Peeled>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(196,16)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(196,16)
-   <Remainder>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(198,26)
-   <Peeled>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(198,26)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(198,26)
-   <Remainder>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(198,26)
-   <Remainder>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(198,17)
-   <Peeled>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(198,17)
-      remark #17109: LOOP WAS AUTO-PARALLELIZED
-      remark #17101: parallel loop shared={ .2.25_2upper_.111 } private={ } firstprivate={ 991 C 979 981 983 } lastprivate={ } firstlastprivate={ } reduction={ }
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(198,17)
-   <Remainder>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(199,17)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(199,17)
-      <Peeled, Multiversioned v2>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(199,17)
-      <Multiversioned v2>
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(199,17)
-      <Remainder, Multiversioned v2>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(200,17)
-   <Peeled>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(200,17)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(200,17)
-   <Remainder>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(170,13)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(171,13)
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(208,11)
-   remark #17102: loop was not parallelized: not a parallelization candidate
-
-   LOOP BEGIN at propagate.f90(211,13)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(211,13)
-         remark #17104: loop was not parallelized: existence of parallel dependence
-
-         LOOP BEGIN at propagate.f90(211,13)
-         <Peeled>
-         LOOP END
-
-         LOOP BEGIN at propagate.f90(211,13)
-            remark #17108: loop was not parallelized: insufficient computational work
-         LOOP END
-
-         LOOP BEGIN at propagate.f90(211,13)
-         <Remainder>
-         LOOP END
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(222,43)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(222,43)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(222,43)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(222,43)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(222,43)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(222,43)
-      <Remainder>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(222,43)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(223,17)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(223,17)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(223,17)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(223,17)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(223,17)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(223,17)
-      <Remainder>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(223,17)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(223,50)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(223,50)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(223,50)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(223,50)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(223,50)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(223,50)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(224,20)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(224,20)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(224,20)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(224,20)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(224,20)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(224,20)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(222,15)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(222,15)
-   <Remainder>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(226,43)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(226,43)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(226,43)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(226,43)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(226,43)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(226,43)
-      <Remainder>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(226,43)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(227,17)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(227,17)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(227,17)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(227,17)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(227,17)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(227,17)
-      <Remainder>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(227,17)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(228,17)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(228,17)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(228,17)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(228,17)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(228,17)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(228,17)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(228,41)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(228,41)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(228,41)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(228,41)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(228,41)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(228,41)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(226,15)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(226,15)
-   <Remainder>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(231,13)
-   <Peeled>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(231,13)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(231,13)
-   <Remainder>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(209,13)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(210,13)
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(237,11)
-   remark #17102: loop was not parallelized: not a parallelization candidate
-
-   LOOP BEGIN at propagate.f90(240,13)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(240,13)
-         remark #17104: loop was not parallelized: existence of parallel dependence
-
-         LOOP BEGIN at propagate.f90(240,13)
-         <Peeled>
-         LOOP END
-
-         LOOP BEGIN at propagate.f90(240,13)
-            remark #17108: loop was not parallelized: insufficient computational work
-         LOOP END
-
-         LOOP BEGIN at propagate.f90(240,13)
-         <Remainder>
-         LOOP END
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(246,47)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(246,47)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(246,47)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(246,47)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(246,47)
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(246,47)
-      <Remainder>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(246,47)
-      <Remainder>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(246,13)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(246,13)
-   <Remainder>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(248,16)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(252,22)
-   <Peeled>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(252,22)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(252,22)
-   <Remainder>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(252,22)
-   <Remainder>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(252,13)
-   <Peeled>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(252,13)
-      remark #17109: LOOP WAS AUTO-PARALLELIZED
-      remark #17101: parallel loop shared={ .2.25_2upper_.165 } private={ } firstprivate={ 1199 C 1187 1189 1191 } lastprivate={ } firstlastprivate={ } reduction={ }
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(252,13)
-   <Remainder>
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(253,13)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(253,13)
-      <Peeled, Multiversioned v2>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(253,13)
-      <Multiversioned v2>
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(253,13)
-      <Remainder, Multiversioned v2>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(254,13)
-      remark #17104: loop was not parallelized: existence of parallel dependence
-
-      LOOP BEGIN at propagate.f90(254,13)
-      <Peeled, Multiversioned v2>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(254,13)
-      <Multiversioned v2>
-         remark #17108: loop was not parallelized: insufficient computational work
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(254,13)
-      <Remainder, Multiversioned v2>
-      LOOP END
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(238,13)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at propagate.f90(239,13)
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(90,8)
-   remark #25460: No loop optimizations reported
-
-   LOOP BEGIN at propagate.f90(90,8)
+   LOOP BEGIN at propagate.f90(99,8)
       remark #25460: No loop optimizations reported
 
-      LOOP BEGIN at propagate.f90(90,8)
+      LOOP BEGIN at propagate.f90(99,8)
       <Peeled>
       LOOP END
 
-      LOOP BEGIN at propagate.f90(90,8)
+      LOOP BEGIN at propagate.f90(99,8)
          remark #25460: No loop optimizations reported
       LOOP END
 
-      LOOP BEGIN at propagate.f90(90,8)
+      LOOP BEGIN at propagate.f90(99,8)
       <Remainder>
       LOOP END
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(132,8)
+LOOP BEGIN at propagate.f90(100,8)
+   remark #17108: loop was not parallelized: insufficient computational work
+LOOP END
+
+LOOP BEGIN at propagate.f90(101,8)
+LOOP END
+
+LOOP BEGIN at propagate.f90(102,8)
+LOOP END
+
+LOOP BEGIN at propagate.f90(103,8)
+LOOP END
+
+LOOP BEGIN at propagate.f90(104,8)
+LOOP END
+
+LOOP BEGIN at propagate.f90(77,11)
 <Peeled>
 LOOP END
 
-LOOP BEGIN at propagate.f90(132,8)
+LOOP BEGIN at propagate.f90(77,11)
    remark #25460: No loop optimizations reported
 LOOP END
 
-LOOP BEGIN at propagate.f90(132,8)
+LOOP BEGIN at propagate.f90(77,11)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at propagate.f90(132,8)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(141,11)
-<Peeled>
-LOOP END
-
-LOOP BEGIN at propagate.f90(141,11)
+LOOP BEGIN at propagate.f90(99,8)
    remark #25460: No loop optimizations reported
-LOOP END
 
-LOOP BEGIN at propagate.f90(141,11)
-<Remainder>
-LOOP END
+   LOOP BEGIN at propagate.f90(99,8)
+      remark #25460: No loop optimizations reported
 
-LOOP BEGIN at propagate.f90(146,13)
-<Peeled>
-LOOP END
+      LOOP BEGIN at propagate.f90(99,8)
+      <Peeled>
+      LOOP END
 
-LOOP BEGIN at propagate.f90(146,13)
-   remark #25460: No loop optimizations reported
-LOOP END
+      LOOP BEGIN at propagate.f90(99,8)
+         remark #25460: No loop optimizations reported
+      LOOP END
 
-LOOP BEGIN at propagate.f90(146,13)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(150,13)
-<Peeled>
-LOOP END
-
-LOOP BEGIN at propagate.f90(150,13)
-   remark #25460: No loop optimizations reported
-LOOP END
-
-LOOP BEGIN at propagate.f90(150,13)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(153,8)
-<Peeled>
-LOOP END
-
-LOOP BEGIN at propagate.f90(153,8)
-   remark #25460: No loop optimizations reported
-LOOP END
-
-LOOP BEGIN at propagate.f90(153,8)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(198,17)
-<Peeled>
-LOOP END
-
-LOOP BEGIN at propagate.f90(198,17)
-   remark #25460: No loop optimizations reported
-LOOP END
-
-LOOP BEGIN at propagate.f90(198,17)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at propagate.f90(252,13)
-<Peeled>
-LOOP END
-
-LOOP BEGIN at propagate.f90(252,13)
-   remark #25460: No loop optimizations reported
-LOOP END
-
-LOOP BEGIN at propagate.f90(252,13)
-<Remainder>
+      LOOP BEGIN at propagate.f90(99,8)
+      <Remainder>
+      LOOP END
+   LOOP END
 LOOP END
 ===========================================================================
 
@@ -1709,347 +2741,347 @@ Begin optimization report for: PROPAGATE::CREATE_FIELD
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at propagate.f90(303,9)
+LOOP BEGIN at propagate.f90(195,9)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.26_2upper_.1 } private={ } firstprivate={ 1359 propagate_mp_f_ 1355 1359 } lastprivate={ } firstlastprivate={ } reduction={ }
+   remark #17101: parallel loop shared={ .2.32_2upper_.1 } private={ } firstprivate={ 684 propagate_mp_f_ 680 684 } lastprivate={ } firstlastprivate={ } reduction={ }
 
-   LOOP BEGIN at propagate.f90(303,9)
+   LOOP BEGIN at propagate.f90(195,9)
       remark #25460: No loop optimizations reported
 
-      LOOP BEGIN at propagate.f90(303,9)
+      LOOP BEGIN at propagate.f90(195,9)
       <Peeled>
       LOOP END
 
-      LOOP BEGIN at propagate.f90(303,9)
+      LOOP BEGIN at propagate.f90(195,9)
          remark #25460: No loop optimizations reported
       LOOP END
 
-      LOOP BEGIN at propagate.f90(303,9)
+      LOOP BEGIN at propagate.f90(195,9)
       <Remainder>
       LOOP END
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(309,12)
+LOOP BEGIN at propagate.f90(201,12)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at propagate.f90(311,15)
+   LOOP BEGIN at propagate.f90(203,15)
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at propagate.f90(311,15)
+   LOOP BEGIN at propagate.f90(203,15)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(317,12)
+LOOP BEGIN at propagate.f90(209,12)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at propagate.f90(319,15)
+   LOOP BEGIN at propagate.f90(211,15)
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at propagate.f90(321,15)
+   LOOP BEGIN at propagate.f90(213,15)
    LOOP END
 
-   LOOP BEGIN at propagate.f90(319,15)
+   LOOP BEGIN at propagate.f90(211,15)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(331,10)
+LOOP BEGIN at propagate.f90(223,10)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.26_2upper_.7 } private={ } firstprivate={ i_max t_a dt t_mid omega 1359 propagate_mp_f_ i } lastprivate={ } firstlastprivate={ } reduction={ }
+   remark #17101: parallel loop shared={ .2.32_2upper_.7 } private={ } firstprivate={ i_max t_a dt t_mid omega 684 propagate_mp_f_ i } lastprivate={ } firstlastprivate={ } reduction={ }
 
-   LOOP BEGIN at propagate.f90(333,11)
+   LOOP BEGIN at propagate.f90(225,11)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at propagate.f90(333,11)
+   LOOP BEGIN at propagate.f90(225,11)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(336,10)
+LOOP BEGIN at propagate.f90(228,10)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.26_2upper_.9 } private={ } firstprivate={ n_step i_max 1359 propagate_mp_f_ i } lastprivate={ } firstlastprivate={ } reduction={ }
+   remark #17101: parallel loop shared={ .2.32_2upper_.9 } private={ } firstprivate={ n_step i_max 684 propagate_mp_f_ i } lastprivate={ } firstlastprivate={ } reduction={ }
 
-   LOOP BEGIN at propagate.f90(338,11)
+   LOOP BEGIN at propagate.f90(230,11)
       remark #25460: No loop optimizations reported
 
-      LOOP BEGIN at propagate.f90(338,11)
+      LOOP BEGIN at propagate.f90(230,11)
       <Peeled>
       LOOP END
 
-      LOOP BEGIN at propagate.f90(338,11)
+      LOOP BEGIN at propagate.f90(230,11)
          remark #25460: No loop optimizations reported
       LOOP END
 
-      LOOP BEGIN at propagate.f90(338,11)
+      LOOP BEGIN at propagate.f90(230,11)
       <Remainder>
       LOOP END
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(343,10)
+LOOP BEGIN at propagate.f90(235,10)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.26_2upper_.11 } private={ } firstprivate={ n_step t_a dt 1359 propagate_mp_f_ sigma t_mid omega i } lastprivate={ } firstlastprivate={ } reduction={ }
+   remark #17101: parallel loop shared={ .2.32_2upper_.11 } private={ } firstprivate={ n_step t_a dt 684 propagate_mp_f_ sigma t_mid omega i } lastprivate={ } firstlastprivate={ } reduction={ }
 
-   LOOP BEGIN at propagate.f90(345,11)
+   LOOP BEGIN at propagate.f90(237,11)
       remark #25460: No loop optimizations reported
 
-      LOOP BEGIN at propagate.f90(345,11)
+      LOOP BEGIN at propagate.f90(237,11)
       <Peeled>
       LOOP END
 
-      LOOP BEGIN at propagate.f90(345,11)
+      LOOP BEGIN at propagate.f90(237,11)
          remark #25460: No loop optimizations reported
       LOOP END
 
-      LOOP BEGIN at propagate.f90(345,11)
+      LOOP BEGIN at propagate.f90(237,11)
       <Remainder>
       LOOP END
    LOOP END
 
-   LOOP BEGIN at propagate.f90(347,13)
+   LOOP BEGIN at propagate.f90(239,13)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at propagate.f90(347,13)
+   LOOP BEGIN at propagate.f90(239,13)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(353,10)
+LOOP BEGIN at propagate.f90(245,10)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.26_2upper_.13 } private={ } firstprivate={ n_step t_a dt omega 1359 propagate_mp_f_ i } lastprivate={ } firstlastprivate={ } reduction={ }
+   remark #17101: parallel loop shared={ .2.32_2upper_.13 } private={ } firstprivate={ n_step t_a dt omega 684 propagate_mp_f_ i } lastprivate={ } firstlastprivate={ } reduction={ }
 
-   LOOP BEGIN at propagate.f90(355,11)
+   LOOP BEGIN at propagate.f90(247,11)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at propagate.f90(355,11)
+   LOOP BEGIN at propagate.f90(247,11)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(361,10)
+LOOP BEGIN at propagate.f90(253,10)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.26_2upper_.15 } private={ } firstprivate={ n_step t_a dt omega 1359 propagate_mp_f_ t_mid i } lastprivate={ } firstlastprivate={ } reduction={ }
+   remark #17101: parallel loop shared={ .2.32_2upper_.15 } private={ } firstprivate={ n_step t_a dt omega 684 propagate_mp_f_ t_mid i } lastprivate={ } firstlastprivate={ } reduction={ }
 
-   LOOP BEGIN at propagate.f90(364,13)
+   LOOP BEGIN at propagate.f90(256,13)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at propagate.f90(364,13)
+   LOOP BEGIN at propagate.f90(256,13)
    <Remainder>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(366,30)
+   LOOP BEGIN at propagate.f90(258,30)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at propagate.f90(366,30)
+   LOOP BEGIN at propagate.f90(258,30)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(373,12)
+LOOP BEGIN at propagate.f90(265,12)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at propagate.f90(375,15)
+   LOOP BEGIN at propagate.f90(267,15)
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at propagate.f90(375,15)
+   LOOP BEGIN at propagate.f90(267,15)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(380,12)
+LOOP BEGIN at propagate.f90(272,12)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at propagate.f90(382,15)
+   LOOP BEGIN at propagate.f90(274,15)
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at propagate.f90(383,15)
+   LOOP BEGIN at propagate.f90(275,15)
    LOOP END
 
-   LOOP BEGIN at propagate.f90(382,15)
+   LOOP BEGIN at propagate.f90(274,15)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(402,10)
+LOOP BEGIN at propagate.f90(294,10)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.26_2upper_.21 } private={ } firstprivate={ n_step t_a dt 1359 propagate_mp_f_ sigma t_mid tf ti i } lastprivate={ } firstlastprivate={ } reduction={ }
+   remark #17101: parallel loop shared={ .2.32_2upper_.21 } private={ } firstprivate={ n_step t_a dt 684 propagate_mp_f_ sigma t_mid tf ti i } lastprivate={ } firstlastprivate={ } reduction={ }
 
-   LOOP BEGIN at propagate.f90(404,11)
+   LOOP BEGIN at propagate.f90(296,11)
       remark #25460: No loop optimizations reported
 
-      LOOP BEGIN at propagate.f90(404,11)
+      LOOP BEGIN at propagate.f90(296,11)
       <Peeled>
       LOOP END
 
-      LOOP BEGIN at propagate.f90(404,11)
+      LOOP BEGIN at propagate.f90(296,11)
          remark #25460: No loop optimizations reported
       LOOP END
 
-      LOOP BEGIN at propagate.f90(404,11)
+      LOOP BEGIN at propagate.f90(296,11)
       <Remainder>
       LOOP END
    LOOP END
 
-   LOOP BEGIN at propagate.f90(406,13)
+   LOOP BEGIN at propagate.f90(298,13)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at propagate.f90(406,13)
+   LOOP BEGIN at propagate.f90(298,13)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(414,9)
+LOOP BEGIN at propagate.f90(306,9)
    remark #17104: loop was not parallelized: existence of parallel dependence
 LOOP END
 
-LOOP BEGIN at propagate.f90(303,9)
+LOOP BEGIN at propagate.f90(195,9)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at propagate.f90(303,9)
+   LOOP BEGIN at propagate.f90(195,9)
       remark #25460: No loop optimizations reported
 
-      LOOP BEGIN at propagate.f90(303,9)
+      LOOP BEGIN at propagate.f90(195,9)
       <Peeled>
       LOOP END
 
-      LOOP BEGIN at propagate.f90(303,9)
+      LOOP BEGIN at propagate.f90(195,9)
          remark #25460: No loop optimizations reported
       LOOP END
 
-      LOOP BEGIN at propagate.f90(303,9)
+      LOOP BEGIN at propagate.f90(195,9)
       <Remainder>
       LOOP END
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(331,10)
+LOOP BEGIN at propagate.f90(223,10)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at propagate.f90(333,11)
+   LOOP BEGIN at propagate.f90(225,11)
       remark #17107: loop was not parallelized: inner loop
    LOOP END
 
-   LOOP BEGIN at propagate.f90(333,11)
+   LOOP BEGIN at propagate.f90(225,11)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(336,10)
+LOOP BEGIN at propagate.f90(228,10)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at propagate.f90(338,11)
+   LOOP BEGIN at propagate.f90(230,11)
       remark #25460: No loop optimizations reported
 
-      LOOP BEGIN at propagate.f90(338,11)
+      LOOP BEGIN at propagate.f90(230,11)
       <Peeled>
       LOOP END
 
-      LOOP BEGIN at propagate.f90(338,11)
+      LOOP BEGIN at propagate.f90(230,11)
          remark #25460: No loop optimizations reported
       LOOP END
 
-      LOOP BEGIN at propagate.f90(338,11)
+      LOOP BEGIN at propagate.f90(230,11)
       <Remainder>
       LOOP END
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(343,10)
+LOOP BEGIN at propagate.f90(235,10)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at propagate.f90(345,11)
+   LOOP BEGIN at propagate.f90(237,11)
       remark #25460: No loop optimizations reported
 
-      LOOP BEGIN at propagate.f90(345,11)
+      LOOP BEGIN at propagate.f90(237,11)
       <Peeled>
       LOOP END
 
-      LOOP BEGIN at propagate.f90(345,11)
+      LOOP BEGIN at propagate.f90(237,11)
          remark #25460: No loop optimizations reported
       LOOP END
 
-      LOOP BEGIN at propagate.f90(345,11)
+      LOOP BEGIN at propagate.f90(237,11)
       <Remainder>
       LOOP END
    LOOP END
 
-   LOOP BEGIN at propagate.f90(347,13)
+   LOOP BEGIN at propagate.f90(239,13)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at propagate.f90(347,13)
+   LOOP BEGIN at propagate.f90(239,13)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(353,10)
+LOOP BEGIN at propagate.f90(245,10)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at propagate.f90(355,11)
+   LOOP BEGIN at propagate.f90(247,11)
       remark #17107: loop was not parallelized: inner loop
    LOOP END
 
-   LOOP BEGIN at propagate.f90(355,11)
+   LOOP BEGIN at propagate.f90(247,11)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(361,10)
+LOOP BEGIN at propagate.f90(253,10)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at propagate.f90(364,13)
+   LOOP BEGIN at propagate.f90(256,13)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at propagate.f90(364,13)
+   LOOP BEGIN at propagate.f90(256,13)
    <Remainder>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(366,30)
+   LOOP BEGIN at propagate.f90(258,30)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at propagate.f90(366,30)
+   LOOP BEGIN at propagate.f90(258,30)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(402,10)
+LOOP BEGIN at propagate.f90(294,10)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at propagate.f90(404,11)
+   LOOP BEGIN at propagate.f90(296,11)
       remark #25460: No loop optimizations reported
 
-      LOOP BEGIN at propagate.f90(404,11)
+      LOOP BEGIN at propagate.f90(296,11)
       <Peeled>
       LOOP END
 
-      LOOP BEGIN at propagate.f90(404,11)
+      LOOP BEGIN at propagate.f90(296,11)
          remark #25460: No loop optimizations reported
       LOOP END
 
-      LOOP BEGIN at propagate.f90(404,11)
+      LOOP BEGIN at propagate.f90(296,11)
       <Remainder>
       LOOP END
    LOOP END
 
-   LOOP BEGIN at propagate.f90(406,13)
+   LOOP BEGIN at propagate.f90(298,13)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at propagate.f90(406,13)
+   LOOP BEGIN at propagate.f90(298,13)
    <Remainder>
    LOOP END
 LOOP END
@@ -2060,154 +3092,76 @@ Begin optimization report for: PROPAGATE::WRT_DECOHERENCE
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at propagate.f90(575,9)
-   remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.28_2upper_.1 } private={ } firstprivate={ 1946 r 1944 1917 } lastprivate={ } firstlastprivate={ } reduction={ }
-
-   LOOP BEGIN at propagate.f90(575,9)
-      remark #25460: No loop optimizations reported
-
-      LOOP BEGIN at propagate.f90(575,9)
-      <Peeled>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(575,9)
-         remark #25460: No loop optimizations reported
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(575,9)
-      <Remainder>
-      LOOP END
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(576,9)
-   remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.28_2upper_.3 } private={ } firstprivate={ 1954 p 1952 1917 } lastprivate={ } firstlastprivate={ } reduction={ }
-
-   LOOP BEGIN at propagate.f90(576,9)
-      remark #25460: No loop optimizations reported
-
-      LOOP BEGIN at propagate.f90(576,9)
-      <Peeled>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(576,9)
-         remark #25460: No loop optimizations reported
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(576,9)
-      <Remainder>
-      LOOP END
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(578,9)
+LOOP BEGIN at propagate.f90(462,9)
 <Peeled>
 LOOP END
 
-LOOP BEGIN at propagate.f90(578,9)
+LOOP BEGIN at propagate.f90(462,9)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.28_2upper_.5 } private={ } firstprivate={ tmp rtmp itmp c 1946 r 1954 p 1960 cc k 1917 } lastprivate={ } firstlastprivate={ } reduction={ }
+   remark #17101: parallel loop shared={ .2.34_2upper_.1 } private={ } firstprivate={ c 1225 cc k 1210 } lastprivate={ } firstlastprivate={ } reduction={ }
 LOOP END
 
-LOOP BEGIN at propagate.f90(578,9)
+LOOP BEGIN at propagate.f90(462,9)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at propagate.f90(590,12)
-   remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.28_2upper_.7 } private={ } firstprivate={ tmp rtmp itmp c 1946 r 1954 p 1960 cc 1917 j } lastprivate={ } firstlastprivate={ } reduction={ }
+LOOP BEGIN at propagate.f90(462,9)
+<Remainder>
+LOOP END
 
-   LOOP BEGIN at propagate.f90(591,15)
+LOOP BEGIN at propagate.f90(468,12)
+   remark #17109: LOOP WAS AUTO-PARALLELIZED
+   remark #17101: parallel loop shared={ .2.34_2upper_.3 } private={ } firstprivate={ c 1225 cc 1210 j } lastprivate={ } firstlastprivate={ } reduction={ }
+
+   LOOP BEGIN at propagate.f90(469,15)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(591,15)
+   LOOP BEGIN at propagate.f90(469,15)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at propagate.f90(591,15)
+   LOOP BEGIN at propagate.f90(469,15)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(469,15)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at propagate.f90(605,12)
+LOOP BEGIN at propagate.f90(477,12)
    remark #17104: loop was not parallelized: existence of parallel dependence
 LOOP END
 
-LOOP BEGIN at propagate.f90(606,12)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-LOOP END
-
-LOOP BEGIN at propagate.f90(607,12)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-LOOP END
-
-LOOP BEGIN at propagate.f90(575,9)
-   remark #25460: No loop optimizations reported
-
-   LOOP BEGIN at propagate.f90(575,9)
-      remark #25460: No loop optimizations reported
-
-      LOOP BEGIN at propagate.f90(575,9)
-      <Peeled>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(575,9)
-         remark #25460: No loop optimizations reported
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(575,9)
-      <Remainder>
-      LOOP END
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(576,9)
-   remark #25460: No loop optimizations reported
-
-   LOOP BEGIN at propagate.f90(576,9)
-      remark #25460: No loop optimizations reported
-
-      LOOP BEGIN at propagate.f90(576,9)
-      <Peeled>
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(576,9)
-         remark #25460: No loop optimizations reported
-      LOOP END
-
-      LOOP BEGIN at propagate.f90(576,9)
-      <Remainder>
-      LOOP END
-   LOOP END
-LOOP END
-
-LOOP BEGIN at propagate.f90(578,9)
+LOOP BEGIN at propagate.f90(462,9)
 <Peeled>
 LOOP END
 
-LOOP BEGIN at propagate.f90(578,9)
+LOOP BEGIN at propagate.f90(462,9)
    remark #25460: No loop optimizations reported
 LOOP END
 
-LOOP BEGIN at propagate.f90(578,9)
+LOOP BEGIN at propagate.f90(462,9)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at propagate.f90(590,12)
+LOOP BEGIN at propagate.f90(468,12)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at propagate.f90(591,15)
+   LOOP BEGIN at propagate.f90(469,15)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at propagate.f90(591,15)
+   LOOP BEGIN at propagate.f90(469,15)
       remark #17107: loop was not parallelized: inner loop
    LOOP END
 
-   LOOP BEGIN at propagate.f90(591,15)
+   LOOP BEGIN at propagate.f90(469,15)
+   <Remainder>
+   LOOP END
+
+   LOOP BEGIN at propagate.f90(469,15)
    <Remainder>
    LOOP END
 LOOP END

@@ -197,7 +197,7 @@ Begin optimization report for: VIB::HERMITE
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at vib.f90(290,12)
+LOOP BEGIN at vib.f90(307,12)
    remark #17104: loop was not parallelized: existence of parallel dependence
 LOOP END
 ===========================================================================
@@ -207,24 +207,24 @@ Begin optimization report for: VIB::FACT
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at vib.f90(332,8)
+LOOP BEGIN at vib.f90(349,8)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.47_2upper_.1 } private={ } firstprivate={ 666 k } lastprivate={ } firstlastprivate={ } reduction={ s }
+   remark #17101: parallel loop shared={ .2.47_2upper_.1 } private={ } firstprivate={ 671 k } lastprivate={ } firstlastprivate={ } reduction={ s }
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8)
+LOOP BEGIN at vib.f90(349,8)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8)
+LOOP BEGIN at vib.f90(349,8)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8)
+LOOP BEGIN at vib.f90(349,8)
    remark #25460: No loop optimizations reported
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8)
+LOOP BEGIN at vib.f90(349,8)
 <Remainder>
 LOOP END
 ===========================================================================
@@ -234,28 +234,28 @@ Begin optimization report for: VIB::DFACT
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at vib.f90(362,11)
+LOOP BEGIN at vib.f90(379,11)
    remark #17104: loop was not parallelized: existence of parallel dependence
 LOOP END
 
-LOOP BEGIN at vib.f90(366,11)
+LOOP BEGIN at vib.f90(383,11)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.48_2upper_.1 } private={ } firstprivate={ 676 k } lastprivate={ } firstlastprivate={ } reduction={ s }
+   remark #17101: parallel loop shared={ .2.48_2upper_.1 } private={ } firstprivate={ 681 k } lastprivate={ } firstlastprivate={ } reduction={ s }
 LOOP END
 
-LOOP BEGIN at vib.f90(366,11)
+LOOP BEGIN at vib.f90(383,11)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(366,11)
+LOOP BEGIN at vib.f90(383,11)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(366,11)
+LOOP BEGIN at vib.f90(383,11)
    remark #25460: No loop optimizations reported
 LOOP END
 
-LOOP BEGIN at vib.f90(366,11)
+LOOP BEGIN at vib.f90(383,11)
 <Remainder>
 LOOP END
 ===========================================================================
@@ -265,66 +265,66 @@ Begin optimization report for: VIB::BIN_COEF
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(399,18)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(416,18)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
    remark #17101: parallel loop shared={ .2.49_2upper_.7 } private={ } firstprivate={ K } lastprivate={ } firstlastprivate={ } reduction={ S }
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(399,18)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(416,18)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(399,18)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(416,18)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(399,27)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(416,27)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
    remark #17101: parallel loop shared={ .2.49_2upper_.9 } private={ } firstprivate={ K } lastprivate={ } firstlastprivate={ } reduction={ S }
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(399,27)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(416,27)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(399,27)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(416,27)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(399,35)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(416,35)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
    remark #17101: parallel loop shared={ .2.49_2upper_.11 } private={ } firstprivate={ K } lastprivate={ } firstlastprivate={ } reduction={ S }
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(399,35)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(416,35)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(399,35)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(416,35)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(399,18)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(416,18)
    remark #25460: No loop optimizations reported
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(399,18)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(416,18)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(399,27)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(416,27)
    remark #25460: No loop optimizations reported
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(399,27)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(416,27)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(399,35)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(416,35)
    remark #25460: No loop optimizations reported
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(399,35)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(416,35)
 <Remainder>
 LOOP END
 ===========================================================================
@@ -334,121 +334,121 @@ Begin optimization report for: VIB::COMPUTE_E_DIP
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at vib.f90(546,8) inlined into vib.f90(418,14)
+LOOP BEGIN at vib.f90(563,8) inlined into vib.f90(435,14)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
    remark #17101: parallel loop shared={ .2.50_2upper_.71 } private={ } firstprivate={ nvib X I } lastprivate={ } firstlastprivate={ } reduction={ }
 
-   LOOP BEGIN at vib.f90(547,11) inlined into vib.f90(418,14)
+   LOOP BEGIN at vib.f90(564,11) inlined into vib.f90(435,14)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at vib.f90(547,11) inlined into vib.f90(418,14)
+   LOOP BEGIN at vib.f90(564,11) inlined into vib.f90(435,14)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at vib.f90(547,11) inlined into vib.f90(418,14)
+   LOOP BEGIN at vib.f90(564,11) inlined into vib.f90(435,14)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(550,8) inlined into vib.f90(418,14)
+LOOP BEGIN at vib.f90(567,8) inlined into vib.f90(435,14)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at vib.f90(550,8) inlined into vib.f90(418,14)
+   LOOP BEGIN at vib.f90(567,8) inlined into vib.f90(435,14)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at vib.f90(550,8) inlined into vib.f90(418,14)
+   LOOP BEGIN at vib.f90(567,8) inlined into vib.f90(435,14)
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at vib.f90(550,8) inlined into vib.f90(418,14)
+   LOOP BEGIN at vib.f90(567,8) inlined into vib.f90(435,14)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(582,11) inlined into vib.f90(418,14)
+LOOP BEGIN at vib.f90(599,11) inlined into vib.f90(435,14)
    remark #17104: loop was not parallelized: existence of parallel dependence
 LOOP END
 
-LOOP BEGIN at vib.f90(589,11) inlined into vib.f90(418,14)
+LOOP BEGIN at vib.f90(606,11) inlined into vib.f90(435,14)
    remark #17108: loop was not parallelized: insufficient computational work
 LOOP END
 
-LOOP BEGIN at vib.f90(589,11) inlined into vib.f90(418,14)
+LOOP BEGIN at vib.f90(606,11) inlined into vib.f90(435,14)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(420,9)
+LOOP BEGIN at vib.f90(437,9)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.50_2upper_.77 } private={ } firstprivate={ vib_mp_dipf_ 743 747 741 747 } lastprivate={ } firstlastprivate={ } reduction={ }
+   remark #17101: parallel loop shared={ .2.50_2upper_.77 } private={ } firstprivate={ vib_mp_dipf_ 748 752 746 752 } lastprivate={ } firstlastprivate={ } reduction={ }
 
-   LOOP BEGIN at vib.f90(420,9)
+   LOOP BEGIN at vib.f90(437,9)
       remark #25460: No loop optimizations reported
 
-      LOOP BEGIN at vib.f90(420,9)
+      LOOP BEGIN at vib.f90(437,9)
          remark #25460: No loop optimizations reported
 
-         LOOP BEGIN at vib.f90(420,9)
+         LOOP BEGIN at vib.f90(437,9)
          <Peeled>
          LOOP END
 
-         LOOP BEGIN at vib.f90(420,9)
+         LOOP BEGIN at vib.f90(437,9)
             remark #25460: No loop optimizations reported
          LOOP END
 
-         LOOP BEGIN at vib.f90(420,9)
+         LOOP BEGIN at vib.f90(437,9)
          <Remainder>
          LOOP END
       LOOP END
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(424,12)
+LOOP BEGIN at vib.f90(441,12)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at vib.f90(425,15)
+   LOOP BEGIN at vib.f90(442,15)
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at vib.f90(425,15)
+   LOOP BEGIN at vib.f90(442,15)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(430,12)
+LOOP BEGIN at vib.f90(447,12)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at vib.f90(431,15)
+   LOOP BEGIN at vib.f90(448,15)
       remark #17104: loop was not parallelized: existence of parallel dependence
 
-      LOOP BEGIN at vib.f90(432,18)
+      LOOP BEGIN at vib.f90(449,18)
          remark #17104: loop was not parallelized: existence of parallel dependence
 
-         LOOP BEGIN at vib.f90(433,21)
+         LOOP BEGIN at vib.f90(450,21)
             remark #17104: loop was not parallelized: existence of parallel dependence
 
-            LOOP BEGIN at vib.f90(646,8) inlined into vib.f90(434,29)
+            LOOP BEGIN at vib.f90(663,8) inlined into vib.f90(451,29)
                remark #17104: loop was not parallelized: existence of parallel dependence
             LOOP END
 
-            LOOP BEGIN at vib.f90(653,8) inlined into vib.f90(434,29)
+            LOOP BEGIN at vib.f90(670,8) inlined into vib.f90(451,29)
                remark #17108: loop was not parallelized: insufficient computational work
             LOOP END
 
-            LOOP BEGIN at vib.f90(435,24)
+            LOOP BEGIN at vib.f90(452,24)
                remark #17108: loop was not parallelized: insufficient computational work
             LOOP END
 
-            LOOP BEGIN at vib.f90(435,24)
+            LOOP BEGIN at vib.f90(452,24)
             <Remainder>
             LOOP END
 
-            LOOP BEGIN at vib.f90(435,24)
+            LOOP BEGIN at vib.f90(452,24)
                remark #17108: loop was not parallelized: insufficient computational work
             LOOP END
 
-            LOOP BEGIN at vib.f90(435,24)
+            LOOP BEGIN at vib.f90(452,24)
             <Remainder>
             LOOP END
          LOOP END
@@ -456,146 +456,146 @@ LOOP BEGIN at vib.f90(430,12)
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(447,9)
+LOOP BEGIN at vib.f90(464,9)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at vib.f90(448,12)
+   LOOP BEGIN at vib.f90(465,12)
       remark #17104: loop was not parallelized: existence of parallel dependence
 
-      LOOP BEGIN at vib.f90(450,20)
+      LOOP BEGIN at vib.f90(467,20)
          remark #17108: loop was not parallelized: insufficient computational work
       LOOP END
 
-      LOOP BEGIN at vib.f90(450,20)
+      LOOP BEGIN at vib.f90(467,20)
       <Remainder>
       LOOP END
 
-      LOOP BEGIN at vib.f90(620,8) inlined into vib.f90(450,20)
+      LOOP BEGIN at vib.f90(637,8) inlined into vib.f90(467,20)
          remark #17108: loop was not parallelized: insufficient computational work
       LOOP END
 
-      LOOP BEGIN at vib.f90(620,8) inlined into vib.f90(450,20)
+      LOOP BEGIN at vib.f90(637,8) inlined into vib.f90(467,20)
       <Remainder>
       LOOP END
 
-      LOOP BEGIN at vib.f90(620,8) inlined into vib.f90(450,20)
+      LOOP BEGIN at vib.f90(637,8) inlined into vib.f90(467,20)
       <Remainder>
       LOOP END
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(459,9)
+LOOP BEGIN at vib.f90(476,9)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at vib.f90(460,12)
+   LOOP BEGIN at vib.f90(477,12)
    <Peeled, Multiversioned v1>
    LOOP END
 
-   LOOP BEGIN at vib.f90(460,12)
+   LOOP BEGIN at vib.f90(477,12)
    <Multiversioned v1>
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at vib.f90(460,12)
+   LOOP BEGIN at vib.f90(477,12)
    <Remainder, Multiversioned v1>
    LOOP END
 
-   LOOP BEGIN at vib.f90(460,12)
+   LOOP BEGIN at vib.f90(477,12)
    <Remainder, Multiversioned v1>
    LOOP END
 
-   LOOP BEGIN at vib.f90(460,12)
+   LOOP BEGIN at vib.f90(477,12)
    <Multiversioned v2>
       remark #17104: loop was not parallelized: existence of parallel dependence
    LOOP END
 
-   LOOP BEGIN at vib.f90(460,12)
+   LOOP BEGIN at vib.f90(477,12)
    <Remainder, Multiversioned v2>
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(672,8) inlined into vib.f90(467,14)
+LOOP BEGIN at vib.f90(689,8) inlined into vib.f90(484,14)
    remark #17108: loop was not parallelized: insufficient computational work
 LOOP END
 
-LOOP BEGIN at vib.f90(672,8) inlined into vib.f90(467,14)
+LOOP BEGIN at vib.f90(689,8) inlined into vib.f90(484,14)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(676,8) inlined into vib.f90(467,14)
+LOOP BEGIN at vib.f90(693,8) inlined into vib.f90(484,14)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at vib.f90(702,8) inlined into vib.f90(467,14)
+   LOOP BEGIN at vib.f90(719,8) inlined into vib.f90(484,14)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at vib.f90(702,8) inlined into vib.f90(467,14)
+   LOOP BEGIN at vib.f90(719,8) inlined into vib.f90(484,14)
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at vib.f90(702,8) inlined into vib.f90(467,14)
+   LOOP BEGIN at vib.f90(719,8) inlined into vib.f90(484,14)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(470,9)
+LOOP BEGIN at vib.f90(487,9)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at vib.f90(471,12)
+   LOOP BEGIN at vib.f90(488,12)
       remark #17104: loop was not parallelized: existence of parallel dependence
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(477,9)
+LOOP BEGIN at vib.f90(494,9)
    remark #17104: loop was not parallelized: existence of parallel dependence
 LOOP END
 
-LOOP BEGIN at vib.f90(481,9)
+LOOP BEGIN at vib.f90(498,9)
    remark #17104: loop was not parallelized: existence of parallel dependence
 LOOP END
 
-LOOP BEGIN at vib.f90(486,9)
+LOOP BEGIN at vib.f90(503,9)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at vib.f90(487,12)
+   LOOP BEGIN at vib.f90(504,12)
       remark #17104: loop was not parallelized: existence of parallel dependence
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(546,8) inlined into vib.f90(418,14)
+LOOP BEGIN at vib.f90(563,8) inlined into vib.f90(435,14)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at vib.f90(547,11) inlined into vib.f90(418,14)
+   LOOP BEGIN at vib.f90(564,11) inlined into vib.f90(435,14)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at vib.f90(547,11) inlined into vib.f90(418,14)
+   LOOP BEGIN at vib.f90(564,11) inlined into vib.f90(435,14)
       remark #17107: loop was not parallelized: inner loop
    LOOP END
 
-   LOOP BEGIN at vib.f90(547,11) inlined into vib.f90(418,14)
+   LOOP BEGIN at vib.f90(564,11) inlined into vib.f90(435,14)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(420,9)
+LOOP BEGIN at vib.f90(437,9)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at vib.f90(420,9)
+   LOOP BEGIN at vib.f90(437,9)
       remark #17107: loop was not parallelized: inner loop
 
-      LOOP BEGIN at vib.f90(420,9)
+      LOOP BEGIN at vib.f90(437,9)
          remark #25460: No loop optimizations reported
 
-         LOOP BEGIN at vib.f90(420,9)
+         LOOP BEGIN at vib.f90(437,9)
          <Peeled>
          LOOP END
 
-         LOOP BEGIN at vib.f90(420,9)
+         LOOP BEGIN at vib.f90(437,9)
             remark #25460: No loop optimizations reported
          LOOP END
 
-         LOOP BEGIN at vib.f90(420,9)
+         LOOP BEGIN at vib.f90(437,9)
          <Remainder>
          LOOP END
       LOOP END
@@ -608,277 +608,277 @@ Begin optimization report for: VIB::COMPUTE_FC
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(219,35)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(220,20)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
    remark #17101: parallel loop shared={ .2.51_2upper_.71 } private={ } firstprivate={ K } lastprivate={ } firstlastprivate={ } reduction={ S }
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(219,35)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(220,20)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(219,35)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(220,20)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(219,43)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(221,21)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
    remark #17101: parallel loop shared={ .2.51_2upper_.73 } private={ } firstprivate={ K } lastprivate={ } firstlastprivate={ } reduction={ S }
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(219,43)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(221,21)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(219,43)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(221,21)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(228,9)
+LOOP BEGIN at vib.f90(235,9)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at vib.f90(290,12) inlined into vib.f90(229,17)
+   LOOP BEGIN at vib.f90(307,12) inlined into vib.f90(236,17)
       remark #17104: loop was not parallelized: existence of parallel dependence
    LOOP END
 
-   LOOP BEGIN at vib.f90(230,12)
+   LOOP BEGIN at vib.f90(237,12)
       remark #17104: loop was not parallelized: existence of parallel dependence
 
-      LOOP BEGIN at vib.f90(290,12) inlined into vib.f90(231,20)
+      LOOP BEGIN at vib.f90(307,12) inlined into vib.f90(238,20)
          remark #17104: loop was not parallelized: existence of parallel dependence
       LOOP END
 
-      LOOP BEGIN at vib.f90(362,11) inlined into vib.f90(235,23)
+      LOOP BEGIN at vib.f90(379,11) inlined into vib.f90(250,23)
          remark #17104: loop was not parallelized: existence of parallel dependence
       LOOP END
 
-      LOOP BEGIN at vib.f90(366,11) inlined into vib.f90(235,23)
+      LOOP BEGIN at vib.f90(383,11) inlined into vib.f90(250,23)
          remark #17108: loop was not parallelized: insufficient computational work
       LOOP END
 
-      LOOP BEGIN at vib.f90(366,11) inlined into vib.f90(235,23)
+      LOOP BEGIN at vib.f90(383,11) inlined into vib.f90(250,23)
       <Remainder>
       LOOP END
 
-      LOOP BEGIN at vib.f90(366,11) inlined into vib.f90(235,23)
+      LOOP BEGIN at vib.f90(383,11) inlined into vib.f90(250,23)
       <Remainder>
       LOOP END
 
-      LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(237,25)
+      LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(252,25)
          remark #17108: loop was not parallelized: insufficient computational work
       LOOP END
 
-      LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(237,25)
+      LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(252,25)
       <Remainder>
       LOOP END
 
-      LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(237,25)
+      LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(252,25)
       <Remainder>
       LOOP END
 
-      LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(237,25)
+      LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(252,25)
          remark #17108: loop was not parallelized: insufficient computational work
       LOOP END
 
-      LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(237,25)
+      LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(252,25)
       <Remainder>
       LOOP END
 
-      LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(237,25)
+      LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(252,25)
       <Remainder>
       LOOP END
 
-      LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(237,25)
+      LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(252,25)
          remark #17108: loop was not parallelized: insufficient computational work
       LOOP END
 
-      LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(237,25)
+      LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(252,25)
       <Remainder>
       LOOP END
 
-      LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(237,25)
+      LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(252,25)
       <Remainder>
       LOOP END
 
-      LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(237,39)
+      LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(252,39)
          remark #17108: loop was not parallelized: insufficient computational work
       LOOP END
 
-      LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(237,39)
+      LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(252,39)
       <Remainder>
       LOOP END
 
-      LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(237,39)
+      LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(252,39)
       <Remainder>
       LOOP END
 
-      LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(237,39)
+      LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(252,39)
          remark #17108: loop was not parallelized: insufficient computational work
       LOOP END
 
-      LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(237,39)
+      LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(252,39)
       <Remainder>
       LOOP END
 
-      LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(237,39)
+      LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(252,39)
       <Remainder>
       LOOP END
 
-      LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(237,39)
+      LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(252,39)
          remark #17108: loop was not parallelized: insufficient computational work
       LOOP END
 
-      LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(237,39)
+      LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(252,39)
       <Remainder>
       LOOP END
 
-      LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(237,39)
+      LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(252,39)
       <Remainder>
       LOOP END
 
-      LOOP BEGIN at vib.f90(238,15)
+      LOOP BEGIN at vib.f90(253,15)
          remark #17104: loop was not parallelized: existence of parallel dependence
 
-         LOOP BEGIN at vib.f90(362,11) inlined into vib.f90(242,28)
+         LOOP BEGIN at vib.f90(379,11) inlined into vib.f90(259,28)
             remark #17104: loop was not parallelized: existence of parallel dependence
          LOOP END
 
-         LOOP BEGIN at vib.f90(366,11) inlined into vib.f90(242,28)
+         LOOP BEGIN at vib.f90(383,11) inlined into vib.f90(259,28)
             remark #17108: loop was not parallelized: insufficient computational work
          LOOP END
 
-         LOOP BEGIN at vib.f90(366,11) inlined into vib.f90(242,28)
+         LOOP BEGIN at vib.f90(383,11) inlined into vib.f90(259,28)
          <Remainder>
          LOOP END
 
-         LOOP BEGIN at vib.f90(366,11) inlined into vib.f90(242,28)
+         LOOP BEGIN at vib.f90(383,11) inlined into vib.f90(259,28)
          <Remainder>
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,28)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,28)
             remark #17108: loop was not parallelized: insufficient computational work
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,28)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,28)
          <Remainder>
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,28)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,28)
          <Remainder>
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,28)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,28)
             remark #17108: loop was not parallelized: insufficient computational work
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,28)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,28)
          <Remainder>
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,28)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,28)
          <Remainder>
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,28)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,28)
             remark #17108: loop was not parallelized: insufficient computational work
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,28)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,28)
          <Remainder>
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,28)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,28)
          <Remainder>
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,42)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,42)
             remark #17108: loop was not parallelized: insufficient computational work
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,42)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,42)
          <Remainder>
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,42)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,42)
          <Remainder>
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,42)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,42)
             remark #17108: loop was not parallelized: insufficient computational work
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,42)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,42)
          <Remainder>
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,42)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,42)
          <Remainder>
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,42)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,42)
             remark #17108: loop was not parallelized: insufficient computational work
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,42)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,42)
          <Remainder>
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,42)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,42)
          <Remainder>
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,58)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,58)
             remark #17108: loop was not parallelized: insufficient computational work
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,58)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,58)
          <Remainder>
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,58)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,58)
          <Remainder>
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,58)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,58)
             remark #17108: loop was not parallelized: insufficient computational work
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,58)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,58)
          <Remainder>
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,58)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,58)
          <Remainder>
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,58)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,58)
             remark #17108: loop was not parallelized: insufficient computational work
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,58)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,58)
          <Remainder>
          LOOP END
 
-         LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(244,58)
+         LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(261,58)
          <Remainder>
          LOOP END
       LOOP END
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(219,35)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(220,20)
    remark #25460: No loop optimizations reported
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(219,35)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(220,20)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(219,43)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(221,21)
    remark #25460: No loop optimizations reported
 LOOP END
 
-LOOP BEGIN at vib.f90(332,8) inlined into vib.f90(219,43)
+LOOP BEGIN at vib.f90(349,8) inlined into vib.f90(221,21)
 <Remainder>
 LOOP END
 ===========================================================================
@@ -888,15 +888,15 @@ Begin optimization report for: VIB::REC_MAP
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at vib.f90(582,11)
+LOOP BEGIN at vib.f90(599,11)
    remark #17104: loop was not parallelized: existence of parallel dependence
 LOOP END
 
-LOOP BEGIN at vib.f90(589,11)
+LOOP BEGIN at vib.f90(606,11)
    remark #17108: loop was not parallelized: insufficient computational work
 LOOP END
 
-LOOP BEGIN at vib.f90(589,11)
+LOOP BEGIN at vib.f90(606,11)
 <Remainder>
 LOOP END
 ===========================================================================
@@ -906,63 +906,63 @@ Begin optimization report for: VIB::GEN_MAP
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at vib.f90(546,8)
+LOOP BEGIN at vib.f90(563,8)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
    remark #17101: parallel loop shared={ .2.54_2upper_.17 } private={ } firstprivate={ X i } lastprivate={ } firstlastprivate={ } reduction={ }
 
-   LOOP BEGIN at vib.f90(547,11)
+   LOOP BEGIN at vib.f90(564,11)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at vib.f90(547,11)
+   LOOP BEGIN at vib.f90(564,11)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at vib.f90(547,11)
+   LOOP BEGIN at vib.f90(564,11)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(550,8)
+LOOP BEGIN at vib.f90(567,8)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at vib.f90(550,8)
+   LOOP BEGIN at vib.f90(567,8)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at vib.f90(550,8)
+   LOOP BEGIN at vib.f90(567,8)
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at vib.f90(550,8)
+   LOOP BEGIN at vib.f90(567,8)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(582,11) inlined into vib.f90(555,13)
+LOOP BEGIN at vib.f90(599,11) inlined into vib.f90(572,13)
    remark #17104: loop was not parallelized: existence of parallel dependence
 LOOP END
 
-LOOP BEGIN at vib.f90(589,11) inlined into vib.f90(555,13)
+LOOP BEGIN at vib.f90(606,11) inlined into vib.f90(572,13)
    remark #17108: loop was not parallelized: insufficient computational work
 LOOP END
 
-LOOP BEGIN at vib.f90(589,11) inlined into vib.f90(555,13)
+LOOP BEGIN at vib.f90(606,11) inlined into vib.f90(572,13)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(546,8)
+LOOP BEGIN at vib.f90(563,8)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at vib.f90(547,11)
+   LOOP BEGIN at vib.f90(564,11)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at vib.f90(547,11)
+   LOOP BEGIN at vib.f90(564,11)
       remark #17107: loop was not parallelized: inner loop
    LOOP END
 
-   LOOP BEGIN at vib.f90(547,11)
+   LOOP BEGIN at vib.f90(564,11)
    <Remainder>
    LOOP END
 LOOP END
@@ -973,32 +973,32 @@ Begin optimization report for: VIB::ADD_VIBE
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at vib.f90(620,8)
+LOOP BEGIN at vib.f90(637,8)
 <Peeled>
 LOOP END
 
-LOOP BEGIN at vib.f90(620,8)
+LOOP BEGIN at vib.f90(637,8)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.55_2upper_.1 } private={ } firstprivate={ 1061 ii vib_mp_w_ ef k } lastprivate={ } firstlastprivate={ } reduction={ }
+   remark #17101: parallel loop shared={ .2.55_2upper_.1 } private={ } firstprivate={ 1066 ii vib_mp_w_ ef k } lastprivate={ } firstlastprivate={ } reduction={ }
 LOOP END
 
-LOOP BEGIN at vib.f90(620,8)
+LOOP BEGIN at vib.f90(637,8)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(620,8)
+LOOP BEGIN at vib.f90(637,8)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(620,8)
+LOOP BEGIN at vib.f90(637,8)
 <Peeled>
 LOOP END
 
-LOOP BEGIN at vib.f90(620,8)
+LOOP BEGIN at vib.f90(637,8)
    remark #25460: No loop optimizations reported
 LOOP END
 
-LOOP BEGIN at vib.f90(620,8)
+LOOP BEGIN at vib.f90(637,8)
 <Remainder>
 LOOP END
 ===========================================================================
@@ -1008,11 +1008,11 @@ Begin optimization report for: VIB::MODIFY_DIP
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at vib.f90(646,8)
+LOOP BEGIN at vib.f90(663,8)
    remark #17104: loop was not parallelized: existence of parallel dependence
 LOOP END
 
-LOOP BEGIN at vib.f90(653,8)
+LOOP BEGIN at vib.f90(670,8)
    remark #17108: loop was not parallelized: insufficient computational work
 LOOP END
 ===========================================================================
@@ -1022,30 +1022,30 @@ Begin optimization report for: VIB::SORT
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at vib.f90(672,8)
+LOOP BEGIN at vib.f90(689,8)
 <Peeled>
 LOOP END
 
-LOOP BEGIN at vib.f90(672,8)
+LOOP BEGIN at vib.f90(689,8)
    remark #17108: loop was not parallelized: insufficient computational work
 LOOP END
 
-LOOP BEGIN at vib.f90(672,8)
+LOOP BEGIN at vib.f90(689,8)
 <Remainder>
 LOOP END
 
-LOOP BEGIN at vib.f90(676,8)
+LOOP BEGIN at vib.f90(693,8)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at vib.f90(702,8) inlined into vib.f90(677,17)
+   LOOP BEGIN at vib.f90(719,8) inlined into vib.f90(694,17)
    <Peeled>
    LOOP END
 
-   LOOP BEGIN at vib.f90(702,8) inlined into vib.f90(677,17)
+   LOOP BEGIN at vib.f90(719,8) inlined into vib.f90(694,17)
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at vib.f90(702,8) inlined into vib.f90(677,17)
+   LOOP BEGIN at vib.f90(719,8) inlined into vib.f90(694,17)
    <Remainder>
    LOOP END
 LOOP END
@@ -1056,15 +1056,15 @@ Begin optimization report for: VIB::FIND_MIN
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at vib.f90(702,8)
+LOOP BEGIN at vib.f90(719,8)
 <Peeled>
 LOOP END
 
-LOOP BEGIN at vib.f90(702,8)
+LOOP BEGIN at vib.f90(719,8)
    remark #17108: loop was not parallelized: insufficient computational work
 LOOP END
 
-LOOP BEGIN at vib.f90(702,8)
+LOOP BEGIN at vib.f90(719,8)
 <Remainder>
 LOOP END
 ===========================================================================
@@ -1074,108 +1074,20 @@ Begin optimization report for: VIB::VIB_SPECTRA
     Report from: Auto-parallelization optimizations [par]
 
 
-LOOP BEGIN at vib.f90(778,8)
+LOOP BEGIN at vib.f90(795,8)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at vib.f90(778,8)
+   LOOP BEGIN at vib.f90(795,8)
    <Peeled, Multiversioned v2>
    LOOP END
 
-   LOOP BEGIN at vib.f90(778,8)
+   LOOP BEGIN at vib.f90(795,8)
    <Multiversioned v2>
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at vib.f90(778,8)
+   LOOP BEGIN at vib.f90(795,8)
    <Remainder, Multiversioned v2>
-   LOOP END
-LOOP END
-
-LOOP BEGIN at vib.f90(782,8)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-
-   LOOP BEGIN at vib.f90(783,11)
-   <Peeled>
-   LOOP END
-
-   LOOP BEGIN at vib.f90(783,11)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at vib.f90(783,11)
-   <Remainder>
-   LOOP END
-
-   LOOP BEGIN at vib.f90(783,11)
-   <Remainder>
-   LOOP END
-LOOP END
-
-LOOP BEGIN at vib.f90(672,8) inlined into vib.f90(789,13)
-<Peeled>
-LOOP END
-
-LOOP BEGIN at vib.f90(672,8) inlined into vib.f90(789,13)
-   remark #17108: loop was not parallelized: insufficient computational work
-LOOP END
-
-LOOP BEGIN at vib.f90(672,8) inlined into vib.f90(789,13)
-<Remainder>
-LOOP END
-
-LOOP BEGIN at vib.f90(676,8) inlined into vib.f90(789,13)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-
-   LOOP BEGIN at vib.f90(702,8) inlined into vib.f90(789,13)
-   <Peeled>
-   LOOP END
-
-   LOOP BEGIN at vib.f90(702,8) inlined into vib.f90(789,13)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at vib.f90(702,8) inlined into vib.f90(789,13)
-   <Remainder>
-   LOOP END
-LOOP END
-
-LOOP BEGIN at vib.f90(792,8)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-
-   LOOP BEGIN at vib.f90(792,8)
-   <Peeled>
-   LOOP END
-
-   LOOP BEGIN at vib.f90(792,8)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at vib.f90(792,8)
-   <Remainder>
-   LOOP END
-LOOP END
-
-LOOP BEGIN at vib.f90(793,8)
-   remark #17104: loop was not parallelized: existence of parallel dependence
-
-   LOOP BEGIN at vib.f90(793,8)
-   <Peeled>
-   LOOP END
-
-   LOOP BEGIN at vib.f90(793,8)
-      remark #17108: loop was not parallelized: insufficient computational work
-   LOOP END
-
-   LOOP BEGIN at vib.f90(793,8)
-   <Remainder>
-   LOOP END
-LOOP END
-
-LOOP BEGIN at vib.f90(795,8)
-   remark #17109: LOOP WAS AUTO-PARALLELIZED
-   remark #17101: parallel loop shared={ .2.61_2upper_.53 } private={ } firstprivate={ ne vib_mp_dipf_ TMP i } lastprivate={ } firstlastprivate={ } reduction={ }
-
-   LOOP BEGIN at vib.f90(796,11)
    LOOP END
 LOOP END
 
@@ -1183,10 +1095,15 @@ LOOP BEGIN at vib.f90(799,8)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
    LOOP BEGIN at vib.f90(800,11)
-      remark #17104: loop was not parallelized: existence of parallel dependence
+   <Peeled>
+   LOOP END
 
-      LOOP BEGIN at vib.f90(802,14)
-      LOOP END
+   LOOP BEGIN at vib.f90(800,11)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at vib.f90(800,11)
+   <Remainder>
    LOOP END
 
    LOOP BEGIN at vib.f90(800,11)
@@ -1194,87 +1111,170 @@ LOOP BEGIN at vib.f90(799,8)
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(806,8)
+LOOP BEGIN at vib.f90(689,8) inlined into vib.f90(806,13)
+<Peeled>
+LOOP END
+
+LOOP BEGIN at vib.f90(689,8) inlined into vib.f90(806,13)
+   remark #17108: loop was not parallelized: insufficient computational work
+LOOP END
+
+LOOP BEGIN at vib.f90(689,8) inlined into vib.f90(806,13)
+<Remainder>
+LOOP END
+
+LOOP BEGIN at vib.f90(693,8) inlined into vib.f90(806,13)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at vib.f90(719,8) inlined into vib.f90(806,13)
+   <Peeled>
+   LOOP END
+
+   LOOP BEGIN at vib.f90(719,8) inlined into vib.f90(806,13)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at vib.f90(719,8) inlined into vib.f90(806,13)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at vib.f90(809,8)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at vib.f90(809,8)
+   <Peeled>
+   LOOP END
+
+   LOOP BEGIN at vib.f90(809,8)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at vib.f90(809,8)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at vib.f90(810,8)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at vib.f90(810,8)
+   <Peeled>
+   LOOP END
+
+   LOOP BEGIN at vib.f90(810,8)
+      remark #17108: loop was not parallelized: insufficient computational work
+   LOOP END
+
+   LOOP BEGIN at vib.f90(810,8)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at vib.f90(812,8)
+   remark #17109: LOOP WAS AUTO-PARALLELIZED
+   remark #17101: parallel loop shared={ .2.61_2upper_.53 } private={ } firstprivate={ ne vib_mp_dipf_ TMP i } lastprivate={ } firstlastprivate={ } reduction={ }
+
+   LOOP BEGIN at vib.f90(813,11)
+   LOOP END
+LOOP END
+
+LOOP BEGIN at vib.f90(816,8)
+   remark #17104: loop was not parallelized: existence of parallel dependence
+
+   LOOP BEGIN at vib.f90(817,11)
+      remark #17104: loop was not parallelized: existence of parallel dependence
+
+      LOOP BEGIN at vib.f90(819,14)
+      LOOP END
+   LOOP END
+
+   LOOP BEGIN at vib.f90(817,11)
+   <Remainder>
+   LOOP END
+LOOP END
+
+LOOP BEGIN at vib.f90(823,8)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
    remark #17101: parallel loop shared={ .2.61_2upper_.55 } private={ } firstprivate={ nf IMAP TMP TDIP i } lastprivate={ } firstlastprivate={ } reduction={ }
 
-   LOOP BEGIN at vib.f90(807,11)
+   LOOP BEGIN at vib.f90(824,11)
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(813,8)
+LOOP BEGIN at vib.f90(830,8)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at vib.f90(813,8)
+   LOOP BEGIN at vib.f90(830,8)
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at vib.f90(813,8)
+   LOOP BEGIN at vib.f90(830,8)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(814,8)
+LOOP BEGIN at vib.f90(831,8)
    remark #17104: loop was not parallelized: existence of parallel dependence
 LOOP END
 
-LOOP BEGIN at vib.f90(822,8)
+LOOP BEGIN at vib.f90(839,8)
    remark #17104: loop was not parallelized: existence of parallel dependence
 
-   LOOP BEGIN at vib.f90(822,8)
+   LOOP BEGIN at vib.f90(839,8)
       remark #17108: loop was not parallelized: insufficient computational work
    LOOP END
 
-   LOOP BEGIN at vib.f90(822,8)
+   LOOP BEGIN at vib.f90(839,8)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(824,8)
+LOOP BEGIN at vib.f90(841,8)
    remark #17109: LOOP WAS AUTO-PARALLELIZED
    remark #17101: parallel loop shared={ .2.61_2upper_.61 } private={ } firstprivate={ ee de emin esigma ebin ebins nbin i } lastprivate={ } firstlastprivate={ } reduction={ }
 
-   LOOP BEGIN at vib.f90(828,11)
+   LOOP BEGIN at vib.f90(845,11)
       remark #25460: No loop optimizations reported
    LOOP END
 
-   LOOP BEGIN at vib.f90(828,11)
+   LOOP BEGIN at vib.f90(845,11)
    <Remainder>
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(833,8)
+LOOP BEGIN at vib.f90(850,8)
    remark #17104: loop was not parallelized: existence of parallel dependence
 LOOP END
 
-LOOP BEGIN at vib.f90(838,8)
+LOOP BEGIN at vib.f90(855,8)
    remark #17104: loop was not parallelized: existence of parallel dependence
 LOOP END
 
-LOOP BEGIN at vib.f90(795,8)
+LOOP BEGIN at vib.f90(812,8)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at vib.f90(796,11)
+   LOOP BEGIN at vib.f90(813,11)
       remark #17107: loop was not parallelized: inner loop
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(806,8)
+LOOP BEGIN at vib.f90(823,8)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at vib.f90(807,11)
+   LOOP BEGIN at vib.f90(824,11)
       remark #17107: loop was not parallelized: inner loop
    LOOP END
 LOOP END
 
-LOOP BEGIN at vib.f90(824,8)
+LOOP BEGIN at vib.f90(841,8)
    remark #25460: No loop optimizations reported
 
-   LOOP BEGIN at vib.f90(828,11)
+   LOOP BEGIN at vib.f90(845,11)
       remark #17107: loop was not parallelized: inner loop
    LOOP END
 
-   LOOP BEGIN at vib.f90(828,11)
+   LOOP BEGIN at vib.f90(845,11)
    <Remainder>
    LOOP END
 LOOP END
