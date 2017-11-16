@@ -8,7 +8,20 @@
       use dissipation
 
       implicit none
-      real(dbl),allocatable :: f(:,:)
+
+      integer(i4b)                :: ijump=0
+      real(dbl),allocatable       :: f(:,:)
+      complex(cmp), allocatable   :: c(:),c_prev(:),c_prev2(:),h_rnd(:,:), h_rnd2(:,:)
+      !complex(cmp), allocatable   :: ccexp(:) !SC 31/10/17: added to store exp(-ui*e(:)*dt), used in propagation
+      real(dbl),     allocatable  :: h_int(:,:), h_dis(:,:)
+      real(dbl),     allocatable  :: pjump(:)
+      real(dbl)                   :: f_prev(3),f_prev2(3)
+      real(dbl)                   :: mu_prev(3),mu_prev2(3),mu_prev3(3),&
+                                    mu_prev4(3), mu_prev5(3)
+      real(dbl),     allocatable  :: w(:), w_prev(:)
+      real(dbl)                   :: eps
+      logical                     :: first=.true.
+
 ! SC mu_a is the dipole moment at current step,
 !    int_rad is the classical radiated power at current step
 !    int_rad_int is the integral of the classical radiated power at current step
@@ -32,17 +45,18 @@
 !------------------------------------------------------------------------
 
        implicit none
-       integer(i4b)                :: i,j,k,istop,ijump=0
-       complex(cmp), allocatable  :: c(:),c_prev(:),c_prev2(:), h_rnd(:,:), h_rnd2(:,:)
-       real(dbl),     allocatable  :: h_int(:,:), h_dis(:,:)
-       real(dbl),     allocatable  :: pjump(:) 
-       real(dbl)                   :: f_prev(3),f_prev2(3)
-       real(dbl)                   :: mu_prev(3),mu_prev2(3),mu_prev3(3),&
-                                    mu_prev4(3), mu_prev5(3)
-       real(dbl)                   :: eps  
-       real(dbl),     allocatable  :: w(:), w_prev(:)
+       integer(i4b)                :: i,j,k!,ijump=0
+       !complex(cmp), allocatable  :: c(:),c_prev(:),c_prev2(:), h_rnd(:,:), h_rnd2(:,:)
+       complex(cmp), allocatable  :: ccexp(:) !SC 31/10/17: added to store exp(-ui*e(:)*dt), used in propagation
+       !real(dbl),     allocatable  :: h_int(:,:), h_dis(:,:)
+       !real(dbl),     allocatable  :: pjump(:) 
+       !real(dbl)                   :: f_prev(3),f_prev2(3)
+       !real(dbl)                   :: mu_prev(3),mu_prev2(3),mu_prev3(3),&
+       !                             mu_prev4(3), mu_prev5(3)
+       !real(dbl)                   :: eps  
+       !real(dbl),     allocatable  :: w(:), w_prev(:)
        character(20)             :: name_f
-       logical                   :: first=.true. 
+       !logical                   :: first=.true. 
 
 ! OPEN FILES
        write(name_f,'(a4,i0,a4)') "c_t_",n_f,".dat"
@@ -64,14 +78,15 @@
        allocate (c_prev(n_ci))
        allocate (c_prev2(n_ci))
        allocate (h_int(n_ci,n_ci))
+       if (Fexp.eq."exp") then 
+          allocate (ccexp(n_ci))
+          ccexp=exp(-ui*dt*e_ci)
+       endif
 ! SP 17/07/17: new flags
-       !if (dis) then
        if (Fdis(1:3).eq."mar".or.Fdis(1:3).eq."nma") then
           allocate (h_dis(n_ci,n_ci))
-          !if (qjump) then
           if (Fdis(5:9).eq."qjump") then
              allocate (pjump(2*nf+nexc+1))
-          !elseif (dis.and..not.qjump) then 
           else
              allocate (h_rnd(n_ci,n_ci))
              allocate (h_rnd2(n_ci,n_ci))
@@ -94,8 +109,9 @@
        mu_prev4=0.d0
        mu_prev5=0.d0
        int_rad_int=0.d0
-       !if(rad.eq."arl".or.dis.or.ernd) call seed_random_number_sc(iseed)
-       if(Frad.eq."arl".or.Fdis.ne."nodis") & 
+       !if(rad.eq."arl".or.dis.or.ernd) call
+       !seed_random_number_sc(iseed)
+       if(Frad.eq."arl".or.Fdis.ne."nodis") &
                                call seed_random_number_sc(iseed)
        call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
        i=1
@@ -119,7 +135,6 @@
        !if (dis) then
        if (Fdis(1:3).eq."mar".or.Fdis(1:3).eq."nma") then
           call define_h_dis(h_dis,n_ci)
-          !if (.not.qjump) then
           if (Fdis(5:9).ne."qjump") then 
              call rnd_noise(w,w_prev,n_ci,first)
              first=.false.
@@ -127,150 +142,30 @@
              call add_h_rnd2(h_rnd2,n_ci)
           endif
        endif
-!
-! INITIAL STEP: dpsi/dt=(psi(2)-psi(1))/dt
-       c=c_prev-ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))
-!       if (ernd) then
-       if (Fdis.eq."ernd") then
-          do j=1,n_ci
-             c(j) = c(j) - ui*dt*krnd*random_normal()*c_prev(j)
-          enddo
-       endif
-       !if (dis) then
-       if (Fdis(1:3).eq."mar".or.Fdis(1:3).eq."nma") then
-          c=c-dt*matmul(h_dis,c_prev)
-          !if (.not.qjump) then
-          !if (tdis.eq.0) then
-          if (Fdis(5:9).eq."EuMar") then
-          ! Euler-Maruyama
-            c=c-ui*sqrt(dt)*matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev)               
-          !elseif (tdis.eq.1) then
-          elseif (Fdis(5:9).eq."LeiMa") then
-          ! Leimkuhler-Matthews
-            c=c-ui*0.5d0*sqrt(dt)*matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev)
-          endif
-       endif
-       c=c/sqrt(dot_product(c,c))
-       c_prev=c
 
-! SP 16/07/17: added call to medium propagation at step 2 to have full output
-       i=2
-       if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,f_prev,h_int)
-       call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
-! SP 16/07/17: heder called at step 1                                        
-       !call out_header
-       if (mod(2,n_out).eq.0) call output(2,c,f_prev,h_int)
-!
-!
-! PROPAGATION CYCLE: starts the propagation at timestep 3
-! Markovian dissipation (quantum jump) -> dis.and.qjump
-!       if (dis.and.qjump) then
-       if (Fdis(5:9).eq."qjump") then
-          do i=3,n_step
-            f_prev2=f(:,i-2)
-            f_prev=f(:,i-1)
-            h_int=zero 
-            if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,f_prev,h_int)
-            call add_int_vac(f_prev,h_int)
-! SC field
-            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
-                                                mu_prev4,mu_prev5,h_int)
-! Quantum jump (spontaneous or nonradiative relaxation, pure dephasing)
-! Algorithm from J. Opt. Soc. Am. B. vol. 10 (1993) 524
-            if (i.eq.ijump+1) then
-               c=c_prev-ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))-dt*matmul(h_dis,c_prev)
-            else 
-               c=c_prev2-2.d0*ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))-2.d0*dt*matmul(h_dis,c_prev)
-            endif 
-! loss_norm computes: 
-! norm = 1 - dtot
-! dtot = dsp + dnr + dde
-! Loss of the norm, dissipative events simulated
-! eps -> uniform random number in [0,1]
-            call loss_norm(c_prev,n_ci,pjump)
-            call random_number(eps)  
-            if (dtot.gt.eps)  then
-               call quan_jump(c,c_prev,n_ci,pjump)
-               ijump=i
-               write(*,*) 'Quantum jump at step:', i, (i-1)*dt 
-               c_prev=c
-            else
-                c=c/sqrt(dot_product(c,c))
-                c_prev2=c_prev
-                c_prev=c
-            endif
-            call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
-            if (mod(i,n_out).eq.0)  call output(i,c,f_prev,h_int)
-          enddo
-! Markovian dissipation (Euler-Maruyama) -> dis.and.not.qjump
-!       elseif (dis.and..not.qjump) then
-       elseif (Fdis(1:3).eq."mar") then
-          do i=3,n_step
-            f_prev2=f(:,i-2)
-            f_prev=f(:,i-1)
-            h_int=zero 
-            if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,f_prev,h_int)
-            call add_int_vac(f_prev,h_int)
-! SC field
-            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
-                                                mu_prev4,mu_prev5,h_int)
-! Dissipation by a continuous stochastic propagation
-            call rnd_noise(w,w_prev,n_ci,first)
-            call add_h_rnd(h_rnd,n_ci,w,w_prev)
-            if (Fdis(5:9).eq."EuMar") then
-            ! Euler-Maruyama 
-              c=c_prev-ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))-dt* &
-                matmul(h_dis,c_prev)-ui*sqrt(dt)*matmul(h_rnd,c_prev)- &
-                dt*matmul(h_rnd2,c_prev)
-            elseif (Fdis(5:9).eq."LeiMa") then
-              c=c_prev-ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))-dt* &
-                matmul(h_dis,c_prev)-ui*0.5d0*sqrt(dt)* &
-                matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev)
-            endif
-            !c=c/sqrt(dot_product(c,c))
-            c_prev=c
-            call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
-            if (mod(i,n_out).eq.0)  call output(i,c,f_prev,h_int)
-          enddo
-       elseif (Fdis.eq."nodis".or.Fdis.eq."ernd") then
-! No dissipation in the propagation -> .not.dis
-          do i=3,n_step
-            f_prev2=f(:,i-2)
-            f_prev=f(:,i-1)
-            h_int=zero 
-            if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,f_prev,h_int)
-            call add_int_vac(f_prev,h_int)
-! SC field
-            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
-                                                mu_prev4,mu_prev5,h_int)
-            c=c_prev2-2.d0*ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))
-            if (Fdis.eq."ernd") then
-               do j=1,n_ci
-                  c(j) = c(j) - 2.d0*ui*dt*krnd*random_normal()*c_prev(j)
-               enddo
-            endif
-            c=c/sqrt(dot_product(c,c))
-            c_prev2=c_prev
-            c_prev=c
-            call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
-            if (mod(i,n_out).eq.0)  call output(i,c,f_prev,h_int)
-          enddo
-       endif 
+       if (Fexp.eq.'exp') then
+! Energy term is propagated analytically
+! Interaction term via second-order Euler
+          call exp_euler_prop(ccexp,n_ci)
+       elseif (Fexp.eq.'non') then
+! Both energy and intercation terms are
+! porpagated via second-order Euler
+          call full_euler_prop()
+       endif
+
 
 ! DEALLOCATION AND CLOSING
-       deallocate (c,c_prev,c_prev2,h_int)
-!       if (dis) then
+       deallocate(c,c_prev,c_prev2,h_int)
+       if (Fexp.eq."exp") deallocate(ccexp)
        if (Fdis(1:3).eq."mar".or.Fdis(1:3).eq."nma") then
           call deallocate_dis()
           deallocate(h_dis)
-          !if (.not.qjump) then
           if (Fdis(5:9).ne."qjump") then
              deallocate(h_rnd)
              deallocate(h_rnd2)
              deallocate(w)
              deallocate(w_prev)
           endif 
-!          if (qjump) then
           if (Fdis(5:9).eq."qjump") then
              write(*,*)
              write(*,*) 'Total number of quantum jumps',i_sp+i_nr+i_de,&
@@ -288,8 +183,11 @@
        close (file_e)
        close (file_mu)
        close (file_p)
+
        if(Fmdm(1:3).ne.'vac') call finalize_medium
+
        return
+
       end subroutine prop
 !
       subroutine create_field
@@ -616,4 +514,294 @@
 
       end subroutine wrt_decoherence
 
+
+      subroutine exp_euler_prop(ccexp,nci)
+!------------------------------------------------------------------------
+! @brief Energy term is propagated analytically
+! Interaction term via second-order Euler 
+! 
+! @date Created   : E. Coccia 15 Nov 2017
+! Modified  :
+!------------------------------------------------------------------------
+
+        implicit none
+
+        integer(i4b),  intent(in)  :: nci
+        complex(cmp),  intent(in)  :: ccexp(nci) 
+
+        integer(i4b)   ::  i,j
+
+
+! INITIAL STEP: dpsi/dt=(psi(2)-psi(1))/dt
+! SC: 31/10/17 modified the propagation with ccexp 
+       c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev))
+       if (Fdis.eq."ernd") then
+          do j=1,n_ci
+             c(j) = c(j) - ccexp(j)*ui*dt*krnd*random_normal()*c_prev(j)
+          enddo
+       endif
+       if (Fdis(1:3).eq."mar".or.Fdis(1:3).eq."nma") then
+          c=c-ccexp*dt*matmul(h_dis,c_prev)
+          if (Fdis(5:9).eq."EuMar") then
+          ! Euler-Maruyama
+            c=c-ccexp*(ui*sqrt(dt)*matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev))               
+          elseif (Fdis(5:9).eq."LeiMa") then
+          ! Leimkuhler-Matthews
+            c=c-ccexp*(ui*0.5d0*sqrt(dt)*matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev))
+          endif
+       endif
+       c=c/sqrt(dot_product(c,c))
+       c_prev=c
+
+! SP 16/07/17: added call to medium propagation at step 2 to have full output
+       i=2
+       if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,f_prev,h_int)
+       call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+! SP 16/07/17: heder called at step 1                                        
+       !call out_header
+       if (mod(2,n_out).eq.0) call output(2,c,f_prev,h_int)
+!
+!
+! PROPAGATION CYCLE: starts the propagation at timestep 3
+! Markovian dissipation (quantum jump) 
+       if (Fdis(5:9).eq."qjump") then
+          do i=3,n_step
+            f_prev2=f(:,i-2)
+            f_prev=f(:,i-1)
+            h_int=zero 
+            if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,f_prev,h_int)
+            call add_int_vac(f_prev,h_int)
+! SC field
+            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
+                                                mu_prev4,mu_prev5,h_int)
+! Quantum jump (spontaneous or nonradiative relaxation, pure dephasing)
+! Algorithm from J. Opt. Soc. Am. B. vol. 10 (1993) 524
+            if (i.eq.ijump+1) then
+               c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev)-dt*matmul(h_dis,c_prev))
+            else 
+               c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int,c_prev)-2.d0*dt*matmul(h_dis,c_prev))
+            endif 
+! loss_norm computes: 
+! norm = 1 - dtot
+! dtot = dsp + dnr + dde
+! Loss of the norm, dissipative events simulated
+! eps -> uniform random number in [0,1]
+            call loss_norm(c_prev,n_ci,pjump)
+            call random_number(eps)  
+            if (dtot.gt.eps)  then
+               call quan_jump(c,c_prev,n_ci,pjump)
+               ijump=i
+               write(*,*) 'Quantum jump at step:', i, (i-1)*dt 
+               c_prev=c
+            else
+                c=c/sqrt(dot_product(c,c))
+                c_prev2=c_prev
+                c_prev=c
+            endif
+            call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+            if (mod(i,n_out).eq.0)  call output(i,c,f_prev,h_int)
+          enddo
+! Markovian dissipation (Euler-Maruyama) 
+       elseif (Fdis(1:3).eq."mar") then
+          do i=3,n_step
+            f_prev2=f(:,i-2)
+            f_prev=f(:,i-1)
+            h_int=zero 
+            if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,f_prev,h_int)
+            call add_int_vac(f_prev,h_int)
+! SC field
+            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
+                                                mu_prev4,mu_prev5,h_int)
+! Dissipation by a continuous stochastic propagation
+            call rnd_noise(w,w_prev,n_ci,first)
+            call add_h_rnd(h_rnd,n_ci,w,w_prev)
+            if (Fdis(5:9).eq."EuMar") then
+            ! Euler-Maruyama 
+                c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev)-dt* &
+                matmul(h_dis,c_prev)-ui*sqrt(dt)*matmul(h_rnd,c_prev)- &
+                dt*matmul(h_rnd2,c_prev))
+            elseif (Fdis(5:9).eq."LeiMa") then
+                c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev)-dt* &
+                matmul(h_dis,c_prev)-ui*0.5d0*sqrt(dt)* &
+                matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev))
+            endif
+            !c=c/sqrt(dot_product(c,c))
+            c_prev=c
+            call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+            if (mod(i,n_out).eq.0)  call output(i,c,f_prev,h_int)
+          enddo
+       elseif (Fdis.eq."nodis".or.Fdis.eq."ernd") then
+! No dissipation in the propagation 
+          do i=3,n_step
+            f_prev2=f(:,i-2)
+            f_prev=f(:,i-1)
+            h_int=zero 
+            if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,f_prev,h_int)
+            call add_int_vac(f_prev,h_int)
+! SC field
+            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
+                                                mu_prev4,mu_prev5,h_int)
+! SC 31/10/17: modified propagation by adding the exp term
+            c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int,c_prev))
+            if (Fdis.eq."ernd") then
+               do j=1,n_ci
+                  c(j) = c(j) - 2.d0*ccexp(j)*ui*dt*krnd*random_normal()*c_prev(j)
+               enddo
+            endif
+            c=c/sqrt(dot_product(c,c))
+            c_prev2=c_prev
+            c_prev=c
+            call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+            if (mod(i,n_out).eq.0)  call output(i,c,f_prev,h_int)
+          enddo
+       endif 
+
+       return
+
+      end subroutine exp_euler_prop
+
+
+      subroutine full_euler_prop()
+!------------------------------------------------------------------------
+! @brief Energy and interaction terms are propagated
+! via second-order Euler 
+! 
+! @date Created   : E. Coccia 15 Nov 2017
+! Modified  :
+!------------------------------------------------------------------------      
+
+        implicit none
+
+        integer(i4b)   :: i,j
+
+! INITIAL STEP: dpsi/dt=(psi(2)-psi(1))/dt
+       c=c_prev-ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))
+       if (Fdis.eq."ernd") then
+          do j=1,n_ci
+             c(j) = c(j) - ui*dt*krnd*random_normal()*c_prev(j)
+          enddo
+       endif
+       if (Fdis(1:3).eq."mar".or.Fdis(1:3).eq."nma") then
+          c=c-dt*matmul(h_dis,c_prev)
+          if (Fdis(5:9).eq."EuMar") then
+          ! Euler-Maruyama
+            c=c-ui*sqrt(dt)*matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev)               
+          elseif (Fdis(5:9).eq."LeiMa") then
+          ! Leimkuhler-Matthews
+            c=c-ui*0.5d0*sqrt(dt)*matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev)
+          endif
+       endif
+       c=c/sqrt(dot_product(c,c))
+       c_prev=c
+
+! SP 16/07/17: added call to medium propagation at step 2 to have full
+! output
+       i=2
+       if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,f_prev,h_int)
+       call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+! SP 16/07/17: header called at step 1                                        
+       !call out_header
+       if (mod(2,n_out).eq.0) call output(2,c,f_prev,h_int)
+!
+!
+! PROPAGATION CYCLE: starts the propagation at timestep 3
+! Markovian dissipation (quantum jump) -> qjump
+       if (Fdis(5:9).eq."qjump") then
+          do i=3,n_step
+            f_prev2=f(:,i-2)
+            f_prev=f(:,i-1)
+            h_int=zero
+            if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,f_prev,h_int)
+            call add_int_vac(f_prev,h_int)
+! SC field
+            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
+                                               mu_prev4,mu_prev5,h_int)
+! Quantum jump (spontaneous or nonradiative relaxation, pure dephasing)
+! Algorithm from J. Opt. Soc. Am. B. vol. 10 (1993) 524
+            if (i.eq.ijump+1) then
+               c=c_prev-ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))-dt*matmul(h_dis,c_prev)
+            else
+               c=c_prev2-2.d0*ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))-2.d0*dt*matmul(h_dis,c_prev)
+            endif
+! loss_norm computes: 
+! norm = 1 - dtot
+! dtot = dsp + dnr + dde
+! Loss of the norm, dissipative events simulated
+! eps -> uniform random number in [0,1]
+            call loss_norm(c_prev,n_ci,pjump)
+            call random_number(eps)
+            if (dtot.gt.eps)  then
+               call quan_jump(c,c_prev,n_ci,pjump)
+               ijump=i
+               write(*,*) 'Quantum jump at step:', i, (i-1)*dt
+               c_prev=c
+            else
+                c=c/sqrt(dot_product(c,c))
+                c_prev2=c_prev
+                c_prev=c
+            endif
+            call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+            if (mod(i,n_out).eq.0)  call output(i,c,f_prev,h_int)
+          enddo
+! Markovian dissipation (Euler-Maruyama) 
+       elseif (Fdis(1:3).eq."mar") then
+          do i=3,n_step
+            f_prev2=f(:,i-2)
+            f_prev=f(:,i-1)
+            h_int=zero
+            if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,f_prev,h_int)
+            call add_int_vac(f_prev,h_int)
+! SC field
+            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
+                                                mu_prev4,mu_prev5,h_int)
+! Dissipation by a continuous stochastic propagation
+            call rnd_noise(w,w_prev,n_ci,first)
+            call add_h_rnd(h_rnd,n_ci,w,w_prev)
+            if (Fdis(5:9).eq."EuMar") then
+            ! Euler-Maruyama 
+              c=c_prev-ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))-dt* &
+                matmul(h_dis,c_prev)-ui*sqrt(dt)*matmul(h_rnd,c_prev)- &
+                dt*matmul(h_rnd2,c_prev)
+            elseif (Fdis(5:9).eq."LeiMa") then
+              c=c_prev-ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))-dt* &
+                matmul(h_dis,c_prev)-ui*0.5d0*sqrt(dt)* &
+                matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev)
+            endif
+            !c=c/sqrt(dot_product(c,c))
+            c_prev=c
+            call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+            if (mod(i,n_out).eq.0)  call output(i,c,f_prev,h_int)
+          enddo
+       elseif (Fdis.eq."nodis".or.Fdis.eq."ernd") then
+! No dissipation in the propagation 
+          do i=3,n_step
+            f_prev2=f(:,i-2)
+            f_prev=f(:,i-1)
+            h_int=zero
+            if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,f_prev,h_int)
+            call add_int_vac(f_prev,h_int)
+! SC field
+            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
+                                                mu_prev4,mu_prev5,h_int)
+            c=c_prev2-2.d0*ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))
+            if (Fdis.eq."ernd") then
+               do j=1,n_ci
+                  c(j) = c(j) - 2.d0*ui*dt*krnd*random_normal()*c_prev(j)
+               enddo
+            endif
+            c=c/sqrt(dot_product(c,c))
+            c_prev2=c_prev
+            c_prev=c
+            call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+            if (mod(i,n_out).eq.0)  call output(i,c,f_prev,h_int)
+          enddo
+       endif
+
+       return
+      
+      end subroutine full_euler_prop
+
+
       end module
+
+

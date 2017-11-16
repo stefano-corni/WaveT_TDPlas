@@ -178,8 +178,8 @@ module vib
         real(dbl),     intent(out) :: fc,mn
         integer(i4b)               :: k,ke,kk,k2
         real(dbl)                  :: s,a,b,be,ik,r,nf
-        real(dbl)                  :: t1,t2,ikk
-        real(dbl)                  :: hv,hve,ww 
+        real(dbl)                  :: t1,t2,ikk,factv,factve
+        real(dbl)                  :: hv,hve,ww,pow2,dw,ptmp 
 
 ! Harmonic oscillator eigenfunction for the electronic ground state
 ! |v> = Nv*Hv(sqrt(alpha)x)*exp(-1/2*alpha*x^2)
@@ -216,12 +216,19 @@ module vib
 
         a  = 2.d0*sqrt(w*we)*ww
         s  = w*we*d**2*ww
-        nf = a*exp(-s)/(2**(v+ve)*fact(v)*fact(ve))
+        pow2=1.d0/2.d0**(v+ve)
+        factv=1.d0/fact(v)
+        factve=1.d0/fact(ve)
+        !nf = a*exp(-s)/(pow2*fact(v)*fact(ve))
+        nf = a*exp(-s)*pow2
+        nf = nf*factv
+        nf = nf*factve
         t1 = 2.d0*sqrt(w)
         t2 = 2.d0*sqrt(we)
         r  = -we*d*ww
         b  = -we*sqrt(w)*d*ww
         be = w*sqrt(we)*d*ww 
+        if (nf.lt.1.d-100) nf=0.d0
 
         fc=0.d0
         mn=0.d0
@@ -232,14 +239,24 @@ module vib
               if (mod(k+ke,2).ne.0) then
                  ik=0.d0
               else
-                 ik = dfact(k+ke-1)/((w+we)**(0.5d0*(k+ke)))
+                 ptmp=0.5d0*(k+ke)
+                 dw=(w+we)**ptmp
+                 !if (dw.lt.1.d-50) then
+                 !   dw=1.d50
+                 !else
+                 !   dw=1.d0/dw
+                 !endif 
+                 !dw=1.d0/((w+we)**(0.5d0*(k+ke)))
+                 ik = dfact(k+ke-1)*dw
               endif
               fc = fc + bin_coef(v,k)*bin_coef(ve,ke)*hv*hve*t1**k*t2**ke*ik
               do k2=0,n
                  if (mod(k+ke+k2,2).ne.0) then
                      ikk=0.d0
                  else
-                     ikk = dfact(k+ke+k2-1)/(w+we)**(0.5d0*(k+ke+k2))
+                     ptmp=0.5d0*(k+ke+k2)
+                     dw=(w+we)**ptmp
+                     ikk = dfact(k+ke+k2-1)*dw
                  endif
                  mn = mn + bin_coef(v,k)*bin_coef(ve,ke)*bin_coef(n,k2)*hv*hve*t1**k*t2**ke*r**(n-k2)*ikk
               enddo
