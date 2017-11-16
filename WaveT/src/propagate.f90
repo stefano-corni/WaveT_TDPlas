@@ -26,8 +26,8 @@
 !    int_rad is the classical radiated power at current step
 !    int_rad_int is the integral of the classical radiated power at current step
       real(dbl) :: mu_a(3),int_rad,int_rad_int
-      integer(i4b) :: file_c=10,file_e=8,file_mu=9,file_p=15 
-      integer(i4b) :: file_dm=12, file_dp=13, file_d=14
+      integer(i4b) :: file_c=10,file_e=8,file_mu=9 
+      integer(i4b) :: file_d=14
       save
       private
       public create_field, prop
@@ -65,12 +65,6 @@
        open (file_e,file=name_f,status="unknown")
        write(name_f,'(a5,i0,a4)') "mu_t_",n_f,".dat"
        open (file_mu,file=name_f,status="unknown")
-       write(name_f,'(a4,i0,a4)') "p_t_",n_f,".dat"
-       open (file_p,file=name_f,status="unknown")
-       write(name_f,'(a5,i0,a4)') "dm_t_",n_f,".dat"
-       open (file_dm,file=name_f,status="unknown")
-       write(name_f,'(a5,i0,a4)') "dp_t_",n_f,".dat"
-       open (file_dp,file=name_f,status="unknown") 
        write(name_f,'(a4,i0,a4)') "d_t_",n_f,".dat"
        open (file_d,file=name_f,status="unknown")
 ! ALLOCATING
@@ -182,7 +176,7 @@
        close (file_c)
        close (file_e)
        close (file_mu)
-       close (file_p)
+       close (file_d)
 
        if(Fmdm(1:3).ne.'vac') call finalize_medium
 
@@ -342,43 +336,40 @@
        real(dbl), intent(IN) :: h_int(n_ci,n_ci)
        real(dbl), intent(IN) :: f_prev(3)
        real(dbl) :: e_a,e_vac,t,g_neq_t,g_neq2_t,g_eq_t,f_med(3)
-       real(dbl) :: ctmp(n_ci)
-       character(20) :: fmt_ci,fmt_ci1,fmt_ci2
+       character(4000) :: fmt_ci,fmt_ci2
        integer(i4b)    :: itmp,j
-        t=(i-1)*dt 
-        e_a=dot_product(c,e_ci*c+matmul(h_int,c))
+
+
+       t=(i-1)*dt 
+       e_a=dot_product(c,e_ci*c+matmul(h_int,c))
 ! SC 07/02/16: added printing of g_neq, g_eq 
-        if(Fmdm(1:3).ne.'vac') then 
-         g_eq_t=e_a
-         g_neq_t=e_a
-         g_neq2_t=e_a
-         e_vac=e_a
-         call get_energies(e_vac,g_eq_t,g_neq_t,g_neq2_t)
-         write (file_e,'(i8,f14.4,7e20.8)') i,t,e_a,e_vac, &
+       if(Fmdm(1:3).ne.'vac') then 
+          g_eq_t=e_a
+          g_neq_t=e_a
+          g_neq2_t=e_a
+          e_vac=e_a
+          call get_energies(e_vac,g_eq_t,g_neq_t,g_neq2_t)
+          write (file_e,'(i8,f14.4,7e20.8)') i,t,e_a,e_vac, &
                    g_eq_t,g_neq2_t,g_neq_t,int_rad,int_rad_int
-        else
-         write (file_e,'(i8,f14.4,3e22.10)') i,t,e_a,int_rad,int_rad_int
-        endif
-        itmp = n_ci*(n_ci-1)/2
-        write (fmt_ci,'("(i8,f14.4,",I0,"e13.5)")') n_ci
-        write (fmt_ci1,'("(i8,f14.4,",I0,"e13.5)")') itmp 
-        write (fmt_ci2,'("(i8,f14.4,",I0,"2e13.5)")') 2*itmp
-        ctmp(:) = real(c(:)*conjg(c(:)))
-        do j=1,n_ci
-           if (ctmp(j).lt.10.d-50) ctmp(j)=0.d0
-        enddo
-        write (file_c,fmt_ci) i,t,ctmp(:)
-        write (file_p,fmt_ci) i,t,atan2(aimag(c),real(c))
+       else
+          write (file_e,'(i8,f14.4,3e22.10)') i,t,e_a,int_rad,int_rad_int
+       endif
+       itmp = n_ci*(n_ci-1)/2
+       write (fmt_ci,'("(i8,f14.4,",I0,"e13.5)")') n_ci
+       write (fmt_ci2,'("(i8,f14.4,",I0,"2e13.5)")') 2*itmp
 ! SP 10/07/17: commented the following, strange error 
-        call wrt_decoherence(i,t,file_dm,file_dp,file_d,fmt_ci1,fmt_ci2,c,n_ci)
-        write (file_mu,'(i8,f14.4,3e22.10)') i,t,mu_a(:)
-        j=int(dble(i)/dble(n_out))
-        if(j.lt.1) j=1
-        Sdip(:,1,j)=mu_a(:)
+       call wrt_decoherence(i,t,file_d,fmt_ci2,c,n_ci)
+       write (file_c,fmt_ci) i,t,real(c(:)*conjg(c(:)))
+       write (file_mu,'(i8,f14.4,3e22.10)') i,t,mu_a(:)
+       j=int(dble(i)/dble(n_out))
+       if(j.lt.1) j=1
+       Sdip(:,1,j)=mu_a(:)
 ! SP 270817: using get_* functions to communicate with TDPlas
-        if(Fmdm(1:3).ne."vac") call get_medium_dip(Sdip(:,2,j))
-        Sfld(:,j)=f(:,i)
+       if(Fmdm(1:3).ne."vac") call get_medium_dip(Sdip(:,2,j))
+       Sfld(:,j)=f(:,i)
+
        return
+
       end subroutine output
 !
       subroutine add_int_vac(f_prev,h_int)
@@ -446,7 +437,7 @@
       return
       end subroutine out_header
 !
-      subroutine wrt_decoherence(i,t,int1,int2,int3,char20,char1_20,c,nci)
+      subroutine wrt_decoherence(i,t,int1,char2,c,nci)
 !------------------------------------------------------------------------
 ! @brief Print the tridiagional C*_iC_j (i.ne.j) matrix 
 ! corresponding to the decoherence 
@@ -458,29 +449,18 @@
         implicit none
 
         integer(i4b),    intent(in)    :: i, nci
-        integer(i4b),    intent(in)    :: int1, int2, int3
-        character(20), intent(in)    :: char20, char1_20 
+        integer(i4b),    intent(in)    :: int1 
+        character(4000), intent(in)    :: char2 
         real(dbl),       intent(in)    :: t
-        complex(cmp),   intent(in)    :: c(nci)
-        complex(cmp)                  :: cc(nci,nci)
+        complex(cmp),    intent(in)    :: c(nci)
+        complex(cmp)                   :: cc(nci,nci)
         integer(i4b)                   :: j, k
-        complex(cmp)                  :: tmp
-        real(dbl)                      :: r(nci,nci)
-        real(dbl)                      :: p(nci,nci)
-        real(dbl)                      :: rtmp, itmp
+        complex(cmp)                   :: tmp
 
         tmp=cmplx(0.d0,0.d0)
-        r=0.d0
-        p=0.d0
 
         do k=2,nci
            tmp = conjg(c(k))*c(1)
-           rtmp=real(tmp)
-           itmp=aimag(tmp)
-           if (abs(rtmp).lt.10.d-50) tmp=cmplx(0.d0,itmp)
-           if (abs(itmp).lt.10.d-50) tmp=cmplx(rtmp,0.d0)
-           r(1,k) = abs(tmp)
-           p(1,k) = atan2(aimag(tmp),real(tmp))
            cc(1,k) = tmp
         enddo  
 
@@ -488,27 +468,16 @@
            do j=2,nci
               do k=j+1,nci
                  tmp = conjg(c(k))*c(j)
-                 rtmp=real(tmp)
-                 itmp=aimag(tmp)
-                 if (abs(rtmp).lt.10.d-50) tmp=cmplx(0.d0,itmp)
-                 if (abs(itmp).lt.10.d-50) tmp=cmplx(rtmp,0.d0)
-                 r(j,k) = abs(tmp)
-                 p(j,k) = atan2(aimag(tmp),real(tmp)) 
                  cc(j,k) = tmp
               enddo
            enddo
         endif
 
         if (nci.gt.2) then
-           write(int1,char20,advance='no') i, t, ((r(j,k), k=j+1,nci), j=1,nci-1)
-           write(int2,char20,advance='no') i, t, ((p(j,k), k=j+1,nci), j=1,nci-1)    
-           write(int3,char1_20) i, t, ((cc(j,k), k=j+1,nci),j=1,nci-1)
+           write(int1,char2) i, t, ((cc(j,k), k=j+1,nci),j=1,nci-1)
         else 
-           write(int1,char20,advance='no') i, t, r(1,2)
-           write(int2,char20,advance='no') i, t, p(1,2)
-           write(int3,char1_20) i, t, cc(1,2)
+           write(int1,char2) i, t, cc(1,2)
         endif
-         !((FORM(K,L), L=1,10), K=1,10,2)
     
         return
 
