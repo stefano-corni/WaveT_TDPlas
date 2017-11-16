@@ -49,11 +49,13 @@
       character(flg) :: Frad !< Flag for radiative damping 
       character(flg) :: Fres !< Flag for restart
       character(flg) :: Fful !< Flag for relaxation matrix
+      character(flg) :: Fexp !< Flag for propagation of the enrgy term
 !      character(flg) :: Fpulse !< Flag for pulse             
 ! Flags read from input file
       character(flg) :: medium,radiative,dissipative,pulse
       character(flg) :: dis_prop
       character(flg) :: restart 
+      character(flg) :: propa
       character(flg) :: full ! full or only |e> -> |0> relaxation
       integer(i4b) :: iseed  ! seed for random number generator
       integer(i4b) :: nexc   ! number of excited states
@@ -82,7 +84,8 @@
              deallocate_dis,i_sp,i_nr,i_de,nrnd,sp_fact,    &
 !             nr_typ,idep,imar,de_gam1,krnd,ernd       
              de_gam1,krnd,Fdis,Fdis_deph,Fdis_rel,nf,irel,  &
-             npulse,omega1,sigma1,tdelay,pshift,nrel,Fful            
+             npulse,omega1,sigma1,tdelay,pshift,nrel,Fful,  &
+             Fexp           
              
 !
       contains
@@ -95,7 +98,7 @@
      
        !Molecular parameters 
        namelist /general/n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,& 
-                         dt,n_step,n_out
+                         dt,n_step,n_out,propa
        !External field paramaters
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
                         pulse,omega1,sigma1,tdelay,pshift
@@ -304,7 +307,7 @@
           call define_gamma(de_gam,de_gam1,n_ci)
        endif
 ! Define spontaneous emission terms 
-       term=4.d0/(3.d0*c**3)
+       term=4.d0/(3.d0*clight**3)
        do i=1,nf
           sp_gam(i) = sp_fact(i)*term*tomega(i)**3
        enddo
@@ -498,6 +501,8 @@
        restart='n'
        ! Full or only |e> -> |0> relaxation
        full='n'
+       ! Propagation of the energy term
+       propa='e'
 
        return
 
@@ -645,6 +650,14 @@
         case ('y', 'Y')
           write(*,*) 'Full relaxation'
           Fful='Yesf'
+       end select
+       select case (propa)
+        case ('e', 'E')
+          write(*,*) 'Energy term is propagated analytically'
+          Fexp='exp'
+        case ('n','N')
+          write(*,*) 'Energy term is propagated via second-order Euler'
+          Fexp='non' 
        end select
        write(*,*) ''
 
