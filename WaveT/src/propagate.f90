@@ -12,8 +12,7 @@
       integer(i4b)                :: ijump=0
       real(dbl),allocatable       :: f(:,:)
       complex(cmp), allocatable   :: c(:),c_prev(:),c_prev2(:),h_rnd(:,:), h_rnd2(:,:)
-      !complex(cmp), allocatable   :: ccexp(:) !SC 31/10/17: added to store exp(-ui*e(:)*dt), used in propagation
-      real(dbl),     allocatable  :: h_int(:,:), h_dis(:,:)
+      real(dbl),     allocatable  :: h_int(:,:), h_dis(:)
       real(dbl),     allocatable  :: pjump(:)
       real(dbl)                   :: f_prev(3),f_prev2(3)
       real(dbl)                   :: mu_prev(3),mu_prev2(3),mu_prev3(3),&
@@ -45,18 +44,9 @@
 !------------------------------------------------------------------------
 
        implicit none
-       integer(i4b)                :: i,j,k!,ijump=0
-       !complex(cmp), allocatable  :: c(:),c_prev(:),c_prev2(:), h_rnd(:,:), h_rnd2(:,:)
+       integer(i4b)                :: i,j,k
        complex(cmp), allocatable  :: ccexp(:) !SC 31/10/17: added to store exp(-ui*e(:)*dt), used in propagation
-       !real(dbl),     allocatable  :: h_int(:,:), h_dis(:,:)
-       !real(dbl),     allocatable  :: pjump(:) 
-       !real(dbl)                   :: f_prev(3),f_prev2(3)
-       !real(dbl)                   :: mu_prev(3),mu_prev2(3),mu_prev3(3),&
-       !                             mu_prev4(3), mu_prev5(3)
-       !real(dbl)                   :: eps  
-       !real(dbl),     allocatable  :: w(:), w_prev(:)
        character(20)             :: name_f
-       !logical                   :: first=.true. 
 
 ! OPEN FILES
        write(name_f,'(a4,i0,a4)') "c_t_",n_f,".dat"
@@ -78,7 +68,7 @@
        endif
 ! SP 17/07/17: new flags
        if (Fdis(1:3).eq."mar".or.Fdis(1:3).eq."nma") then
-          allocate (h_dis(n_ci,n_ci))
+          allocate(h_dis(n_ci))
           if (Fdis(5:9).eq."qjump") then
              allocate (pjump(2*nf+nexc+1))
           else
@@ -144,7 +134,7 @@
        elseif (Fexp.eq.'non') then
 ! Both energy and intercation terms are
 ! porpagated via second-order Euler
-          call full_euler_prop()
+          call full_euler_prop(n_ci)
        endif
 
 
@@ -497,6 +487,7 @@
 
         integer(i4b),  intent(in)  :: nci
         complex(cmp),  intent(in)  :: ccexp(nci) 
+        complex(cmp)               :: dis(nci)
 
         integer(i4b)   ::  i,j
 
@@ -510,7 +501,8 @@
           enddo
        endif
        if (Fdis(1:3).eq."mar".or.Fdis(1:3).eq."nma") then
-          c=c-ccexp*dt*matmul(h_dis,c_prev)
+          dis=disp(h_dis,c_prev,nci)
+          c=c-ccexp*dt*dis
           if (Fdis(5:9).eq."EuMar") then
           ! Euler-Maruyama
             c=c-ccexp*(ui*sqrt(dt)*matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev))               
@@ -545,10 +537,11 @@
                                                 mu_prev4,mu_prev5,h_int)
 ! Quantum jump (spontaneous or nonradiative relaxation, pure dephasing)
 ! Algorithm from J. Opt. Soc. Am. B. vol. 10 (1993) 524
+            dis=disp(h_dis,c_prev,nci)
             if (i.eq.ijump+1) then
-               c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev)-dt*matmul(h_dis,c_prev))
+               c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev)-dt*dis)
             else 
-               c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int,c_prev)-2.d0*dt*matmul(h_dis,c_prev))
+               c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int,c_prev)-2.d0*dt*dis)
             endif 
 ! loss_norm computes: 
 ! norm = 1 - dtot
@@ -584,14 +577,15 @@
 ! Dissipation by a continuous stochastic propagation
             call rnd_noise(w,w_prev,n_ci,first)
             call add_h_rnd(h_rnd,n_ci,w,w_prev)
+            dis=disp(h_dis,c_prev,nci)
             if (Fdis(5:9).eq."EuMar") then
             ! Euler-Maruyama 
                 c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev)-dt* &
-                matmul(h_dis,c_prev)-ui*sqrt(dt)*matmul(h_rnd,c_prev)- &
+                dis-ui*sqrt(dt)*matmul(h_rnd,c_prev)- &
                 dt*matmul(h_rnd2,c_prev))
             elseif (Fdis(5:9).eq."LeiMa") then
                 c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev)-dt* &
-                matmul(h_dis,c_prev)-ui*0.5d0*sqrt(dt)* &
+                dis-ui*0.5d0*sqrt(dt)* &
                 matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev))
             endif
             !c=c/sqrt(dot_product(c,c))
@@ -630,7 +624,7 @@
       end subroutine exp_euler_prop
 
 
-      subroutine full_euler_prop()
+      subroutine full_euler_prop(nci)
 !------------------------------------------------------------------------
 ! @brief Energy and interaction terms are propagated
 ! via second-order Euler 
@@ -641,7 +635,9 @@
 
         implicit none
 
-        integer(i4b)   :: i,j
+        integer(i4b), intent(in)  :: nci
+        integer(i4b)              :: i,j
+        complex(cmp)              :: dis(nci)
 
 ! INITIAL STEP: dpsi/dt=(psi(2)-psi(1))/dt
        c=c_prev-ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))
@@ -651,7 +647,8 @@
           enddo
        endif
        if (Fdis(1:3).eq."mar".or.Fdis(1:3).eq."nma") then
-          c=c-dt*matmul(h_dis,c_prev)
+          dis=disp(h_dis,c_prev,nci)
+          c=c-dt*dis
           if (Fdis(5:9).eq."EuMar") then
           ! Euler-Maruyama
             c=c-ui*sqrt(dt)*matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev)               
@@ -687,10 +684,11 @@
                                                mu_prev4,mu_prev5,h_int)
 ! Quantum jump (spontaneous or nonradiative relaxation, pure dephasing)
 ! Algorithm from J. Opt. Soc. Am. B. vol. 10 (1993) 524
+            dis=disp(h_dis,c_prev,nci)
             if (i.eq.ijump+1) then
-               c=c_prev-ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))-dt*matmul(h_dis,c_prev)
+               c=c_prev-ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))-dt*dis
             else
-               c=c_prev2-2.d0*ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))-2.d0*dt*matmul(h_dis,c_prev)
+               c=c_prev2-2.d0*ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))-2.d0*dt*dis
             endif
 ! loss_norm computes: 
 ! norm = 1 - dtot
@@ -726,14 +724,15 @@
 ! Dissipation by a continuous stochastic propagation
             call rnd_noise(w,w_prev,n_ci,first)
             call add_h_rnd(h_rnd,n_ci,w,w_prev)
+            dis=disp(h_dis,c_prev,nci)
             if (Fdis(5:9).eq."EuMar") then
             ! Euler-Maruyama 
               c=c_prev-ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))-dt* &
-                matmul(h_dis,c_prev)-ui*sqrt(dt)*matmul(h_rnd,c_prev)- &
+                dis-ui*sqrt(dt)*matmul(h_rnd,c_prev)- &
                 dt*matmul(h_rnd2,c_prev)
             elseif (Fdis(5:9).eq."LeiMa") then
               c=c_prev-ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))-dt* &
-                matmul(h_dis,c_prev)-ui*0.5d0*sqrt(dt)* &
+                dis-ui*0.5d0*sqrt(dt)* & 
                 matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev)
             endif
             !c=c/sqrt(dot_product(c,c))

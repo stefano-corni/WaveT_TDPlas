@@ -13,7 +13,7 @@ module dissipation
   save 
   private
   public norm, dtot, dsp, dnr, dde, add_dis_m, add_dis_nm, loss_norm
-  public quan_jump, add_h_rnd, define_h_dis, rnd_noise, add_h_rnd2 
+  public quan_jump, add_h_rnd, define_h_dis, rnd_noise, add_h_rnd2, disp 
 !
   contains
 
@@ -26,18 +26,16 @@ module dissipation
 !
 ! @date Created   : E. Coccia 20 Dec 2016
 ! Modified  :
-! @param h_dis(:,:)
+! @param h_dis
 !------------------------------------------------------------------------
 
    implicit none
    integer, intent(in)    :: nci
-   real(dbl), intent(inout) :: h_dis(nci,nci)    
+   real(dbl), intent(inout) :: h_dis(nci)
    integer                :: i,j,k
    real(dbl)                :: rate, sde
 
-!   if (idep.eq.1) sde = sum(de_gam1)
    if (Fdis_deph.eq."i-0") sde = sum(de_gam1)
-
 
    if (Fful.eq.'Yesf') then
 ! Matrix elements of S^+_alpha S_alpha in the system eigenstates basis
@@ -45,29 +43,26 @@ module dissipation
 ! Relaxation via spontaneous emission (sp)
 ! S_alpha = sqrt(sp_gam_alpha) d_(alpha,0)  |Phi_0> <Phi_alpha| 
       do i=2, nci
-         h_dis(i,i) = h_dis(i,i) + sp_gam(i-1)*tmom2(i-1)
+         h_dis(i) = h_dis(i) + sp_gam(i-1)*tmom2(i-1) 
       enddo
       k=nci-1
       do i=nci,2,-1
          do j=i-1,2,-1
             k=k+1
             rate = sp_gam(k)*tmom2(k)
-            h_dis(i,i) = h_dis(i,i) + rate 
-            !h_dis(j,j) = h_dis(j,j) - rate 
+            h_dis(i) = h_dis(i) + rate
          enddo 
       enddo 
  
 ! Relaxation via nonradiative processes (nr)
 ! S_alpha = sqrt(nr_gam_alpha) d_(alpha,0)  |Phi_0> <Phi_alpha| 
       do i=2,nci
-!      if (nr_typ.eq.0) then
          if (Fdis_rel.eq."dip") then
             rate = nr_gam(i-1)*tmom2(i-1)
-!      elseif (nr_typ.eq.1) then
          elseif (Fdis_rel.eq."mat") then
             rate = nr_gam(i-1)
          endif
-         h_dis(i,i) = h_dis(i,i) + rate
+         h_dis(i) = h_dis(i) + rate
       enddo
       k=nci-1
       do i=nci,2,-1
@@ -75,25 +70,21 @@ module dissipation
             k=k+1
             if (Fdis_rel.eq."dip") then
                rate = nr_gam(k)*tmom2(k)
-!      elseif (nr_typ.eq.1) then
             elseif (Fdis_rel.eq."mat") then
                rate = nr_gam(k)
             endif
-            h_dis(i,i) = h_dis(i,i) + rate
-            !h_dis(j,j) = h_dis(j,j) - rate
+            h_dis(i) = h_dis(i) + rate
          enddo
       enddo
 
 ! Pure dephasing (de)
 ! S_alpha = sqrt(de_gam_alpha) |Phi_alpha> <Phi_alpha|
       do i=2,nci
-!      if (idep.eq.0) then
          if (Fdis_deph.eq."exp") then
-            h_dis(i,i) = h_dis(i,i) + de_gam(i)
+            h_dis(i) = h_dis(i) + de_gam(i)
 ! S_alpha = sqrt(de_gam_alpha) * (|Phi_alpha> <Phi_alpha| - |Phi_0> <Phi_0|)
-!      elseif (idep.eq.1) then
          elseif (Fdis_deph.eq."i-0") then
-            h_dis(i,i) = h_dis(i,i) + sde
+            h_dis(i) = h_dis(i) + sde
          endif
       enddo
    elseif (Fful.eq.'Nonf') then
@@ -101,36 +92,30 @@ module dissipation
       do i=2, nci
 ! Relaxation via spontaneous emission (sp)
 ! S_alpha = sqrt(sp_gam_alpha) d_(alpha,0)  |Phi_0> <Phi_alpha| 
-         h_dis(i,i) = h_dis(i,i) + sp_gam(i-1)*tmom2(i-1)
+         h_dis(i) = h_dis(i) + sp_gam(i-1)*tmom2(i-1)
 ! Relaxation via nonradiative processes (nr)
 ! S_alpha = sqrt(nr_gam_alpha) d_(alpha,0)  |Phi_0> <Phi_alpha|
-!      if (nr_typ.eq.0) then
          if (Fdis_rel.eq."dip") then
             rate = nr_gam(i-1)*tmom2(i-1)
-!      elseif (nr_typ.eq.1) then
          elseif (Fdis_rel.eq."mat") then
             rate = nr_gam(i-1)
          endif
-         h_dis(i,i) = h_dis(i,i) + rate 
+         h_dis(i) = h_dis(i) + rate
 ! Pure dephasing (de)
 ! S_alpha = sqrt(de_gam_alpha) |Phi_alpha> <Phi_alpha|
-!      if (idep.eq.0) then
          if (Fdis_deph.eq."exp") then
-            h_dis(i,i) = h_dis(i,i) + de_gam(i)
+            h_dis(i) = h_dis(i) + de_gam(i)
 ! S_alpha = sqrt(de_gam_alpha) * (|Phi_alpha> <Phi_alpha| - |Phi_0> <Phi_0|)
-!      elseif (idep.eq.1) then
          elseif (Fdis_deph.eq."i-0") then
-            h_dis(i,i) = h_dis(i,i) + sde
+            h_dis(i) = h_dis(i) + sde
          endif
       enddo
    endif
 
-!   if (idep.eq.0) then
    if (Fdis_deph.eq."exp") then
-      h_dis(1,1) = de_gam(1) 
-!   elseif (idep.eq.1) then
+      h_dis(1) = de_gam(1) 
    elseif (Fdis_deph.eq."i-0") then
-      h_dis(1,1) = sde
+      h_dis(1) = sde
    endif
 
    h_dis=0.5d0*h_dis
@@ -152,7 +137,7 @@ module dissipation
 
     implicit none
     integer, intent(in)    :: nci
-    real(dbl), intent(inout) :: h_dis(nci,nci)
+    real(dbl), intent(inout) :: h_dis(nci)
 
     write(*,*)
     write(*,*) ' NONMARKOVIAN SSE'
@@ -613,20 +598,18 @@ module dissipation
 !
 ! @date Created   : E. Coccia 20 Jan 2017
 ! Modified  :
-! @param h_dis(:,:)
+! @param h_dis
 !------------------------------------------------------------------------
 
    implicit none  
    integer, intent(in)    :: nci 
-   real(dbl), intent(inout) :: h_dis(nci,nci)
+   real(dbl), intent(inout) :: h_dis(nci)
    integer                :: i
 
    h_dis=zero
 
-!   if (imar.eq.0) then 
    if (Fdis(1:3).eq."mar") then 
       call add_dis_m(h_dis,n_ci)
-!   elseif (imar.eq.1) then 
    elseif (Fdis.eq."nma") then 
       call add_dis_nm(h_dis,n_ci) 
    endif 
@@ -732,5 +715,26 @@ module dissipation
    return
 
   end subroutine add_h_rnd2
+
+  function disp(h_dis,c,nci)
+!------------------------------------------------------------------------
+! @brief Element-by-element multiplication 
+!
+! @date Created   : E. Coccia 17 Nov 2017
+! Modified  :
+! @param h_dis,c
+!------------------------------------------------------------------------
+
+   implicit none
+   integer(i4b), intent(in)      :: nci
+   real(dbl),    intent(in)      :: h_dis(nci)
+   complex(cmp), intent(in)      :: c(nci)  
+   complex(cmp), dimension(nci)  :: disp
+
+   disp=h_dis*c
+
+   return
+
+  end function disp
 
 end module dissipation
