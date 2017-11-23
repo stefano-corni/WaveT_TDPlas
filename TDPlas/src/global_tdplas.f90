@@ -16,7 +16,15 @@
   
       subroutine set_global_tdplas(this_dt,this_mdm,this_mol_cc,this_n_ci,this_n_ci_read,this_c_i,this_e_ci,this_mut,&
 				   this_fmax,this_omega,this_Ffld,this_n_out,this_n_f)
+!------------------------------------------------------------------------
+! @brief Set global variables for medium 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
         implicit none
+
         real(dbl)     , intent(in) :: this_dt				! time step
         character(3), intent(in) :: this_mdm				! kind of medium
         integer(i4b)  , intent(in) :: this_n_ci,this_n_ci_read		! number of CIS states
@@ -44,5 +52,7 @@
         n_f=this_n_f
 
         return
+
       end subroutine set_global_tdplas
+
       end module global_tdplas
