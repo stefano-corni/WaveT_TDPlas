@@ -11,30 +11,38 @@
       integer(i4b) :: nr_typ !input integer for type of decay for the internal conversion
       integer(i4b) :: idep   !input integer for the dephasing operator
       integer(i4b) :: tdis   !input integer for Euler tdis=0, Matthews tdis=1 
-      character(flg) :: Fdis_rel  !< Flag for decay for internal conversion, relaxation via dipole "dip" or matrix "mat"
-      character(flg) :: Fdis_deph !< Flag for dephasing operator: exp(i delta_i)|i><i| "exp" or |i><i|-|0><0| "i-0"
 ! SP270917: added for merging to newer master
-      integer(i4b) :: npulse !number of pulses
+      integer(i4b)              :: npulse !number of pulses
       integer(i4b), allocatable :: irel(:,:) !mapping for intermediate relaxations  
+      integer(i4b)              :: restart_i ! step for restart
+      integer(i4b)              :: n_restart ! frequency of restart writing
+      integer(i4b)              :: n_jump    ! number of quantum jumps along a simulation
       real(dbl), allocatable :: mut_np2(:,:) !squared dipole from NP
       real(dbl) :: tdelay, pshift  ! time delay and phase shift with two pulses
       real(dbl) :: omega1, sigma1  ! for the second pulse
 !
-      real(dbl), allocatable :: c_i(:),e_ci(:)  ! coeff and energy from cis
-      real(dbl), allocatable :: mut(:,:,:) !transition dipoles from cis
-      real(dbl), allocatable :: nr_gam(:), de_gam(:) !decay rates for nonradiative and dephasing events
-      real(dbl), allocatable :: sp_gam(:) !decay rate for spontaneous emission  
-      real(dbl), allocatable :: sp_fact(:) !multiplicative factor for the decay rate for spontaneous emission
-      real(dbl), allocatable :: tmom2(:) !square transition moments i->0
-      real(dbl), allocatable :: delta(:) !phases randomly added during the propagation 
-      real(dbl), allocatable :: de_gam1(:) !combined decay rates for idep=1
-      real(dbl), allocatable :: tomega(:)  !generalized transition frequencies 
-      real(dbl) :: dt,tau(2),start, krnd
+      !real(dbl), allocatable    :: c_i(:),e_ci(:)  ! energy from cis
+      real(dbl), allocatable    :: e_ci(:)  ! energy from cis
+      complex(cmp), allocatable :: c_i(:),c_i_prev(:),c_i_prev2(:) ! coefficients from cis
+      real(dbl)                 :: mu_i_prev(3),mu_i_prev2(3),mu_i_prev3(3),mu_i_prev4(3),mu_i_prev5(3)
+      real(dbl), allocatable    :: mut(:,:,:) !transition dipoles from cis
+      real(dbl), allocatable    :: nr_gam(:), de_gam(:) !decay rates for nonradiative and dephasing events
+      real(dbl), allocatable    :: sp_gam(:) !decay rate for spontaneous emission  
+      real(dbl), allocatable    :: sp_fact(:) !multiplicative factor for the decay rate for spontaneous emission
+      real(dbl), allocatable    :: tmom2(:) !square transition moments i->0
+      real(dbl), allocatable    :: delta(:) !phases randomly added during the propagation 
+      real(dbl), allocatable    :: de_gam1(:) !combined decay rates for idep=1
+      real(dbl), allocatable    :: tomega(:)  !generalized transition frequencies 
+      real(dbl)                 :: restart_t  ! time for restart
+      real(dbl)                 :: restart_seed  ! time for restart
+      real(dbl)                 :: dt,tau(2),start, krnd
 ! SP 17/07/17: Changed to char flags
       !logical :: dis !turns on the dissipation
       !logical :: qjump ! =.true. quantum jump, =.false. stochastic propagation
       !logical :: ernd=.false. !add normal number to E: E -> E + krnd*rnd()
-! Global flags         
+! Global flags        
+      character(flg) :: Fdis_rel  !< Flag for decay for internal conversion, relaxation via dipole "dip" or matrix "mat"
+      character(flg) :: Fdis_deph !< Flag for dephasing operator: exp(i delta_i)|i><i| "exp" or |i><i|-|0><0| "i-0" 
       character(flg) :: Fdis !< Flag for dissipation type: 
                              !! Markovian     : quantum jumps "mar-qjump", Euler-Maruyama "mar-EuMar", Leimkuhler-Matthews "mar-LeiMa"
                              !! Non-Markovian : quantum jumps "nma-qjump", Continuous stochastic propagator "nma-cstoc"
@@ -85,12 +93,22 @@
 !             nr_typ,idep,imar,de_gam1,krnd,ernd       
              de_gam1,krnd,Fdis,Fdis_deph,Fdis_rel,nf,irel,  &
              npulse,omega1,sigma1,tdelay,pshift,nrel,Fful,  &
-             Fexp           
+             Fexp,Fres,restart_t,restart_i,n_restart,       &
+             c_i_prev,c_i_prev2,mu_i_prev,mu_i_prev2,       &
+             mu_i_prev3,mu_i_prev4,mu_i_prev5,restart_seed, &
+             n_jump           
              
 !
       contains
 !
       subroutine read_input
+!------------------------------------------------------------------------
+! @brief Read input namelists 
+!
+! @date Created   : 
+! Modified  : E. Coccia 20/11/2017
+!------------------------------------------------------------------------
+
 
        !integer(i4b):: i,nspectra
        !character(3) :: medium,radiative,dissipative
@@ -98,15 +116,14 @@
      
        !Molecular parameters 
        namelist /general/n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,& 
-                         dt,n_step,n_out,propa
+                         dt,n_step,n_out,propa,n_restart
        !External field paramaters
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
                         pulse,omega1,sigma1,tdelay,pshift
-       !Namelist spectra
-       namelist /spectra/ start,tau,dir_ft
        !Stochastic Schroedinger equation
        namelist /sse/ dissipative,idep,dis_prop,nrnd,tdis,nr_typ,krnd
-
+       !Namelist spectra
+       namelist /spectra/ start,tau,dir_ft
 
        write(*,*) ''
        write(*,*) '*****************************************************'
@@ -137,29 +154,42 @@
        read(*,nml=field)
        call write_nml_field() 
 
+       !Namelist sse
+       call init_nml_sse()
+       read(*,nml=sse)
+       call write_nml_sse()
+
        !read gaussian output for CIS propagation
        call read_gau_out
 
        !Namelist spectra
        call init_nml_spectra()
-       read(*,nml=spectra) 
-       call write_nml_spectra() 
-       !start, (tau(i),i=1,nspectra) !Start point for FT calculation &  Artificial damping 
-       !(dir_ft(i),i=1,3) direction along which the field is oriented
 
-       !Namelist sse
-       call init_nml_sse() 
-       read(*,nml=sse) 
-       call write_nml_sse()
+       read(*,nml=spectra) 
+
+       call write_nml_spectra() 
+
        if (Fdis(1:5).ne."nodis") call read_dis_params   
 
        return
-      end subroutine
+
+      end subroutine read_input
 !
 !
       subroutine read_gau_out
+!------------------------------------------------------------------------
+! @brief Read input files 
+!
+! @date Created   : 
+! Modified  : E. Coccia 20/11/2017
+!------------------------------------------------------------------------
+
+       implicit none
+
        integer(i4b) :: i,j
+       real(dbl)    :: rtmp 
        character(4) :: junk
+
 !    read ci energy
        open(7,file="ci_energy.inp",status="old")
        ! add ground state
@@ -208,14 +238,56 @@
 !       enddo
        close(7)
 !    read initial coefficients for the dynamics using the Slater determinants instead of the CIS_0 states.
-       open(7,file="ci_ini.inp",status="old")
        allocate (c_i(n_ci))
-       do i=1,n_ci
-        read(7,*) c_i(i)
-       enddo
-       c_i=c_i/sqrt(dot_product(c_i,c_i))
+       if (Fres.eq.'Nonr') then
+          open(7,file="ci_ini.inp",status="old")
+          do i=1,n_ci
+             read(7,*) rtmp 
+             c_i(i) = dcmplx(rtmp,0.d0)   
+          enddo
+          c_i=c_i/sqrt(dot_product(c_i,c_i))
+       elseif (Fres.eq.'Yesr') then
+          call checkfile('restart',7)
+          read(7,*) junk 
+          read(7,*) restart_t,restart_i
+          allocate(c_i_prev(n_ci),c_i_prev2(n_ci))
+          write(*,*) ''
+          write(*,*) 'Restart from time', restart_t
+          write(*,*) ''
+          read(7,*) junk 
+          do i=1,n_ci
+             read(7,*) c_i(i)
+          enddo
+          read(7,*) junk
+          do i=1,n_ci
+             read(7,*) c_i_prev(i)
+          enddo
+          read(7,*) junk
+          do i=1,n_ci
+             read(7,*) c_i_prev2(i)
+          enddo
+          if (Fdis(1:5).ne.'nodis') then 
+             read(7,*) junk 
+             read(7,*) restart_seed
+             iseed=restart_seed
+             write(*,*) ''
+             write(*,*) 'Used iseed:', iseed
+             write(*,*) ''
+             read(7,*) junk
+             read(7,*) n_jump
+          endif
+          read(7,*) junk 
+          read(7,*) mu_i_prev(1),mu_i_prev(2),mu_i_prev(3)
+          read(7,*) mu_i_prev2(1),mu_i_prev2(2),mu_i_prev2(3)
+          read(7,*) mu_i_prev3(1),mu_i_prev3(2),mu_i_prev3(3)
+          read(7,*) mu_i_prev4(1),mu_i_prev4(2),mu_i_prev4(3)
+          read(7,*) mu_i_prev5(1),mu_i_prev5(2),mu_i_prev5(3)
+       endif
+
        close(7)
+
        return
+
       end subroutine
 !
       subroutine read_dis_params()
@@ -482,14 +554,14 @@
 !
 ! @date Created   : E. Coccia 11 May 2017
 ! Modified  :
-! @param n_ci_read,n_ci,mol_cc,n_f,medium 
+! @param n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,propa,n_restart 
 !------------------------------------------------------------------------
 
        ! Time step in the propagation (a.u.)
        dt=0.05
        ! Number of steps
        n_step=10000
-       ! Frequency in writing files
+       ! Frequency in writing output files
        n_out=1
        ! Molecular center of charge
        mol_cc=0.d0
@@ -503,6 +575,8 @@
        full='n'
        ! Propagation of the energy term
        propa='e'
+       ! Frequency in writing restart file
+       n_restart=10
 
        return
 
@@ -642,6 +716,7 @@
         case ('y', 'Y')
           write(*,*) 'Restart from a previous calculation'
           Fres='Yesr'
+          write(*,*) 'Frequency in writing restart file:', n_restart
        end select
        select case (full)
         case ('n', 'N') 
@@ -737,8 +812,6 @@
 
        select case (dissipative)
         case ('mar', 'Mar', 'MAR')
-          !dis=.true.
-          !imar=0
           select case (idep)
            case (0)
             Fdis_deph="exp"
@@ -750,11 +823,9 @@
           write(*,*) 'Markovian dissipation'
           select case (dis_prop)
            case ('qjump', 'Qjump', 'QJump')
-             !qjump=.true. 
              Fdis="mar-qjump"
              write(*,*) 'Quantum jump algorithm'
            case ('Euler', 'EUler', 'EULER', 'euler')
-             !qjump=.false.
              write(*,*) 'Continuous stochastic propagator'
              write(*,*) 'Time step for the Brownian motion is:', dt/nrnd
              select case (tdis)
@@ -775,27 +846,20 @@
             write(*,*) 'Internal conversion relaxation via given matrix'
           end select
         case ('nma', 'NMa', 'NMA', 'Nma')
-          !dis=.true.
-          !imar=1
           write(*,*) 'NonMarkovian dissipation'
           read(*,*) dis_prop
           select case (dis_prop)
            case ('qjump', 'Qjump', 'QJump')
-             !qjump=.true.
              Fdis="nma-qjump"
              write(*,*) 'Quantum jump algorithm'
            case default
-             !qjump=.false.
              Fdis="nma-cstoc"
              write(*,*) 'Continuous stochastic propagator'
           end select
         case ('rnd', 'RND', 'Rnd', 'RNd')
-          !dis=.false.
-          !ernd=.true.
           Fdis="ernd"
           write(*,*) "Normal random term added to CI energies"
         case default
-          !dis=.false.
           Fdis="nodis"
           write(*,*) 'No dissipation'
        end select
@@ -804,6 +868,31 @@
        return
 
       end subroutine write_nml_sse
+
+      subroutine checkfile(filename,channel)
+!------------------------------------------------------------------------
+! @brief Check file existence 
+!
+! @date Created   : E. Coccia 20 Nov 2017
+! Modified  :
+!------------------------------------------------------------------------
+        implicit none
+
+        character*7,  intent(in)  :: filename
+        integer(i4b),  intent(in)  :: channel   
+        logical                    :: exist
+
+        inquire(file=filename, exist=exist)
+        if (exist) then
+           open(channel, file=filename, status="old")
+        else
+           write(*,*) 'ERROR:  file', filename,'is missing'       
+           stop 
+        endif    
+
+        return 
+
+      end subroutine checkfile 
 
 
     end module readio

@@ -41,7 +41,7 @@ INC = -I/usr/include/ -I/unimore/prod/fftw-3.3.4/include/
 BINPATH=../bin
 TDPLAS=../../TDPlas/src/
 
-OBJ= constants.o global_wavet.o global_tdplas.o random.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o dissipation.o propagate.o main.o pedra_friends.o  
+OBJ= constants.o global_wavet.o global_tdplas.o random.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o sse.o propagate.o main.o pedra_friends.o  
 OBJ_SPECTRA= constants.o pedra_friends.o global_wavet.o global_tdplas.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o main_spectra.o 
 OBJ_VIB= constants.o readio.o vib.o main_vib.o
 
@@ -82,7 +82,7 @@ spectra.o: spectra.f90
 main_spectra.o: main_spectra.f90
 	$(FC) $(FFLAGS) $(INC) -c $< -o $@
 
-dissipation.o: dissipation.f90
+sse.o: sse.f90
 	$(FC) $(FFLAGS) -c $< -o $@
 
 propagate.o: propagate.f90
@@ -134,7 +134,7 @@ spectra.o: global_wavet.o readio.o pedra_friends.o readio_medium.o
 
 main_spectra.o: readio.o readio_medium.o spectra.o
 
-dissipation.o: global_wavet.o readio.o random.o
+sse.o: global_wavet.o readio.o random.o
 
 propagate.o: global_wavet.o random.o readio.o spectra.o readio_medium.o pedra_friends.o td_contmed.o
 
@@ -142,7 +142,7 @@ vib.o: readio.o
 
 main_vib.o: readio.o vib.o
 
-main.o: readio.o spectra.o dissipation.o propagate.o readio_medium.o QM_coupling.o  
+main.o: readio.o spectra.o sse.o propagate.o readio_medium.o QM_coupling.o  
 
 global_tdplas.o: 
 

@@ -1,4 +1,4 @@
-module dissipation 
+module sse 
   use constants   
   use readio
   use random
@@ -14,6 +14,7 @@ module dissipation
   private
   public norm, dtot, dsp, dnr, dde, add_dis_m, add_dis_nm, loss_norm
   public quan_jump, add_h_rnd, define_h_dis, rnd_noise, add_h_rnd2, disp 
+  public random_seq
 !
   contains
 
@@ -737,4 +738,27 @@ module dissipation
 
   end function disp
 
-end module dissipation
+  subroutine random_seq(restart_i)
+!------------------------------------------------------------------------
+! @brief Genarate a dummy sequence of rnd numbers 
+! 
+! @date Created   : E. Coccia 24 Nov 2017
+! Modified  :
+!------------------------------------------------------------------------ 
+
+    implicit none
+
+    integer(i4b),  intent(in)   :: restart_i
+
+    integer(i4b)                :: i
+    real(dbl)                   :: rdum
+
+    do i=1,restart_i-2+2*n_jump
+       call random_number(rdum)
+    enddo
+
+    return
+
+  end subroutine random_seq
+
+end module sse 

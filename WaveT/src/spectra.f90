@@ -9,13 +9,18 @@
       save
       private
       public Sdip, Sfld, do_spectra, init_spectra, read_arrays
-!
+
       contains
-!     
-!------------------------------------------------------------------------
-!> driver routine for computing spectra from dipole(time)
-!------------------------------------------------------------------------
+    
+ 
       subroutine do_spectra      
+!------------------------------------------------------------------------
+! @brief Driver routine for computing spectra from dipole(time) 
+!
+! @date Created   : S. Corni
+! Modified  :  S. Pipolo
+!------------------------------------------------------------------------
+
       implicit none
       real(dbl), allocatable :: Dinp(:),Finp(:)
       real(dbl) :: dw,fac,absD,refD,phiF,phiD,modF,modD    
@@ -98,29 +103,64 @@
       call finalize_spectra
       return
       end subroutine
-!
+
+
       subroutine init_spectra
-      integer(i4b) :: sz
-       sz=int(dble(n_step)/dble(n_out))
+!------------------------------------------------------------------------
+! @brief Initialize spectra from dipole(time) 
+!
+! @date Created   : S. Corni
+! Modified  : E. Coccia 24/11/17
+!------------------------------------------------------------------------
+
+       integer(i4b) :: sz
+       integer(i4b) :: iend 
+
+       if (Fres.eq.'Nonr') then
+          iend=n_step
+       elseif (Fres.eq.'Yesr') then
+          iend=n_step+restart_i
+       endif
+
+       !sz=int(dble(n_step)/dble(n_out))
+       sz=int(dble(iend)/dble(n_out))
        allocate (Sdip(3,3,sz),Sfld(3,sz))
        Sdip(:,:,:)=zero 
        Sfld(:,:)=zero 
-      return
+  
+       return
+   
       end subroutine
-!
+
+
       subroutine finalize_spectra
+!------------------------------------------------------------------------
+! @brief Deallocate ararys for spectra  
+!
+! @date Created   :
+! Modified  :
+!------------------------------------------------------------------------
+
        deallocate (Sdip,Sfld)
-      return
+
+       return
+
       end subroutine
-!     
-!------------------------------------------------------------------------
-!> routine that reads dipole(time) from WaveT.x output and prepares  
-!!   for spectra, used in main_spectra.f90 
-!------------------------------------------------------------------------
+    
+ 
       subroutine read_arrays  
-      integer(4) :: file_mol=10,file_fld=8,file_med=9,i,x
-      real(8) :: t
+!------------------------------------------------------------------------
+! @brief Read dipole(time) from WaveT.x output and prepares  
+!   for spectra, used in main_spectra.f90 
+!
+! @date Created   :
+! Modified  :
+!------------------------------------------------------------------------
+
+       integer(4) :: file_mol=10,file_fld=8,file_med=9,i,x
+       real(8) :: t
        character(20) :: name_f
+    
        write(name_f,'(a5,i0,a4)') "mu_t_",n_f,".dat"
        open (file_mol,file=name_f,status="unknown")
        if (Fmdm.ne.'vac') then 
@@ -142,9 +182,11 @@
        close(file_mol)
        close(file_fld)
        if (Fmdm.ne.'vac') close(file_med)
-      return
+
+       return
+
       end subroutine
-!
-!
-!
+
+
+
       end module
