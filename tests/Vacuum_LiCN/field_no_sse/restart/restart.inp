@@ -7,8 +7,11 @@ mol_cc=
 n_f=1
 medium='vac'
 dt=0.05
-n_step=10000
+n_step=5000
 n_out=1
+restart='y'
+n_restart=1
+propa='n'
 / 
 
 &field Ffld='gau',omega=0.2420,sigma=1000,
