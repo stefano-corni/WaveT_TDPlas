@@ -26,7 +26,7 @@ module sse
 ! Representation in the CIS basis
 !
 ! @date Created   : E. Coccia 20 Dec 2016
-! Modified  :
+! Modified  : E. Coccia 27 Nov 2017 (remove dissipation from dephasing "i-0")
 ! @param h_dis
 !------------------------------------------------------------------------
 
@@ -34,9 +34,9 @@ module sse
    integer, intent(in)    :: nci
    real(dbl), intent(inout) :: h_dis(nci)
    integer                :: i,j,k
-   real(dbl)                :: rate, sde
+   real(dbl)                :: rate!, sde
 
-   if (Fdis_deph.eq."i-0") sde = sum(de_gam1)
+   !if (Fdis_deph.eq."i-0") sde = sum(de_gam1)
 
    if (Fful.eq.'Yesf') then
 ! Matrix elements of S^+_alpha S_alpha in the system eigenstates basis
@@ -84,8 +84,8 @@ module sse
          if (Fdis_deph.eq."exp") then
             h_dis(i) = h_dis(i) + de_gam(i)
 ! S_alpha = sqrt(de_gam_alpha) * (|Phi_alpha> <Phi_alpha| - |Phi_0> <Phi_0|)
-         elseif (Fdis_deph.eq."i-0") then
-            h_dis(i) = h_dis(i) + sde
+         !elseif (Fdis_deph.eq."i-0") then
+         !   h_dis(i) = h_dis(i) + sde
          endif
       enddo
    elseif (Fful.eq.'Nonf') then
@@ -107,16 +107,16 @@ module sse
          if (Fdis_deph.eq."exp") then
             h_dis(i) = h_dis(i) + de_gam(i)
 ! S_alpha = sqrt(de_gam_alpha) * (|Phi_alpha> <Phi_alpha| - |Phi_0> <Phi_0|)
-         elseif (Fdis_deph.eq."i-0") then
-            h_dis(i) = h_dis(i) + sde
+         !elseif (Fdis_deph.eq."i-0") then
+         !   h_dis(i) = h_dis(i) + sde
          endif
       enddo
    endif
 
    if (Fdis_deph.eq."exp") then
       h_dis(1) = de_gam(1) 
-   elseif (Fdis_deph.eq."i-0") then
-      h_dis(1) = sde
+   !elseif (Fdis_deph.eq."i-0") then
+   !   h_dis(1) = sde
    endif
 
    h_dis=0.5d0*h_dis
