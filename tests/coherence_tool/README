@@ -1,0 +1,1 @@
+makec_coherence.x computes the global coherence quantifier C_l1 = \sum_i.ne.j |rho_ij|. It ranges from zero (incoherent system) to N-1 (coherent system), where N is the dimension of the Hilbert space in which the wave function is defined.
