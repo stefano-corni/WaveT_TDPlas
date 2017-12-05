@@ -223,6 +223,7 @@ program decoherence
      l1_err=sqrt(2.d0*l1_err)
  
      open(11,file='l1_norm')
+     write(11,*) '# step     time(au)    C_l1(rho(t))     error(t)'
      do j=1,nsteps
         write(11,'(I8,3(E12.5))') i(j),t(j),l1(j),l1_err(j) 
      enddo
