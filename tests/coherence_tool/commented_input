@@ -1,0 +1,4 @@
+nsteps   !number of steps of the dynamics
+nrep     !number of trajectories from SSE calculation
+nstates  !number of states of the system
+quant    !defines the quantifier (only 'l1' currently works)
