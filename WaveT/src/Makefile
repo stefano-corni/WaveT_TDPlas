@@ -26,7 +26,7 @@ FFLAGS_P3= -O3 -ftz -align -arch pn3 -tune pn3 -tpp6
 FFLAGS_P4= -O3 -ftz -align -arch pn4 -tune pn4 -tpp7 -xN
 FFLAGS_MIO= -O3 -ftz -align -xAVX
 FFLAGS_HYD= -O3 -ftz -align -xHost
-FFLAGS_HYD_PAR= -O3 -ftz -align -xHost -parallel -par_threshold75 -par_report3 #-check bounds 
+FFLAGS_HYD_PAR= -O3 -ftz -align -xHost -parallel -par_threshold75 -par_report3 -check bounds 
 FFLAGS_WS= -O3 -ftz -align -xP -no-prec-div -ipo
 FFLAGS_GF= -O3
 LDLAGS=
@@ -44,11 +44,12 @@ TDPLAS=../../TDPlas/src/
 OBJ= constants.o global_wavet.o global_tdplas.o random.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o dissipation.o propagate.o main.o pedra_friends.o  
 OBJ_SPECTRA= constants.o pedra_friends.o global_wavet.o global_tdplas.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o main_spectra.o 
 OBJ_VIB= constants.o readio.o vib.o main_vib.o
+OBJ_COH= coherence_tool.o 
 
 
 # rules
 
-all: $(BINPATH) $(BINPATH)/WaveT.x $(BINPATH)/make_spectra.x $(BINPATH)/make_vib.x
+all: $(BINPATH) $(BINPATH)/WaveT.x $(BINPATH)/make_spectra.x $(BINPATH)/make_vib.x $(BINPATH)/make_coherence.x
 	
 $(BINPATH):
 	mkdir $(BINPATH)
@@ -61,6 +62,9 @@ $(BINPATH)/WaveT.x: $(OBJ)
 
 $(BINPATH)/make_vib.x: $(OBJ_VIB)
 	$(FC) $(FFLAGS) -o $@ $(OBJ_VIB)
+
+$(BINPATH)/make_coherence.x: $(OBJ_COH)
+	$(FC) $(FFLAGS) -o $@ $(OBJ_COH)
 clean:
 	rm -f *.o *.mod *.il *.optrpt $(BINPATH)/*.x
 
@@ -86,6 +90,9 @@ dissipation.o: dissipation.f90
 	$(FC) $(FFLAGS) -c $< -o $@
 
 propagate.o: propagate.f90
+	$(FC) $(FFLAGS) -c $< -o $@
+
+coherence_tool.o: coherence_tool.f90
 	$(FC) $(FFLAGS) -c $< -o $@
 
 vib.o: vib.f90
@@ -141,6 +148,8 @@ propagate.o: global_wavet.o random.o readio.o spectra.o readio_medium.o pedra_fr
 vib.o: readio.o
 
 main_vib.o: readio.o vib.o
+
+coherence_tool.o: 
 
 main.o: readio.o spectra.o dissipation.o propagate.o readio_medium.o QM_coupling.o  
 
