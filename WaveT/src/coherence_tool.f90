@@ -220,7 +220,7 @@ program decoherence
            l1_err(j) = l1_err(j) + ferr(j,k)**2
         enddo 
      enddo
-     l1_err=sqrt(2.d0*l1_err)
+     l1_err=2.d0*sqrt(l1_err)
  
      open(11,file='l1_norm')
      write(11,*) '# step     time(au)    C_l1(rho(t))     error(t)'
