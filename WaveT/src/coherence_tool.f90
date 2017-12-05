@@ -61,7 +61,6 @@ program decoherence
 
  npair=nstates*(nstates-1)/2 
 
- 
  allocate(i(nsteps))
  allocate(t(nsteps))
  if (quant.ne.'l1') then
@@ -103,28 +102,33 @@ program decoherence
 
     ! Population 
     pop=0.d0
-    do j=1,nsteps
-       do k=1,nstates 
-          do m=1,nrep
+    do m=1,nrep
+       do k=1,nstates
+          do j=1,nsteps
              pop(j,k) = pop(j,k) + rdum(j,k,m)
           enddo
        enddo
-       pop(j,k)=pop(j,k)/real(nrep)
     enddo
+    pop=pop/real(nrep)
 
  ! Error 
     perr=0.d0
-    do j=1,nsteps
-       do k=1,nstates 
-          do m=1,nrep
+    do m=1,nrep
+       do k=1,nstates
+          do j=1,nsteps
              perr(j,k) = perr(j,k) + (rdum(j,k,m) - pop(j,k))**2
           enddo
        enddo 
     enddo
-    perr=perr/real(nrep-1.d0)
+    if (nrep.gt.1) then
+       perr=perr/real(nrep-1.d0)
+    else
+       perr=perr/real(nrep-1.d0)
+    endif
     perr=sqrt(perr)
 
   elseif (quant(1:2).eq.'l1') then
+
      do m=1,nrep
        if (m.lt.10) then
           WRITE(filename,'(a,i1.1,a)') "d_t_",m,".dat"
@@ -140,21 +144,21 @@ program decoherence
        open(20+m,file=filename)
      enddo
 
+
      !Read coherences
      do m=1,nrep
         do j=1,nsteps
-          read(20+m,*) i(j),t(j), (rdum(j,k,m), idum(j,k,m), k=1,nstates)
+          read(20+m,*) i(j),t(j), (rdum(j,k,m), idum(j,k,m), k=1,npair)
         enddo
      enddo
 
-     npair=nstates*(nstates-1)/2
 
      ! Mean
      cor=0.d0
      coi=0.d0
-     do j=1,nsteps
+     do m=1,nrep
         do k=1,npair
-           do m=1,nrep
+           do j=1,nsteps
               cor(j,k) = cor(j,k) + rdum(j,k,m)
               coi(j,k) = coi(j,k) + idum(j,k,m)
            enddo
@@ -166,26 +170,35 @@ program decoherence
      ! Error 
      rerr=0.d0
      ierr=0.d0 
-     do j=1,nsteps
+     do m=1,nrep
         do k=1,npair
-           do m=1,nrep
+           do j=1,nsteps
               rerr(j,k) = rerr(j,k) + (rdum(j,k,m) - cor(j,k))**2
               ierr(j,k) = ierr(j,k) + (idum(j,k,m) - coi(j,k))**2 
            enddo
         enddo
      enddo
-     rerr=rerr/real(nrep-1.d0)
-     ierr=ierr/real(nrep-1.d0)
+     if (nrep.gt.1) then
+        rerr=rerr/real(nrep-1.d0)
+        ierr=ierr/real(nrep-1.d0)
+     else
+        rerr=rerr/real(nrep)
+        ierr=ierr/real(nrep)
+     endif
      rerr=sqrt(rerr)
      ierr=sqrt(ierr)
 
-     do j=1,nsteps
-        do k=1,npair
+     ferr=0.d0
+     do k=1,npair
+        do j=1,nsteps
            co(j,k) = sqrt(cor(j,k)**2 + coi(j,k)**2)
-           ferr(j,k) = sqrt( (cor(j,k)/co(j,k)*rerr(j,k))**2 + (coi(j,k)/co(j,k)*ierr(j,k))**2 )
-           ferr(j,k) = ferr(j,k)/sqrt(real(nrep)) 
+           if (co(j,k).ne.0.d0) then
+              ferr(j,k) = sqrt( (cor(j,k)/co(j,k)*rerr(j,k))**2 + (coi(j,k)/co(j,k)*ierr(j,k))**2 )
+              ferr(j,k) = ferr(j,k)/sqrt(real(nrep)) 
+           endif
         enddo
      enddo
+
 
      write(*,*) ''
      write(*,*) 'Coherence quantifier: l1-norm'
@@ -193,8 +206,8 @@ program decoherence
      write(*,*) ''
 
      l1=0.d0
-     do j=1,nsteps
-        do k=1,npair
+     do k=1,npair
+        do j=1,nsteps
            l1(j) = l1(j) + co(j,k)
         enddo
      enddo
@@ -202,9 +215,9 @@ program decoherence
  
 
      l1_err=0.d0
-     do j=1,nsteps
-        do k=1,npair
-           l1_err(j) = l1_err(j) + co(j,k)**2
+     do k=1,npair 
+        do j=1,nsteps
+           l1_err(j) = l1_err(j) + ferr(j,k)**2
         enddo 
      enddo
      l1_err=sqrt(2.d0*l1_err)
