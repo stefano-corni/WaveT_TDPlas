@@ -119,7 +119,11 @@
        if (Fres.eq.'Nonr') then
           iend=n_step
        elseif (Fres.eq.'Yesr') then
-          iend=n_step+restart_i
+          if (Fsim.eq.'y') then
+            iend=diff_step+restart_i
+          elseif (Fsim.eq.'n') then
+            iend=n_step+restart_i
+          endif
        endif
 
        !sz=int(dble(n_step)/dble(n_out))

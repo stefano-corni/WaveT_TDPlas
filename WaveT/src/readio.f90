@@ -17,6 +17,7 @@
       integer(i4b)              :: restart_i ! step for restart
       integer(i4b)              :: n_restart ! frequency of restart writing
       integer(i4b)              :: n_jump    ! number of quantum jumps along a simulation
+      integer(i4b)              :: diff_step ! effective number of steps for restart
       real(dbl), allocatable :: mut_np2(:,:) !squared dipole from NP
       real(dbl) :: tdelay, pshift  ! time delay and phase shift with two pulses
       real(dbl) :: omega1, sigma1  ! for the second pulse
@@ -35,7 +36,7 @@
       real(dbl), allocatable    :: tomega(:)  !generalized transition frequencies 
       real(dbl)                 :: restart_t  ! time for restart
       real(dbl)                 :: restart_seed  ! time for restart
-      real(dbl)                 :: dt,tau(2),start, krnd
+      real(dbl)                 :: dt,tau(2),start,krnd
 ! SP 17/07/17: Changed to char flags
       !logical :: dis !turns on the dissipation
       !logical :: qjump ! =.true. quantum jump, =.false. stochastic propagation
@@ -57,10 +58,11 @@
       character(flg) :: Frad !< Flag for radiative damping 
       character(flg) :: Fres !< Flag for restart
       character(flg) :: Fful !< Flag for relaxation matrix
-      character(flg) :: Fexp !< Flag for propagation of the enrgy term
+      character(flg) :: Fexp !< Flag for propagation of the energy term
+      character(flg) :: Fsim !< Flag for the dynamics length in case of restart
 !      character(flg) :: Fpulse !< Flag for pulse             
 ! Flags read from input file
-      character(flg) :: medium,radiative,dissipative,pulse
+      character(flg) :: medium,radiative,dissipative,pulse,lsim
       character(flg) :: dis_prop
       character(flg) :: restart 
       character(flg) :: propa
@@ -96,7 +98,7 @@
              Fexp,Fres,restart_t,restart_i,n_restart,       &
              c_i_prev,c_i_prev2,mu_i_prev,mu_i_prev2,       &
              mu_i_prev3,mu_i_prev4,mu_i_prev5,restart_seed, &
-             n_jump           
+             n_jump,Fsim,diff_step           
              
 !
       contains
@@ -116,7 +118,7 @@
      
        !Molecular parameters 
        namelist /general/n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,& 
-                         dt,n_step,n_out,propa,n_restart
+                         dt,n_step,n_out,propa,n_restart,lsim
        !External field paramaters
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
                         pulse,omega1,sigma1,tdelay,pshift
@@ -249,7 +251,7 @@
        elseif (Fres.eq.'Yesr') then
           call checkfile('restart',7)
           read(7,*) junk 
-          read(7,*) restart_t,restart_i
+          read(7,*) restart_t,restart_i,diff_step
           allocate(c_i_prev(n_ci),c_i_prev2(n_ci))
           write(*,*) ''
           write(*,*) 'Restart from time', restart_t
@@ -577,6 +579,9 @@
        propa='e'
        ! Frequency in writing restart file
        n_restart=10
+       ! Dynamics length in case of restart ('n' n_step from input, 'y'
+       ! n_step = n_step - restart_step)
+       lsim='n'
 
        return
 
@@ -733,6 +738,13 @@
         case ('n','N')
           write(*,*) 'Energy term is propagated via second-order Euler'
           Fexp='non' 
+       end select
+       select case (lsim)
+        case ('y', 'Y')
+         write(*,*) 'Effective number of steps is n_step - restart_step'
+         Fsim='y'
+        case ('n', 'N')
+         Fsim='n'
        end select
        write(*,*) ''
 

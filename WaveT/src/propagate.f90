@@ -107,8 +107,8 @@
        elseif (Fres.eq.'Yesr') then
           c_prev2=c_i_prev2
           c_prev=c_i_prev
-          !f_prev2=f(:,restart_i-1)
-          !f_prev=f(:,restart_i)
+          f_prev2=f(:,restart_i-1)
+          f_prev=f(:,restart_i)
           mu_prev=mu_i_prev
           mu_prev2=mu_i_prev2
           mu_prev3=mu_i_prev3
@@ -222,7 +222,11 @@
        if (Fres.eq.'Nonr') then
           n_tot=n_step
        elseif (Fres.eq.'Yesr') then
-          n_tot=n_step+restart_i
+          if (Fsim.eq.'y') then
+             n_tot=diff_step+restart_i
+          elseif (Fsim.eq.'n') then 
+             n_tot=n_step+restart_i
+          endif
        endif
 
        allocate (f(3,n_tot))
@@ -639,7 +643,11 @@
           iend=n_step
        elseif (Fres.eq.'Yesr') then
           istart=restart_i+1
-          iend=n_step+istart-1
+          if (Fsim.eq.'y') then 
+             iend=diff_step+restart_i
+          elseif (Fsim.eq.'n') then
+             iend=n_step+istart-1
+          endif
        endif
 
 ! PROPAGATION CYCLE: starts the propagation at timestep 3
@@ -687,7 +695,7 @@
             ! Restart
             if (mod(i,n_restart).eq.0) then
                t=(i-1)*dt
-               call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+               call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend)
             endif
           enddo
 ! Markovian dissipation (Euler-Maruyama) 
@@ -723,7 +731,7 @@
             ! Restart
             if (mod(i,n_restart).eq.0) then
                t=(i-1)*dt
-               call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5) 
+               call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif
           enddo
        elseif (Fdis.eq."nodis".or.Fdis.eq."ernd") then
@@ -753,7 +761,7 @@
             ! Restart
             if (mod(i,n_restart).eq.0) then
                t=(i-1)*dt
-               call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5) 
+               call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif
           enddo
        endif 
@@ -818,8 +826,13 @@
           iend=n_step
        elseif (Fres.eq.'Yesr') then
           istart=restart_i+1
-          iend=n_step+istart-1
+          if (Fsim.eq.'y') then 
+             iend=diff_step+restart_i
+          elseif (Fsim.eq.'n') then
+             iend=n_step+istart-1
+          endif 
        endif 
+
 
 ! PROPAGATION CYCLE: starts the propagation at timestep 3
 ! Markovian dissipation (quantum jump) -> qjump
@@ -865,7 +878,7 @@
             ! Restart
             if (mod(i,n_restart).eq.0) then
                t=(i-1)*dt
-               call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5) 
+               call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif
           enddo
 ! Markovian dissipation (Euler-Maruyama) 
@@ -901,7 +914,7 @@
             ! Restart
             if (mod(i,n_restart).eq.0) then
                t=(i-1)*dt
-               call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5) 
+               call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif
           enddo
        elseif (Fdis.eq."nodis".or.Fdis.eq."ernd") then
@@ -912,6 +925,7 @@
             f_prev=f(:,i-1)
             h_int=zero
             if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,f_prev,h_int)
+            !write(*,*) 'ciao', i, h_int(1,1),h_int(3,4)
             call add_int_vac(f_prev,h_int)
 ! SC field
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
@@ -930,7 +944,7 @@
             ! Restart
             if (mod(i,n_restart).eq.0) then
                t=(i-1)*dt
-               call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5) 
+               call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif 
           enddo
        endif
@@ -939,7 +953,7 @@
       
       end subroutine full_euler_prop
 
-      subroutine wrt_restart(i,t,c,c_prev,c_prev2,nci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+      subroutine wrt_restart(i,t,c,c_prev,c_prev2,nci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend)
 !------------------------------------------------------------------------
 ! @brief Write restart file 
 ! 
@@ -949,7 +963,7 @@
   
        implicit none
 
-       integer(i4b),  intent(in)  :: i,nci,iseed
+       integer(i4b),  intent(in)  :: i,nci,iseed,iend
        real(dbl),     intent(in)  :: t
        real(dbl),     intent(in)  :: mu_prev(3),mu_prev2(3),mu_prev3(3)
        real(dbl),     intent(in)  :: mu_prev4(3),mu_prev5(3)
@@ -959,9 +973,9 @@
 
        open(777,file='restart')
        rewind(777)
-       
+ 
        write(777,*) 'Restart time in au, Restart step'
-       write(777,*) t,i
+       write(777,*) t,i,iend-i
        write(777,*) 'Coefficients'
        do j=1,nci
           write(777,*) c(j)
@@ -991,7 +1005,7 @@
        close(777)
  
        !flush(6)
-
+      
        return
 
       end subroutine wrt_restart 
