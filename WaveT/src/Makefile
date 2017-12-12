@@ -44,7 +44,7 @@ TDPLAS=../../TDPlas/src/
 OBJ= constants.o global_wavet.o global_tdplas.o random.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o dissipation.o propagate.o main.o pedra_friends.o  
 OBJ_SPECTRA= constants.o pedra_friends.o global_wavet.o global_tdplas.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o main_spectra.o 
 OBJ_VIB= constants.o readio.o vib.o main_vib.o
-OBJ_COH= coherence_tool.o 
+OBJ_COH= constants.o coherence_tool.o 
 
 
 # rules
