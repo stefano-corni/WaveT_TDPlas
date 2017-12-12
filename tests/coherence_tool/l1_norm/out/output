@@ -1,0 +1,26 @@
+ **********************************************
+ *                                            *
+ *               Tool for a                   *
+ *         global and quantitative            *
+ *                analysis                    *
+ *                   of                       *
+ *            quantum coherence               *
+ *                                            *
+ *                   by                       *
+ *              Stefano Corni                 *
+ *                  and                       *
+ *             Emanuele Coccia                *
+ *                                            *
+ **********************************************
+ 
+ Number of steps:           3
+ Number of trajectories:           3
+ Number of states           3
+ Quantifier:
+ l1-norm
+ 
+ 
+ Coherence quantifier: l1-norm
+ C(rho) = \sum_i.ne.j |rho_ij|
+ 
+ Calculation ended
