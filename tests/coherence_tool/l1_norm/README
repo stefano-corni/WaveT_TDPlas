@@ -1,0 +1,9 @@
+makec_coherence.x computes the global coherence quantifier C_l1 = \sum_i.ne.j |rho_ij| (quant='l1' in the input). It ranges from zero (incoherent system) to N-1 (coherent system), where N is the dimension of the Hilbert space in which the wave function is defined.
+In low-excitation regime, the N-1 value can not be reached. In this case, we compute epsilon = Tr(Pe*rho*Pe), where Pe is the projector oon the manifold of the excited states, and the maximum value of l1 becomes:
+
+   (Ng-1)*(1-epsilon) + (Ne-1)*epsilon + 2*sqrt(Ng*Ne*epsilon*(1-epsilon)),
+
+with Ng and Ne the number of ground and excited states, respectively.
+
+
+make_coherence.x also computes the linear entropy S_L = 1 - Tr(rho^2) (quant='le' in the input). It ranges from zero (pure state) to 1-1/N (maximally mixed state). In low-excitation regime, for Ng=1, S_L ranges from 1 - 2*epsilon + epsilon^2*N/(N-1) and 1. 
