@@ -333,7 +333,7 @@ program decoherence
     enddo
     close(11)
 
-    open(11,file='lin_entropy_eps')
+    open(11,file='rho2_eps')
     write(11,*) '# step     time(au)    S(eps)     error(t)'
     tmp4=real(nstates)/real(nstates-1)
     do j=1,nsteps
