@@ -1,24 +1,26 @@
 program decoherence 
 
+ use constants 
+
  implicit none
 
- integer                 :: nrep,nstates,nsteps,npair,ngs
- real(8), allocatable    :: rdum(:,:,:),pop(:,:),perr(:,:)
- real(8), allocatable    :: cor(:,:),coi(:,:),co(:,:)
- real(8), allocatable    :: rerr(:,:),ierr(:,:),rpop(:,:,:)
- integer, allocatable    :: i(:)
- real(8), allocatable    :: t(:),l1(:),l1_err(:)
- real(8), allocatable    :: idum(:,:,:),ferr(:,:)
- real(8), allocatable    :: trp2(:),trp2_err(:)
- real(8), allocatable    :: rho(:,:,:),rho2(:,:,:)
- real(8), allocatable    :: leps(:), l1_norm_eps(:) 
- real(8), allocatable    :: leps_err(:),l1_norm_eps_err(:)
- real(8), allocatable    :: rho_err(:,:,:),rho2_err(:,:,:)
+ integer(i4b)                 :: nrep,nstates,nsteps,npair,ngs
+ real(dbl),    allocatable    :: rdum(:,:,:),pop(:,:),perr(:,:)
+ real(dbl),    allocatable    :: cor(:,:),coi(:,:),co(:,:)
+ real(dbl),    allocatable    :: rerr(:,:),ierr(:,:),rpop(:,:,:)
+ integer(i4b), allocatable    :: i(:)
+ real(dbl),    allocatable    :: t(:),l1(:),l1_err(:)
+ real(dbl),    allocatable    :: idum(:,:,:),ferr(:,:)
+ real(dbl),    allocatable    :: trp2(:),trp2_err(:)
+ real(dbl),    allocatable    :: rho(:,:,:),rho2(:,:,:)
+ real(dbl),    allocatable    :: leps(:), l1_norm_eps(:) 
+ real(dbl),    allocatable    :: leps_err(:),l1_norm_eps_err(:)
+ real(dbl),    allocatable    :: rho_err(:,:,:),rho2_err(:,:,:)
 
 
- integer       :: j,k,m,ijunk,l
- real(8)       :: rjunk,tmp,tmp1,tmp2,tmp3,tmperr  
- character(30) :: filename, quant
+ integer(i4b)       :: j,k,m,ijunk,l
+ real(dbl)          :: rjunk,tmp,tmp1,tmp2,tmp3,tmperr  
+ character(30)      :: filename, quant
 
 
  namelist /coherence/ nstates,nrep,nsteps,quant,ngs
@@ -38,6 +40,8 @@ program decoherence
  write(*,*) '*              Stefano Corni                 *'
  write(*,*) '*                  and                       *'
  write(*,*) '*             Emanuele Coccia                *'
+ write(*,*) '*                  and                       *'
+ write(*,*) '*             Filippo Troiani                *'
  write(*,*) '*                                            *'
  write(*,*) '**********************************************'
 
@@ -91,18 +95,15 @@ program decoherence
  allocate(co(nsteps,npair))
  allocate(leps(nsteps))
  allocate(leps_err(nsteps))
- !if (quant.eq.'le') then
-    allocate(trp2(nsteps),trp2_err(nsteps))
-    allocate(rho_err(nsteps,nstates,nstates))
-    allocate(rho2_err(nsteps,nstates,nstates))
- !elseif (quant.eq.'l1') then
-    allocate(l1(nsteps))
-    allocate(l1_err(nsteps))
-    allocate(l1_norm_eps(nsteps))
-    allocate(l1_norm_eps_err(nsteps))
- !endif
+ allocate(trp2(nsteps),trp2_err(nsteps))
+ allocate(rho_err(nsteps,nstates,nstates))
+ allocate(rho2_err(nsteps,nstates,nstates))
+ allocate(l1(nsteps))
+ allocate(l1_err(nsteps))
+ allocate(l1_norm_eps(nsteps))
+ allocate(l1_norm_eps_err(nsteps))
 
-
+ ! Population files
  do m=1,nrep
     if (m.lt.10) then
         WRITE(filename,'(a,i1.1,a)') "c_t_",m,".dat"
@@ -125,7 +126,7 @@ program decoherence
     enddo
  enddo
 
- ! Population 
+ !Average population 
  pop=0.d0
  do m=1,nrep
     do k=1,nstates
@@ -136,13 +137,14 @@ program decoherence
  enddo
  pop=pop/real(nrep)
 
+ !Building density matrix
  do k=1,nstates
     do j=1,nsteps
        rho(j,k,k) = pop(j,k)
     enddo
  enddo
 
- ! Error 
+ !Error on population 
  perr=0.d0
  do m=1,nrep
     do k=1,nstates
@@ -159,9 +161,9 @@ program decoherence
  perr=sqrt(perr)
 
 
+ !Coherences
  do m=1,nrep
     close(20+m)
-    open(20+m,file=filename)
     if (m.lt.10) then
         WRITE(filename,'(a,i1.1,a)') "d_t_",m,".dat"
     elseif (m.ge.10.and.m.lt.100) then
@@ -187,7 +189,7 @@ program decoherence
      close(20+m)
  enddo
 
- ! Mean
+ !Average coherence 
  cor=0.d0
  coi=0.d0
  do m=1,nrep
@@ -201,7 +203,7 @@ program decoherence
  cor=cor/real(nrep)
  coi=coi/real(nrep)
 
- ! Error 
+ !Error on coherence 
  rerr=0.d0
  ierr=0.d0
  do m=1,nrep
@@ -228,12 +230,13 @@ program decoherence
         co(j,k) = sqrt(cor(j,k)**2 + coi(j,k)**2)
         if (co(j,k).ne.0.d0) then
            ferr(j,k) = sqrt( (cor(j,k)/co(j,k)*rerr(j,k))**2 + (coi(j,k)/co(j,k)*ierr(j,k))**2 )
-           ferr(j,k) = ferr(j,k)/sqrt(real(nrep))
+           !ferr(j,k) = ferr(j,k)/sqrt(real(nrep))
         endif
      enddo
   enddo
 
-  ! Coherence from WaveT: (1,i=2,n_ci) (j=2,n_ci,k=j+1,n_ci)
+  !Coherence from WaveT: (1,i=2,n_ci) (j=2,n_ci,k=j+1,n_ci)
+  !Buiding density matrix
   k=0
   do m=1,nstates
      do l=m+1,nstates
@@ -245,8 +248,10 @@ program decoherence
      enddo
   enddo
 
+  !l1-norm with epsilon
+  !Error on l1-norm
   leps_err=0.d0
-  do k=2,nstates
+  do k=ngs+1,nstates
      do j=1,nsteps
         leps(j) = leps(j) + rho(j,k,k)
         leps_err(j) = leps_err(j) + perr(j,k)**2
@@ -264,11 +269,12 @@ program decoherence
 
   if (quant(1:2).eq.'le') then
 
-
+    !Building rho^2
     do j=1,nsteps
        rho2(j,:,:)=matmul(rho(j,:,:),rho(j,:,:))
     enddo
 
+    !Error on density matrix
     do k=1,nstates
        do j=1,nsteps
           rho_err(j,k,k) = perr(j,k)
@@ -290,6 +296,7 @@ program decoherence
        rho2_err(j,:,:)=matmul(rho_err(j,:,:),rho_err(j,:,:))
     enddo
 
+    !Building Tr(rho^2)
     trp2=0.d0
     do k=1,nstates
        do j=1,nsteps
@@ -324,7 +331,7 @@ program decoherence
      tmp1=real(nstates-ngs-1)
      tmp3=real(tmp1+1)
 
- 
+     !Maximum l1-norm value for a given epsilon (Tr(Pe*rho*Pe)) 
      do j=1,nsteps
         tmp2=1.d0-leps(j)
         l1_norm_eps(j) = tmp*tmp2 + tmp1*leps(j) + 2.d0*sqrt(ngs*tmp3*leps(j)*tmp2)
@@ -333,10 +340,11 @@ program decoherence
      do j=1,nsteps
         tmp2=1.d0-leps(j)
         if (leps_err(j).ne.0.d0) then
-           l1_norm_eps_err(j) = leps_err(j)*(-tmp + tmp1 +ngs*tmp3/sqrt(ngs*tmp3*leps(j)*tmp2))
+           l1_norm_eps_err(j) = leps_err(j)*(-tmp + tmp1 +(ngs*tmp3)*(1.d0-2.d0*leps(j))/sqrt(ngs*tmp3*leps(j)*tmp2))
+           l1_norm_eps_err(j) = l1_norm_eps_err(j)**2 
         endif
      enddo
-     !l1_norm_eps_err=sqrt(l1_norm_eps_err)
+     l1_norm_eps_err=sqrt(l1_norm_eps_err)
 
 
      open(11,file='l1_norm_eps')
@@ -374,10 +382,10 @@ program decoherence
      do j=1,nsteps
         if (l1_norm_eps(j).ne.0.d0) then
            tmperr=(l1_err(j)/l1_norm_eps(j))**2 + (l1(j)/(l1_norm_eps(j))**2*l1_norm_eps_err(j))**2
+           tmperr=sqrt(tmperr)
         else
            tmperr=0.d0
         endif
-        tmperr=sqrt(tmperr)
         if (l1_norm_eps(j).ne.0.d0) then
            write(11,'(I8,5(E12.5))') i(j),t(j),l1(j)/l1_norm_eps(j),tmperr,l1(j), l1_err(j) 
         else
@@ -404,17 +412,14 @@ program decoherence
   deallocate(co)
   deallocate(leps)
   deallocate(leps_err)
-  !if (quant.eq.'l1') then
-     deallocate(trp2)
-     deallocate(trp2_err) 
-     deallocate(rho_err)
-     deallocate(rho2_err)
-  !elseif (quant.eq.'l1') then
-     deallocate(l1)
-     deallocate(l1_err)
-     deallocate(l1_norm_eps)
-     deallocate(l1_norm_eps_err)
-  !endif
+  deallocate(trp2)
+  deallocate(trp2_err) 
+  deallocate(rho_err)
+  deallocate(rho2_err)
+  deallocate(l1)
+  deallocate(l1_err)
+  deallocate(l1_norm_eps)
+  deallocate(l1_norm_eps_err)
 
   close(11)
 
