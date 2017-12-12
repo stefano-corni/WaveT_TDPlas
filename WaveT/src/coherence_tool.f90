@@ -19,7 +19,7 @@ program decoherence
 
 
  integer(i4b)       :: j,k,m,ijunk,l
- real(dbl)          :: rjunk,tmp,tmp1,tmp2,tmp3,tmperr  
+ real(dbl)          :: rjunk,tmp,tmp1,tmp2,tmp3,tmp4,tmp5,tmperr  
  character(30)      :: filename, quant
 
 
@@ -303,6 +303,10 @@ program decoherence
           trp2(j) = trp2(j) + rho2(j,k,k)
        enddo
     enddo
+ 
+    do j=1,nsteps
+       if (trp2(j).gt.1.d0) trp2(j)=1.d0 
+    enddo
 
     write(*,*) ''
     write(*,*) 'Coherence quantifier: linear entropy'
@@ -312,8 +316,11 @@ program decoherence
 
     trp2_err=0.d0
     do k=1,nstates
-       do j=1,nsteps
-          trp2_err(j) = trp2_err(j) + rho2_err(j,k,k)**2 
+       do m=1,nstates
+          do j=1,nsteps
+             trp2_err(j) = trp2_err(j) + (2.d0*rho(j,k,k)*rho_err(j,k,k))**2 
+             if (m.ne.k) trp2_err(j) = trp2_err(j) + 2.d0*(rho(j,m,k)*rho_err(j,m,k))**2
+          enddo
        enddo
     enddo
     trp2_err=sqrt(trp2_err)
@@ -324,6 +331,20 @@ program decoherence
     do j=1,nsteps
        write(11,'(I8,3(E12.5))') i(j),t(j),1.d0-trp2(j),trp2_err(j)
     enddo
+    close(11)
+
+    open(11,file='lin_entropy_eps')
+    write(11,*) '# step     time(au)    S(eps)     error(t)'
+    tmp4=real(nstates)/real(nstates-1)
+    do j=1,nsteps
+       tmp5 = 1.d0 - 2.d0*leps(j) + leps(j)**2*tmp4
+       tmperr = 2.d0*(-1.d0 + leps(j)*tmp4)*leps_err(j)
+       tmperr=tmperr**2
+       tmperr=sqrt(tmperr)
+       write(11,'(I8,3(E12.5))') i(j),t(j),tmp5,tmperr
+    enddo
+    close(11)
+
 
   elseif (quant(1:2).eq.'l1') then
 
