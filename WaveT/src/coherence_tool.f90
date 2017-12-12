@@ -303,6 +303,10 @@ program decoherence
           trp2(j) = trp2(j) + rho2(j,k,k)
        enddo
     enddo
+ 
+    do j=1,nsteps
+       if (trp2(j).gt.1.d0) trp2(j)=1.d0 
+    enddo
 
     write(*,*) ''
     write(*,*) 'Coherence quantifier: linear entropy'
@@ -312,8 +316,11 @@ program decoherence
 
     trp2_err=0.d0
     do k=1,nstates
-       do j=1,nsteps
-          trp2_err(j) = trp2_err(j) + rho2_err(j,k,k)**2 
+       do m=1,nstates
+          do j=1,nsteps
+             trp2_err(j) = trp2_err(j) + (2.d0*rho(j,k,k)*rho_err(j,k,k))**2 
+             if (m.ne.k) trp2_err(j) = trp2_err(j) + 2.d0*(rho(j,m,k)*rho_err(j,m,k))**2
+          enddo
        enddo
     enddo
     trp2_err=sqrt(trp2_err)
