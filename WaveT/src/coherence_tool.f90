@@ -135,9 +135,10 @@ program decoherence
        enddo
     enddo
  enddo
- pop=pop/real(nrep)
+ pop=pop/dble(nrep)
 
  !Building density matrix
+ rho=0.d0 
  do k=1,nstates
     do j=1,nsteps
        rho(j,k,k) = pop(j,k)
@@ -154,11 +155,12 @@ program decoherence
     enddo
  enddo
  if (nrep.gt.1) then
-    perr=perr/real(nrep-1.d0)
+    perr=perr/dble(nrep-1.d0)
  else
-    perr=perr/real(nrep)
+    perr=perr/dble(nrep)
  endif
- perr=sqrt(perr)
+ perr=dsqrt(perr)
+ perr=perr/dsqrt(dble(nrep))
 
 
  !Coherences
@@ -200,8 +202,8 @@ program decoherence
        enddo
     enddo
  enddo
- cor=cor/real(nrep)
- coi=coi/real(nrep)
+ cor=cor/dble(nrep)
+ coi=coi/dble(nrep)
 
  !Error on coherence 
  rerr=0.d0
@@ -215,22 +217,23 @@ program decoherence
     enddo
  enddo
  if (nrep.gt.1) then
-    rerr=rerr/real(nrep-1.d0)
-    ierr=ierr/real(nrep-1.d0)
+    rerr=rerr/dble(nrep-1.d0)
+    ierr=ierr/dble(nrep-1.d0)
   else
-    rerr=rerr/real(nrep)
-    ierr=ierr/real(nrep)
+    rerr=rerr/dble(nrep)
+    ierr=ierr/dble(nrep)
   endif
-  rerr=sqrt(rerr)
-  ierr=sqrt(ierr)
+  rerr=dsqrt(rerr)
+  ierr=dsqrt(ierr)
+  rerr=rerr/dsqrt(dble(nrep))
+  ierr=ierr/dsqrt(dble(nrep))
 
   ferr=0.d0
   do k=1,npair
      do j=1,nsteps
-        co(j,k) = sqrt(cor(j,k)**2 + coi(j,k)**2)
+        co(j,k) = dsqrt(cor(j,k)**2 + coi(j,k)**2)
         if (co(j,k).ne.0.d0) then
-           ferr(j,k) = sqrt( (cor(j,k)/co(j,k)*rerr(j,k))**2 + (coi(j,k)/co(j,k)*ierr(j,k))**2 )
-           !ferr(j,k) = ferr(j,k)/sqrt(real(nrep))
+           ferr(j,k) = dsqrt( (cor(j,k)/co(j,k)*rerr(j,k))**2 + (coi(j,k)/co(j,k)*ierr(j,k))**2 )
         endif
      enddo
   enddo
@@ -248,8 +251,8 @@ program decoherence
      enddo
   enddo
 
-  !l1-norm with epsilon
-  !Error on l1-norm
+  !Epsilon = Tr(Pe*rho*Pe)
+  !Error on epsilon 
   leps_err=0.d0
   do k=ngs+1,nstates
      do j=1,nsteps
@@ -257,12 +260,12 @@ program decoherence
         leps_err(j) = leps_err(j) + perr(j,k)**2
      enddo
   enddo
-  leps_err=sqrt(leps_err)
+  leps_err=dsqrt(leps_err)
 
-  open(11,file='l1_eps')
-  write(11,*) '# step     time(au)    l1_eps(rho(t))     error(t)'
+  open(11,file='eps')
+  write(11,*) '# step     time(au)    eps(rho(t))     error(t)'
   do j=1,nsteps
-     write(11,'(I8,3(E12.5))') i(j),t(j),leps(j),leps_err(j)
+     write(11,'(I8,3(E14.7))') i(j),t(j),leps(j),leps_err(j)
   enddo
   close(11)
 
@@ -323,55 +326,55 @@ program decoherence
           enddo
        enddo
     enddo
-    trp2_err=sqrt(trp2_err)
+    trp2_err=dsqrt(trp2_err)
 
 
     open(11,file='lin_entropy')
     write(11,*) '# step     time(au)    S(rho(t))     error(t)'
     do j=1,nsteps
-       write(11,'(I8,3(E12.5))') i(j),t(j),1.d0-trp2(j),trp2_err(j)
+       write(11,'(I8,3(E14.7))') i(j),t(j),1.d0-trp2(j),trp2_err(j)
     enddo
     close(11)
 
     open(11,file='rho2_eps')
-    write(11,*) '# step     time(au)    S(eps)     error(t)'
-    tmp4=real(nstates)/real(nstates-1)
+    write(11,*) '# step     time(au)    Tr(rho2(eps))     error(t)'
+    tmp4=dble(nstates)/dble(nstates-1)
     do j=1,nsteps
        tmp5 = 1.d0 - 2.d0*leps(j) + leps(j)**2*tmp4
        tmperr = 2.d0*(-1.d0 + leps(j)*tmp4)*leps_err(j)
        tmperr=tmperr**2
-       tmperr=sqrt(tmperr)
-       write(11,'(I8,3(E12.5))') i(j),t(j),tmp5,tmperr
+       tmperr=dsqrt(tmperr)
+       write(11,'(I8,3(E14.7))') i(j),t(j),tmp5,tmperr
     enddo
     close(11)
 
 
   elseif (quant(1:2).eq.'l1') then
 
-     tmp=real(ngs-1)
-     tmp1=real(nstates-ngs-1)
-     tmp3=real(tmp1+1)
+     tmp=dble(ngs-1)
+     tmp1=dble(nstates-ngs-1)
+     tmp3=tmp1+1.d0
 
      !Maximum l1-norm value for a given epsilon (Tr(Pe*rho*Pe)) 
      do j=1,nsteps
         tmp2=1.d0-leps(j)
-        l1_norm_eps(j) = tmp*tmp2 + tmp1*leps(j) + 2.d0*sqrt(ngs*tmp3*leps(j)*tmp2)
+        l1_norm_eps(j) = tmp*tmp2 + tmp1*leps(j) + 2.d0*dsqrt(ngs*tmp3*leps(j)*tmp2)
      enddo
 
      do j=1,nsteps
         tmp2=1.d0-leps(j)
         if (leps_err(j).ne.0.d0) then
-           l1_norm_eps_err(j) = leps_err(j)*(-tmp + tmp1 +(ngs*tmp3)*(1.d0-2.d0*leps(j))/sqrt(ngs*tmp3*leps(j)*tmp2))
+           l1_norm_eps_err(j) = leps_err(j)*(-tmp + tmp1 +(ngs*tmp3)*(1.d0-2.d0*leps(j))/dsqrt(ngs*tmp3*leps(j)*tmp2))
            l1_norm_eps_err(j) = l1_norm_eps_err(j)**2 
         endif
      enddo
-     l1_norm_eps_err=sqrt(l1_norm_eps_err)
+     l1_norm_eps_err=dsqrt(l1_norm_eps_err)
 
 
      open(11,file='l1_norm_eps')
      write(11,*) '# step     time(au)    l1_norm_eps(rho(t))     error(t)'
      do j=1,nsteps
-        write(11,'(I8,3(E12.5))') i(j),t(j),l1_norm_eps(j),l1_norm_eps_err(j)
+        write(11,'(I8,3(E14.7))') i(j),t(j),l1_norm_eps(j),l1_norm_eps_err(j)
      enddo
      close(11)
 
@@ -396,21 +399,21 @@ program decoherence
            l1_err(j) = l1_err(j) + ferr(j,k)**2
         enddo 
      enddo
-     l1_err=2.d0*sqrt(l1_err)
+     l1_err=2.d0*dsqrt(l1_err)
  
      open(11,file='l1_norm')
      write(11,*) '# step     time(au)    C_l1(eps)     error(t)    C_l1(rho(t)  error(t) '
      do j=1,nsteps
         if (l1_norm_eps(j).ne.0.d0) then
            tmperr=(l1_err(j)/l1_norm_eps(j))**2 + (l1(j)/(l1_norm_eps(j))**2*l1_norm_eps_err(j))**2
-           tmperr=sqrt(tmperr)
+           tmperr=dsqrt(tmperr)
         else
            tmperr=0.d0
         endif
         if (l1_norm_eps(j).ne.0.d0) then
-           write(11,'(I8,5(E12.5))') i(j),t(j),l1(j)/l1_norm_eps(j),tmperr,l1(j), l1_err(j) 
+           write(11,'(I8,5(E14.7))') i(j),t(j),l1(j)/l1_norm_eps(j),tmperr,l1(j), l1_err(j) 
         else
-           write(11,'(I8,5(E12.5))') i(j),t(j),l1(j),tmperr,l1(j), l1_err(j)
+           write(11,'(I8,5(E14.7))') i(j),t(j),l1(j),tmperr,l1(j), l1_err(j)
         endif
      enddo
 
