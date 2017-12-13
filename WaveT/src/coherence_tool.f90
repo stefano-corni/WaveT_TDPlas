@@ -337,7 +337,7 @@ program decoherence
     close(11)
 
     open(11,file='rho2_eps')
-    write(11,*) '# step     time(au)    S(eps)     error(t)'
+    write(11,*) '# step     time(au)    Tr(rho2(eps))     error(t)'
     tmp4=dble(nstates)/dble(nstates-1)
     do j=1,nsteps
        tmp5 = 1.d0 - 2.d0*leps(j) + leps(j)**2*tmp4
