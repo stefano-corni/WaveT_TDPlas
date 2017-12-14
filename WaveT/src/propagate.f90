@@ -123,10 +123,10 @@
                                call seed_random_number_sc(iseed)
        if (Fmdm(1:3).ne."vac") then
            call init_medium(c_prev,f_prev,h_int)
-           if (Fres.eq.'Nonr') then
+           !if (Fres.eq.'Nonr') then
               i=1
               call prop_medium(i,c_prev,f_prev,h_int)
-           endif
+           !endif
        endif
        if (Fres.eq.'Nonr') then
           call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
@@ -925,7 +925,6 @@
             f_prev=f(:,i-1)
             h_int=zero
             if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,f_prev,h_int)
-            !write(*,*) 'ciao', i, h_int(1,1),h_int(3,4)
             call add_int_vac(f_prev,h_int)
 ! SC field
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
