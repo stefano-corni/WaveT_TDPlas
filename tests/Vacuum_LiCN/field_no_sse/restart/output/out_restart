@@ -61,5 +61,5 @@
  Direction along which the field is oriented  0.000000000000000E+000
    1.00000000000000       0.000000000000000E+000
  
-Done reading input & setting up the field, took     0.384s
-Done , total elapsed time    63.255s
+Done reading input & setting up the field, took     0.188s
+Done , total elapsed time    47.075s

@@ -10,6 +10,7 @@ n_step              Number of steps
 n_out               Frequency for writing output files
 restart             Reading coefficients from restart file
 n_restart           Frequency for writing restart file
+lsim                If 'y', the total length of the simulation (run+restart) is n_step, regardless of the value in the restart input
 
 Ffld                Type of field
 omega               Pulse frequency (au)
