@@ -20,8 +20,8 @@
        ! Fmdm(1:3) means the first three letters of the char flag Fmdm 
        if (Fmdm(1:3).ne."vac") then
          call set_global_tdplas(dt,Fmdm,mol_cc,n_ci,n_ci_read,c_i, &
-                               e_ci,mut,fmax,omega,Ffld,n_out,n_f, &
-                               restart,n_restart)
+                               e_ci,mut,fmax,omega,Ffld,n_out,n_f)!, &
+                               !restart,n_restart)
          call read_medium_input
        endif
        call init_spectra
