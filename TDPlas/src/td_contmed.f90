@@ -80,11 +80,21 @@
       real(dbl), intent(INOUT):: h_int(n_ci,n_ci)
       integer(i4b) :: its,i,j                   
       character(20) :: name_f
+
  
 ! OPEN FILES
       write(name_f,'(a9,i0,a4)') "medium_t_",n_f,".dat"
+      !if (Fmdm_res.eq.'Nonr') then
       open (file_med,file=name_f,status="unknown")
       write(file_med,*) "# step  time  dipole  field  qtot  qtot0"
+      !elseif (Fmdm_res.eq.'Yesr') then
+      !   open (file_med,file=name_f,status="unknown",position='append')
+      !   if (Fint.eq.'pcm') then
+      !      allocate(qr_i(nts_act))
+      !      if (Floc.eq.'loc') allocate(qx_i(nts_act))
+      !   endif 
+      !   call read_medium_restart()
+      !endif
       allocate(h_mdm(n_ci,n_ci),h_mdm_0(n_ci,n_ci))
       h_mdm=zero
       h_mdm_0=zero
@@ -102,6 +112,20 @@
 !        call init_BEM_Q0
         call init_potential(c_tp,f_tp)
         call init_charges(c_tp)
+!EC: restart values
+        !if (Fmdm_res.eq.'Yesr') then
+         !if (Fint.eq.'ons') then
+        !    fr_t=fr_i
+        !    if (Floc.eq.'loc') fx_t=fx_i
+         !elseif (Fint.eq.'pcm') then
+        !    qr_t=qr_i
+        !    qr_tp=qr_i
+        !    if (Floc.eq.'loc') then
+        !       qx_t=qx_i
+        !       qx_tp=qx_i
+        !    endif
+         !endif 
+        !endif
 ! SC: predifine the factors used in the VV propagator, used for
 ! Drude-Lorentz
       endif
@@ -131,6 +155,7 @@
        integer(i4b), intent(IN) :: i                    
        integer(i4b) :: its,k,j                    
 
+ 
       ! Propagate medium only every n_q timesteps  
       !  otherwise, just resum the interaction hamiltonian and exit
        if(mod(i,n_q).ne.0) then
@@ -140,6 +165,7 @@
        endif
        t=(i-1)*dt
        call do_dip_from_coeff(c_tp,mu_tp,n_ci)
+
        if (Fprop(1:3).eq."dip") then
        ! Dipole propagation: 
          call prop_dip(c_tp,f_tp)
@@ -161,6 +187,7 @@
          else 
            call do_pot_from_coeff(c_tp,pot_tp)
          endif
+
          call prop_chr
          ! Calculate medium's dipole from charges 
          qtot=zero
@@ -197,8 +224,13 @@
        if(Ftest(2:2).eq."-") call do_ref(c_tp)
        ! Update the interaction Hamiltonian 
        h_int(:,:)=h_int(:,:)+h_mdm(:,:)
+
        ! SP 24/02/16  Write output
        if (mod(i,n_out).eq.0.or.i.eq.1) call out_mdm(i)
+
+       ! EC 28/11/17 Write restart
+       !if (mod(i,n_res).eq.0) call wrt_restart_mdm()
+
 
        return
 
@@ -210,7 +242,7 @@
 ! @brief Medium finalization called by WaveT or other programs 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: E. Coccia
 !------------------------------------------------------------------------
 
        deallocate(h_mdm,h_mdm_0)
@@ -220,6 +252,15 @@
        elseif (Fprop(1:3).eq."dip".or.Fint.eq."ons") then
          call deallocate_MPL_public    
        endif
+       !if (Fmdm_res.eq.'Yesr') then
+       !   if (Fint.eq.'pcm') then
+       !      deallocate(qr_i)
+       !      if (Floc.eq.'loc') then
+       !         deallocate(qx_i)
+       !      endif
+       !   endif 
+       !endif
+ 
        close (file_med)
 
        return
@@ -835,11 +876,12 @@
 
       subroutine prop_chr
 !------------------------------------------------------------------------
-! @brief Potential anche charges propagation 
+! @brief Potential and charges propagation 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+
 
        ! Propagate
        if(Ftest.eq."s-r") pot_tp=vts(:,1,1) !Only for debug purposes
@@ -1069,6 +1111,7 @@
 !      f4=0.5d0*dt
 !      f5=eps_gm*f2
        qr_t=qr_tp+f1*dqr_tp+f2*fqr_tp
+
        fqr_t=-matmul(BEM_Qw,qr_t)+matmul(BEM_Qf,pot_tp)
        dqr_t=f3*dqr_tp+f4*(fqr_t+fqr_tp)-f5*fqr_tp
        fqr_tp=fqr_t
@@ -1626,5 +1669,49 @@
 
       end subroutine
 
+
+      subroutine wrt_restart_mdm()
+!------------------------------------------------------------------------
+! @brief write restart 
+!
+! @date Created   : E. Coccia 28 Nov 2017
+! Modified  :
+!------------------------------------------------------------------------
+
+       implicit none
+
+       integer(i4b)     :: i
+
+       open(778, file='restart_mdm')
+
+      ! if (Fint.eq.'ons') then
+          write(778,*) 'Dipoles for Onsager' 
+          do i=1,3
+             write(778,*) fr_t(1), fr_t(2), fr_t(3)
+          enddo
+          if (Floc.eq.'loc') then
+             write(778,*) 'Dipoles for Onsager (local)' 
+             do i=1,3
+                write(778,*) fx_t(1), fx_t(2), fx_t(3)
+             enddo
+          endif
+       !elseif (Fint.eq.'pcm') then
+          write(778,*) 'Charges for PCM' 
+          do i=1,nts_act
+             write(778,*) qr_t(i)
+          enddo
+          if (Floc.eq.'loc') then
+             write(778,*) 'Charges for PCM (local)' 
+             do i=1,nts_act
+                write(778,*) qx_t(i)
+             enddo
+          endif
+       !endif
+
+       close(778)
+
+       return
+ 
+      end subroutine wrt_restart_mdm
 
       end module
