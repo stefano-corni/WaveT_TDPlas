@@ -1,4 +1,4 @@
-module sse 
+module dissipation 
   use constants   
   use readio
   use random

@@ -19,7 +19,7 @@ LIBS =  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
 #LIBSF = -lm -L/usr/lib/i386-linux-gnu -lfftw3
 INC = -I/usr/include/ -I/unimore/prod/fftw-3.3.4/include/
 
-OBJ= random.o cav_types.o pedra_friends.o readio.o readio_medium.o sse.o spectra.o BEM_medium.o scf.o td_contmed.o QM_coupling.o propagate.o main.o  
+OBJ= random.o cav_types.o pedra_friends.o readio.o readio_medium.o dissipation.o spectra.o BEM_medium.o scf.o td_contmed.o QM_coupling.o propagate.o main.o  
 
 embem.x: $(OBJ) 
 	$(FC) $(FFLAGS) $(LDLAGS) -o $@ $(OBJ)  $(LIBS) $(LIBSF)
@@ -42,7 +42,7 @@ readio.o: readio.f90
 readio_medium.o: readio_medium.f90
 	$(FC) -c $(FFLAGS)  $<
 
-sse.o: sse.f90
+dissipation.o: dissipation.f90
 	$(FC) -c $(FFLAGS)  $<
 
 scf.o: scf.f90

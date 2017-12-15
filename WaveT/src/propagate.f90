@@ -5,7 +5,7 @@
       !use pedra_friends  
       use spectra
       use random
-      use sse 
+      use dissipation 
 
       implicit none
 
@@ -417,6 +417,7 @@
        else
           write (file_e,'(i8,f14.4,3e22.10)') i,t,e_a,int_rad,int_rad_int
        endif
+
        itmp = n_ci*(n_ci-1)/2
        write (fmt_ci,'("(i8,f14.4,",I0,"e13.5)")') n_ci
        write (fmt_ci2,'("(i8,f14.4,",I0,"2e13.5)")') 2*itmp
@@ -424,6 +425,7 @@
        call wrt_decoherence(i,t,file_d,fmt_ci2,c,n_ci)
        write (file_c,fmt_ci) i,t,real(c(:)*conjg(c(:)))
        write (file_mu,'(i8,f14.4,3e22.10)') i,t,mu_a(:)
+
        j=int(dble(i)/dble(n_out))
        if(j.lt.1) j=1
        Sdip(:,1,j)=mu_a(:)
@@ -693,7 +695,7 @@
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
-            if (mod(i,n_restart).eq.0) then
+            if (mod(i,n_restart).eq.0.and.Fmdm.eq.'vac') then
                t=(i-1)*dt
                call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend)
             endif
@@ -729,7 +731,7 @@
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
-            if (mod(i,n_restart).eq.0) then
+            if (mod(i,n_restart).eq.0.and.Fmdm.eq.'vac') then
                t=(i-1)*dt
                call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif
@@ -759,7 +761,7 @@
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
-            if (mod(i,n_restart).eq.0) then
+            if (mod(i,n_restart).eq.0.and.Fmdm.eq.'vac') then
                t=(i-1)*dt
                call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif
@@ -876,7 +878,7 @@
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
-            if (mod(i,n_restart).eq.0) then
+            if (mod(i,n_restart).eq.0.and.Fmdm.eq.'vac') then
                t=(i-1)*dt
                call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif
@@ -912,7 +914,7 @@
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
-            if (mod(i,n_restart).eq.0) then
+            if (mod(i,n_restart).eq.0.and.Fmdm.eq.'vac') then
                t=(i-1)*dt
                call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif
@@ -941,7 +943,7 @@
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
-            if (mod(i,n_restart).eq.0) then
+            if (mod(i,n_restart).eq.0.and.Fmdm.eq.'vac') then
                t=(i-1)*dt
                call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif 
