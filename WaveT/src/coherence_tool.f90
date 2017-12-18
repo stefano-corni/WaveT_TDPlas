@@ -12,10 +12,11 @@ program decoherence
  real(dbl),    allocatable    :: t(:),l1(:),l1_err(:)
  real(dbl),    allocatable    :: idum(:,:,:),ferr(:,:)
  real(dbl),    allocatable    :: trp2(:),trp2_err(:)
- real(dbl),    allocatable    :: rho(:,:,:),rho2(:,:,:)
+ real(dbl),    allocatable    :: rho(:,:,:)
  real(dbl),    allocatable    :: leps(:), l1_norm_eps(:) 
  real(dbl),    allocatable    :: leps_err(:),l1_norm_eps_err(:)
- real(dbl),    allocatable    :: rho_err(:,:,:),rho2_err(:,:,:)
+ real(dbl),    allocatable    :: rho_err(:,:,:)
+ real(dbl),    allocatable    :: norm(:) 
 
 
  integer(i4b)       :: j,k,m,ijunk,l
@@ -81,10 +82,12 @@ program decoherence
 
  npair=nstates*(nstates-1)/2 
 
+
+
  allocate(i(nsteps))
  allocate(t(nsteps))
+ allocate(norm(nsteps))
  allocate(rho(nsteps,nstates,nstates))
- allocate(rho2(nsteps,nstates,nstates))
  allocate(rpop(nsteps,nstates,nrep))
  allocate(rdum(nsteps,npair,nrep))
  allocate(idum(nsteps,npair,nrep))
@@ -97,7 +100,6 @@ program decoherence
  allocate(leps_err(nsteps))
  allocate(trp2(nsteps),trp2_err(nsteps))
  allocate(rho_err(nsteps,nstates,nstates))
- allocate(rho2_err(nsteps,nstates,nstates))
  allocate(l1(nsteps))
  allocate(l1_err(nsteps))
  allocate(l1_norm_eps(nsteps))
@@ -137,8 +139,15 @@ program decoherence
  enddo
  pop=pop/dble(nrep)
 
+ do j=1,nsteps
+     norm(j)=sum(pop(j,:))
+ enddo
+ do j=1,nsteps
+    pop(j,:)=pop(j,:)/norm(j)
+ enddo
+
  !Building density matrix
- rho=0.d0 
+ rho=0.d0
  do k=1,nstates
     do j=1,nsteps
        rho(j,k,k) = pop(j,k)
@@ -150,7 +159,7 @@ program decoherence
  do m=1,nrep
     do k=1,nstates
        do j=1,nsteps
-          perr(j,k) = perr(j,k) + (rpop(j,k,m) - pop(j,k))**2
+          perr(j,k) = perr(j,k) + (rpop(j,k,m) - pop(j,k)*norm(j))**2
        enddo
     enddo
  enddo
@@ -247,6 +256,8 @@ program decoherence
         do j=1,nsteps
            rho(j,l,m) = co(j,k) 
            rho(j,m,l) = co(j,k)
+           !rho(j,l,m) = cmplx(cor(j,k),coi(j,k))
+           !rho(j,m,l) = conjg(rho(j,l,m))!cmplx(cor(j,k),-coi(j,k))
         enddo
      enddo
   enddo
@@ -272,10 +283,6 @@ program decoherence
 
   if (quant(1:2).eq.'le') then
 
-    !Building rho^2
-    do j=1,nsteps
-       rho2(j,:,:)=matmul(rho(j,:,:),rho(j,:,:))
-    enddo
 
     !Error on density matrix
     do k=1,nstates
@@ -295,15 +302,22 @@ program decoherence
        enddo
     enddo
 
-    do j=1,nsteps
-       rho2_err(j,:,:)=matmul(rho_err(j,:,:),rho_err(j,:,:))
-    enddo
 
     !Building Tr(rho^2)
     trp2=0.d0
     do k=1,nstates
        do j=1,nsteps
-          trp2(j) = trp2(j) + rho2(j,k,k)
+          trp2(j) = trp2(j) + pop(j,k)**2
+       enddo
+    enddo    
+ 
+    do l=1,nstates
+       do k=1,nstates
+          do j=1,nsteps
+             if (l.ne.k) then
+                trp2(j) = trp2(j) + rho(j,k,l)**2
+             endif
+          enddo
        enddo
     enddo
  
@@ -322,7 +336,8 @@ program decoherence
        do m=1,nstates
           do j=1,nsteps
              trp2_err(j) = trp2_err(j) + (2.d0*rho(j,k,k)*rho_err(j,k,k))**2 
-             if (m.ne.k) trp2_err(j) = trp2_err(j) + 2.d0*(rho(j,m,k)*rho_err(j,m,k))**2
+             !if (m.ne.k) trp2_err(j) = trp2_err(j) + 2.d0*(rho(j,m,k)*rho_err(j,m,k))**2
+             if (m.ne.k) trp2_err(j) = trp2_err(j) + (2.d0*rho(j,m,k)*rho_err(j,m,k))**2
           enddo
        enddo
     enddo
@@ -421,11 +436,11 @@ program decoherence
 
   deallocate(i) 
   deallocate(t)
+  deallocate(norm)
   deallocate(rdum)
   deallocate(idum)
   deallocate(rpop)
   deallocate(rho)
-  deallocate(rho2)
   deallocate(perr)
   deallocate(pop)
   deallocate(rerr)
@@ -439,7 +454,6 @@ program decoherence
   deallocate(trp2)
   deallocate(trp2_err) 
   deallocate(rho_err)
-  deallocate(rho2_err)
   deallocate(l1)
   deallocate(l1_err)
   deallocate(l1_norm_eps)
