@@ -2,12 +2,12 @@
 mol_cc= 0. 0. 0.
 medium='sol'
 n_f=1 
+dt=0.20
+n_step=5000
+n_out=1
 / 
 
 &field 
-dt=0.20
-n_step=5000     
-n_out=1
 Ffld='snd'
 omega=0.5 
 sigma=10.,
@@ -16,12 +16,12 @@ radiative='non'
 fmax= 0. 0. 0.000001      
 /
 
+&sse dissipative='non'
+/
+
 &spectra start=80, 
 tau= 2000.0 2000.0
 dir_ft= 1. 1. 1. 
-/
-
-&sse dissipative='non'
 /
 
 ! Here starts the tdplas part

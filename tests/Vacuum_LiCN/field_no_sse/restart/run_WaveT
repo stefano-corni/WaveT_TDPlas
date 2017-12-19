@@ -1,0 +1,3 @@
+/s3_home/ecoccia/programs/WaveT.git/branches/restart/WaveT/bin/WaveT.x < test_vac_diss.inp > out 
+
+/s3_home/ecoccia/programs/WaveT.git/branches/restart/WaveT/bin/WaveT.x < restart.inp > out_restart

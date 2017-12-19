@@ -19,6 +19,8 @@ fmax=
 0.01 
 /
 
+&sse dissipative='non',idep=1,dis_prop='qjump',nrnd=0,tdis=0,nr_typ=1,krnd=0.0 /
+
 &spectra start=0, 
 
 tau=
@@ -31,4 +33,3 @@ dir_ft=
 0.0 
 /
 
-&sse dissipative='non',idep=1,dis_prop='qjump',nrnd=0,tdis=0,nr_typ=1,krnd=0.0 /

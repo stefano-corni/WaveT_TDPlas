@@ -28,10 +28,14 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!  DRIVER  ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-!------------------------------------------------------------------------
-!> SCF driver routine   
-!------------------------------------------------------------------------
       subroutine do_scf(q_or_f,c_prev)                  
+!------------------------------------------------------------------------
+! @brief SCF friver routine 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
        implicit none
        real(dbl), intent(INOUT):: q_or_f(:)     !< charges or field  
        complex(cmp), intent(INOUT) :: c_prev(:)  !< basis state coefficients
@@ -41,6 +45,7 @@
        real(dbl) :: e_scf, e_ini                !< GS energies
        real(dbl) :: fld(3)                      !  field from charges
        integer(i4b):: max_p(1)    
+
        write(6,*) "SCF Cycle"
        write(6,*) "Max_cycle ", ncycmax
        thrv=10**(-thrshld+2)
@@ -96,101 +101,149 @@
        c_i=0.d0
        c_i(max_p(1))=1.d0
        c_prev=c_i
-      return
+
+       return
+
       end subroutine
-!     
-!------------------------------------------------------------------------
-!> init/allocation SCF  
-!------------------------------------------------------------------------
+
+
       subroutine init_scf                      
+!------------------------------------------------------------------------
+! @brief Init/allocation SCF 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
        allocate(eigv_c(n_ci),eigt_c(n_ci,n_ci))
        allocate(eigv_cp(n_ci),eigt_cp(n_ci,n_ci))
        allocate(Htot(n_ci,n_ci))
        if(Fprop(1:3).eq."chr") allocate(pot(nts_act))
        allocate(c_c(n_ci))
-      return
+
+       return
+
       end subroutine
-!     
-!------------------------------------------------------------------------
-!> finalize/deallocation SCF  
-!------------------------------------------------------------------------
+
+
       subroutine finalize_scf                      
-      deallocate(eigv_c,eigt_c)
-      deallocate(eigv_cp,eigt_cp)
-      deallocate(Htot)
-      if(allocated(pot))deallocate(pot)
-      deallocate(c_c)
-      return
+!------------------------------------------------------------------------
+! @brief Finalize/deallocation SCF 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       deallocate(eigv_c,eigt_c)
+       deallocate(eigv_cp,eigt_cp)
+       deallocate(Htot)
+       if(allocated(pot))deallocate(pot)
+       deallocate(c_c)
+
+       return
+
       end subroutine
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!  SCF  ROUTINES     !!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-!------------------------------------------------------------------------
-!> Write the new coefficients in the old basis 
-!------------------------------------------------------------------------
       subroutine do_c_oldbasis                      
-      implicit none
-      integer(i4b):: max_p(1),i    
+!------------------------------------------------------------------------
+! @brief Write the new coefficients in the old basis 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       implicit none
+
+       integer(i4b):: max_p(1),i    
 ! SP 12/07/17: avoiding use of automatic arrays, especially in cycles   
-      !real(dbl) :: c_c(n_ci)
-      ! find the new eigenvector that is most similar to the old one
-      c_c=abs(matmul(c_i,eigt_c))
-      max_p=maxloc(c_c)
-      if(Fwrite.eq."high") write(6,*) 'maxloc',max_p(1)
-      c_c=0.d0
-      c_c(max_p(1))=1.d0
-      ! This is the new state on the basis of the old states  
-      c_c=matmul(eigt_c,c_c) 
-      ! write the state
-      if(Fwrite.eq."high") then
-        write(6,*) "State on the basis of original states"
-        do i=1,n_ci
-         write(6,*) i, c_c(i)
-        enddo
-        write(6,*)
-      endif
-      return
+       !real(dbl) :: c_c(n_ci)
+
+       ! find the new eigenvector that is most similar to the old one
+       c_c=abs(matmul(c_i,eigt_c))
+       max_p=maxloc(c_c)
+       if(Fwrite.eq."high") write(6,*) 'maxloc',max_p(1)
+       c_c=0.d0
+       c_c(max_p(1))=1.d0
+       ! This is the new state on the basis of the old states  
+       c_c=matmul(eigt_c,c_c) 
+       ! write the state
+       if(Fwrite.eq."high") then
+         write(6,*) "State on the basis of original states"
+         do i=1,n_ci
+          write(6,*) i, c_c(i)
+         enddo
+         write(6,*)
+       endif
+
+       return
+
       end subroutine
-!     
-!------------------------------------------------------------------------
-!> compute field from dipole 
-!------------------------------------------------------------------------
+
+
       subroutine do_field(f)                      
-      implicit none 
-      real(dbl), intent(OUT):: f(3)     
-      integer(i4b)::i    
-      do i=1,3
-        mu(i)=dot_product(c_c,matmul(mut(i,:,:),c_c))
-      enddo
-      ! SP 04/0717 matmul for general spheroid orientation
-      f=(1.-mix_coef)*f+mix_coef*matmul(mat_f0,mu)
-      return
+!------------------------------------------------------------------------
+! @brief Compute field from dipole 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       implicit none 
+
+       real(dbl), intent(OUT):: f(3)     
+       integer(i4b)::i    
+
+       do i=1,3
+         mu(i)=dot_product(c_c,matmul(mut(i,:,:),c_c))
+       enddo
+       ! SP 04/0717 matmul for general spheroid orientation
+       f=(1.-mix_coef)*f+mix_coef*matmul(mat_f0,mu)
+
+       return
+
       end subroutine
-!     
-!------------------------------------------------------------------------
-!> compute chrges from potential 
-!------------------------------------------------------------------------
+
+
       subroutine do_charges(q)                      
-      implicit none 
-      real(dbl), intent(OUT):: q(nts_act)     
-      integer(i4b)::i    
+!------------------------------------------------------------------------
+! @brief Compute charges from potential 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       implicit none 
+
+       real(dbl), intent(OUT):: q(nts_act)     
+       integer(i4b)::i    
+
        do i=1,nts_act
          pot(i)=dot_product(c_c,matmul(vts(i,:,:),c_c))
        enddo 
        q=(1.-mix_coef)*q+mix_coef*matmul(BEM_Q0,pot)
 ! SC 12/8/2016: apparently for NP, charge compensation is needed
        if (Fmdm(2:4).eq.'nan') q=q-sum(q)/nts_act
-      return
+
+       return
+
       end subroutine
-!     
-!------------------------------------------------------------------------
-!> compute hamiltonian with new charges 
-!------------------------------------------------------------------------
+
+
       subroutine do_matrix_q(q)                      
-      real(dbl), intent(IN):: q(nts_act)     
-      integer(4)::j,k     
+!------------------------------------------------------------------------
+! @brief Compute Hamiltonian with new charges 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       real(dbl), intent(IN):: q(nts_act)     
+       integer(4)::j,k     
+
        do j=1,n_ci
          do k=1,j   
            Htot(k,j)=-dot_product(vts(:,k,j),q(:)-q0(:))
@@ -199,15 +252,23 @@
          Htot(j,j)=Htot(j,j)+e_ci(j)
          if(Fwrite.eq."high") write(6,*) j,Htot(j,j)
        enddo
-      return
+
+       return
+
       end subroutine
-!     
-!------------------------------------------------------------------------
-!> compute hamiltonian with new field  
-!------------------------------------------------------------------------
+
+
       subroutine do_matrix_f(f)                      
-      real(dbl), intent(IN):: f(3)     
-      integer(4)::i,j,k     
+!------------------------------------------------------------------------
+! @brief Compute Hamiltonian with new field 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       real(dbl), intent(IN):: f(3)     
+       integer(4)::i,j,k     
+
        do j=1,n_ci
          do k=1,j   
            Htot(k,j)=dot_product(mut(:,k,j),f(:)-fr_0(:))
@@ -216,17 +277,25 @@
          Htot(j,j)=Htot(j,j)+e_ci(j)
          if(Fwrite.eq."high") write(6,*) j,Htot(j,j)
        enddo
-      return
+
+       return
+
       end subroutine
-!     
-!------------------------------------------------------------------------
-!> Check convergence                   
-!------------------------------------------------------------------------
+
+
       subroutine check_conv(mxe,mxv,Mdim)                       
+!------------------------------------------------------------------------
+! @brief Check convergence 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
        real(dbl),intent(inout) :: mxe,mxv
        integer(i4b),intent(in) :: Mdim 
        integer(i4b) :: i,j
        real(dbl):: diff               
+
        mxv=zero                
        mxe=zero          
 !       write(6,*)
@@ -240,23 +309,34 @@
            if(diff.gt.mxv) mxv=diff
          enddo
        enddo
-      return
+
+       return
+
       end subroutine
-!     
-!------------------------------------------------------------------------
-!> Define total energy                 
-!------------------------------------------------------------------------
+
+
       subroutine do_energies(e_scf,e_ini)
-      implicit none
-      integer(4) :: i
-      real(8) :: e_scf,e_ini
-      e_scf=0.d0
-      e_ini=0.d0
-      do i=1,n_ci
-       e_scf=e_scf+abs(c_i(i))*abs(c_i(i))*eigv_c(i)
-       e_ini=e_ini+abs(c_i(i))*abs(c_i(i))*e_ci(i)
-      enddo
-      return
+!------------------------------------------------------------------------
+! @brief Define total energy 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       implicit none
+
+       integer(4) :: i
+       real(8) :: e_scf,e_ini
+
+       e_scf=0.d0
+       e_ini=0.d0
+       do i=1,n_ci
+        e_scf=e_scf+abs(c_i(i))*abs(c_i(i))*eigv_c(i)
+        e_ini=e_ini+abs(c_i(i))*abs(c_i(i))*e_ci(i)
+       enddo
+
+       return
+
       end subroutine
 !
 !
@@ -264,13 +344,19 @@
 !!!!!!!!!!!!!!!!!!!!!! OUTPUT/TRANSFORMATION ROUTINES !!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-!------------------------------------------------------------------------
-!> write out the charges in the charges0_scf.dat file
-!------------------------------------------------------------------------
       subroutine out_charges(q)
-      implicit none
-      real(dbl), intent(IN):: q(nts_act)     
-      integer(i4b) its
+!------------------------------------------------------------------------
+! @brief Write out the charges in the charges0_scf.dat file 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       implicit none
+
+       real(dbl), intent(IN):: q(nts_act)     
+       integer(i4b) its
+
        open(unit=7,file="charges0_scf.inp",status="unknown", &
             form="formatted")
          write (7,*) nts_act
@@ -282,15 +368,25 @@
        ! SP 23/10/16: update the q0 vector to have a consistent correction if a
        !              propagation is performed after the SCF cycle
        q0(:)=q(:)
-      return 
+
+       return 
+
       end subroutine      
-!     
-!------------------------------------------------------------------------
-!> transform to the new basis and write out potential integrals on tesserae (vts)     
-!------------------------------------------------------------------------
+
+
       subroutine out_vts
-      implicit none
-      integer(i4b) :: its,i,j
+!------------------------------------------------------------------------
+! @brief Transform to the new basis and write out potential integrals on
+! tesserae (vts) 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       implicit none
+
+       integer(i4b) :: its,i,j
+
        do its=1,nts_act
         vts(its,:,:)=matmul(vts(its,:,:),eigt_c)
         vts(its,:,:)=matmul(transpose(eigt_c),vts(its,:,:))
@@ -323,15 +419,24 @@
        enddo
        close(unit=7)
        write(6,*) "Written out the SCF potentials"
-      return 
+
+       return 
+
       end subroutine      
-!     
-!------------------------------------------------------------------------
-!> transform to the new basis and write out dipole integrals (mut)     
-!------------------------------------------------------------------------
+
+
       subroutine out_dipoles
-      implicit none
-      integer(i4b) :: its,i,j
+!------------------------------------------------------------------------
+! @brief Transform to the new basis and write out dipole integrals (mut)  
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       implicit none
+
+       integer(i4b) :: its,i,j
+
        do its=1,3
         mut(its,:,:)=matmul(mut(its,:,:),eigt_c)
         mut(its,:,:)=matmul(transpose(eigt_c),mut(its,:,:))
@@ -349,16 +454,24 @@
        enddo
        close(unit=7)
        write(6,*) "Written out the SCF dipoles"
-      return 
+
+       return 
+
       end subroutine      
-! Put the new diagonal energy of the hamiltonian
-!     
-!------------------------------------------------------------------------
-!> write out new energies and reset the zero of energy     
-!------------------------------------------------------------------------
+
+
       subroutine out_energies
-      implicit none
-      integer(i4b) :: i
+!------------------------------------------------------------------------
+! @brief Write out new energies and reset the zero of energy
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       implicit none
+
+       integer(i4b) :: i
+
        e_ci=eigv_c
        open(unit=7,file="ci_energy_scf.inp",status="unknown", &
            form="formatted")
@@ -368,8 +481,10 @@
        close(unit=7)
        write(6,*) "Written out the SCF energies,", &
                " GS has been given zero energy!"
-      return 
+
+       return 
+
       end subroutine      
-!
-!
+
+
       end module
