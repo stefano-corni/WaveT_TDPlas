@@ -1,0 +1,2 @@
+Calculation with an external electric field and restart.
+Restart is not Gaussian-like, one can change parameters in the input (event though changing field could be weird). Moreover, the number of states must be unchanged.

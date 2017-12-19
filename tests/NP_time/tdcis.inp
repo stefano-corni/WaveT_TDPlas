@@ -18,14 +18,14 @@ radiative='non'
 fmax= 0.000001 0. 0.
 /
 
+&sse
+dissipative='non'
+/
+
 &spectra 
 start=0.  
 tau= 2000.0 2000.0
 dir_ft= 1. 0. 0. 
-/
-
-&sse 
-dissipative='non'
 /
 
 ! Here starts the tdplas part

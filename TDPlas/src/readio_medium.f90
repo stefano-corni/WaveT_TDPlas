@@ -20,6 +20,9 @@
       real(dbl), allocatable :: vts(:,:,:)       !<transition potentials on tesserae from cis
       real(dbl), allocatable :: vtsn(:)          !<nuclear potential on tesserae
       real(dbl), allocatable :: q0(:)            !< Charges at time 0 defined with Finit_mdm, here because used in scf
+      ! Restart
+      !real(dbl)              :: fr_i(3),fx_i(3)  !< restart Onsager 
+      !real(dbl), allocatable :: qr_i(:),qx_i(:)  !< restart pcm  
 ! Dielectric function variables 
       real(dbl) :: eps_0,eps_d                   !< $\omega \rightarrow 0$ and $\omega \rightarrow \infty$ limits of $\epsilon(\omega)$
       real(dbl) :: tau_deb                       !< Debye's $\tau_D$
@@ -51,7 +54,8 @@
                         Fwrite,    & !< Modulates the level of output "low" and "high"
                         Fmdm_relax,& !< Medium charges follow the quantum jump "rel" or not "non"
                         Ftest,     & !< Test Flag: see below
-                        Fdeb         !< Debug Flag: see below
+                        Fdeb       !< Debug Flag: see below
+                        !Fmdm_res     !< Medium restart
                                      !! 
       
 ! namelists user-friendly variables 
@@ -85,22 +89,27 @@
              ncycmax,thrshld,mix_coef,                               &
              FinitBEM,Fsurf,Finit_mdm,read_medium_freq,              &
              read_medium_tdplas,n_omega,omega_ini,omega_end,         &
-             Fwrite,Fmdm_relax 
+             Fwrite,Fmdm_relax!,Fmdm_res,fr_i,fx_i,qr_i,qx_i,         &
+             !read_medium_restart 
 !
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!  DRIVER  ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-!------------------------------------------------------------------------
-!> Driver read_medium routine for propagation
-!------------------------------------------------------------------------
       subroutine read_medium
+!------------------------------------------------------------------------
+! @brief Driver routine for reading medium input 
+!
+! @date Created: S. Pipolo
+! Modified: E. Coccia
+!------------------------------------------------------------------------
+
        namelist /propagate/interaction_stride,interaction_init,        &
                          interaction_type,propagation_type,            &
                          scf_mix_coeff,scf_max_cycles,scf_threshold,   &
                          local_field,debug_type,out_level,test_type,   &
-                         medium_relax    
+                         medium_relax
        namelist /medium/ medium_type,medium_init,medium_pol,bem_type,  &
                          bem_read_write                   
        namelist /surface/input_surface,spheres_number,spheroids_number,&
@@ -127,13 +136,20 @@
        read(*,nml=eps_function) 
        call write_nml_eps_function()
        call write_nml_all()
+
        return
+
       end subroutine
-!     
-!------------------------------------------------------------------------
-!> Driver read_medium routine for main_freq
-!------------------------------------------------------------------------
+
+
       subroutine read_medium_freq
+!------------------------------------------------------------------------
+! @brief Driver routine for reading medium input form main_freq 
+!
+! @date Created: S. Pipolo
+! Modified: E. Coccia
+!------------------------------------------------------------------------
+
        namelist /freq/ fmax,n_omega,omega_ini,omega_end,debug_type, &
                        out_level,test_type
 ! SP 13/07/18:: medium and surface not used but added for future implementations
@@ -144,28 +160,36 @@
          spheroid_axis_x,spheroid_axis_y,spheroid_axis_z,              &
          spheroid_position_x,spheroid_position_y,spheroid_position_z,  &
          sphere_radius,spheroid_radius                                
-      namelist /eps_function/epsilon_omega,eps_0,eps_d,eps_A, &
+       namelist /eps_function/epsilon_omega,eps_0,eps_d,eps_A, &
                          eps_gm,eps_w0,f_vel,tau_deb       
-      call init_nml_all() 
-      call init_nml_freq()
-      read(*,nml=freq) 
-      write(*,nml=freq)
-      read(*,nml=medium) 
-      write(*,nml=medium)
-      call write_nml_medium() 
-      read(*,nml=surface) 
-      call write_nml_surface() 
-      read(*,nml=eps_function) 
-      write(*,nml=eps_function)
-      call write_nml_eps_function()
-      call write_nml_all() 
-      return
+       call init_nml_all() 
+       call init_nml_freq()
+       read(*,nml=freq) 
+       write(*,nml=freq)
+       read(*,nml=medium) 
+       write(*,nml=medium)
+       call write_nml_medium() 
+       read(*,nml=surface) 
+       call write_nml_surface() 
+       read(*,nml=eps_function) 
+       write(*,nml=eps_function)
+       call write_nml_eps_function()
+       call write_nml_all() 
+
+       return
+
       end subroutine
-!     
-!------------------------------------------------------------------------
-!> Driver read_medium routine for main_tdplas (to be merged with read_medium)
-!------------------------------------------------------------------------
+
+
       subroutine read_medium_tdplas
+!------------------------------------------------------------------------
+! @brief Driver routine for main_tdplas 
+!
+! @date Created: S. Pipolo
+! Modified: E. Coccia
+!------------------------------------------------------------------------
+
+
        !namelist /tdplas/ debug
        namelist /medium/ medium_type,medium_init,medium_pol,bem_type,  &
                          bem_read_write,out_level,debug_type,test_type 
@@ -186,7 +210,9 @@
        read(*,nml=eps_function) 
        call write_nml_eps_function()
        call write_nml_all()
+
        return
+
       end subroutine
 !
 !
@@ -194,11 +220,15 @@
 !!!!!!!!!!!!!!!!!!!!!  INITIALIZATION  ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-!------------------------------------------------------------------------
-!> Initialize variables for all mains to safe values even if not used in 
-!!  a specific calculation they are defined in this module. 
-!------------------------------------------------------------------------
       subroutine init_nml_all 
+!------------------------------------------------------------------------
+! @brief Initialize variables for all mains to safe values 
+!
+! @date Created: S. Pipolo
+! Modified: E. Coccia
+!------------------------------------------------------------------------
+
+
        ! Output and debug
        out_level="low"
        debug_type="non"
@@ -225,13 +255,20 @@
        medium_init='fro'
        MPL_ord=1 ! SP 29/06/17: multipole order (not used)
        nts_act=0 
-      return
+
+       return
+
       end subroutine
-!     
-!------------------------------------------------------------------------
-!> Initialize variables for propagation main (will be tdplas) 
-!------------------------------------------------------------------------
+
+
       subroutine init_nml_propagate()
+!------------------------------------------------------------------------
+! @brief Initialize variables for propagation main (will be tdplas) 
+!
+! @date Created: S. Pipolo
+! Modified: E. Coccia
+!------------------------------------------------------------------------
+
        medium_init='fro'
        medium_type='nan'
        medium_pol='chr'
@@ -244,12 +281,12 @@
        input_surface='fil'
        propagation_type='ief'
        local_field='loc'
+
        return
+
       end subroutine 
-!     
-!------------------------------------------------------------------------
-!> Initialize variables for nanoparticle                                        
-!------------------------------------------------------------------------
+
+
       subroutine init_nml_nanoparticle()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist nanoparticle 
@@ -258,6 +295,7 @@
 ! Modified  : SP 10/07/17
 ! @param epsilon_omega,eps_0,eps_d,eps_A,eps_gm,eps_w0,f_vel
 !------------------------------------------------------------------------
+
        epsilon_omega='drl'
        tau_deb=1000.
        eps_0=1000. 
@@ -266,12 +304,12 @@
        eps_gm=0.000757576
        eps_w0=0. 
        f_vel=0. 
+
        return
+
       end subroutine init_nml_nanoparticle
-!     
-!------------------------------------------------------------------------
-!> Initialize variables for solvent                                             
-!------------------------------------------------------------------------
+
+
       subroutine init_nml_solvent()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist solvent 
@@ -280,6 +318,7 @@
 ! Modified  : SP 10/07/17
 ! @param epsilon_omega,eps_0,eps_d,eps_A,eps_gm,eps_w0,f_vel
 !------------------------------------------------------------------------
+
        epsilon_omega='deb'
        tau_deb=1000.
        eps_0=35.688
@@ -288,12 +327,12 @@
        eps_gm=0.000757576
        eps_w0=0.0
        f_vel=0.0
+
        return
+
       end subroutine init_nml_solvent
-!     
-!------------------------------------------------------------------------
-!> Initialize variables for main_freq                                           
-!------------------------------------------------------------------------
+
+
       subroutine init_nml_freq()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist freq 
@@ -301,6 +340,7 @@
 ! @date Created   : E. Coccia 11 May 2017
 ! Modified  : SP 10/07/17
 !------------------------------------------------------------------------
+
        ! SP: No propagation: Fprop set to other than "dip" or "chr" 
        Fprop="non"
        medium_type='nan'
@@ -321,12 +361,12 @@
        omega_end= 0.35
        ! The following are not 
        interaction_type='pcm'
+
        return
+
       end subroutine init_nml_freq
-!     
-!------------------------------------------------------------------------
-!> Initialize variables for main_tdplas                                         
-!------------------------------------------------------------------------
+
+
       subroutine init_nml_tdplas()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist tdplas 
@@ -334,6 +374,7 @@
 ! @date Created   : E. Coccia 16 May 2017
 ! Modified  : SP 14/07/17
 !------------------------------------------------------------------------
+
        ! SP: No propagation: Fprop set to other than "dip" or "chr" 
        Fprop="non"
        medium_type='nan'
@@ -349,7 +390,9 @@
        eps_w0=zero
        eps_gm=0.000757576
        f_vel=zero
+
        return
+
       end subroutine init_nml_tdplas
 !
 !
@@ -357,10 +400,14 @@
 !!!!!!!!!!!!!!!!!!  VARIABLE DEFINITION ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-!------------------------------------------------------------------------
-!> Write variables for all mains                                        
-!------------------------------------------------------------------------
       subroutine write_nml_all 
+!------------------------------------------------------------------------
+! @brief Write variables for all mains 
+!      
+! @date Created: S. Pipolo
+! Modified: E. Coccia
+!------------------------------------------------------------------------
+
        ! Output level
        select case (out_level)
         case ('high','High','HIGH')
@@ -415,13 +462,20 @@
        case default
         Fdeb='non'
        end select
-      return
+
+       return
+
       end subroutine
-!     
-!------------------------------------------------------------------------
-!> Write variables for common to solvent and nanoparticle          
-!------------------------------------------------------------------------
+
+
       subroutine write_nml_propagate()
+!------------------------------------------------------------------------
+! @brief Write solvent and nanoparticle shared variables 
+!      
+! @date Created: S. Pipolo
+! Modified: E. Coccia
+!------------------------------------------------------------------------
+
        ! propagation_type refers to which quantity is propagated by equations of motions
        !   dip: only the dipolar (i.e., Onsager) reaction/local field/dipole is propagated
        !   ief,ied,ons: the apparent charges are propagated, within different schemes
@@ -466,12 +520,21 @@
            Fmdm_relax="non"
            !np_relax=.true.
        end select
-      return
+! EC 281117: added restart for medium
+       !select case(medium_res)
+       !   case ('y','Y')
+       !    write(*,*) 'Restart for medium'
+       !    Fmdm_res='Yesr'
+       !    call read_medium_restart()
+       !   case ('n','N')
+       !    Fmdm_res='Nonr' 
+       !end select
+
+       return
+
       end subroutine
-!     
-!------------------------------------------------------------------------
-!> Write variables for main_tdplas (already defined in write_nml_medium)
-!------------------------------------------------------------------------
+
+
       subroutine write_nml_tdplas()
 !------------------------------------------------------------------------
 ! @brief Write variables in the namelist tdplas and put conditions 
@@ -483,13 +546,19 @@
 !------------------------------------------------------------------------
        return
       end subroutine  write_nml_tdplas
-!     
-!------------------------------------------------------------------------
-!> Write variables for common to solvent and nanoparticle          
-!------------------------------------------------------------------------
+
+
       subroutine write_nml_eps_function()
+!------------------------------------------------------------------------
+! @brief Write solvent and nanoparticle shared variables 
+!      
+! @date Created: S. Pipolo
+! Modified: E. Coccia
+!------------------------------------------------------------------------
+
        real(dbl)::a,b,c
        integer(i4b)::i,j
+
        select case (epsilon_omega)
          case ('deb','Deb','DEB')
            Feps='deb'
@@ -499,13 +568,20 @@
            write(*,*) "Error, specify eps(omega) type DEB or DRL"
            stop
        end select        
-      return
+
+       return
+
       end subroutine
-!     
-!------------------------------------------------------------------------
-!> Write variables for common to solvent and nanoparticle          
-!------------------------------------------------------------------------
+
+
       subroutine write_nml_interaction()
+!------------------------------------------------------------------------
+! @brief Write solvent and nanoparticle shared variables 
+!      
+! @date Created: S. Pipolo
+! Modified: E. Coccia
+!------------------------------------------------------------------------
+
        n_q=interaction_stride
        write(*,*) 'Frequency of updating the interaction potential', n_q
        select case(interaction_init)
@@ -548,13 +624,20 @@
          write(*,*) "Error, specify interaction type ONS or PCM"
          stop
        end select
-      return
+
+       return
+
       end subroutine
-!     
-!------------------------------------------------------------------------
-!> Write variables for common to solvent and nanoparticle          
-!------------------------------------------------------------------------
+
+
       subroutine write_nml_medium()
+!------------------------------------------------------------------------
+! @brief Write solvent and nanoparticle shared variables 
+!      
+! @date Created: S. Pipolo
+! Modified: E. Coccia
+!------------------------------------------------------------------------
+
 ! PER STEFANO:
 ! SP 14/07/17: medium_type is the same of medium in maedium.f90 except for the vacuum case
 !              the medium type could be specified at this level and the activation of the 
@@ -645,16 +728,25 @@
           stop
          end select
        endif     
+
        return
+
       end subroutine 
-!     
-!------------------------------------------------------------------------
-!> Write variables for surface/medium object                       
+
+
 !------------------------------------------------------------------------
 ! SP 14/07/17 calculations should probably go in a different module. which one?
 !             Probably pedra_firends....
       subroutine write_nml_surface()
+!------------------------------------------------------------------------
+! @brief Write variables for surface/medium object 
+!      
+! @date Created: S. Pipolo
+! Modified: E. Coccia
+!------------------------------------------------------------------------
+
        integer(i4b)::i,j
+
        if (spheres_number.gt.0) nsph=spheres_number
        if (spheroids_number.gt.0) nsph=spheroids_number
        if (Fprop(1:3).eq.'dip') then
@@ -737,7 +829,9 @@
           stop
          end select
        endif
+
        return
+
       end subroutine 
 !
 !
@@ -745,12 +839,17 @@
 !!!!!!!!!!!!!!!!!!!!!!  READ/WRITE ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-!------------------------------------------------------------------------
-!> Read spheres/oids parameters from file    
-!------------------------------------------------------------------------
       subroutine read_sph_fromfile
+!------------------------------------------------------------------------
+! @brief Read spheres/oids parameters from file 
+!      
+! @date Created: S. Pipolo
+! Modified: E. Coccia
+!------------------------------------------------------------------------
+
        integer(i4b) :: i,j,its
        real(dbl)  :: scr       
+
        open(7,file="sph.inp",status="old")
        read(7,*) scr 
        if(scr.ne.nsph) then
@@ -763,16 +862,25 @@
          read(7,*) (sph_centre(j,i),j=1,3),sph_min, &
                    (sph_vrs(j,1,i),j=1,3) 
        enddo
+
        close(7)
+
        return
+
       end subroutine
-!     
-!------------------------------------------------------------------------
-!> Read transition potentials on tesserae    
-!------------------------------------------------------------------------
+
+
       subroutine read_gau_out_medium
+!------------------------------------------------------------------------
+! @brief Read transition potentials on tesserae 
+!      
+! @date Created: S. Pipolo
+! Modified: E. Coccia
+!------------------------------------------------------------------------
+
        integer(i4b) :: i,j,its,nts
        real(dbl)  :: scr       
+
        open(7,file="ci_pot.inp",status="old")
        read(7,*) nts
        if(nts_act.eq.0.or.nts.eq.nts_act) then
@@ -826,14 +934,22 @@
         endif
        enddo
        close(7)
+
        return
+
       end subroutine
-!     
-!------------------------------------------------------------------------
-!> Output surface.xyz file (SP: who's using this?)                  
-!------------------------------------------------------------------------
+
+
       subroutine output_surf
+!------------------------------------------------------------------------
+! @brief Output surface.xyz file 
+!      
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
        integer :: i
+
        open(unit=7,file="surface.xyz",status="unknown",form="formatted")
         write (7,*) nts_act
         do i=1,nts_act
@@ -841,11 +957,16 @@
         enddo
        close(unit=7)
       end subroutine
-!     
-!------------------------------------------------------------------------
-!> Deallocate medium arrays defined here             
-!------------------------------------------------------------------------
+
+
       subroutine deallocate_medium
+!------------------------------------------------------------------------
+! @brief Deallocate medium arrays 
+!      
+! @date Created: S. Pipolo
+! Modified: E. Coccia
+!------------------------------------------------------------------------
+
        if(allocated(q0)) deallocate(q0)
        if(allocated(vts)) deallocate(vts)
        if(allocated(vtsn)) deallocate(vtsn)
@@ -853,7 +974,62 @@
        if(allocated(sph_min)) deallocate(sph_min)
        if(allocated(sph_vrs)) deallocate(sph_vrs)
        if(allocated(sph_centre)) deallocate(sph_centre)
+
        return
+
       end subroutine
+
+     
+!      subroutine read_medium_restart() 
+!------------------------------------------------------------------------
+! @brief Read restart 
+!
+! @date Created   : E. Coccia 28 Nov 2017
+! Modified  :
+!------------------------------------------------------------------------
+       
+!       implicit none
+
+!       integer(i4b)     :: i
+!       character(3)     :: cdum 
+!       logical          :: exist
+
+!       inquire(file='restart_mdm', exist=exist)
+!       if (exist) then
+!          open(779, file='restart_mdm', status="old")
+!       else
+!          write(*,*) 'ERROR:  file restart_mdm is missing'
+!          stop
+!       endif
+
+       !if (Fint.eq.'ons') then
+!          read(779,*) cdum 
+!          do i=1,3
+!             read(779,*) fr_i(1), fr_i(2), fr_i(3)
+!          enddo
+!          if (Floc.eq.'loc') then
+!             read(779,*) cdum 
+!             do i=1,3
+!                read(779,*) fx_i(1), fx_i(2), fx_i(3)
+!             enddo
+!          endif
+       !elseif (Fint.eq.'pcm') then
+!          read(779,*) cdum 
+!          do i=1,nts_act
+!             read(779,*) qr_i(i)
+!          enddo
+!          if (Floc.eq.'loc') then
+!             read(779,*) cdum 
+!             do i=1,nts_act
+!                read(779,*) qx_i(i)
+!             enddo
+!          endif
+       !endif
+
+!       close(779)
+
+!       return
+
+!      end subroutine read_medium_restart
 
  end module

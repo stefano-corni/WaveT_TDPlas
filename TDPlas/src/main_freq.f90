@@ -28,5 +28,7 @@
             F10.3,"s")') real(current-st)/real(rate)
 !         
       deallocate(omega_list)
+
       stop
-      end
+
+      end program tdcis

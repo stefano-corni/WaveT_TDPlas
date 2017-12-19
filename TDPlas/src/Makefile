@@ -14,7 +14,8 @@ FFLAGS_GF= -O3
 LDLAGS= 
 #LDLAGS= --static --disable-shared --enable-static
 #FFLAGS= $(FFLAGS_DEB)
-FFLAGS= $(FFLAGS_GF_DEB)
+#FFLAGS= $(FFLAGS_GF_DEB)
+FFLAGS=$(FFLAGS_HYD_PAR) #-check bounds 
 #LIBS = -L/usr/lib -llapack  -lblas 
 #LIBS =  -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lpthread
 LIBS =  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
@@ -45,7 +46,7 @@ $(BINPATH)/freq_bem.x: $(OBJ_FREQ)
 	$(FC) $(FFLAGS) -o $@ $(OBJ_FREQ) $(LIBS) $(LIBSF)
 
 clean:
-	rm -f *.o *.mod *.il $(BINPATH)/*.x
+	rm -f *.o *.mod *.il *.optrpt $(BINPATH)/*.x
 
 constants.o: constants.f90
 	$(FC) $(FFLAGS) $(INC) -c $< -o $@

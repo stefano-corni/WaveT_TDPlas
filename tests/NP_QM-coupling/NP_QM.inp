@@ -4,12 +4,12 @@ n_ci_read=1
 mol_cc= 0.0 0.0 0.0
 medium='qna'
 n_f=1
-/ 
-
-&field 
 dt=0.20
 n_step=10000
 n_out=1
+/ 
+
+&field 
 Ffld='snd'
 omega=0.26
 sigma=10,
@@ -18,15 +18,16 @@ radiative='non'
 fmax= 0.00001 0.0 0.0 
 /
 
+&sse
+dissipative='non'
+/
+
 &spectra 
 start=80 
 tau= 2000.0 2000.0
 dir_ft= 1.0 1.0 1.0 
 /
 
-&sse 
-dissipative='non'
-/
 
 ! Here starts the tdplas part
 !

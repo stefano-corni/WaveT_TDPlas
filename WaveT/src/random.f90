@@ -100,8 +100,8 @@ CONTAINS
 
 
 FUNCTION random_normal() RESULT(fn_val)
-
-! Adapted from the following Fortran 77 code
+!----------------------------------------------------------------------------------
+! @brief Adapted from the following Fortran 77 code
 !      ALGORITHM 712, COLLECTED ALGORITHMS FROM ACM.
 !      THIS WORK PUBLISHED IN TRANSACTIONS ON MATHEMATICAL SOFTWARE,
 !      VOL. 18, NO. 4, DECEMBER, 1992, PP. 434-435.
@@ -111,6 +111,10 @@ FUNCTION random_normal() RESULT(fn_val)
 
 !  The algorithm uses the ratio of uniforms method of A.J. Kinderman
 !  and J.F. Monahan augmented with quadratic bounding curves.
+!
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 
 REAL :: fn_val
 
@@ -147,17 +151,20 @@ END FUNCTION random_normal
 
 
 FUNCTION random_gamma(s, first) RESULT(fn_val)
-
-! Adapted from Fortran 77 code from the book:
+!----------------------------------------------------------------------------------
+! @brief Adapted from Fortran 77 code from the book:
 !     Dagpunar, J. 'Principles of random variate generation'
 !     Clarendon Press, Oxford, 1988.   ISBN 0-19-852202-9
-
+!
 !     FUNCTION GENERATES A RANDOM GAMMA VARIATE.
 !     CALLS EITHER random_gamma1 (S > 1.0)
 !     OR random_exponential (S = 1.0)
 !     OR random_gamma2 (S < 1.0).
-
+!
 !     S = SHAPE PARAMETER OF DISTRIBUTION (0 < REAL).
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 
 REAL, INTENT(IN)    :: s
 LOGICAL, INTENT(IN) :: first
@@ -182,12 +189,15 @@ END FUNCTION random_gamma
 
 
 FUNCTION random_gamma1(s, first) RESULT(fn_val)
-
-! Uses the algorithm in
+!----------------------------------------------------------------------------------
+! @brief Uses the algorithm in
 ! Marsaglia, G. and Tsang, W.W. (2000) `A simple method for generating
 ! gamma variables', Trans. om Math. Software (TOMS), vol.26(3), pp.363-372.
-
+!
 ! Generates a random gamma deviate for shape parameter s >= 1.
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 
 REAL, INTENT(IN)    :: s
 LOGICAL, INTENT(IN) :: first
@@ -231,19 +241,21 @@ END FUNCTION random_gamma1
 
 
 FUNCTION random_gamma2(s, first) RESULT(fn_val)
-
-! Adapted from Fortran 77 code from the book:
+!---------------------------------------------------------------------------------
+! @brief Adapted from Fortran 77 code from the book:
 !     Dagpunar, J. 'Principles of random variate generation'
 !     Clarendon Press, Oxford, 1988.   ISBN 0-19-852202-9
-
+!
 ! FUNCTION GENERATES A RANDOM VARIATE IN [0,INFINITY) FROM
 ! A GAMMA DISTRIBUTION WITH DENSITY PROPORTIONAL TO
 ! GAMMA2**(S-1) * EXP(-GAMMA2),
 ! USING A SWITCHING METHOD.
-
+!
 !    S = SHAPE PARAMETER OF DISTRIBUTION
 !          (REAL < 1.0)
-
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 REAL, INTENT(IN)    :: s
 LOGICAL, INTENT(IN) :: first
 REAL                :: fn_val
@@ -301,9 +313,13 @@ END FUNCTION random_gamma2
 
 
 FUNCTION random_chisq(ndf, first) RESULT(fn_val)
-
-!     Generates a random variate from the chi-squared distribution with
-!     ndf degrees of freedom
+!----------------------------------------------------------------------------------
+! @brief    Generates a random variate from the chi-squared distribution with
+!           ndf degrees of freedom
+!
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 
 INTEGER, INTENT(IN) :: ndf
 LOGICAL, INTENT(IN) :: first
@@ -344,12 +360,16 @@ END FUNCTION random_exponential
 
 
 FUNCTION random_Weibull(a) RESULT(fn_val)
-
-!     Generates a random variate from the Weibull distribution with
-!     probability density:
+!---------------------------------------------------------------------------------
+! @brief  Generates a random variate from the Weibull distribution with
+!         probability density:
 !                      a
 !               a-1  -x
 !     f(x) = a.x    e
+!
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 
 REAL, INTENT(IN) :: a
 REAL             :: fn_val
@@ -364,18 +384,22 @@ END FUNCTION random_Weibull
 
 
 FUNCTION random_beta(aa, bb, first) RESULT(fn_val)
-
-! Adapted from Fortran 77 code from the book:
+!----------------------------------------------------------------------------------
+! @brief Adapted from Fortran 77 code from the book:
 !     Dagpunar, J. 'Principles of random variate generation'
 !     Clarendon Press, Oxford, 1988.   ISBN 0-19-852202-9
-
+!
 ! FUNCTION GENERATES A RANDOM VARIATE IN [0,1]
 ! FROM A BETA DISTRIBUTION WITH DENSITY
 ! PROPORTIONAL TO BETA**(AA-1) * (1-BETA)**(BB-1).
 ! USING CHENG'S LOG LOGISTIC METHOD.
-
+!
 !     AA = SHAPE PARAMETER FROM DISTRIBUTION (0 < REAL)
 !     BB = SHAPE PARAMETER FROM DISTRIBUTION (0 < REAL)
+!
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 
 REAL, INTENT(IN)    :: aa, bb
 LOGICAL, INTENT(IN) :: first
@@ -441,16 +465,19 @@ END FUNCTION random_beta
 
 
 FUNCTION random_t(m) RESULT(fn_val)
-
-! Adapted from Fortran 77 code from the book:
+!----------------------------------------------------------------------------------
+! @brief Adapted from Fortran 77 code from the book:
 !     Dagpunar, J. 'Principles of random variate generation'
 !     Clarendon Press, Oxford, 1988.   ISBN 0-19-852202-9
-
+!
 ! FUNCTION GENERATES A RANDOM VARIATE FROM A
 ! T DISTRIBUTION USING KINDERMAN AND MONAHAN'S RATIO METHOD.
-
+!
 !     M = DEGREES OF FREEDOM OF DISTRIBUTION
 !           (1 <= 1NTEGER)
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 
 INTEGER, INTENT(IN) :: m
 REAL                :: fn_val
@@ -502,16 +529,16 @@ END FUNCTION random_t
 
 
 SUBROUTINE random_mvnorm(n, h, d, f, first, x, ier)
-
-! Adapted from Fortran 77 code from the book:
+!-----------------------------------------------------------------------------------
+! @brief Adapted from Fortran 77 code from the book:
 !     Dagpunar, J. 'Principles of random variate generation'
 !     Clarendon Press, Oxford, 1988.   ISBN 0-19-852202-9
-
+!
 ! N.B. An extra argument, ier, has been added to Dagpunar's routine
-
+!
 !     SUBROUTINE GENERATES AN N VARIATE RANDOM NORMAL
 !     VECTOR USING A CHOLESKY DECOMPOSITION.
-
+!
 ! ARGUMENTS:
 !        N = NUMBER OF VARIATES IN VECTOR
 !           (INPUT,INTEGER >= 1)
@@ -525,14 +552,17 @@ SUBROUTINE random_mvnorm(n, h, d, f, first, x, ier)
 !    F((J-1)*(2*N-J)/2+I) = (I,J)'TH ELEMENT OF LOWER TRIANGULAR
 !           DECOMPOSITION OF VARIANCE MATRIX (J <= I)
 !            (OUTPUT,REAL)
-
+!
 !    FIRST = .TRUE. IF THIS IS THE FIRST CALL OF THE ROUTINE
 !    OR IF THE DISTRIBUTION HAS CHANGED SINCE THE LAST CALL OF THE ROUTINE.
 !    OTHERWISE SET TO .FALSE.
 !            (INPUT,LOGICAL)
-
+!
 !    ier = 1 if the input covariance matrix is not +ve definite
 !        = 0 otherwise
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 
 INTEGER, INTENT(IN)   :: n
 REAL, INTENT(IN)      :: h(:), d(:)   ! d(n*(n+1)/2)
@@ -603,19 +633,21 @@ END SUBROUTINE random_mvnorm
 
 
 FUNCTION random_inv_gauss(h, b, first) RESULT(fn_val)
-
-! Adapted from Fortran 77 code from the book:
+!---------------------------------------------------------------------------------
+! @brief Adapted from Fortran 77 code from the book:
 !     Dagpunar, J. 'Principles of random variate generation'
 !     Clarendon Press, Oxford, 1988.   ISBN 0-19-852202-9
-
+!
 ! FUNCTION GENERATES A RANDOM VARIATE IN [0,INFINITY] FROM
 ! A REPARAMETERISED GENERALISED INVERSE GAUSSIAN (GIG) DISTRIBUTION
 ! WITH DENSITY PROPORTIONAL TO  GIG**(H-1) * EXP(-0.5*B*(GIG+1/GIG))
 ! USING A RATIO METHOD.
-
+!
 !     H = PARAMETER OF DISTRIBUTION (0 <= REAL)
 !     B = PARAMETER OF DISTRIBUTION (0 < REAL)
-
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 REAL, INTENT(IN)    :: h, b
 LOGICAL, INTENT(IN) :: first
 REAL                :: fn_val
@@ -674,8 +706,8 @@ END FUNCTION random_inv_gauss
 
 
 FUNCTION random_Poisson(mu, first) RESULT(ival)
-!**********************************************************************
-!     Translated to Fortran 90 by Alan Miller from:
+!-----------------------------------------------------------------------------------
+! @brief    Translated to Fortran 90 by Alan Miller from:
 !                           RANLIB
 !
 !     Library of Fortran Routines for Random Number Generation
@@ -690,36 +722,40 @@ FUNCTION random_Poisson(mu, first) RESULT(ival)
 !             1515 Holcombe Boulevard
 !             Houston, TX      77030
 !
-! This work was supported by grant CA-16672 from the National Cancer Institute.
-
+!! This work was supported by grant CA-16672 from the National Cancer Institute.
+!
 !                    GENerate POIsson random deviate
-
+!
 !                            Function
-
+!
 ! Generates a single random deviate from a Poisson distribution with mean mu.
-
+!
 !                            Arguments
-
+!
 !     mu --> The mean of the Poisson distribution from which
 !            a random deviate is to be generated.
 !                              REAL mu
-
+!
 !                              Method
-
+!
 !     For details see:
-
+!
 !               Ahrens, J.H. and Dieter, U.
 !               Computer Generation of Poisson Deviates
 !               From Modified Normal Distributions.
 !               ACM Trans. Math. Software, 8, 2
 !               (June 1982),163-179
-
+!
 !     TABLES: COEFFICIENTS A0-A7 FOR STEP F. FACTORIALS FACT
 !     COEFFICIENTS A(K) - FOR PX = FK*V*V*SUM(A(K)*V**K)-DEL
-
+!
 !     SEPARATION OF CASES A AND B
-
+!
 !     .. Scalar Arguments ..
+!
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 REAL, INTENT(IN)    :: mu
 LOGICAL, INTENT(IN) :: first
 INTEGER             :: ival
@@ -916,20 +952,23 @@ END FUNCTION random_Poisson
 
 
 FUNCTION random_binomial1(n, p, first) RESULT(ival)
-
-! FUNCTION GENERATES A RANDOM BINOMIAL VARIATE USING C.D.Kemp's method.
+!---------------------------------------------------------------------------------
+! @brief FUNCTION GENERATES A RANDOM BINOMIAL VARIATE USING C.D.Kemp's method.
 ! This algorithm is suitable when many random variates are required
 ! with the SAME parameter values for n & p.
-
+!
 !    P = BERNOULLI SUCCESS PROBABILITY
 !           (0 <= REAL <= 1)
 !    N = NUMBER OF BERNOULLI TRIALS
 !           (1 <= INTEGER)
 !    FIRST = .TRUE. for the first call using the current parameter values
 !          = .FALSE. if the values of (n,p) are unchanged from last call
-
+!
 ! Reference: Kemp, C.D. (1986). `A modal method for generating binomial
 !            variables', Commun. Statist. - Theor. Meth. 15(3), 805-813.
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 
 INTEGER, INTENT(IN) :: n
 REAL, INTENT(IN)    :: p
@@ -993,7 +1032,12 @@ END FUNCTION random_binomial1
 
 
 FUNCTION bin_prob(n, p, r) RESULT(fn_val)
-!     Calculate a binomial probability
+!----------------------------------------------------------------------------------
+! @brief  Calculate a binomial probability
+!
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 
 INTEGER, INTENT(IN) :: n, r
 REAL, INTENT(IN)    :: p
@@ -1011,13 +1055,16 @@ END FUNCTION bin_prob
 
 
 FUNCTION lngamma(x) RESULT(fn_val)
-
-! Logarithm to base e of the gamma function.
+!----------------------------------------------------------------------------------
+! @brief Logarithm to base e of the gamma function.
 !
 ! Accurate to about 1.e-14.
 ! Programmer: Alan Miller
-
+!
 ! Latest revision of Fortran 77 version - 28 February 1988
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 
 REAL (dp), INTENT(IN) :: x
 REAL (dp)             :: fn_val
@@ -1075,8 +1122,8 @@ END FUNCTION lngamma
 
 
 FUNCTION random_binomial2(n, pp, first) RESULT(ival)
-!**********************************************************************
-!     Translated to Fortran 90 by Alan Miller from:
+!------------------------------------------------------------------------------------
+! @brief   Translated to Fortran 90 by Alan Miller from:
 !                              RANLIB
 !
 !     Library of Fortran Routines for Random Number Generation
@@ -1092,45 +1139,48 @@ FUNCTION random_binomial2(n, pp, first) RESULT(ival)
 !               Houston, TX      77030
 !
 ! This work was supported by grant CA-16672 from the National Cancer Institute.
-
+!
 !                    GENerate BINomial random deviate
-
+!
 !                              Function
-
+!
 !     Generates a single random deviate from a binomial
 !     distribution whose number of trials is N and whose
 !     probability of an event in each trial is P.
-
+!
 !                              Arguments
-
+!
 !     N  --> The number of trials in the binomial distribution
 !            from which a random deviate is to be generated.
 !                              INTEGER N
-
+!
 !     P  --> The probability of an event in each trial of the
 !            binomial distribution from which a random deviate
 !            is to be generated.
 !                              REAL P
-
+!
 !     FIRST --> Set FIRST = .TRUE. for the first call to perform initialization
 !               the set FIRST = .FALSE. for further calls using the same pair
 !               of parameter values (N, P).
 !                              LOGICAL FIRST
-
+!
 !     random_binomial2 <-- A random deviate yielding the number of events
 !                from N independent trials, each of which has
 !                a probability of event P.
 !                              INTEGER random_binomial
-
+!
 !                              Method
-
+!
 !     This is algorithm BTPE from:
-
+!
 !         Kachitvichyanukul, V. and Schmeiser, B. W.
 !         Binomial Random Variate Generation.
 !         Communications of the ACM, 31, 2 (February, 1988) 216.
-
-!**********************************************************************
+!
+!
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 
 !*****DETERMINE APPROPRIATE ALGORITHM AND WHETHER SETUP IS NECESSARY
 
@@ -1307,23 +1357,26 @@ END FUNCTION random_binomial2
 
 
 FUNCTION random_neg_binomial(sk, p) RESULT(ival)
-
-! Adapted from Fortran 77 code from the book:
+!----------------------------------------------------------------------------------
+! @brief Adapted from Fortran 77 code from the book:
 !     Dagpunar, J. 'Principles of random variate generation'
 !     Clarendon Press, Oxford, 1988.   ISBN 0-19-852202-9
-
+!
 ! FUNCTION GENERATES A RANDOM NEGATIVE BINOMIAL VARIATE USING UNSTORED
 ! INVERSION AND/OR THE REPRODUCTIVE PROPERTY.
-
+!
 !    SK = NUMBER OF FAILURES REQUIRED (Dagpunar's words!)
 !       = the `power' parameter of the negative binomial
 !           (0 < REAL)
 !    P = BERNOULLI SUCCESS PROBABILITY
 !           (0 < REAL < 1)
-
+!
 ! THE PARAMETER H IS SET SO THAT UNSTORED INVERSION ONLY IS USED WHEN P <= H,
 ! OTHERWISE A COMBINATION OF UNSTORED INVERSION AND
 ! THE REPRODUCTIVE PROPERTY IS USED.
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 
 REAL, INTENT(IN)   :: sk, p
 INTEGER            :: ival
@@ -1382,20 +1435,23 @@ END FUNCTION random_neg_binomial
 
 
 FUNCTION random_von_Mises(k, first) RESULT(fn_val)
-
-!     Algorithm VMD from:
+!----------------------------------------------------------------------------------
+! @brief    Algorithm VMD from:
 !     Dagpunar, J.S. (1990) `Sampling from the von Mises distribution via a
 !     comparison of random numbers', J. of Appl. Statist., 17, 165-168.
-
+!
 !     Fortran 90 code by Alan Miller
 !     CSIRO Division of Mathematical & Information Sciences
-
+!
 !     Arguments:
 !     k (real)        parameter of the von Mises distribution.
 !     first (logical) set to .TRUE. the first time that the function
 !                     is called, or the first time with a new value
 !                     for k.   When first = .TRUE., the function sets
 !                     up starting values and may be very much slower.
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 
 REAL, INTENT(IN)     :: k
 LOGICAL, INTENT(IN)  :: first
@@ -1479,8 +1535,12 @@ END FUNCTION random_von_Mises
 
 
 SUBROUTINE integral(a, b, result, dk)
-
-!     Gaussian integration of exp(k.cosx) from a to b.
+!----------------------------------------------------------------------------------
+! @brief   Gaussian integration of exp(k.cosx) from a to b.
+!
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 
 REAL (dp), INTENT(IN) :: dk
 REAL, INTENT(IN)      :: a, b
@@ -1510,8 +1570,12 @@ END SUBROUTINE integral
 
 
 FUNCTION random_Cauchy() RESULT(fn_val)
-
-!     Generate a random deviate from the standard Cauchy distribution
+!----------------------------------------------------------------------------------
+! @brief   Generate a random deviate from the standard Cauchy distribution
+!
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 
 REAL     :: fn_val
 
@@ -1532,8 +1596,12 @@ END FUNCTION random_Cauchy
 
 
 SUBROUTINE random_order(order, n)
-
-!     Generate a random ordering of the integers 1 ... n.
+!----------------------------------------------------------------------------------
+! @brief    Generate a random ordering of the integers 1 ... n.
+!
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 
 INTEGER, INTENT(IN)  :: n
 INTEGER, INTENT(OUT) :: order(n)
@@ -1566,7 +1634,12 @@ END SUBROUTINE random_order
 
 
 SUBROUTINE seed_random_number(iounit)
-
+!----------------------------------------------------------------------------------
+! @ Initialize random number seed
+!
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 INTEGER, INTENT(IN)  :: iounit
 
 ! Local variables
@@ -1588,7 +1661,12 @@ RETURN
 END SUBROUTINE seed_random_number
 
 SUBROUTINE seed_random_number_sc(iseed)
-
+!----------------------------------------------------------------------------------
+! @ Initialize random number seed
+!
+! @date Created: S. Corni
+! Modified:   E. Coccia 22/11/17
+!----------------------------------------------------------------------------------
 INTEGER, INTENT(IN)  :: iseed
 
 ! Local variables
