@@ -16,7 +16,7 @@ program decoherence
  real(dbl),    allocatable    :: leps(:), l1_norm_eps(:) 
  real(dbl),    allocatable    :: leps_err(:),l1_norm_eps_err(:)
  real(dbl),    allocatable    :: rho_err(:,:,:)
- real(dbl),    allocatable    :: norm(:) 
+ real(dbl),    allocatable    :: opop(:)
 
 
  integer(i4b)       :: j,k,m,ijunk,l
@@ -86,7 +86,7 @@ program decoherence
 
  allocate(i(nsteps))
  allocate(t(nsteps))
- allocate(norm(nsteps))
+ allocate(opop(nsteps))
  allocate(rho(nsteps,nstates,nstates))
  allocate(rpop(nsteps,nstates,nrep))
  allocate(rdum(nsteps,npair,nrep))
@@ -128,6 +128,7 @@ program decoherence
     enddo
  enddo
 
+
  !Average population 
  pop=0.d0
  do m=1,nrep
@@ -138,13 +139,15 @@ program decoherence
     enddo
  enddo
  pop=pop/dble(nrep)
+ do j=1,nsteps
+    opop(j) = pop(j,1)
+ enddo
 
+ pop(:,1)=0.d0
  do j=1,nsteps
-     norm(j)=sum(pop(j,:))
+    pop(j,1) = 1.d0 - sum(pop(j,2:nstates))
  enddo
- do j=1,nsteps
-    pop(j,:)=pop(j,:)/norm(j)
- enddo
+
 
  !Building density matrix
  rho=0.d0
@@ -157,10 +160,15 @@ program decoherence
  !Error on population 
  perr=0.d0
  do m=1,nrep
-    do k=1,nstates
+    do k=2,nstates
        do j=1,nsteps
-          perr(j,k) = perr(j,k) + (rpop(j,k,m) - pop(j,k)*norm(j))**2
+          perr(j,k) = perr(j,k) + (rpop(j,k,m) - pop(j,k))**2
        enddo
+    enddo
+ enddo
+ do m=1,nrep
+    do j=1,nsteps
+       perr(j,1) = perr(j,1) + (rpop(j,1,m) - opop(j))**2
     enddo
  enddo
  if (nrep.gt.1) then
@@ -256,6 +264,10 @@ program decoherence
         do j=1,nsteps
            rho(j,l,m) = co(j,k) 
            rho(j,m,l) = co(j,k)
+           if (j.eq.1.or.m.eq.1) then
+              rho(j,l,m) = rho(j,l,m)*dsqrt(pop(j,1)/opop(j))
+              rho(j,m,l) = rho(j,l,m)
+           endif
            !rho(j,l,m) = cmplx(cor(j,k),coi(j,k))
            !rho(j,m,l) = conjg(rho(j,l,m))!cmplx(cor(j,k),-coi(j,k))
         enddo
@@ -436,7 +448,7 @@ program decoherence
 
   deallocate(i) 
   deallocate(t)
-  deallocate(norm)
+  deallocate(opop)
   deallocate(rdum)
   deallocate(idum)
   deallocate(rpop)
