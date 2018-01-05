@@ -247,19 +247,20 @@ module vib
                  !   dw=1.d0/dw
                  !endif 
                  !dw=1.d0/((w+we)**(0.5d0*(k+ke)))
+                 dw=1.d0/dw
                  ik = dfact(k+ke-1)*dw
               endif
               fc = fc + bin_coef(v,k)*bin_coef(ve,ke)*hv*hve*t1**k*t2**ke*ik
-              do k2=0,n
-                 if (mod(k+ke+k2,2).ne.0) then
-                     ikk=0.d0
-                 else
-                     ptmp=0.5d0*(k+ke+k2)
-                     dw=(w+we)**ptmp
-                     ikk = dfact(k+ke+k2-1)*dw
-                 endif
-                 mn = mn + bin_coef(v,k)*bin_coef(ve,ke)*bin_coef(n,k2)*hv*hve*t1**k*t2**ke*r**(n-k2)*ikk
-              enddo
+              !do k2=0,n
+              !   if (mod(k+ke+k2,2).ne.0) then
+              !       ikk=0.d0
+              !   else
+              !       ptmp=0.5d0*(k+ke+k2)
+              !       dw=(w+we)**ptmp
+              !       ikk = dfact(k+ke+k2-1)*dw
+              !   endif
+              !   mn = mn + bin_coef(v,k)*bin_coef(ve,ke)*bin_coef(n,k2)*hv*hve*t1**k*t2**ke*r**(n-k2)*ikk
+              !enddo
            enddo
         enddo
 
@@ -438,8 +439,9 @@ module vib
         ! Neglecting normal mode mixing
         if (.not.mix) then
            kk=0
-           do i=1,nstates
-              do j=1,ncomb
+           !do j=1,ncomb
+              do i=1,nstates
+                do j=1,ncomb
                  kk=kk+1
                  kmap(i,j)=kk 
               enddo
@@ -664,7 +666,18 @@ module vib
           v=iv(i,k)
           v1=iv(j,k) 
           d=q(l,k)-q(m,k)
-          call compute_fc(v,v1,w(l,k),w(m,k),d,nfc,fc,mn)
+          !call compute_fc(v,v1,w(l,k),w(m,k),d,nfc,fc,mn)
+          !Same electronic state
+          if (l.eq.m) then
+             !Orthonormalization of harmonic oscillator eigenfunctions
+             if (v.eq.v1) then
+                fc=1.d0
+             else
+                fc=0.d0
+             endif 
+          else
+             call compute_fc(v,v1,w(l,k),w(m,k),d,nfc,fc,mn)
+          endif
           tfc=tfc*fc 
        enddo
        dipf(:)=dip(:)*tfc     
@@ -821,7 +834,6 @@ module vib
        enddo
 
        do i=1,nf
-          tdip(:,i) = tmp(:,imap(i)) 
           dip2 = tdip(1,i)**2 + tdip(2,i)**2 + tdip(3,i)**2 
        enddo 
 
