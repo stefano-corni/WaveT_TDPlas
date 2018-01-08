@@ -22,6 +22,9 @@
       real(dbl), parameter :: twp=two*pi
       real(dbl), parameter :: pt5=0.5d0
       real(dbl), parameter :: three=3.d0
+      real(dbl), parameter :: plus_inf=HUGE(zero)
+      real(dbl), parameter :: zeromin = tiny(zero) 
+
       integer(i4b), parameter :: one_i=1
       double complex, parameter :: zeroc=(zero,zero)      
       double complex, parameter :: onec=(one,zero)                

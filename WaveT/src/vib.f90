@@ -179,7 +179,8 @@ module vib
         integer(i4b)               :: k,ke,kk,k2
         real(dbl)                  :: s,a,b,be,ik,r,nf
         real(dbl)                  :: t1,t2,ikk,factv,factve
-        real(dbl)                  :: hv,hve,ww,pow2,dw,ptmp 
+        real(dbl)                  :: hv,hve,ww,pow2,dw,ptmp,tmp,tmp1 
+                          
 
 ! Harmonic oscillator eigenfunction for the electronic ground state
 ! |v> = Nv*Hv(sqrt(alpha)x)*exp(-1/2*alpha*x^2)
@@ -228,6 +229,7 @@ module vib
         r  = -we*d*ww
         b  = -we*sqrt(w)*d*ww
         be = w*sqrt(we)*d*ww 
+        !if (nf.lt.zeromin) nf=zeromin
         if (nf.lt.1.d-100) nf=0.d0
 
         fc=0.d0
@@ -241,16 +243,12 @@ module vib
               else
                  ptmp=0.5d0*(k+ke)
                  dw=(w+we)**ptmp
-                 !if (dw.lt.1.d-50) then
-                 !   dw=1.d50
-                 !else
-                 !   dw=1.d0/dw
-                 !endif 
-                 !dw=1.d0/((w+we)**(0.5d0*(k+ke)))
-                 dw=1.d0/dw
-                 ik = dfact(k+ke-1)*dw
+                 tmp = dfact(k+ke-1)
+                 ik = safe_division(tmp,dw,1.d100) 
               endif
-              fc = fc + bin_coef(v,k)*bin_coef(ve,ke)*hv*hve*t1**k*t2**ke*ik
+              tmp1 = sqrt(nf)*bin_coef(v,k)*bin_coef(ve,ke)*hv*hve*t1**k*t2**ke*ik
+              fc = fc + tmp1 
+
               !do k2=0,n
               !   if (mod(k+ke+k2,2).ne.0) then
               !       ikk=0.d0
@@ -264,7 +262,7 @@ module vib
            enddo
         enddo
 
-        fc = sqrt(nf)*fc
+        !fc = sqrt(nf)*fc
 
 ! <v|x^n|v'> = sqrt(A*exp(-S)/(2^(v+v')*v!*v'!))*sum_k=0^v * sum_k'^v' *
 ! sum_k''=0^n*
@@ -498,14 +496,14 @@ module vib
         enddo
 
         do i=1,ntot
-           write(71,*) 'States', 0, 'and',i-1,dipf(:,1,imap(i))      
+           write(71,"(A,I6,X,A,I6,X,3(E15.8,X))") 'States', 0, 'and',i-1,dipf(1,1,imap(i)),dipf(2,1,imap(i)),dipf(3,1,imap(i))      
         enddo
 
         kk=0
         do i=2,ntot
            do j=2,i
               kk=kk+1
-              write(71,*) 'States', j-1, 'and',i-1,dipf(:,imap(i),imap(j))
+              write(71,"(A,I6,X,A,I6,X,3(E15.8,X))") 'States', j-1, 'and',i-1,dipf(:,imap(i),imap(j))
            enddo
         enddo
 
@@ -877,5 +875,28 @@ module vib
        return
 
      end subroutine vib_spectra
+
+     function safe_division(n,d,alt) result(q)
+!------------------------------------------------------------------------
+! @brief Performs "safe division", that is to prevent overflow,
+!  underflow, NaN, or infinity errors 
+!                   
+! @date Created   : E. Coccia 12 Oct 2017
+! Modified  :          
+!------------------------------------------------------------------------ 
+
+       real(cmp), intent(in) :: n,d,alt
+     
+       real(cmp)             :: q
+
+       if ((exponent(n)-exponent(d)).ge.maxexponent(n).or.d.eq.0) then 
+          q = alt 
+       else 
+          q = n/d
+       endif 
+   
+       return
+
+      end function safe_division 
 
 end module vib
