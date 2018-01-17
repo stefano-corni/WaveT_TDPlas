@@ -118,12 +118,12 @@
          ! Introduces the coupling with the field for propagation
          do j=1,n_ci
            do k=1,n_ci
-             Hqm(k,j)=-dot_product(mut(:,k,j),fmax(:))
+             Hqm(k,j)=-dot_product(mut(:,k,j),fmax(:,1))
            enddo
          enddo
          do i=1,nmodes 
-           dp(i)=cts_act(i)%x*fmax(1)+cts_act(i)%y*fmax(2)+       &
-                                      cts_act(i)%z*fmax(3) 
+           dp(i)=cts_act(i)%x*fmax(1,1)+cts_act(i)%y*fmax(2,1)+       &
+                                      cts_act(i)%z*fmax(3,1) 
          enddo 
        endif
        ! CI energies, diagonal 
