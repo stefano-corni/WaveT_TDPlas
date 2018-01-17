@@ -971,7 +971,7 @@
 !------------------------------------------------------------------------
 
        !eps_gm=eps_gm+f_vel/sfe_act(1)%r
-       eps=dcmplx(eps_A,zero)/dcmplx(eps_w0**2-omega**2,-omega*eps_gm)
+       eps=dcmplx(eps_A,zero)/dcmplx(eps_w0**2-omega(1)**2,-omega(1)*eps_gm)
        eps=eps+onec
        eps_f=(eps-onec)/(eps+twoc)
 
@@ -990,7 +990,7 @@
 
        !eps_gm=eps_gm+f_vel/sfe_act(1)%r
        eps=dcmplx(eps_d,zero)+dcmplx(eps_0-eps_d,zero)/ &
-                              dcmplx(one,-omega*tau_deb)
+                              dcmplx(one,-omega(1)*tau_deb)
        eps_f=(three*eps)/(two*eps+onec)
 
        return
