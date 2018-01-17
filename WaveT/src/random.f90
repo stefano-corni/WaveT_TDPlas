@@ -762,7 +762,7 @@ INTEGER             :: ival
 !     ..
 !     .. Local Scalars ..
 REAL          :: b1, b2, c, c0, c1, c2, c3, del, difmuk, e, fk, fx, fy, g,  &
-                 omega, px, py, t, u, v, x, xx
+                 omega1, px, py, t, u, v, x, xx
 REAL, SAVE    :: s, d, p, q, p0
 INTEGER       :: j, k, kflag
 LOGICAL, SAVE :: full_init
@@ -823,7 +823,7 @@ IF (mu > 10.0) THEN
 !             C=.1069/MU GUARANTEES MAJORIZATION BY THE 'HAT'-FUNCTION.
 
   IF (.NOT. full_init) THEN
-    omega = .3989423/s
+    omega1 = .3989423/s
     b1 = .4166667E-1/mu
     b2 = .3*b1*b1
     c3 = .1428571*b1*b2
@@ -892,7 +892,7 @@ IF (mu > 10.0) THEN
   110 x = (half - difmuk)/s
   xx = x*x
   fx = -half*xx
-  fy = omega* (((c3*xx + c2)*xx + c1)*xx + c0)
+  fy = omega1* (((c3*xx + c2)*xx + c1)*xx + c0)
   IF (kflag <= 0) GO TO 40
   GO TO 60
 
