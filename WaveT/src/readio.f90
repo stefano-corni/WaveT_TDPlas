@@ -18,9 +18,8 @@
       integer(i4b)              :: n_restart ! frequency of restart writing
       integer(i4b)              :: n_jump    ! number of quantum jumps along a simulation
       integer(i4b)              :: diff_step ! effective number of steps for restart
-      real(dbl), allocatable :: mut_np2(:,:) !squared dipole from NP
-      real(dbl) :: tdelay, pshift  ! time delay and phase shift with two pulses
-      real(dbl) :: omega1, sigma1  ! for the second pulse
+      real(dbl), allocatable    :: mut_np2(:,:) !squared dipole from NP
+      real(dbl)                 :: tdelay(npulsemax), pshift(npulsemax)  ! time delay and phase shift with two pulses
 !
       !real(dbl), allocatable    :: c_i(:),e_ci(:)  ! energy from cis
       real(dbl), allocatable    :: e_ci(:)  ! energy from cis
@@ -52,7 +51,7 @@
       ! Stochastic propagation from:
       ! Appl. Math. Res. Express vol. 2013 34-56 (2013)
       ! IMA J. Numer. Anal. vol. 36 13-79 (2016)
-      real(dbl) :: t_mid,sigma,dir_ft(3),fmax(3),omega,mol_cc(3)
+      real(dbl) :: t_mid,sigma(npulsemax),dir_ft(3),fmax(3,npulsemax),omega(npulsemax),mol_cc(3)
       character(flg) :: Ffld !< Field type 
       character(flg) :: Fmdm !< Flag for medium type, this will be defined in readio_medium after separation
       character(flg) :: Frad !< Flag for radiative damping 
@@ -60,9 +59,8 @@
       character(flg) :: Fful !< Flag for relaxation matrix
       character(flg) :: Fexp !< Flag for propagation of the energy term
       character(flg) :: Fsim !< Flag for the dynamics length in case of restart
-!      character(flg) :: Fpulse !< Flag for pulse             
 ! Flags read from input file
-      character(flg) :: medium,radiative,dissipative,pulse,lsim
+      character(flg) :: medium,radiative,dissipative,lsim
       character(flg) :: dis_prop
       character(flg) :: restart 
       character(flg) :: propa
@@ -94,11 +92,11 @@
              deallocate_dis,i_sp,i_nr,i_de,nrnd,sp_fact,    &
 !             nr_typ,idep,imar,de_gam1,krnd,ernd       
              de_gam1,krnd,Fdis,Fdis_deph,Fdis_rel,nf,irel,  &
-             npulse,omega1,sigma1,tdelay,pshift,nrel,Fful,  &
+             npulse,tdelay,pshift,nrel,Fful,  &
              Fexp,Fres,restart_t,restart_i,n_restart,       &
              c_i_prev,c_i_prev2,mu_i_prev,mu_i_prev2,       &
              mu_i_prev3,mu_i_prev4,mu_i_prev5,restart_seed, &
-             n_jump,Fsim,diff_step           
+             n_jump,Fsim,diff_step
              
 !
       contains
@@ -121,7 +119,7 @@
                          dt,n_step,n_out,propa,n_restart,lsim
        !External field paramaters
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
-                        pulse,omega1,sigma1,tdelay,pshift
+                        npulse,tdelay,pshift
        !Stochastic Schroedinger equation
        namelist /sse/ dissipative,idep,dis_prop,nrnd,tdis,nr_typ,krnd
        !Namelist spectra
@@ -154,6 +152,10 @@
        !Namelist field
        call init_nml_field()
        read(*,nml=field)
+       if (npulse.gt.npulsemax) then
+          write(*,*) 'Error: npulse', npulse,'larger than', npulsemax
+          stop 
+       endif
        call write_nml_field() 
 
        !Namelist sse
@@ -166,9 +168,7 @@
 
        !Namelist spectra
        call init_nml_spectra()
-
        read(*,nml=spectra) 
-
        call write_nml_spectra() 
 
        if (Fdis(1:5).ne."nodis") call read_dis_params   
@@ -601,7 +601,7 @@
        ! Center of the pulse
        t_mid=200
        ! Sigma for the pulse
-       sigma=10 
+       sigma=0.d0
        ! Frequency (no oscillation)
        omega=0.d0
        ! Stochastic field
@@ -611,15 +611,11 @@
        ! Amplitude of the external field
        fmax=0.d0
        ! Number of pulses
-       pulse='one'
+       npulse=1
        ! Time delay
-       tdelay=2000.
+       tdelay=0.d0
        ! Phase shift
        pshift=0.d0
-       ! Frequency second pulse
-       omega1=0.d0
-       ! Sigma for the second pulse
-       sigma1=0.d0
 
        return
 
@@ -672,6 +668,7 @@
        return
 
       end subroutine init_nml_sse
+
 
       subroutine write_nml_general()
 !------------------------------------------------------------------------
@@ -763,11 +760,20 @@
 ! @param dt,n_step,n_out,Ffld,t_mid,sigma,omega,radiative,iseed,fmax 
 !------------------------------------------------------------------------
 
+       integer :: i
+
+       if (npulse.lt.1) then
+           write(*,*) 'WARNING: number of pulses in input '
+           write(*,*) 'is less than zero'
+           write(*,*) 'Calculation will be done with one pulse'
+           npulse=1
+       endif
+
        write (*,*) "Time shape of the perturbing field",Ffld
        write (*,*) "time at the center of the pulse (au):",t_mid
-       write (*,*) "Width of the pulse (time au):",sigma
-       write (*,*) "Frequency (au):",omega
-       write (*,*) "Maximum E field",fmax
+       write (*,*) "Width of the pulse (time au):",sigma(1)
+       write (*,*) "Frequency (au):",omega(1)
+       write (*,*) "Maximum E field",fmax(:,1)
        !SC
        select case (radiative)
         case ('rad','Rad','RAD')
@@ -775,20 +781,14 @@
         case default
          Frad='non'
        end select
-       select case (pulse)
-        case ('one', 'ONE', 'One')
-          write(*,*) 'One pulse'
-          npulse=1
-        case ('two', 'TWO', 'Two')
-          write(*,*) 'Two pulses'
-          write(*,*) 'Time delay =', tdelay
-          write(*,*) 'Phase shift =', pshift
-          write(*,*) 'Frequency second pulse (au) =', omega1
-          write(*,*) 'Sigma second pulse =', sigma1
-          npulse=2
-        case default
-          npulse=1
-       end select
+       do i=2,npulse
+          write(*,*) 'Pulse no.', i
+          write(*,*) 'Frequency (au) =', omega(i)
+          write(*,*) 'Sigma pulse =', sigma(i)
+          write(*,*) 'Time delay (au) between pulse',i-1,'and pulse', i, '=', tdelay(i-1)
+          write(*,*) 'Phase shift between pulse',i-1,'and pulse', i, '=', pshift(i-1)
+          write(*,*) ''
+       enddo
        write(*,*) ''
 
        return
