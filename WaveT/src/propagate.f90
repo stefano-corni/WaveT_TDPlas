@@ -265,22 +265,21 @@
             t_a=dt*(i-1)
             f(:,i)=0.
          enddo
-         do j=2,npulse
-            i_max=int((t_mid+sum(tdelay(1:j-1)))/dt)
-            do i=1,2*i_max
-               t_a=dt*(dble(i)-1)
-               f(:,i)=f(:,i)+fmax(:,j)*cos(pi*(t_a-(t_mid+sum(tdelay(1:j-1))))/ &
-                      (2.d0*(t_mid+sum(tdelay(1:j-1)))))**2/2.d0* &
-                      sin(omega(j)*t_a+sum(pshift(1:j-1)))
-            enddo
-            do i=2*i_max+1,n_tot
-               t_a=dt*(i-1)
-               f(:,i)=0.
-            enddo
-         enddo
+         !do j=2,npulse
+         !   i_max=int((t_mid+sum(tdelay(1:j-1)))/dt)
+         !   do i=1,2*i_max
+         !      t_a=dt*(dble(i)-1)
+         !      f(:,i)=f(:,i)+fmax(:,j)*cos(pi*(t_a-(t_mid+sum(tdelay(1:j-1))))/ &
+         !             (2.d0*(t_mid+sum(tdelay(1:j-1)))))**2/2.d0* &
+         !             sin(omega(j)*t_a+sum(pshift(1:j-1)))
+         !   enddo
+         !   do i=2*i_max+1,n_tot
+         !      t_a=dt*(i-1)
+         !      f(:,i)=0.
+         !   enddo
+         !enddo
         case ("pip")
         ! Pi pulse: cos^2(pi(t-t0)/(2s)) * cos(w(t-t0)) 
-         i_max=int(t_mid/dt)
          do i=1,n_tot
             t_a=dt*(dble(i)-1)
             f(:,i)=0.d0
@@ -290,7 +289,6 @@
             endif
          enddo
          do j=2,npulse
-            i_max=int((t_mid+sum(tdelay(1:j-1)))/dt)
             do i=1,n_tot
                t_a=dt*(dble(i)-1)
                if (abs(t_a-(t_mid+sum(tdelay(1:j-1)))).lt.sigma(j)) then
