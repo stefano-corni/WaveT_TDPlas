@@ -210,12 +210,12 @@
 ! 
 ! 
 ! @date Created   : 
-! Modified  : 
+! Modified  : E. Coccia 16 Jan 2018
 !------------------------------------------------------------------------
 
        implicit none
 
-       integer(i4b) :: i,i_max,n_tot
+       integer(i4b) :: i,j,i_max,n_tot
        real(dbl) :: t_a,ti,tf,arg
        character(15) :: name_f
 
@@ -233,91 +233,100 @@
 
        write(name_f,'(a5,i0,a4)') "field",n_f,".dat"
        open (7,file=name_f,status="unknown")
+
         f(:,:)=0.d0
         select case (Ffld)
         case ("mdg")
         ! Gaussian modulated sinusoid: exp(-(t-t0)^2/s^2) * sin(wt) 
-         select case (npulse)
-          case (1)
            do i=1,n_tot
               t_a=dt*(i-1)
-              f(:,i)=fmax(:)*exp(-(t_a-t_mid)**2/(sigma**2))*   &
-                         sin(omega*t_a)
-              if (mod(i,n_out).eq.0) &
-              write (7,'(f12.2,3e22.10e3)') t_a,f(:,i)
+              f(:,i) = fmax(:,1)*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))* & 
+                       sin(omega(1)*t_a)
+              do j=2,npulse
+                 f(:,i) = f(:,i) + fmax(:,j)*                   &
+                        exp(-pt5*(t_a-(t_mid+sum(tdelay(1:j-1))))**2/(sigma(j)**2))*   &
+                        sin(omega(j)*t_a+sum(pshift(1:j-1)))
+              enddo 
            enddo
-          case (2)
-           do i=1,n_tot
-              t_a=dt*(i-1)
-              f(:,i)=fmax(:)*exp(-(t_a-t_mid)**2/(sigma**2))*   &
-                         sin(omega*t_a)
-              f(:,i)=f(:,i) + fmax(:)*exp(-(t_a-(t_mid+tdelay))**2 &
-                     /(sigma1**2))*sin(omega1*t_a+pshift) 
-              if (mod(i,n_out).eq.0) &
-              write (7,'(f12.2,3e22.10e3)') t_a,f(:,i)
-           enddo
-         end select 
         case ("mds")
         ! Cosine^2 modulated sinusoid: 1/2* cos^2(pi(t-t0)/(2t0)) * sin(wt) 
         !          f=0 for t>t0
          i_max=int(t_mid/dt)
+         if (2*i_max.gt.n_tot) then
+            write(*,*) 'ERROR: 2*t_mid/dt must be smaller than', n_tot
+            stop
+         endif
          do i=1,2*i_max
-          t_a=dt*(dble(i)-1)
-          f(:,i)=fmax(:)*cos(pi*(t_a-t_mid)/(2*t_mid))**2/2.d0* &
-                 sin(omega*t_a)
+            t_a=dt*(dble(i)-1)
+            f(:,i)=fmax(:,1)*cos(pi*(t_a-t_mid)/(2*t_mid))**2/2.d0* &
+                   sin(omega(1)*t_a)
          enddo
          do i=2*i_max+1,n_tot
-          t_a=dt*(i-1)
-          f(:,i)=0.
+            t_a=dt*(i-1)
+            f(:,i)=0.
          enddo
+         !do j=2,npulse
+         !   i_max=int((t_mid+sum(tdelay(1:j-1)))/dt)
+         !   do i=1,2*i_max
+         !      t_a=dt*(dble(i)-1)
+         !      f(:,i)=f(:,i)+fmax(:,j)*cos(pi*(t_a-(t_mid+sum(tdelay(1:j-1))))/ &
+         !             (2.d0*(t_mid+sum(tdelay(1:j-1)))))**2/2.d0* &
+         !             sin(omega(j)*t_a+sum(pshift(1:j-1)))
+         !   enddo
+         !   do i=2*i_max+1,n_tot
+         !      t_a=dt*(i-1)
+         !      f(:,i)=0.
+         !   enddo
+         !enddo
         case ("pip")
         ! Pi pulse: cos^2(pi(t-t0)/(2s)) * cos(w(t-t0)) 
-         i_max=int(t_mid/dt)
          do i=1,n_tot
-          t_a=dt*(dble(i)-1)
-          f(:,i)=0.
-          if (abs(t_a-t_mid).lt.sigma) then
-            f(:,i)=fmax(:)*(cos(pi*(t_a-t_mid)/(2*sigma)))**2* &
-               cos(omega*(t_a-t_mid))
-          endif
+            t_a=dt*(dble(i)-1)
+            f(:,i)=0.d0
+            if (abs(t_a-t_mid).lt.sigma(1)) then
+               f(:,i)=fmax(:,1)*(cos(pi*(t_a-t_mid)/(2*sigma(1))))**2* &
+               cos(omega(1)*(t_a-t_mid))
+            endif
+         enddo
+         do j=2,npulse
+            do i=1,n_tot
+               t_a=dt*(dble(i)-1)
+               if (abs(t_a-(t_mid+sum(tdelay(1:j-1)))).lt.sigma(j)) then
+                  f(:,i)=f(:,i)+fmax(:,j)*(cos(pi*(t_a-(t_mid+sum(tdelay(1:j-1))))/ &
+                  (2*sigma(j))))**2* &
+                  cos(omega(j)*(t_a-(t_mid+sum(tdelay(1:j-1))))+sum(pshift(1:j-1)))
+               endif
+            enddo
          enddo
         case ("sin")
         ! Sinusoid:  sin(wt) 
          do i=1,n_tot
-          t_a=dt*(dble(i)-1)
-          f(:,i)=fmax(:)*sin(omega*t_a)
+            t_a=dt*(dble(i)-1)
+            f(:,i)=fmax(:,1)*sin(omega(1)*t_a)
          enddo
+         
         case ("snd")
         ! Linearly modulated (up to t0) Sinusoid:
         !         0 < t < t0 : t/to* sin(wt) 
         !             t > t0 :       sin(wt) 
          do i=1,n_tot
-          t_a=dt*(dble(i)-1)
-          if (t_a.gt.t_mid) then
-            f(:,i)=fmax(:)*sin(omega*t_a)
-          else
-            if (t_a.gt.zero) f(:,i)=fmax(:)*t_a/t_mid*sin(omega*t_a)
-          endif            
+            t_a=dt*(dble(i)-1)
+            if (t_a.gt.t_mid) then
+               f(:,i)=fmax(:,1)*sin(omega(1)*t_a)
+            else
+               if (t_a.gt.zero) f(:,i)=fmax(:,1)*t_a/t_mid*sin(omega(1)*t_a)
+            endif            
          enddo
         case ("gau")
         ! Gaussian pulse: exp(-(t-t0)^2/s^2) 
-          select case (npulse)
-          case (1)
            do i=1,n_tot
               t_a=dt*(i-1)
-              f(:,i)=fmax(:)*exp(-pt5*(t_a-t_mid)**2/(sigma**2))
-              if (mod(i,n_out).eq.0) &
-                write (7,'(f12.2,3e22.10e3)') t_a,f(:,i)
+              f(:,i)=fmax(:,1)*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))
+              do j=2,npulse
+                 f(:,i)=f(:,i) + fmax(:,j)*exp(-pt5*(t_a- &
+                 (t_mid+sum(tdelay(1:j-1))))**2/(sigma(j)**2)) 
+              enddo
            enddo
-          case(2)
-           do i=1,n_tot
-              t_a=dt*(i-1)
-              f(:,i)=fmax(:)*exp(-pt5*(t_a-t_mid)**2/(sigma**2))
-              f(:,i)=f(:,i)+fmax(:)*exp(-pt5*(t_a-(t_mid+tdelay))**2/(sigma**2))
-              if (mod(i,n_out).eq.0) &
-                write (7,'(f12.2,3e22.10e3)') t_a,f(:,i)
-           enddo
-          end select
 ! SP 270817: the following (commented) is probably needed for spectra  
          !do i=1,n_tot
          ! t_a=dt*(dble(i)-1)
@@ -330,13 +339,13 @@
          !enddo
         case ("css")
         ! Cos^2 pulse (only half a period): cos^2(pi*(t-t0)/(s)) 
-         ti=t_mid-sigma/two
-         tf=t_mid+sigma/two
+         ti=t_mid-sigma(1)/two
+         tf=t_mid+sigma(1)/two
          do i=1,n_tot
           t_a=dt*(dble(i)-1)
           f(:,i)=zero
           if (t_a.gt.ti.and.t_a.le.tf) then
-            f(:,i)=fmax(:)*(cos(pi*(t_a-t_mid)/(sigma)))**2
+            f(:,i)=fmax(:,1)*(cos(pi*(t_a-t_mid)/(sigma(1))))**2
           endif
          enddo
         case default
@@ -349,9 +358,10 @@
          if (mod(i,n_out).eq.0) &
            write (7,'(f12.2,3e22.10e3)') t_a,f(:,i)
         enddo
+       
 
         close(7)
-
+ 
         return
 
       end subroutine create_field

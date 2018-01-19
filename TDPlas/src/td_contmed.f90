@@ -1523,8 +1523,8 @@
            endif
            call do_eps_drl
            !refc=eps_f*ui*exp(-ui*omega*t)
-           E0=dcmplx(zero,0.5d0*sqrt(dot_product(fmax,fmax)))
-           refc=eps_f*E0*exp(-ui*omega*t)
+           E0=dcmplx(zero,0.5d0*sqrt(dot_product(fmax(:,1),fmax(:,1))))
+           refc=eps_f*E0*exp(-ui*omega(1)*t)
            ref=real(refc+conjg(refc))*rr**3
            !write(*,*) eps_f,refc,ref, cts_act(1)%rsfe 
            !stop
@@ -1547,8 +1547,8 @@
            endif
            call do_eps_deb
            !refc=eps_f*ui*exp(-ui*omega*t)
-           E0=dcmplx(zero,0.5d0*sqrt(dot_product(fmax,fmax)))
-           refc=eps_f*E0*exp(-ui*omega*t)
+           E0=dcmplx(zero,0.5d0*sqrt(dot_product(fmax(:,1),fmax(:,1))))
+           refc=eps_f*E0*exp(-ui*omega(1)*t)
            ref=real(refc+conjg(refc))
        end select
 
