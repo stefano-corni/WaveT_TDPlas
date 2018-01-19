@@ -144,7 +144,7 @@
        call out_BEM_gamess
        ! Calculate potential on tesserae
        allocate(pot(nts_act))
-       call do_pot_from_field(fmax,pot)
+       call do_pot_from_field(fmax(:,1),pot)
        allocate(Kdiag_omega(nts_act))
        allocate(q_omega(nts_act))
        open(7,file="dipole_freq.dat",status="unknown")
