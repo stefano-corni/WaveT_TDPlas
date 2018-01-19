@@ -1,0 +1,40 @@
+Input:
+
+n_ci                Number of excited states
+n_ci_read           Number of excited states to be read
+mol_cc              Molecular center of charge
+n_f                 Number to be be appended to all output file names
+medium              Presence of external medium
+dt                  Time step (au)
+n_step              Number of steps
+n_out               Frequency for writing output files
+
+Ffld                Type of field
+omega               Pulse frequency (au) / Array(npulse)
+sigma               Sigma of the envelope function (if needed) / Array(npulse
+t_mid               Center of the pulse
+radiative           Stochastic term in dynamics
+iseed               Random number ad seed
+fmax                Maximum value of the field (3D variable) (au) / Array(2,npulse)
+pulse               Number of pulses ("one" or "two")
+tdelay              Delay time between the centers of the two pulses (au) / Array(npulse-1): first element is the delay between 1st and 2nd pulse, second one between 2nd and 3rd pulse etc.
+pshift              Phase shift between the two pulses / Array(npulse-1): ad tdelay 
+           
+
+start               Starting point (au) for FT 
+tau                 Tau (au) for FT
+dir_ft              Direction for FT
+
+dissipative         SSE propagation
+idep                Type of dephasing operator
+dis_prop            Type of propagation
+nrnd                Factor between deterministic time step and Wiener process time step 
+tdis                Type of continuous propagator (if needed)
+nr_typ              Type pf nonradiative relaxation decay rate
+krnd                Factor multiplying Gaussian fluctuation of energies
+
+Calculations done using full numerical propagation of coefficients (it is not the default anymore, propa='n' in the namelist general)
+
+
+
+
