@@ -1,0 +1,12 @@
+&vibrations
+nstates=4
+nvib=3
+nmodes=1
+coupling=.false.
+mix=.false.
+nfc=1
+emax=8.
+nbin=10000
+sigma=10.5
+/
+

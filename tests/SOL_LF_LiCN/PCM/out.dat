@@ -1,0 +1,69 @@
+ 
+ *****************************************************
+ *****************************************************
+ **                                                 **
+ **                    WaveT                        **
+ **     Evolution of molecular wavefunctions        **
+ **   under external electromagnetic perturbations  **
+ **                                                 **
+ **                     by                          **
+ **                Stefano Corni                    **
+ **                Silvio Pipolo                    **
+ **               Emanuele Coccia                   **
+ **                 Gabriel Gil                     **
+ **                Jacopo Fregoni                   **
+ **                                                 **
+ *****************************************************
+ *****************************************************
+ 
+ Number to append to dat file           1
+ Number of CIS states to be read           5
+ Number of CIS states to be used           5
+ Molecular center of charge
+   0.0000000000000000        0.0000000000000000        0.0000000000000000     
+ 
+ Solvent as external medium
+ 
+ Time step (in au), number of steps, stride  0.20000000000000001             5000           1
+ Time shape of the perturbing fieldsnd       
+ time at the center of the pulse (au):   500.00000000000000     
+ Width of the pulse (time au):   10.000000000000000     
+ Frequency (au):  0.50000000000000000     
+ Maximum E field   0.0000000000000000        0.0000000000000000        9.9999999999999995E-007
+ One pulse
+ 
+ Excitation energies read from input, in Hartree
+           1  0.23991947435064415     
+           2  0.24484356143453079     
+           3  0.24484356143453276     
+           4  0.24900196722366114     
+           5  0.24900196779883316     
+
+ Starting point for FT calculation   80.000000000000000     
+ Artificial damping   2000.0000000000000        2000.0000000000000     
+ Direction along which the field is oriented   1.0000000000000000        1.0000000000000000        1.0000000000000000     
+ 
+ No dissipation
+ 
+ Apparent charges are propagated
+ Local field effects are included
+ Medium charges do not follow the quantum jump
+ Frequency of updating the interaction potential           1
+ Use GS RF as coded in the ci_energy.inp values
+ The coupling is of PCM type: pot \cdot chr
+ Solvent as external medium
+ Medium polarization described by apparent charges
+ Diagonal BEM furmulation
+ This is a Classical BEM run
+ This is full run reading matrix and boundary
+ Medium polarization set initially to zero
+ Surface read from file cavity.inp
+ Essential output written.
+ TEST: Solvent local field
+Done reading input & setting up the field, took     0.065s
+ BEM surface and Matrixes S D have been read in
+ BEM correctly initialized
+ Done BEM diagonal
+ Medium contribution to ground state free energy:   0.0000000000000000     
+ G_neq at t=0:   0.0000000000000000     
+Done , total elapsed time    17.076s

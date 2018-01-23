@@ -1,0 +1,63 @@
+&general 
+n_ci=1 
+n_ci_read=1  
+mol_cc= 0.0 0.0 0.0
+medium='qna'
+n_f=1
+dt=0.20
+n_step=10000
+n_out=1
+/ 
+
+&field 
+Ffld='snd'
+omega=0.26
+sigma=10,
+t_mid=5000
+radiative='non'
+fmax= 0.00001 0.0 0.0 
+/
+
+&sse
+dissipative='non'
+/
+
+&spectra 
+start=80 
+tau= 2000.0 2000.0
+dir_ft= 1.0 1.0 1.0 
+/
+
+
+! Here starts the tdplas part
+!
+&PROPAGATE  
+propagation_type='ief'
+interaction_type='pcm'
+interaction_stride=1
+interaction_init='non-scf'
+debug_type='qmt' 
+local_field='non'
+/
+
+&MEDIUM
+medium_type='qna'
+medium_init='fro'
+bem_type='diag'
+bem_read_write='rea'
+/
+
+&SURFACE
+input_surface='fil'
+/
+
+&EPS_FUNCTION
+epsilon_omega='drl'
+eps_0=1000.
+eps_d=1. 
+eps_A=0.171666   
+eps_gm=0.000757576
+eps_w0=0.  
+f_vel=0. 
+/
+

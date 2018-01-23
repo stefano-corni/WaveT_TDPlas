@@ -17,30 +17,43 @@
  *****************************************************
  
  Number to append to dat file           1
- Number of CIS states to be read           3
- Number of CIS states to be used           3
+ Number of CIS states to be read          10
+ Number of CIS states to be used          10
  Molecular center of charge
   0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
  
  No external medium, vacuum calculation
+ No restart
+ Only |k> -> |0> relaxation
  
- Time step (in au), number of steps, stride  5.000000000000000E-002      100000
-           2
- Time shape of the perturbing fieldgau
+ Time step (in au), number of steps, stride  5.000000074505806E-002       10000
+           1
+ Time shape of the perturbing fieldgau       
  time at the center of the pulse (au):   2500.00000000000     
  Width of the pulse (time au):   1000.00000000000     
  Frequency (au):  0.242000000000000     
  Maximum E field  1.000000000000000E-002  1.000000000000000E-002
   1.000000000000000E-002
+ One pulse
  
  Excitation energies read from input, in Hartree
            1  0.239189226989031     
            2  0.241982406620969     
            3  0.241982406620973     
+           4  0.248481326284246     
+           5  0.248481326345823     
+           6  0.264390132375462     
+           7  0.292505208317815     
+           8  0.292505208317815     
+           9  0.308951472642535     
+          10  0.330458849355420     
+ 
+ Starting point for FT calculation  0.000000000000000E+000
+ Artificial damping   2.00000000000000     
+ Direction along which the field is oriented  0.000000000000000E+000
+   1.00000000000000       0.000000000000000E+000
  
  No dissipation
  
- No dissipation
- 
-Done reading input & setting up the field, took     1.119s
-Done , total elapsed time    11.503s
+Done reading input & setting up the field, took     0.383s
+Done , total elapsed time     2.246s

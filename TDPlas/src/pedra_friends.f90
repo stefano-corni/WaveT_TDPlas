@@ -1,6 +1,7 @@
       Module pedra_friends
 ! Modulo copiato spudoratamente da GAMESS
       use global_tdplas
+      use constants    
       implicit none
 
       type tessera
@@ -61,7 +62,7 @@
                  sfe_act(isfe)%z, sfe_act(isfe)%r
       enddo
       return
-      end subroutine read_act
+      end subroutine
 !
       Subroutine read_pro
       integer(i4b) :: isfe
@@ -72,7 +73,7 @@
                   sfe_pro(isfe)%r
       enddo
       return
-      end subroutine read_pro
+      end subroutine
 !
       Subroutine new_sphere (i_count,nsfe,sfe,nsfe_new,sfe_new)
 ! Add new spheres to improve intersections
@@ -120,7 +121,7 @@
       enddo
       nsfe_new=nsfe+n_add   
       return
-      end subroutine new_sphere
+      end subroutine
 !
       Subroutine pedra_int(what)
       character*3 :: what
@@ -145,7 +146,7 @@
         write (6,*) "nts_act",nts_act
       endif
       return
-      end subroutine pedra_int
+      end subroutine
 !      
       SUBROUTINE PEDRA(i_count,n_tes,nesf_in,sfe_in,nts,cts)
 !
@@ -522,7 +523,7 @@
  9080 FORMAT(' TESSERA  SFERA   AREA   X Y Z CENTRO TESSERA  ', &
              'X Y Z PUNTO NORMALE')
  9090 FORMAT(2I4,7F12.7)
-      END subroutine PEDRA
+      END subroutine
 !
       SUBROUTINE SUBTESSERA(sfe,ns,nesf,NV,PTS,CCC,PP,PP1,AREA)
 !
@@ -831,7 +832,7 @@
 !
       CALL GAUBON(sfe,NV,NS,PTS,CCC,PP,PP1,AREA,INTSPH)
       RETURN
-      END subroutine SUBTESSERA
+      END subroutine
 !*MODULE PCMCAV  *DECK INTER
       SUBROUTINE INTER(sfe,P1,P2,P3,P4,NS,I)
 !
@@ -890,7 +891,7 @@
       END IF
 !          the code probably never reaches this return
       RETURN
-      END subroutine INTER
+      END subroutine
 !*MODULE PCMCAV  *DECK GAUBON
       SUBROUTINE GAUBON(sfe,NV,NS,PTS,CCC,PP,PP1,AREA,INTSPH)
 !
@@ -1048,7 +1049,7 @@
         AREA = ZERO
       END IF
       RETURN
-      END subroutine GAUBON
+      END subroutine
 !*MODULE PCMCAV  *DECK VECP
       SUBROUTINE VECP(P1,P2,P3,DNORM3)
 !
@@ -1064,7 +1065,7 @@
       P3(3) = P1(1)*P2(2) - P1(2)*P2(1)
       DNORM3 = SQRT(P3(1)*P3(1) + P3(2)*P3(2) + P3(3)*P3(3))
       RETURN
-      END subroutine VECP
+      END subroutine
 !
 !      subroutine raffina(icount)
 !      integer(4) :: nagg,its,iaddtes,
@@ -1210,7 +1211,7 @@
       enddo
       close(7)
       return
-      end subroutine read_cavity_full_file
+      end subroutine
 !
       subroutine read_cavity_file
        integer(4) :: i,nts,nsphe
@@ -1247,7 +1248,7 @@
 
        close(7)
        return
-      end subroutine read_cavity_file
+      end subroutine
 !
       subroutine read_gmsh_file
 ! this routine read in gmsh mesh files
@@ -1350,7 +1351,7 @@
 !      enddo
 !      close(7)
       return
-      end subroutine read_gmsh_file
+      end subroutine
 !
       function vec(v1,v2)
       real(8) :: vec(3),v1(3),v2(3)
@@ -1358,7 +1359,7 @@
       vec(1)=v1(2)*v2(3)-v1(3)*v2(2)
       vec(2)=v1(3)*v2(1)-v1(1)*v2(3)
       return
-      end function vec
+      end function
 !
       subroutine dealloc_pedra
       if (allocated(sfe_act)) deallocate(sfe_act)
@@ -1366,6 +1367,6 @@
       if (allocated(cts_act)) deallocate(cts_act)
       if (allocated(cts_pro)) deallocate(cts_pro)
       return
-      end subroutine dealloc_pedra
+      end subroutine
 !
-      end module pedra_friends
+      end module

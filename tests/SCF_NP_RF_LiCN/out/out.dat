@@ -1,0 +1,195 @@
+ 
+ *****************************************************
+ *****************************************************
+ **                                                 **
+ **                    WaveT                        **
+ **     Evolution of molecular wavefunctions        **
+ **   under external electromagnetic perturbations  **
+ **                                                 **
+ **                     by                          **
+ **                Stefano Corni                    **
+ **                Silvio Pipolo                    **
+ **               Emanuele Coccia                   **
+ **                 Gabriel Gil                     **
+ **                Jacopo Fregoni                   **
+ **                                                 **
+ *****************************************************
+ *****************************************************
+ 
+ Number to append to dat file           1
+ Number of CIS states to be read          10
+ Number of CIS states to be used          10
+ Molecular center of charge
+   0.0000000000000000        0.0000000000000000        0.0000000000000000     
+ 
+ Nanoparticle as external medium
+ 
+ Time step (in au), number of steps, stride  0.20000000000000001               10           1
+ Time shape of the perturbing fieldsnd       
+ time at the center of the pulse (au):   5000.0000000000000     
+ Width of the pulse (time au):   10.000000000000000     
+ Frequency (au):  0.26000000000000001     
+ Maximum E field   0.0000000000000000        0.0000000000000000        0.0000000000000000     
+ One pulse
+ 
+ Excitation energies read from input, in Hartree
+           1  0.23914658398378114     
+           2  0.24189270838648344     
+           3  0.24189270838648416     
+           4  0.24843651971915551     
+           5  0.24843651971915581     
+           6  0.26431451556334062     
+           7  0.29246945274044112     
+           8  0.29246945274044123     
+           9  0.30889639632024479     
+          10  0.33040533910159270     
+
+ Starting point for FT calculation   80.000000000000000     
+ Artificial damping   2000.0000000000000        2000.0000000000000     
+ Direction along which the field is oriented   1.0000000000000000        1.0000000000000000        1.0000000000000000     
+ 
+ No dissipation
+ 
+ Apparent charges are propagated
+ Local field effects are NOT included
+ Medium charges do not follow the quantum jump
+ Frequency of updating the interaction potential           1
+ Do SCF calculation for the state in ci_ini.inp
+ SCF threshold   14.000000000000000     
+ Mixing coefficient  0.20000000298023224     
+ Max number of SCF cycles         600
+ The coupling is of PCM type: pot \cdot chr
+ Nanoparticle as external medium
+ Medium polarization described by apparent charges
+ Diagonal BEM furmulation
+ This is a Classical BEM run
+ This is full run reading matrix and boundary
+ Medium polarization set initially to zero
+ Surface read from file cavity.inp
+ Essential output written.
+Done reading input & setting up the field, took     0.313s
+ BEM surface and Matrixes S D have been read in
+ BEM correctly initialized
+ Done BEM diagonal
+ Medium contribution to ground state free energy:   0.0000000000000000     
+ SCF Cycle
+ Max_cycle          600
+ Threshold    9.9999999999999998E-013   1.0000000000000000E-014
+ Max Diff on Eigenvalue    0.0000000000000000     
+ Max Diff on Eigenvector    0.0000000000000000     
+ Max Diff on Eigenvalue    0.0000000000000000     
+ Max Diff on Eigenvector    0.0000000000000000     
+ cycle            3   6.5536341192209621E-011   0.0000000000000000     
+ Max Diff on Eigenvalue    1.7189978227753061E-011
+ Max Diff on Eigenvector   0.12694469808561570     
+ cycle            4   7.9288272914488159E-011   0.0000000000000000     
+ Max Diff on Eigenvalue    1.3751931722278538E-011
+ Max Diff on Eigenvector   0.16106925479859369     
+ cycle            5   9.0289701442421849E-011   0.0000000000000000     
+ Max Diff on Eigenvalue    1.1001428527933690E-011
+ Max Diff on Eigenvector    1.8823196466093761E-002
+ cycle            6   9.9090860087196025E-011   0.0000000000000000     
+ Max Diff on Eigenvalue    8.8011586447741763E-012
+ Max Diff on Eigenvector    2.3560108652843414E-002
+ cycle            7   1.0613184315635025E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    7.0409830691542261E-012
+ Max Diff on Eigenvector    8.0736104007933795E-002
+ cycle            8   1.1176477956011469E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    5.6329364037644339E-012
+ Max Diff on Eigenvector   0.13659809500991604     
+ cycle            9   1.1627081816876356E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    4.5060386086488713E-012
+ Max Diff on Eigenvector   0.14097608491309638     
+ cycle           10   1.1987601048531887E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    3.6051923165553168E-012
+ Max Diff on Eigenvector    1.0700722754697745E-002
+ cycle           11   1.2275981075312963E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    2.8838002678107516E-012
+ Max Diff on Eigenvector    1.8685669099637203E-002
+ cycle           12   1.2506706412694635E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    2.3072533738167228E-012
+ Max Diff on Eigenvector    3.7587095360596567E-002
+ cycle           13   1.2691285782712169E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    1.8457937001753466E-012
+ Max Diff on Eigenvector    1.5478957366142798E-002
+ cycle           14   1.2838912106932535E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    1.4762632422036522E-012
+ Max Diff on Eigenvector    6.2020785174348170E-003
+ cycle           15   1.2957060814902666E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    1.1814870797013093E-012
+ Max Diff on Eigenvector    4.0201186936610789E-002
+ cycle           16   1.3051558846264438E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    9.4498031361772705E-013
+ Max Diff on Eigenvector    1.5929885885259898E-002
+ cycle           17   1.3127160925115178E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    7.5602078850739440E-013
+ Max Diff on Eigenvector    2.6425911183150130E-002
+ cycle           18   1.3187654511167060E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    6.0493586051882375E-013
+ Max Diff on Eigenvector    1.7397269626821532E-002
+ cycle           19   1.3236025204468524E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    4.8370693301463819E-013
+ Max Diff on Eigenvector    4.8658698957440794E-002
+ cycle           20   1.3274729438513683E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    3.8704234045158770E-013
+ Max Diff on Eigenvector    7.0026107770367552E-002
+ cycle           21   1.3305707750876916E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    3.0978312363233451E-013
+ Max Diff on Eigenvector    1.8565010413267302E-002
+ cycle           22   1.3330480274319212E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    2.4772523442295746E-013
+ Max Diff on Eigenvector    6.8338612830575352E-002
+ cycle           23   1.3350280082813359E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    1.9799808494147531E-013
+ Max Diff on Eigenvector    8.5792955236517365E-002
+ cycle           24   1.3366151176315288E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    1.5871093501929057E-013
+ Max Diff on Eigenvector    9.3276292123631310E-003
+ cycle           25   1.3378841166433036E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    1.2689990117747962E-013
+ Max Diff on Eigenvector   0.76888914885159598     
+ cycle           26   1.3388975941396736E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    1.0134774963699300E-013
+ Max Diff on Eigenvector   0.77029801038590928     
+ cycle           27   1.3397104020769490E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    8.1280793727545042E-014
+ Max Diff on Eigenvector    8.0457884835169524E-002
+ cycle           28   1.3403591615519100E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    6.4875947496101372E-014
+ Max Diff on Eigenvector    3.5843976639492292E-002
+ cycle           29   1.3408795959419378E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    5.2043439002780190E-014
+ Max Diff on Eigenvector    6.0168287249152186E-002
+ cycle           30   1.3412936218518481E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    4.1402590991029831E-014
+ Max Diff on Eigenvector    6.0470483546900544E-003
+ cycle           31   1.3416264572820719E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    3.3283543022372131E-014
+ Max Diff on Eigenvector    4.8891568055618839E-002
+ cycle           32   1.3418928696082993E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    2.6641232622748312E-014
+ Max Diff on Eigenvector    4.8116452241514340E-002
+ cycle           33   1.3421055467064541E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    2.1267709815475655E-014
+ Max Diff on Eigenvector    4.1088340713958837E-002
+ cycle           34   1.3422756526063062E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    1.7010589985211322E-014
+ Max Diff on Eigenvector    3.0918210757768960E-002
+ cycle           35   1.3424123054481263E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    1.3665284182007298E-014
+ Max Diff on Eigenvector    1.3748617925557260E-002
+ cycle           36   1.3425214878595021E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    1.0918241137580775E-014
+ Max Diff on Eigenvector    7.5289938662146949E-003
+ cycle           37   1.3426082652329835E-010   0.0000000000000000     
+ Max Diff on Eigenvalue    8.6777373481394804E-015
+ Max Diff on Eigenvector    2.0293644242730169E-002
+ SCF Done
+ Written out the SCF charges
+ Written out the SCF potentials
+ Written out the SCF dipoles
+ Written out the SCF energies, GS has been given zero energy!
+ maxloc           1
+ G_neq at t=0:  -6.7133900830903010E-011
+ Initiated VV propagator
+Done , total elapsed time     0.584s

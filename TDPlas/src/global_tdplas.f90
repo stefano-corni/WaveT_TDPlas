@@ -1,58 +1,52 @@
       module global_tdplas
-      implicit none
-      INTEGER, PARAMETER :: dbl = selected_real_kind(14,200)
-      INTEGER, PARAMETER :: sgl = selected_real_kind(6,30)
-      INTEGER, PARAMETER :: i4b = selected_int_kind(9)
-      INTEGER, PARAMETER :: cmp = dbl
-!
-      !LIGHT SPEED IN AU TO BE REVISED
-      ! constants, conversion factors, and number literals
-      real(8), parameter :: pi=3.141592653589793D+00
-      real(8), parameter :: ev_to_au=0.0367493
-      real(8), parameter :: debye_to_au=0.393456
-      real(dbl), parameter :: TOANGS=0.52917724924D+00
-      real(dbl), parameter :: ANTOAU=1.0D+00/TOANGS
-      real(dbl), parameter :: c=1.37036d2
-      real(8), parameter :: slight=137.d0
-      real(dbl), parameter :: zero=0.d0
-      real(dbl), parameter :: one=1.d0
-      real(dbl), parameter :: two=2.d0
-      real(dbl), parameter :: twp=two*pi
-      real(dbl), parameter :: pt5=0.5d0
-      integer(i4b), parameter :: one_i=1
-      complex(cmp), parameter :: zeroc=(zero,zero)      
-      complex(cmp), parameter :: onec=(one,zero)                
-      complex(cmp), parameter :: twoc=(two,zero)                
-      complex(16), parameter :: ui=(zero,one)
 
+      use constants  
+
+      implicit none
       ! block of global variables to be supplied by WaveT
-      real(8) 		:: dt				! time step
-      character(3) 	:: mdm				! kind of medium
-      integer(4) 	:: n_ci,n_ci_read		! number of CIS states
-      real(8), allocatable :: c_i(:),e_ci(:)		! CIS coefficients and energies
-      real(8), allocatable :: mut(:,:,:)			! CIS transition dipoles
-      real(8) 		:: mol_cc(3)			! molecule center
-      real(8) 		:: fmax(3),omega			! field amplitude and frequency
-      character(3) 	:: Ffld				! shape of impulse
-      integer(4) 	:: n_out,n_f			! auxiliaries for output
+      real(dbl) 		:: dt				! time step
+      character(flg) 	        :: Fmdm				! kind of medium
+      integer(i4b)       	:: n_ci,n_ci_read		! number of CIS states
+      real(dbl), allocatable    :: c_i(:),e_ci(:)		! CIS coefficients and energies
+      real(dbl), allocatable    :: mut(:,:,:)		! CIS transition dipoles
+      real(dbl) 		:: mol_cc(3)			! molecule center
+      real(dbl) 		:: fmax(3,10),omega(10)		! field amplitude and frequency
+      real(dbl)                 :: tdelay(10),pshift(10) ! time delay and phase shift
+      character(flg) 	        :: Ffld				! shape of impulse
+      integer(i4b) 	        :: n_out,n_f			! auxiliaries for output
+      !character(1)              :: medium_res                   !restart for medium 
+      !integer(i4b)              :: n_res                        ! frequency for restart
+
 
       contains
   
       subroutine set_global_tdplas(this_dt,this_mdm,this_mol_cc,this_n_ci,this_n_ci_read,this_c_i,this_e_ci,this_mut,&
-				   this_fmax,this_omega,this_Ffld,this_n_out,this_n_f)
+				   this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift)!,this_res,this_n_res)
+!------------------------------------------------------------------------
+! @brief Set global variables for medium 
+!
+! @date Created: S. Pipolo
+! Modified: E. Coccia 28/11/17
+!------------------------------------------------------------------------
+
         implicit none
-        real(8)     , intent(in) :: this_dt				! time step
-        character(3), intent(in) :: this_mdm				! kind of medium
-        integer(4)  , intent(in) :: this_n_ci,this_n_ci_read		! number of CIS states
-        real(8)     , intent(in) :: this_c_i(:),this_e_ci(:)		! CIS coefficients and energies
-        real(8)     , intent(in) :: this_mut(:,:,:)			! CIS transition dipoles
-        real(8)     , intent(in) :: this_mol_cc(3)			! molecule center
-        real(8)     , intent(in) :: this_fmax(3),this_omega		! field amplitude and frequency
-        character(3), intent(in) :: this_Ffld				! shape of impulse
-        integer(4)  , intent(in) :: this_n_out,this_n_f			! auxiliaries for output
+
+        real(dbl)     , intent(in) :: this_dt				! time step
+        character(3)  , intent(in) :: this_mdm				! kind of medium
+        integer(i4b)  , intent(in) :: this_n_ci,this_n_ci_read		! number of CIS states
+        real(dbl)     , intent(in) :: this_e_ci(:)	        	! CIS energies
+        real(dbl)     , intent(in) :: this_mut(:,:,:)			! CIS transition dipoles
+        real(dbl)     , intent(in) :: this_mol_cc(3)			! molecule center
+        real(dbl)     , intent(in) :: this_fmax(3,10),this_omega(10)		! field amplitude and frequency
+        real(dbl)     , intent(in) :: this_tdelay(10),this_pshift(10) ! time delay and phase shift
+        complex(cmp)  , intent(in) :: this_c_i(:)                       ! CIS coefficients
+        character(3)  , intent(in) :: this_Ffld				! shape of impulse
+        integer(i4b)  , intent(in) :: this_n_out,this_n_f	        ! auxiliaries for output
+        !character(1)  , intent(in) :: this_res                          ! restart for medium 
+        !integer(i4b)  , intent(in) :: this_n_res                        ! frequency for restart
         
         dt=this_dt
-        mdm=this_mdm
+        Fmdm=this_mdm
         mol_cc=this_mol_cc
         n_ci=this_n_ci
         n_ci_read=this_n_ci_read
@@ -66,6 +60,13 @@
         Ffld=this_Ffld
         n_out=this_n_out
         n_f=this_n_f
+        tdelay=this_tdelay
+        pshift=this_pshift
+        !medium_res=this_res 
+        !n_res=this_n_res
+
         return
+
       end subroutine set_global_tdplas
+
       end module global_tdplas

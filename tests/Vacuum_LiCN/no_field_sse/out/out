@@ -17,65 +17,56 @@
  *****************************************************
  
  Number to append to dat file           1
- Number of CIS states to be read           3
- Number of CIS states to be used           3
+ Number of CIS states to be read          10
+ Number of CIS states to be used          10
  Molecular center of charge
   0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
  
  No external medium, vacuum calculation
+ No restart
+ Only |k> -> |0> relaxation
  
- Time step (in au), number of steps, stride  5.000000000000000E-002      100000
-           2
- Time shape of the perturbing fieldgau
+ Time step (in au), number of steps, stride  5.000000074505806E-002       10000
+           1
+ Time shape of the perturbing fieldgau       
  time at the center of the pulse (au):   2500.00000000000     
- Width of the pulse (time au):   1000.00000000000     
+ Width of the pulse (time au):   707.106781187000     
  Frequency (au):  0.242000000000000     
  Maximum E field  0.000000000000000E+000  0.000000000000000E+000
   0.000000000000000E+000
+ One pulse
  
  Excitation energies read from input, in Hartree
            1  0.239189226989031     
            2  0.241982406620969     
            3  0.241982406620973     
+           4  0.248481326284246     
+           5  0.248481326345823     
+           6  0.264390132375462     
+           7  0.292505208317815     
+           8  0.292505208317815     
+           9  0.308951472642535     
+          10  0.330458849355420     
  
- No dissipation
+ Starting point for FT calculation  0.000000000000000E+000
+ Artificial damping   2.00000000000000     
+ Direction along which the field is oriented  0.000000000000000E+000
+   1.00000000000000       0.000000000000000E+000
  
  Use sqrt(gamma_i) (|i><i|-|0><0|)
  Markovian dissipation
  Quantum jump algorithm
  Internal conversion relaxation via given matrix
  
-Done reading input & setting up the field, took     1.046s
+Done reading input & setting up the field, took     0.498s
  Jump due to pure dephasing, channel n.:           3
- Quantum jump at step:        5448   272.350000000000     
- Jump due to nonradiative relaxation, channel n.:           2
- Quantum jump at step:        6375   318.700000000000     
+ Quantum jump at step:        5448   272.350004058331     
  Jump due to pure dephasing, channel n.:           4
- Quantum jump at step:       22070   1103.45000000000     
- Jump due to pure dephasing, channel n.:           2
- Quantum jump at step:       25378   1268.85000000000     
- Jump due to pure dephasing, channel n.:           2
- Quantum jump at step:       25876   1293.75000000000     
- Jump due to pure dephasing, channel n.:           2
- Quantum jump at step:       26481   1324.00000000000     
- Jump due to pure dephasing, channel n.:           4
- Quantum jump at step:       61764   3088.15000000000     
- Jump due to pure dephasing, channel n.:           2
- Quantum jump at step:       66400   3319.95000000000     
- Jump due to pure dephasing, channel n.:           3
- Quantum jump at step:       75228   3761.35000000000     
- Jump due to pure dephasing, channel n.:           2
- Quantum jump at step:       79464   3973.15000000000     
- Jump due to pure dephasing, channel n.:           2
- Quantum jump at step:       82973   4148.60000000000     
- Jump due to pure dephasing, channel n.:           3
- Quantum jump at step:       85000   4249.95000000000     
- Jump due to pure dephasing, channel n.:           2
- Quantum jump at step:       92729   4636.40000000000     
+ Quantum jump at step:        6375   318.700004749000     
  
- Total number of quantum jumps          13 (  1.3000000E-04 )
+ Total number of quantum jumps           2 (  1.9999999E-04 )
  Spontaneous emission quantum jumps           0 (  0.0000000E+00 )
- Nonradiarive relaxation quantum jumps           1 (  9.9999997E-06 )
- Dephasing relaxation quantum jumps          12 (  1.2000000E-04 )
+ Nonradiarive relaxation quantum jumps           0 (  0.0000000E+00 )
+ Dephasing relaxation quantum jumps           2 (  1.9999999E-04 )
  
-Done , total elapsed time    11.060s
+Done , total elapsed time    38.865s

@@ -1,0 +1,61 @@
+&general 
+n_ci=10  !# ci states to be used in the propagation
+n_ci_read=15   !# ci states written in the input files
+mol_cc= 0. 0. 0. ! center of charge of the molecule
+medium='nan'  ! nan: do a wavet+tdplas calculation 
+n_f=1 ! nteger to be appended in all output files
+dt=0.20 ! time step, in a.u.
+n_step=200  ! number of step to be performed
+n_out=2    ! stride for output
+/ 
+
+&field 
+Ffld='gau'  !shape of the pulse. gau(ssian) exp(-(t-t0)^2/s^2); mdg: Gaussian modulated sinusoid exp(-(t-t0)^2/s^2) * sin(wt) ; mds: cos^2 modulated sinusoid 1/2* cos^2(pi(t-t0)/(2t0)) * sin(wt); pip: Pi-pulse cos^2(pi(t-t0)/(2s)) * cos(w(t-t0)) ; sin: sinusoid sin(wt); snd Linearly modulated (up to t0) Sinusoid; css Cos^2 pulse (only half a period): cos^2(pi*(t-t0)/(s))
+omega=0.262961
+sigma=2.,
+t_mid=15.,
+radiative='non' !non: does not include Abraham-Lorentz radiative frictional forces
+fmax= 0.000001 0. 0.
+/
+
+&spectra 
+start=0.  ! at which time to start collect data to calculate absorption spectrum
+tau= 2000.0 2000.0  ! additional damping time. first for the molecule, second for the np
+dir_ft= 1. 0. 0.  ! project the dipole along this direction to perform the FT for the spectrum
+/
+
+&sse 
+dissipative='non' ! this is not a Stochastic Schoeringer equation calculation
+/
+
+! Here starts the tdplas part
+!
+&PROPAGATE  
+propagation_type='ief' !ief: diagonal ief to set up EOM; ied:ief like, but just one  relax time; ons: cosmo-like; dip: no charges, only field   
+interaction_type='pcm' !pcm: potential is used to couple environ and molecule; ons: -mu*F
+interaction_stride=1   ! stride to update the interaction 
+interaction_init='non-scf' !what to do at the beginning: non-scf uses the wavefuction as is,SCF_ES performs initial SCF 
+debug_type='off' !off: molecule-medium interaction turned off; non: no action; equ: equilibrium response; vmu: potentials from transition dipoles 
+local_field='loc' !loc: include local field effects; anything else: do not include local field effects
+/
+
+&MEDIUM
+medium_type='nan'     !nan: NP as external medium,  sol,q(uantum)so(l),q(uantum)nan(oparticle)
+medium_init='fro'     !chr: use apaprent polarization charge, other option:dip(ole)
+bem_type='diag'       !diag: use diagonal IEF, no other option working currently
+bem_read_write='rea'  ! wri: just write matrices and boundary; other options: rea(d) full run reading matrix and boundary
+/
+
+&SURFACE
+input_surface='fil' !gms:Surface read from file cavity.inp;  fil(e): read from file cavity.inp; bui(ld): build from spheres, to be given
+/
+
+&EPS_FUNCTION
+epsilon_omega='drl' !drl: Drude Lorentz, eps_d+eps_A/(w^2-eps_w0^2+i*eps_gm*w); deb: Debye
+eps_0=1000.
+eps_d=1. 
+eps_A=0.110224
+eps_gm=0.00757576
+eps_w0=0.  
+f_vel=0.  !Fermi velocity, to correct eps_gm for the limited mean free path
+/

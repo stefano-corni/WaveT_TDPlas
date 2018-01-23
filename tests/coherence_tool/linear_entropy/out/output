@@ -1,0 +1,28 @@
+ **********************************************
+ *                                            *
+ *               Tool for a                   *
+ *         global and quantitative            *
+ *                analysis                    *
+ *                   of                       *
+ *            quantum coherence               *
+ *                                            *
+ *                   by                       *
+ *              Stefano Corni                 *
+ *                  and                       *
+ *             Emanuele Coccia                *
+ *                  and                       *
+ *             Filippo Troiani                *
+ *                                            *
+ **********************************************
+ 
+ Number of steps:           3
+ Number of trajectories:           3
+ Number of states           3
+ Quantifier:
+ linear entropy
+ 
+ 
+ Coherence quantifier: linear entropy
+ S(rho) = 1 - Tr(rho^2)
+ 
+ Calculation ended

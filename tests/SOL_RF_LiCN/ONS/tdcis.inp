@@ -1,0 +1,61 @@
+&general n_ci=5,n_ci_read=5 
+mol_cc= 0. 0. 0.
+medium='sol'
+n_f=1 
+dt=0.20
+n_step=1000
+n_out=1
+/ 
+
+&field 
+Ffld='pip'
+omega=0.262961
+sigma=20,
+t_mid=250
+radiative='non'
+fmax= 0. 0. 0.
+/
+
+&sse dissipative='non'
+/
+
+&spectra start=80, 
+tau= 2000.0 2000.0
+dir_ft= 1. 1. 1. 
+/
+
+! Here starts the tdplas part
+!
+&PROPAGATE  
+propagation_type='dip'
+interaction_type='ons'
+interaction_stride=1
+interaction_init='non-scf'
+test_type='s-r' 
+local_field='non'
+/
+
+&MEDIUM
+medium_type='sol'
+medium_init='vac'
+!bem_type='diag'
+!bem_read_write='rea'
+/
+
+&SURFACE
+!input_surface='fil'
+spheres_number=1
+sphere_position_x= 0.
+sphere_position_y= 0.
+sphere_position_z= 0.
+sphere_radius= 10.      
+/
+
+&EPS_FUNCTION
+epsilon_omega='deb'
+eps_0=35.688
+eps_d=1.18       
+tau_deb=500. 
+!tau_deb=139320.
+/
+

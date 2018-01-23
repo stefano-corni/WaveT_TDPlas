@@ -1,0 +1,2 @@
+Create the required matrix for a WaveT run or a freq_bem calculation by building the NP as a union of spheres. To run:
+   ../../TDPlas/bin/tdplas.x < tdplas.inp > tdplas.out
