@@ -1,0 +1,10 @@
+ Nanoparticle as external medium
+ Medium polarization described by apparent charges
+ Diagonal BEM furmulation
+ This is a Classical BEM run
+ This run just writes matrices and boundary
+ Surface read from file cavity.inp
+ Essential output written.
+Done reading input, took     0.000s
+ Created output file with surface points
+ Matrixes S D have been written out

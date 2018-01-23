@@ -1,79 +1,1201 @@
       Module BEM_medium      
+      use constants    
+      use readio_medium
       use global_tdplas
       use pedra_friends
-      use readio_medium
-      implicit none
+      use MathTools
+!      use, intrinsic :: iso_c_binding
 
-      real(dbl) :: f_f,f_w    
-      real(dbl), allocatable :: cals(:,:),cald(:,:) !Calderon D and S matrices 
-      real(dbl), allocatable :: sm1(:,:)
-      real(dbl), allocatable :: eigv(:),eigt(:,:)
-      real(dbl), allocatable :: sm12(:,:),sp12(:,:)
-      real(dbl), allocatable :: matq0(:,:),matqd(:,:)
-      real(dbl), allocatable :: matqv(:,:),matqq(:,:)
-!      complex(16), allocatable :: matq_omega(:,:)
-!SP 22/02/16:  Onsager's factors for reaction and local(x) fields
-      real(8) :: f_0,f_d,tau_ons,fx_0,fx_d,taux_ons
-      complex(cmp) :: eps,eps_f
+      implicit none
+! SP 25/06/17: variables starting with "BEM_" are public. 
+      real(dbl), allocatable :: BEM_S(:,:),BEM_D(:,:)    !< Calderon S and D matrices 
+      real(dbl), allocatable :: BEM_Sm1(:,:)             !< Onsager $S^{-1}$ matrix
+      real(dbl), allocatable :: BEM_L(:),BEM_T(:,:)      !< $\Lambda$ and T eigenMatrices
+      real(dbl), allocatable :: BEM_W2(:),BEM_Modes(:,:) !< BEM squared frequencies and Modes ($T*S^{1/2}$)
+! SP 25/06/17: K0 and Kd are still common to 'deb' and 'drl' cases
+      real(dbl), allocatable :: K0(:),Kd(:)              !< Diagonal $K_0$ and $K_d$ matrices 
+      real(dbl), allocatable :: fact1(:),fact2(:)        !< Diagonal vectors for propagation matrices
+      real(dbl), allocatable :: Sm12T(:,:),TSm12(:,:)    !< $S^{-1/2}T$ and $T*S^{-1/2}$ matrices
+      real(dbl), allocatable :: TSp12(:,:)               !< $T*S^{1/2}$ matrices
+      real(dbl), allocatable :: BEM_Sm12(:,:),Sp12(:,:)  !< $S^{-1/2}$ and $S^{1/2}$ matrices
+      real(dbl), allocatable :: BEM_Q0(:,:),BEM_Qd(:,:)  !< Static and Dyanamic BEM matrices $Q_0$ and $Q_d$
+      real(dbl), allocatable :: BEM_Qt(:,:),BEM_R(:,:)   !< Debye propagation matrices $\tilde{Q}$ and $R$
+      real(dbl), allocatable :: BEM_Qw(:,:),BEM_Qf(:,:)  !< Drude-Lorents propagation matrices $Q_\omega$ and $Q_f$
+      real(dbl), allocatable :: MPL_Ff(:,:,:,:),MPL_Fw(:,:)!< Onsager's Matrices with factors for reaction and local (x) field
+      real(dbl), allocatable :: MPL_F0(:,:,:,:),MPL_Fx0(:,:,:) !< Onsager's Matrices with factors for reaction and local (x) field
+      real(dbl), allocatable :: MPL_Ft0(:,:,:),MPL_Ftx0(:,:,:) !< Onsager's Matrices with factors/tau for reaction and local (x) field
+      real(dbl), allocatable :: MPL_Fd(:,:,:,:),MPL_Fxd(:,:,:) !< Onsager's Matrices with factors for local(x) field
+      real(dbl), allocatable :: MPL_Taum1(:),MPL_Tauxm1(:)  !< Onsager's Matrices with factors for local(x) field
+      real(dbl), allocatable :: mat_f0(:,:),mat_fd(:,:)     !< Onsager's total matrices needed for scf, free_energy and propagation
+      real(dbl), allocatable :: ONS_ff(:)                   !< Onsager spherical propagation factors corresponding to $Q_f$
+      real(dbl):: ONS_fw                                 !< Onsager spherical propagation factors corresponding to $Q_\omega$ 
+      real(dbl):: ONS_f0,ONS_fd                          !< Onsager spherical propagation factors corresponding to $Q_0$ and $Q_d$
+      real(dbl):: ONS_fx0,ONS_fxd                        !< Onsager spherical propagation factors for local field 
+      real(dbl):: ONS_taum1,ONS_tauxm1                   !< Onsager spherical time constants 
+      real(dbl) :: sgn                                   !< discriminates between BEM equations for solvent and nanoparticle
+      complex(cmp) :: eps,eps_f                          !< drl complex eps(\omega) and (eps(\omega)-1)/(eps(\omega)+2) 
+      real(dbl), allocatable :: lambda(:,:)              !< depolarizing factors (3,nsph)       
+      complex(cmp), allocatable :: q_omega(:) !< Medium charges in frequency domain
+      complex(cmp), allocatable :: Kdiag_omega(:)         !< Diagonal K matrix in frequency domain
+      real(dbl), allocatable :: scrd3(:) ! Scratch vector dim=3
       save
       private
-      public init_BEM,deallocate_BEM,do_eps,eps,eps_f,eigv,eigt, &
-             sm1,f_f,f_w,sm12,f_0,f_d,tau_ons,fx_0,fx_d,taux_ons, &
-             matqv,matqq,matqd,matq0,do_TS_matrix, &
-             do_charge_freq,allocate_TS_matrix,deallocate_TS_matrix
-
+      public eps,eps_f,BEM_L,BEM_T,BEM_Sm1,ONS_ff,ONS_fw,              &
+             BEM_Sm12,MPL_F0,MPL_Ft0,MPL_Fd,MPL_Fx0,MPL_Ftx0,MPL_Fxd,  &
+             MPL_Tauxm1,MPL_Taum1,mat_f0,mat_fd,MPL_Ff,MPL_Fw,         &
+             ONS_f0,ONS_fd,ONS_taum1,ONS_fx0,ONS_fxd,ONS_tauxm1,       &
+             BEM_Qt,BEM_R,BEM_Qw,BEM_Qf,BEM_Qd,BEM_Q0,BEM_W2,BEM_Modes,&
+             do_BEM_prop,do_BEM_freq,do_BEM_quant,do_MPL_prop,         &
+             do_eps_drl,do_eps_deb,do_charge_freq,                     &
+             deallocate_BEM_public,deallocate_MPL_public
 
       contains
-!     
-      subroutine init_BEM     
-      integer(i4b) :: its                    
-       if (Fprop.eq.'dip') then
-         call do_factors 
-       else
-         if (Fbem.eq.'wri') then
-           !Build the cavity/nanoparticle surface
-           if(Fcav.eq.'fil') then 
-             call read_cavity_full_file
-           elseif(Fcav.eq.'gms') then
-             call read_gmsh_file
-           else
-            if(mdm.eq.'sol') then
-             call pedra_int('act')
-            elseif (mdm.eq.'nan') then
-             call pedra_int('met')
-            endif
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!  DRIVER  ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     
+      subroutine do_BEM_prop     
+!------------------------------------------------------------------------
+! @brief BEM driver routine for propagation
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       !Cavity read/write and S D matrices 
+       call init_BEM
+       if(Fprop(1:6).eq."chr-ie") then
+         allocate(BEM_Qd(nts_act,nts_act))
+         allocate(BEM_Q0(nts_act,nts_act))
+         !Standard or Diagonal BEM           
+         if(Fbem(1:4).eq.'stan') then
+           write(6,*) "Standard BEM not implemented yet"
+           stop
+         elseif(Fbem(1:4).eq.'diag') then
+           call init_BEM_diagonal
+           call do_BEM_diagonal
+           !Save Modes for quantum BEM         
+           if(Fmdm(1:1).eq."Q") then
+             allocate(BEM_Modes(nts_act,nts_act))
+             BEM_Modes=TSm12
            endif
-           ! write out the cavity/nanoparticle surface
-           call output_surf
-           write(6,*) "Created output file with surface points"
-! SC: 30/09/2016: now explicitly set to zero by Fchr.
-           !call write_charges0
-           !write(6,*) "Created charges0.inp file with zero charges"
-         elseif (Fbem.eq.'rea') then
-           ! read in the cavity/nanoparticle surface
-           call read_cavity_file
          endif
-         if(Fprop.eq."ief") then
-           if(Fbem.eq."rea") then
-            allocate(matqv(nts_act,nts_act))
-            allocate(matqq(nts_act,nts_act))
-            allocate(matqd(nts_act,nts_act))
-            allocate(matq0(nts_act,nts_act))
-           endif
-           call do_PCM_propMat
-         else
-           allocate(sm1(nts_act,nts_act))
-           call do_ons_propMat  
+         !Write out matrices for gamess                     
+         if(Fwrite.eq."high") call out_BEM_gamess
+         if(Fwrite.eq."high") call out_BEM_mat
+         !Build propagation Matrices 
+         if(Feps.eq."deb") then
+           allocate(BEM_Qt(nts_act,nts_act))
+           allocate(BEM_R(nts_act,nts_act))
+           if(Fbem(1:4).eq.'stan') call do_propBEM_dia_deb ! 'dia' to be replace by 'std' 
+           if(Fbem(1:4).eq.'diag') call do_propBEM_dia_deb
+         elseif(Feps.eq."drl") then
+           allocate(BEM_Qw(nts_act,nts_act))
+           allocate(BEM_Qf(nts_act,nts_act))
+           if(Fbem(1:4).eq.'stan') call do_propBEM_dia_drl ! 'dia' to be replace by 'std' 
+           if(Fbem(1:4).eq.'diag') call do_propBEM_dia_drl
          endif
+         !Write out propagation matrices         
+         if(Fwrite.eq."high") call out_BEM_propmat  
+       elseif(Fprop(1:7).eq."chr-ons") then
+         allocate(BEM_Sm1(nts_act,nts_act))
+         ! Form $S^{-1}$ matrix
+         BEM_Sm1=inv(BEM_S)
+         nsph=1
+         if(Feps.eq."deb") then
+           call do_propfact_ons_deb
+         elseif(Feps.eq."drl") then
+           allocate(ONS_ff(nsph))
+           call do_propfact_ons_drl
+         endif
+         BEM_Q0=-ONS_f0*BEM_Sm1
+         BEM_Qd=-ONS_fd*BEM_Sm1
        endif
-      return
-      end subroutine init_BEM
+       !Deallocate private arrays              
+       call finalize_BEM
+
+       return
+ 
+      end subroutine
+
+
+      subroutine do_BEM_freq(omega_list,n_omega)     
+!------------------------------------------------------------------------
+! @brief BEM driver routine for frequency calculation (old do_freq_mat) 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       real(dbl), intent(in):: omega_list(:)
+       integer(i4b), intent(in):: n_omega
+       real(dbl), allocatable :: pot(:)
+       complex(cmp) :: mu_omega(3)
+       integer(i4b):: i
+
+       ! Cavity read/write and S D matrices 
+       call init_BEM
+       allocate(BEM_Qd(nts_act,nts_act))
+       allocate(BEM_Q0(nts_act,nts_act))
+       ! Using Diagonal BEM           
+       call init_BEM_diagonal
+       call do_BEM_diagonal
+       ! Write out matrices                     
+       call out_BEM_gamess
+       ! Calculate potential on tesserae
+       allocate(pot(nts_act))
+       call do_pot_from_field(fmax(:,1),pot)
+       allocate(Kdiag_omega(nts_act))
+       allocate(q_omega(nts_act))
+       open(7,file="dipole_freq.dat",status="unknown")
+       write (7,*)"freq re(mux) re(muy) re(muz) im(mux) im(muy) im(muz)"
+       do i=1,n_omega
+        call do_charge_freq(omega_list(i),pot,mu_omega)
+        write (7,'(7e15.6)') omega_list(i),real(mu_omega(:)),aimag(mu_omega(:))
+       enddo
+       close(7)
+       deallocate(pot,q_omega,Kdiag_omega)
+       !Deallocate private arrays              
+       call finalize_BEM
+
+       return
+ 
+      end subroutine
+
+
+      subroutine do_BEM_quant     
+!------------------------------------------------------------------------
+! @brief BEM driver routine for quantum BEM calculation 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       ! Cavity read/write and S D matrices 
+       call init_BEM
+       allocate(BEM_Qd(nts_act,nts_act))
+       allocate(BEM_Q0(nts_act,nts_act))
+       ! Diagonal BEM           
+       call init_BEM_diagonal
+       call do_BEM_diagonal
+       !Save Modes for quantum BEM         
+       allocate(BEM_Modes(nts_act,nts_act))
+       BEM_Modes=TSm12
+       call finalize_BEM
+
+       return
+ 
+      end subroutine
+
+
+      subroutine init_BEM     
+!------------------------------------------------------------------------
+! @brief BEM initialization routine: cavity read/write and S and D
+! matrices 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+     
+       integer(i4b) :: its                    
+      
+       allocate(scrd3(3))
+       sgn=one                 
+       if(Fmdm(2:4).eq."nan") sgn=-one  
+       if (FinitBEM.eq.'wri') then
+       ! Write out geometric info and stop
+         ! Build the cavity/nanoparticle surface
+         if(Fsurf.eq.'fil') then 
+           call read_cavity_full_file
+         elseif(Fsurf.eq.'gms') then
+           call read_gmsh_file
+         else
+           if(Fmdm(2:4).eq.'sol') call pedra_int('act')
+           if(Fmdm(2:4).eq.'nan') call pedra_int('met')
+         endif
+         ! write out the cavity/nanoparticle surface
+         call output_surf
+         write(6,*) "Created output file with surface points"
+         ! Build and write out Calderon SD matrices
+         allocate(BEM_S(nts_act,nts_act))
+         if (Fprop(1:7).ne.'chr-ons') allocate(BEM_D(nts_act,nts_act))
+         call do_BEM_SD
+         call write_BEM_SD
+         write(6,*) "Matrixes S D have been written out"
+         stop
+       elseif (FinitBEM.eq.'rea') then
+       !Read in geometric info and proceed
+         call read_cavity_file
+         allocate(BEM_S(nts_act,nts_act))
+         if (Fprop(1:7).ne.'chr-ons') allocate(BEM_D(nts_act,nts_act))
+         call read_BEM_SD     
+         write(6,*) "BEM surface and Matrixes S D have been read in"
+       endif 
+       write(6,*) "BEM correctly initialized"
+
+       return
+ 
+      end subroutine
+
+
+      subroutine finalize_BEM     
+!------------------------------------------------------------------------
+! @brief BEM finalized and deallocation routine 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       deallocate(scrd3)
+       deallocate(BEM_S)
+       if(allocated(BEM_D)) deallocate(BEM_D)
+       if(allocated(fact1)) deallocate(fact1)
+       if(allocated(fact2)) deallocate(fact2)
+       if(allocated(K0)) deallocate(K0)
+       if(allocated(Kd)) deallocate(Kd)
+       if(allocated(Sp12)) deallocate(Sp12)
+       if(allocated(Sm12T)) deallocate(Sm12T)
+       if(allocated(TSm12)) deallocate(TSm12)
+       if(allocated(TSp12)) deallocate(TSp12)
+
+       return
+ 
+      end subroutine
+
+
+      subroutine deallocate_BEM_public     
+!------------------------------------------------------------------------
+! @brief BEM finalized and deallocation routine 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       if (Fprop(1:3).eq.'chr') then
+         if(allocated(BEM_Qd)) deallocate(BEM_Qd)
+         if(allocated(BEM_Q0)) deallocate(BEM_Q0)
+         if(allocated(BEM_Qt)) deallocate(BEM_Qt)
+         if(allocated(BEM_R)) deallocate(BEM_R)
+         if(allocated(BEM_Qw)) deallocate(BEM_Qw)
+         if(allocated(BEM_Qf)) deallocate(BEM_Qf)
+         if(allocated(BEM_L)) deallocate(BEM_L)
+         if(allocated(BEM_W2)) deallocate(BEM_W2)
+         if(allocated(BEM_T)) deallocate(BEM_T)
+         if(allocated(BEM_Sm1)) deallocate(BEM_Sm1)
+         if(allocated(BEM_Sm12)) deallocate(BEM_Sm12)
+       endif
+
+       return
+ 
+      end subroutine
+
+
+      subroutine do_MPL_prop         
+!------------------------------------------------------------------------
+! @brief Calculate propagation Onsager matrices from factors including
+! depolarization 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       real(dbl):: tmp(3),m
+       integer(i4b):: i,j
+
+       ! SP 05/07/17 Only one cavity!!! 
+       if(Fmdm(2:4).eq."sol") nsph=1 
+       call init_MPL
+       if(MPL_ord.eq.1) then
+       !SPHEROID
+         if(Fshape.eq."spho") then   
+           do i=1,nsph
+           ! Determine minor axis versors for spheroids                          
+             ! build a vector not parallel to major unit vector
+             m=sph_maj(i)/sph_min(i)
+             tmp=zero
+             if(sph_vrs(1,1,i).ne.one) tmp(1)=one
+             if(sph_vrs(1,1,i).eq.one) tmp(2)=one
+             ! build the two minor unit vectors
+             sph_vrs(:,2,i)=vprod(sph_vrs(:,1,i),tmp) 
+             sph_vrs(:,2,i)=sph_vrs(:,2,i)/mdl(sph_vrs(:,2,i))
+             sph_vrs(:,3,i)=vprod(sph_vrs(:,1,i),sph_vrs(:,2,i)) 
+             sph_vrs(:,3,i)=sph_vrs(:,3,i)/mdl(sph_vrs(:,3,i))
+            ! Determine depolarization factors: Osborn Phys. Rev. 67 (1945), 351.
+             if(int(m*100).gt.100) then   ! Prolate spheroid
+               lambda(1,i)=-4.d0*pi/(m*m-one)*(m/two/sqrt(m*m-one)* &
+                     log((m+sqrt(m*m-one))/(m-sqrt(m*m-one)))-one)
+             elseif(int(m*100).lt.100) then    ! Oblate spheroid
+               m=1/m
+               lambda(1,i)=-4.d0*pi*m*m/(m*m-one)*&
+                       (one-one/sqrt(m*m-one)*asin(sqrt(m*m-one)/m))
+             else 
+               write(6,*) "This is a Sphere"
+               lambda(1,i)=one/three
+             endif
+             lambda(2,i)=pt5*(one-lambda(1,i))
+             lambda(3,i)=pt5*(one-lambda(1,i))
+           enddo
+           if(Feps.eq."deb") call do_propMPL_deb
+           if(Feps.eq."drl") call do_propMPL_drl
+           ! mat_f0 and mat_fd for scf, g_ and prop
+           mat_f0=zero
+           mat_fd=zero
+           do j=1,nsph
+             do i=1,3 
+               mat_f0(:,:)=mat_f0(:,:)+MPL_F0(:,:,i,j)
+               mat_fd(:,:)=mat_fd(:,:)+MPL_Fd(:,:,i,j)
+             enddo
+           enddo
+         else                         
+       !SPHERE  
+         !Build propagation Matrices with factors  
+           ! mat_f0 and mat_fd for scf, g_ and prop
+           if(Feps.eq."drl")then 
+             call do_propfact_ons_drl 
+             do i=1,nsph
+               ONS_ff=ONS_ff*sph_maj(i)**3
+               ONS_f0=ONS_f0*sph_maj(i)**3
+               ONS_fd=ONS_fd*sph_maj(i)**3
+             enddo
+           elseif(Feps.eq."deb") then 
+             call do_propfact_ons_deb 
+             do i=1,nsph
+               ONS_f0=ONS_f0/sph_maj(i)**3
+               ONS_fd=ONS_fd/sph_maj(i)**3
+             enddo
+           endif
+           mat_fd=zero
+           mat_f0=zero
+           do i=1,3
+             mat_fd(i,i)=ONS_fd
+             mat_f0(i,i)=ONS_f0
+           enddo
+           write (6,*) "Onsager"
+           write (6,*) "eps_0,eps_d",eps_0,eps_d
+           write (6,*) "lambda",1/three     
+           write (6,*) "f0",ONS_f0
+           write (6,*) "fd",ONS_fd
+           if(Feps.eq."deb")write (6,*) "tau",1./ONS_taum1
+         endif
+       else
+         write(6,*) "Higher multipoles not implemented "
+         stop
+       endif
+       call finalize_MPL
+ 
+       return
+  
+      end subroutine
+
+
+      subroutine init_MPL     
+!------------------------------------------------------------------------
+! @brief Allocate arrays for multipolar routines 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       allocate(mat_fd(3,3))
+       allocate(mat_f0(3,3))
+       if(Fshape.eq."spho") then
+         allocate(lambda(3,nsph))
+         allocate(MPL_F0(3,3,3,nsph))
+         allocate(MPL_Fd(3,3,3,nsph))
+         if(Feps.eq."drl") then
+           allocate(MPL_Fw(3,nsph))
+           allocate(MPL_Ff(3,3,3,nsph))
+         elseif(Feps.eq."deb") then
+           allocate(MPL_Ft0(3,3,3))
+           allocate(MPL_Taum1(3))
+           if(Floc.eq.'loc') then
+             allocate(MPL_Fx0(3,3,3))
+             allocate(MPL_Fxd(3,3,3))
+             allocate(MPL_Ftx0(3,3,3))
+             allocate(MPL_Tauxm1(3))
+           endif
+         endif
+       else 
+         allocate(ONS_ff(nsph))
+       endif
+
+       return
+ 
+      end subroutine
+
+
+      subroutine finalize_MPL     
+!------------------------------------------------------------------------
+! @brief Deallocate lambda 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       if(allocated(lambda)) deallocate(lambda)
+
+       return
+ 
+      end subroutine
+
+
+      subroutine deallocate_MPL_public     
+!------------------------------------------------------------------------
+! @brief Deallocate MPL arrays 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       if(allocated(ONS_ff)) deallocate(ONS_ff)
+       if(allocated(MPL_Fw)) deallocate(MPL_Fw)
+       if(allocated(MPL_Ff)) deallocate(MPL_Ff)
+       if(allocated(MPL_F0)) deallocate(MPL_F0)
+       if(allocated(MPL_Fd)) deallocate(MPL_Fd)
+       if(allocated(MPL_Fx0)) deallocate(MPL_Fx0)
+       if(allocated(MPL_Fxd)) deallocate(MPL_Fxd)
+       if(allocated(MPL_Ft0)) deallocate(MPL_Ft0)
+       if(allocated(MPL_Ftx0)) deallocate(MPL_Ftx0)
+       if(allocated(MPL_Taum1)) deallocate(MPL_Taum1)
+       if(allocated(MPL_Tauxm1)) deallocate(MPL_Tauxm1)
+
+       return
+ 
+      end subroutine
 !
 !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!  CORE ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+      subroutine do_BEM_SD
+!------------------------------------------------------------------------
+! @brief Compute Calderon's S and D matrices 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       real(dbl) :: temp
+       integer(i4b) :: i,j
+  
+       do i=1,nts_act
+        do j=1,nts_act
+          call green_s(i,j,temp)
+          BEM_S(i,j)=temp
+          if (Fprop(1:7).ne.'chr-ons') then 
+            call green_d(i,j,temp)
+            BEM_D(i,j)=temp
+          endif
+        enddo
+       enddo
+
+       return
+ 
+      end subroutine
+
+
+      subroutine green_d (i,j,value)
+!------------------------------------------------------------------------
+! @brief Calderon D matrix with Purisima Dii elements 
+! SC: changed to a diagonal value of D_ii that should be more general
+! than those for the sphere
+!
+! @date Created: S. Pipolo
+! Modified: S. Corni 30/5/17
+!------------------------------------------------------------------------
+
+       integer(i4b), intent(in):: i,j
+       real(dbl), intent(out) :: value
+       real(dbl):: dist,sum_d
+       integer(i4b) :: k
+
+       if (i.ne.j) then
+          scrd3(1)=(cts_act(i)%x-cts_act(j)%x)
+          scrd3(2)=(cts_act(i)%y-cts_act(j)%y)
+          scrd3(3)=(cts_act(i)%z-cts_act(j)%z)
+          dist=sqrt(dot_product(scrd3,scrd3))
+          value=dot_product(cts_act(j)%n,scrd3)/dist**3 
+       else
+          sum_d=0.d0
+          do k=1,i-1
+             scrd3(1)=(cts_act(i)%x-cts_act(k)%x)
+             scrd3(2)=(cts_act(i)%y-cts_act(k)%y)
+             scrd3(3)=(cts_act(i)%z-cts_act(k)%z)
+             dist=sqrt(dot_product(scrd3,scrd3))
+             sum_d=sum_d+dot_product(cts_act(i)%n,scrd3)/dist**3*cts_act(k)%area 
+          enddo
+          do k=i+1,nts_act
+             scrd3(1)=(cts_act(i)%x-cts_act(k)%x)
+             scrd3(2)=(cts_act(i)%y-cts_act(k)%y)
+             scrd3(3)=(cts_act(i)%z-cts_act(k)%z)
+             dist=sqrt(dot_product(scrd3,scrd3))
+             sum_d=sum_d+dot_product(cts_act(i)%n,scrd3)/dist**3*cts_act(k)%area 
+          enddo
+          sum_d=-(2.0*pi-sum_d)/cts_act(i)%area
+          value=sum_d
+          !value=-1.0694*sqrt(4.d0*pi*cts_act(i)%area)/(2.d0* &
+          !       cts_act(i)%rsfe)/cts_act(i)%area
+       endif
+
+       return
+
+      end subroutine
+
+
+      subroutine green_s (i,j,value)
+!------------------------------------------------------------------------
+! @brief Calderon S matrix 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       integer(i4b), intent(in):: i,j
+       real(dbl), intent(out) :: value
+       real(dbl):: dist
+
+       if (i.ne.j) then
+         scrd3(1)=(cts_act(i)%x-cts_act(j)%x)
+         scrd3(2)=(cts_act(i)%y-cts_act(j)%y)
+         scrd3(3)=(cts_act(i)%z-cts_act(j)%z)
+         dist=sqrt(dot_product(scrd3,scrd3))
+         value=one/dist 
+       else
+         value=1.0694*sqrt(4.d0*pi/cts_act(i)%area)
+       endif
+
+       return
+
+      end subroutine
+
+
+      subroutine do_BEM_diagonal
+!------------------------------------------------------------------------
+! @brief Compute BEM matrices within diagonal approach 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       integer(i4b) :: i,j
+       real(8), allocatable :: scr1(:,:),scr2(:,:),scr3(:,:)
+       real(8), allocatable :: eigt(:,:),eigt_t(:,:)
+       real(8), allocatable :: eigv(:)
+       real(dbl) :: fac_eps0,fac_epsd
+
+       allocate(scr1(nts_act,nts_act),scr2(nts_act,nts_act))
+       allocate(scr3(nts_act,nts_act))
+       allocate(eigv(nts_act))
+       allocate(eigt(nts_act,nts_act),eigt_t(nts_act,nts_act))
+       ! Form S^1/2 and S^-1/2
+       ! Copy the matrix in the eigenvector matrix
+       eigt = BEM_S
+       call diag_mat(eigt,eigv,nts_act)
+       if(Fwrite.eq."high")write(6,*) "S matrix diagonalized "
+       do i=1,nts_act
+          if(eigv(i).le.0.d0) then
+            write(6,*) "WARNING:",i," eig of S is negative or zero!"
+            write(6,*) "   I put it to 1e-8"
+            eigv(i)=1.d-8
+          endif
+          scr1(:,i)=eigt(:,i)*sqrt(eigv(i))
+       enddo
+       eigt_t=transpose(eigt)
+       Sp12=matmul(scr1,eigt_t)                   
+       do i=1,nts_act
+         scr1(:,i)=eigt(:,i)/sqrt(eigv(i))
+       enddo
+       BEM_Sm12=matmul(scr1,eigt_t)                   
+!      Form the S^-1/2 D A S^1/2 + S^1/2 A D* S^-1/2 , and diagonalize it
+       !S^-1/2 D A S^1/2
+       do i=1,nts_act
+         scr1(:,i)=BEM_D(:,i)*cts_act(i)%area
+       enddo
+       scr3=matmul(BEM_Sm12,scr1)                   
+       scr2=matmul(scr3,Sp12)                   
+       !S^-1/2 D A S^1/2+S^1/2 A D* S^-1/2 and diagonalize
+       do j=1,nts_act
+        do i=1,nts_act
+         BEM_T(i,j)=0.5*(scr2(i,j)+scr2(j,i))
+        enddo
+       enddo
+       deallocate(scr2,scr3)
+       call diag_mat(BEM_T,BEM_L,nts_act)
+       if(Fwrite.eq."high")&
+       write(6,*) "S^-1/2DAS^1/2+S^1/2AD*S^-1/2 matrix diagonalized"
+       if (Feps.eq."deb") then
+!       debye dielectric function  
+         if(eps_0.ne.one) then
+           fac_eps0=(eps_0+one)/(eps_0-one)
+           K0(:)=(twp-sgn*BEM_L(:))/(twp*fac_eps0-sgn*BEM_L(:))
+         else
+           K0(:)=zero
+         endif
+         if(eps_d.ne.one) then
+           fac_epsd=(eps_d+one)/(eps_d-one)
+           Kd(:)=(twp-sgn*BEM_L(:))/(twp*fac_epsd-sgn*BEM_L(:))
+         else
+           Kd=zero
+         endif
+         ! SP: Need to check the signs of the second part for a debye medium localized in space  
+         fact1(:)=((twp-sgn*BEM_L(:))*eps_0+twp+BEM_L(:))/ &
+                 ((twp-sgn*BEM_L(:))*eps_d+twp+BEM_L(:))/tau_deb
+         fact2(:)=K0(:)*fact1(:)
+       elseif (Feps.eq."drl") then       
+!        Drude-Lorentz dielectric function
+         Kd=zero 
+         fact2(:)=(twp-sgn*BEM_L(:))*eps_A/(two*twp)  
+! SC: the first eigenvector should be 0 for the NP
+         if (Fmdm(2:4).eq.'nan') fact2(1)=0.d0
+         ! SC: no spurious negative square frequencies
+         do i=1,nts_act
+           if(fact2(i).lt.0.d0) then
+             write(6,*) "WARNING: BEM_W2(",i,") is ", fact2(i)+eps_w0*eps_w0
+             write(6,*) "   I put it to 1e-8"
+             fact2(i)=1.d-8
+             BEM_L(i)=-twp
+           endif
+         enddo
+         if (eps_w0.eq.zero) eps_w0=1.d-8
+         BEM_W2(:)=fact2(:)+eps_w0*eps_w0  
+         K0(:)=fact2(:)/BEM_W2(:)
+       endif
+       if(Fwrite.eq."high") write(6,*) "Done BEM eigenmodes"
+       Sm12T=matmul(BEM_Sm12,BEM_T)
+       TSm12=transpose(Sm12T)
+       TSp12=matmul(transpose(BEM_T),Sp12)
+      ! SC 05/11/2016 write out the transition charges in pqr format
+       if(Fwrite.eq."high") call output_charge_pqr
+      ! Do BEM_Q0 and and BEM_Qd 
+       do i=1,nts_act
+         scr1(:,i)=Sm12T(:,i)*K0(i) 
+       enddo
+       BEM_Q0=-matmul(scr1,TSm12) 
+       do i=1,nts_act
+         scr1(:,i)=Sm12T(:,i)*Kd(i) 
+       enddo
+       BEM_Qd=-matmul(scr1,TSm12) 
+      ! Print matrices in output
+       if(Fwrite.eq."high") call out_BEM_diagmat 
+       deallocate(scr1,eigv,eigt,eigt_t)
+       write(6,*) "Done BEM diagonal" 
+
+       return
+ 
+      end subroutine
+ 
+
+      subroutine init_BEM_diagonal
+!------------------------------------------------------------------------
+! @brief Initialize diagonal BEM 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       allocate(fact1(nts_act),fact2(nts_act))
+       allocate(Kd(nts_act),K0(nts_act))
+       allocate(BEM_L(nts_act))
+       allocate(BEM_W2(nts_act))
+       allocate(BEM_T(nts_act,nts_act))
+       allocate(BEM_Sm12(nts_act,nts_act))
+       allocate(Sp12(nts_act,nts_act))
+       allocate(Sm12T(nts_act,nts_act))
+       allocate(TSm12(nts_act,nts_act))
+       allocate(TSp12(nts_act,nts_act))
+
+       return
+
+      end subroutine
+
+
+      subroutine do_charge_freq(omega_a,pot,mu_omega)
+!------------------------------------------------------------------------
+! @brief Compute charges in the frequency domain 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       real(dbl), intent(in):: omega_a
+       real(dbl), intent(in) :: pot(:)
+       complex(cmp), intent(out) :: mu_omega(3)
+       real(dbl) :: a,b               
+       integer(4) :: its
+! SP 16/07/17: avoiding allocations loops
+       !complex(cmp), allocatable :: q_omega(:),mu_omega(:)
+       !complex(cmp), allocatable :: Kdiag_omega(:)
+
+       sgn=-1
+! SP 16/07/17: added eps_w0 to Kdiag_omega
+       if(eps_w0.eq.zero) eps_w0=1.d-8 
+! SP 16/07/17: changed the following to avoid divergence at low omega 
+!      do its=1,nts_act
+       Kdiag_omega(1)=zero                   
+       do its=2,nts_act
+        Kdiag_omega(its)=(twp-sgn*BEM_L(its))/ &
+!        ((one-omega_a*(omega_a+ui*eps_gm)*2.d0/eps_A)*twp-sgn*BEM_L(its))
+         ((one+(eps_w0**2-omega_a*(omega_a+ui*eps_gm))*two/eps_A)*twp-&
+           sgn*BEM_L(its))
+       !a=twp+BEM_L(its)+two*twp*(eps_w0**2-omega_a**2)/eps_A
+       !b=two*twp*eps_gm*omega_a/eps_A
+       !if(its.eq.1) write(6,*) a**2, b**2
+       enddo
+       q_omega=matmul(BEM_Sm12,pot)
+       q_omega=matmul(transpose(BEM_T),q_omega)
+       q_omega=Kdiag_omega*q_omega
+       q_omega=matmul(BEM_T,q_omega)
+       q_omega=-matmul(BEM_Sm12,q_omega)
+       mu_omega=0.d0
+       do its=1,nts_act
+        mu_omega(1)=mu_omega(1)+q_omega(its)*(cts_act(its)%x)
+        mu_omega(2)=mu_omega(2)+q_omega(its)*(cts_act(its)%y)
+        mu_omega(3)=mu_omega(3)+q_omega(its)*(cts_act(its)%z)
+       enddo
+
+       return
+
+      end subroutine
+
+
+      subroutine do_propBEM_dia_deb
+!------------------------------------------------------------------------
+! @brief Propagation of matrices for diagonal BEM (debye) 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       integer(i4b) :: i
+       real(8), allocatable :: scr1(:,:)
+
+       allocate(scr1(nts_act,nts_act))
+!      Form the \tilde{Q} and R for debye propagation
+        do i=1,nts_act
+          scr1(:,i)=Sm12T(:,i)*fact1(i) 
+        enddo
+        BEM_R=matmul(scr1,TSp12)
+        do i=1,nts_act
+          scr1(:,i)=Sm12T(:,i)*fact2(i) 
+        enddo
+        BEM_Qt=-matmul(scr1,TSm12)
+        deallocate(scr1)
+
+        return
+
+      end subroutine
+
+
+      subroutine do_propBEM_dia_drl
+!------------------------------------------------------------------------
+! @brief Propagation of matrices for diagonal BEM (drude-lorentz) 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       integer(i4b) :: i
+       real(8), allocatable :: scr1(:,:)
+
+       allocate(scr1(nts_act,nts_act))
+!      Form the Q_w and Q_f for drude-lorentz propagation
+       do i=1,nts_act
+         scr1(:,i)=Sm12T(:,i)*BEM_W2(i) 
+       enddo
+       BEM_Qw=matmul(scr1,TSp12)
+       do i=1,nts_act
+         scr1(:,i)=Sm12T(:,i)*fact2(i) 
+       enddo
+       BEM_Qf=-matmul(scr1,TSm12)
+       deallocate(scr1)
+
+       return
+
+      end subroutine
+
+
+      subroutine do_propMPL_deb   
+!------------------------------------------------------------------------
+! @brief Initialize factors for debye dipole propagation 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       real(dbl):: k1,f1,g(3,3),m
+       integer(i4b):: i,j,k,l
+
+       ! build geometric factors due to orientations      
+       MPL_Fd=zero  
+       MPL_F0=zero  
+       MPL_Taum1=zero
+       MPL_Ft0=zero
+       if(Floc.eq."loc") then
+         MPL_Fx0=zero
+         MPL_Fxd=zero
+         MPL_Tauxm1=zero
+         MPL_Ftx0=zero
+       endif
+       do i=1,nsph
+         m=sph_maj(i)/sph_min(i)
+         do j=1,3 !Spheroids maj/min
+           g=zero
+           do l=1,3 !xyz
+             do k=1,3 !xyz
+               g(k,l)=sph_vrs(k,j,i)*sph_vrs(l,j,i) 
+             enddo
+           enddo
+           ! Add depolarized reaction factors 3l/ab^2*(eps-1)/(eps+l/(1-l))
+           ! Onsager JACS 58 (1936), Buckingham Trans.Far.Soc. 49 (1953), Abbott Trans.Far.Soc. 48 (1952), 
+           k1=lambda(j,i)/(one-lambda(j,i))
+           f1=three*lambda(j,i)/sph_maj(i)/sph_min(i)**2
+           MPL_F0(:,:,j,i)=g(:,:)*f1*(eps_0-one)/(eps_0+k1)  
+           MPL_Fd(:,:,j,i)=g(:,:)*f1*(eps_d-one)/(eps_d+k1)  
+           ! f0/tau for propagation equations
+           MPL_Ft0(:,:,j)=g(:,:)*f1*(eps_0-one)/(eps_d+k1)/tau_deb  
+           ! SP 29/06/17: changed from tau_deb to 1/tau_deb
+           MPL_Taum1(j)=(eps_0+k1)/(eps_d+k1)/tau_deb 
+           if(Floc.eq."loc") then
+             ! Add depolarized local factors eps/(eps+(1-eps)*l), 3eps/(2eps+1) for spheres
+             ! Sihvola Journal of Nanomaterials 2007
+             MPL_Fx0(:,:,j)=g(:,:)*eps_0/(eps_0+(one-eps_0)*lambda(j,i))
+             MPL_Fxd(:,:,j)=g(:,:)*eps_d/(eps_d+(one-eps_d)*lambda(j,i))
+             MPL_Ftx0(:,:,j)=g(:,:)*eps_0/(eps_d+(1-eps_d)*lambda(j,i))&
+                                         /tau_deb
+             MPL_Tauxm1(j)=(eps_0+(1-eps_0)*lambda(j,i))/ &
+                           (eps_d+(1-eps_d)*lambda(j,i))/tau_deb 
+           endif
+         enddo
+       enddo
+
+       return
+
+      end subroutine
+
+
+      subroutine do_propfact_ons_deb   
+!------------------------------------------------------------------------
+! @brief Onsager propagation matrix for debye 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       ONS_f0=(eps_0-one)/(eps_0+pt5) 
+       ONS_fd=(eps_d-one)/(eps_d+pt5) 
+       ONS_fx0=three*eps_0/(two*eps_0+one) 
+       ONS_fxd=three*eps_d/(two*eps_d+one) 
+       ONS_taum1=(eps_0+pt5)/(eps_d+pt5)/tau_deb
+       ONS_tauxm1=(two*eps_0+one)/(two*eps_d+one)/tau_deb
+
+       return
+
+      end subroutine
+
+
+      subroutine do_propMPL_drl   
+!------------------------------------------------------------------------
+! @brief Initialize factors for drude-lorentz dipole propagation 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       real(dbl):: f1,g(3,3),m
+       integer(i4b):: i,j,k,l
+
+       ! build geometric factors due to orientations      
+       MPL_Fw=zero  
+       MPL_Ff=zero  
+       MPL_F0=zero  
+       MPL_Fd=zero  
+       ! Add depolarized Onsager factors:
+       ! POLARIZABILITY ANALYSIS OF CANONICAL DIELECTRIC AND BIANISOTROPIC SCATTERERS
+       ! Juha Avelin Phd thesis
+       do i=1,nsph
+         m=sph_maj(i)/sph_min(i)
+         ! SP 4\pi\epsilon_0=1
+         !f1=two*two*pi*sph_maj(i)*sph_min(i)**2
+         f1=sph_maj(i)*sph_min(i)**2
+         do j=1,3 !Spheroids maj/min
+           MPL_Fw(j,i)=eps_A*lambda(j,i)+eps_w0*eps_w0
+           g=zero
+           do l=1,3 !xyz
+             do k=1,3 !xyz
+               g(k,l)=sph_vrs(k,j,i)*sph_vrs(l,j,i) 
+             enddo
+           enddo
+           MPL_Ff(:,:,j,i)=g(:,:)*f1*eps_A/three  
+           MPL_F0(:,:,j,i)=g(:,:)*f1/three*(eps_0-one)/(one+& 
+                                     (eps_0-one)*lambda(j,i))  
+           MPL_Fd(:,:,j,i)=g(:,:)*f1/three*(eps_d-one)/(one+& 
+                                     (eps_d-one)*lambda(j,i))  
+         enddo
+       enddo
+
+       return
+
+      end subroutine
+
+
+      subroutine do_propfact_ons_drl  
+!------------------------------------------------------------------------
+! @brief Onsager propagation matrix for drude-lorentz 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       integer(i4b)::i
+
+       ! Form the ONS_fw=-1/tau+w_0^2 and ONS_ff=A/3                           
+       ! SP 4\pi\epsilon_0=1
+       ! May be extended to spheres with different \epsilon(\omega)
+       ONS_fw=eps_A/three+eps_w0*eps_w0 
+       ONS_f0=(eps_0-one)/(eps_0+two) 
+       ONS_fd=(eps_d-one)/(eps_d+two) 
+       ONS_ff(:)=eps_A/three 
+
+       return
+
+      end subroutine
+
+
+      subroutine do_eps_drl      
+!------------------------------------------------------------------------
+! @brief Compute drl cmplx eps(\omega) and (eps(\omega)-1)/(eps(\omega)+2) 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       !eps_gm=eps_gm+f_vel/sfe_act(1)%r
+       eps=dcmplx(eps_A,zero)/dcmplx(eps_w0**2-omega(1)**2,-omega(1)*eps_gm)
+       eps=eps+onec
+       eps_f=(eps-onec)/(eps+twoc)
+
+
+       return
+
+      end subroutine
+
+
+      subroutine do_eps_deb      
+!------------------------------------------------------------------------
+! @brief Compute deb cmplx eps(\omega) and (3*eps(\omega))/(2*eps(\omega)+1)
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       !eps_gm=eps_gm+f_vel/sfe_act(1)%r
+       eps=dcmplx(eps_d,zero)+dcmplx(eps_0-eps_d,zero)/ &
+                              dcmplx(one,-omega(1)*tau_deb)
+       eps_f=(three*eps)/(two*eps+onec)
+
+
+       return
+ 
+      end subroutine
+!
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!   INPUT/OUTPUT ROUTINES   !!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+      subroutine write_BEM_SD
+!------------------------------------------------------------------------
+! @brief Write out Calderon's D and S matrices 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       integer(i4b) :: i,j
+
+       open(7,file="mat_SD.inp",status="unknown")
+       write(7,*) nts_act
+       do j=1,nts_act
+        do i=j,nts_act
+          if (Fprop(1:7).eq.'chr-ons') then 
+            write(7,'(2E26.16)')BEM_S(i,j)
+          else
+            write(7,'(2E26.16)')BEM_S(i,j),BEM_D(i,j)
+          endif
+        enddo
+       enddo
+
+       close(7)
+
+       return
+
+      end subroutine
+
+
+      subroutine read_BEM_SD
+!------------------------------------------------------------------------
+! @brief Read Calderon's D and S matrices 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       integer(i4b) :: i,j
+
+       open(7,file="mat_SD.inp",status="old")
+       read(7,*) nts_act
+       do j=1,nts_act
+        do i=j,nts_act
+          if (Fprop(1:7).eq.'chr-ons') then 
+            read(7,*) BEM_S(i,j)
+          else
+            read(7,*) BEM_S(i,j), BEM_D(i,j)
+            BEM_D(j,i)=BEM_D(i,j)
+          endif
+          BEM_S(j,i)=BEM_S(i,j)
+        enddo
+       enddo
+
+       close(7)
+
+       return
+
+      end subroutine
+
+
+      subroutine out_BEM_mat 
+!------------------------------------------------------------------------
+! @brief Output BEM matrices 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       integer(i4b):: i,j
+
+       open(7,file="BEM_matrices.mat",status="unknown")
+       write(7,*) "# Q_0 , Q_d "
+       write(7,*) nts_act
+       do j=1,nts_act
+        do i=j,nts_act
+         write(7,'(2E26.16)')BEM_Q0(i,j),BEM_Qd(i,j)
+        enddo
+       enddo
+       close(7)
+       write(6,*) "Written out the propagation BEM matrixes"
+
+       return
+
+      end subroutine
+
+
+      subroutine out_BEM_propmat 
+!------------------------------------------------------------------------
+! @brief Output propagation matrices 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       integer(i4b):: i,j
+
+       open(7,file="BEM_propmat.mat",status="unknown")
+       if(Feps.eq."deb")write(7,*) "# \tilde{Q} , R "
+       if(Feps.eq."drl")write(7,*) "# Q_w , Q_t "
+       write(7,*) nts_act
+       do j=1,nts_act
+        do i=j,nts_act
+         if(Feps.eq."deb")write(7,'(2E26.16)')BEM_Qt(i,j),BEM_R(i,j)
+         if(Feps.eq."drl")write(7,'(2E26.16)')BEM_Qw(i,j),BEM_Qt(i,j)
+        enddo
+       enddo
+       close(7)
+       write(6,*) "Written out the propagation BEM matrixes"
+
+       return
+
+      end subroutine
+
+
+      subroutine out_BEM_gamess  
+!------------------------------------------------------------------------
+! @brief Output propagation matrices 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       integer(i4b):: i,j
+
+       open(7,file="np_bem.mat",status="unknown")
+       do j=1,nts_act
+        do i=1,nts_act
+         write(7,'(D20.12)') BEM_Q0(i,j)/cts_act(i)%area
+        enddo
+       enddo
+       close(7)
+       write(6,*) "Written out the static matrix for gamess"
+       open(7,file="np_bem.mdy",status="unknown")
+       do j=1,nts_act
+        do i=1,nts_act
+         write(7,'(D20.12)') BEM_Qd(i,j)/cts_act(i)%area
+        enddo
+       enddo
+       close(7)
+       write(6,*) "Written out the dynamic matrix for gamess"
+
+       return
+
+      end subroutine
+
+
+      subroutine out_BEM_diagmat 
+!------------------------------------------------------------------------
+! @brief Output diagonal matrices and frequencies 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       integer(i4b):: i,j
+
+       open(7,file="BEM_TSpm12.mat",status="unknown")
+       write(7,*) "# T , S^1/2, S^-1/2 "
+       write(7,*) nts_act
+       do j=1,nts_act
+        do i=j,nts_act
+         write(7,'(3D26.16)')BEM_T(i,j),Sp12(i,j),BEM_Sm12(i,j)
+        enddo
+       enddo
+       close(7)
+       open(7,file="BEM_W2L.mat",status="unknown")
+       write(7,*) "# \omega^2 (drude-lorentz) , \Lambda, K_0, K_d "
+       write(7,*) nts_act
+       do j=1,nts_act
+         write(7,'(i10, 4D20.12)') j,BEM_W2(j),BEM_L(j),K0(j),Kd(j)
+       enddo
+       close(7)
+       write(6,*) "Written out BEM diagonal matrices in BEM_TSpm12.mat"
+       write(6,*) "Written out BEM squared frequencies in BEM_W2L.mat"
+
+       return
+
+      end subroutine
+
+
       subroutine output_surf
-      integer :: i
+!------------------------------------------------------------------------
+! @brief Output cavity files 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       integer(i4b) :: i
 ! This routine creates the same files also created by Gaussian
-      open(unit=7,file="cavity.inp",status="unknown",form="formatted")
+
+       open(unit=7,file="cavity.inp",status="unknown",form="formatted")
        write (7,*) nts_act,nesf_act
        do i=1,nesf_act
          write (7,'(3F22.10)') sfe_act(i)%x,sfe_act(i)%y, &
@@ -83,10 +1205,10 @@
          write (7,'(4F22.10,D14.5)') cts_act(i)%x,cts_act(i)%y,cts_act(i)%z, &
                                cts_act(i)%area,cts_act(i)%rsfe
        enddo
-      close(unit=7)
+       close(unit=7)
 ! SC 28/9/2016: write out cavity in GAMESS ineq format
 ! WHICH UNITS ARE ASSUMED IN GAMESS? CHECK!!
-      open(unit=7,file="np_bem.cav",status="unknown",form="formatted")
+       open(unit=7,file="np_bem.cav",status="unknown",form="formatted")
        write (7,*) nts_act
        do i=1,nts_act
          write (7,'(F22.10)') cts_act(i)%x
@@ -100,538 +1222,83 @@
        do i=1,nts_act
          write (7,'(F22.10)') cts_act(i)%area
        enddo
-      close(unit=7)
-!      open(unit=7,file="charges0.inp",status="unknown",form="formatted")
-!       write (7,*) nts_act
-!       do i=1,nts_act
-!         write (7,'(2F22.10)') 0.d0, cts_act(i)%area
-!       enddo
-!      close(unit=7)
-      end subroutine output_surf
+       close(unit=7)
+     
+       return 
+
+      end subroutine
+
+
+      subroutine output_charge_pqr
+!------------------------------------------------------------------------
+! @brief Output charges in pqr files 
 !
-      subroutine output_charge_pqr(st)
-      integer :: its,i
-      character(18) :: fname
-      real(8) :: st(:,:)
-      real(8) :: area
-      area=sum(cts_act(:)%area)
-      do i=1,10
-       write (fname,'("charge_freq_",I0,".pqr")') i
-       open(unit=7,file=fname,status="unknown", &
-          form="formatted")
-       write (7,*) nts_act
-       do its=1,nts_act
-         write (7,'("ATOM ",I6," H    H  ",I6,3F11.3,F15.5,"  1.5")') &
-              its,its,cts_act(its)%x,cts_act(its)%y,cts_act(its)%z, &
-              st(its,i+1)/cts_act(its)%area*area
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       integer :: its,i
+       character(30) :: fname
+       real(dbl) :: area, maxt
+       area=sum(cts_act(:)%area)
+
+       do i=1,10
+        write (fname,'("charge_freq_",I0,".pqr")') i
+        open(unit=7,file=fname,status="unknown", &
+           form="formatted")
+        write (7,*) nts_act
+        do its=1,nts_act
+          write (7,'("ATOM ",I6," H    H  ",I6,3F11.3,F15.5,"  1.5")') &
+               its,its,cts_act(its)%x,cts_act(its)%y,cts_act(its)%z, &
+               Sm12T(its,i+1)/cts_act(its)%area*area
+        enddo
+        close(unit=7)
+        ! SP : eigenvectors
+        write (fname,'("eigenvector_",I0,".pdb")') i
+        open(unit=7,file=fname,status="unknown", &
+           form="formatted")
+        write (7,*) "MODEL        1" 
+        maxt=zero
+        do its=1,nts_act
+          if(sqrt(TSm12(i+1,its)*TSm12(i+1,its)).gt.maxt)&
+             maxt=sqrt(TSm12(i+1,its)*TSm12(i+1,its))
+        enddo
+        do its=1,nts_act
+          write (7,'("ATOM ",I6,"  H   HHH H ",I3,"    ",3F8.3,2F6.2)') &
+               its,i,cts_act(its)%x,cts_act(its)%y,cts_act(its)%z, &
+               TSm12(i+1,its)/maxt*10.,TSm12(i+1,its)/maxt*10.
+        enddo
+        close(unit=7)
+       enddo
+       do i=nts_act-10,nts_act-1
+        write (fname,'("eigenvector_",I0,".pdb")') i
+        open(unit=7,file=fname,status="unknown", &
+           form="formatted")
+        write (7,*) "MODEL        1" 
+        maxt=zero
+        do its=1,nts_act
+          if(sqrt(TSm12(i+1,its)*TSm12(i+1,its)).gt.maxt)&
+             maxt=sqrt(TSm12(i+1,its)*TSm12(i+1,its))
+        enddo
+        do its=1,nts_act
+          write (7,'("ATOM ",I6,"  H   HHH H ",I3,"    ",3F8.3,2F6.2)') &
+               its,i,cts_act(its)%x,cts_act(its)%y,cts_act(its)%z, &
+               TSm12(i+1,its)/maxt*10.,TSm12(i+1,its)/maxt*10.
+        enddo
+        close(unit=7)
+       enddo
+       ! SC 31/10/2016: print out total charges associated with eigenvectors
+       open(unit=7,file="charge_eigv.dat",status="unknown", &
+            form="formatted")
+       write (6,*) "Total charge associated to each eigenvector written"
+       write (6,*) "   in file charge_eigv.dat"
+       do i=1,nts_act
+         write(7,'(i20, 2D20.12)') i,sum(Sm12T(:,i))
        enddo
        close(unit=7)
-      enddo
-      end subroutine output_charge_pqr
-!
-      subroutine write_charges0
-      integer :: i
-      open(unit=7,file="charges0.inp",status="unknown",form="formatted")
-      write(7,*) nts_act
-      do i=1,nts_act
-       write(7,*) 0.d0
-      enddo
-      close(7)
-      end subroutine write_charges0
-!
-      subroutine deallocate_BEM     
-       if (Fprop.eq.'dip') then
-       else
-         ! deallocate matrices related to nanoparticle
-         if (allocated(matqv)) deallocate(matqv)
-         if (allocated(matqq)) deallocate(matqq)
-         if (allocated(matqd)) deallocate(matqd)
-         if (allocated(matq0)) deallocate(matq0)
-         if (allocated(sm1)) deallocate(sm1)
-       endif
-      return
-      end subroutine deallocate_BEM
-!
-      subroutine do_factors   
-       real(8) :: lambda,r_bc
-       ! NB: here assumed prolate cavity with a_cav the largest
-       !     fix for generic input!
-       r_bc=b_cav/c_cav
-       if (r_bc.eq.1.d0) then
-         lambda=1./3.
-       else
-         lambda=-4.d0*pi/(r_bc**2-1)*(r_bc/2.d0/sqrt(r_bc**2-1.)* &
-           log((r_bc+sqrt(r_bc**2-1))/(r_bc-sqrt(r_bc**2-1.)))-1.d0)
-       endif
-       f_0=3.d0*lambda/b_cav/c_cav**2*(eps_0-1.d0)/(eps_0+  &
-           lambda/(1.d0-lambda))
-       f_d=3.d0*lambda/b_cav/c_cav**2*(eps_d-1.d0)/(eps_d+  &
-           lambda/(1.d0-lambda))
-       tau_ons=(eps_d+lambda/(1.d0-lambda))/ &
-               (eps_0+lambda/(1.d0-lambda))*tau_deb 
-       write (6,*) "Onsager"
-       write (6,*) "eps_0,eps_d",eps_0,eps_d
-       write (6,*) "r_bc",r_bc
-       write (6,*) "lambda",lambda
-       write (6,*) "f_0",f_0
-       write (6,*) "f_d",f_d
-       write (6,*) "tau_ons",tau_ons
-       if(Floc.eq."loc") then
-         fx_0=3.d0/b_cav/c_cav**2*eps_0/(two*eps_0+one)
-         fx_d=3.d0/b_cav/c_cav**2*eps_d/(two*eps_d+one)
-         taux_ons=(two*eps_d+one)/(two*eps_0+one)
-       endif
-      return
-      end subroutine do_factors
-!
-      subroutine do_PCM_propMat
-      integer(i4b) :: i,j
-      real(8), allocatable :: scr4(:,:),scr1(:,:)
-      real(8), allocatable :: scr2(:,:),scr3(:,:)
-      real(dbl), dimension(nts_act) :: fact1,fact2
-      real(dbl), dimension(nts_act) :: Kdiag0,Kdiagd
-      complex(16), allocatable :: Kdiag_omega(:)
-      real(dbl) :: sgn,fac_eps0,fac_epsd
-      real(dbl):: temp
-! SC 11/08/2016 if this is a writing run, create the matrixes and stop.
-! SC TO DO: all the automatic arrays are always created, but some of them
-!           are needed for fbem=rea and others for fbem=wri, move to allocatable
-      ! Solvent or nanoparticle
-      sgn=one                 
-      if(mdm.eq."nan") sgn=-one  
-!
-      If(Fbem.eq.'wri') then
-      ! create calderon D, D* and S matrices
-       allocate(cals(nts_act,nts_act))
-       allocate(cald(nts_act,nts_act))
-         do i=1,nts_act
-          do j=1,nts_act
-            call green_s(i,j,temp)
-            cals(i,j)=temp
-            call green_d(i,j,temp)
-            cald(i,j)=temp
-          enddo
-         enddo
-         open(7,file="mat_SD.inp",status="unknown")
-         write(7,*) nts_act
-         do j=1,nts_act
-          do i=j,nts_act
-           write(7,'(2E26.16)')cals(i,j),cald(i,j)
-          enddo
-         enddo
-         close(7)
-         deallocate(cals,cald)
-         write(6,*) "Matrixes S D have been written out, I'll stop now"
-        stop
-      elseif(Fbem.eq.'rea') then
-!SC 05/11/2016: use the same routine as for frequency calculation
-!   to build S^-1/2 (in sm12), S^1/2 (in sp12), T (in eigt) and Lambda (in eigv) 
-        call allocate_TS_matrix
-        call do_TS_matrix
-!
-        allocate(scr4(nts_act,nts_act),scr1(nts_act,nts_act))
-        allocate(scr2(nts_act,nts_act),scr3(nts_act,nts_act))
-!        Test on S^-1/2 D A S^1/2 + S^1/2 A D* S^-1/2 Diagonal passed 
-!        
-!        Form the Q_w and Q_f and K_d and K_0 for debye propagation
-         if (Feps.eq."deb") then
-!          debye dielectric function  
-           fac_eps0=(eps_0+1)/(eps_0-1)
-           Kdiag0(:)=(twp-sgn*eigv(:))/(twp*fac_eps0-sgn*eigv(:))
-           fac_epsd=(eps_d+1)/(eps_d-1)
-           Kdiagd(:)=(twp-sgn*eigv(:))/(twp*fac_epsd-sgn*eigv(:))
-           ! SP: Need to check the signs of the second part for a debye medium localized in space  
-           fact1(:)=((twp-sgn*eigv(:))*eps_0+twp+eigv(:))/ &
-                    ((twp-sgn*eigv(:))*eps_d+twp+eigv(:))/tau_deb
-           fact2(:)=Kdiag0(:)*fact1(:)
-         elseif (Feps.eq."drl") then       
-!          Drude-Lorentz dielectric function
-           Kdiagd(:)=0.d0
-           fact2(:)=(twp-sgn*eigv(:))*eps_A/(two*twp)  
-! SC: the first eigenvector should be 0 for the NP
-           if (mdm.eq.'nan') fact2(1)=0.d0
-! SC: no spurious negative square frequencies
-           do i=1,nts_act
-            if(fact2(i).lt.0.d0) fact2(i)=0d0
-           enddo
-           if (eps_w0.eq.0.d0) eps_w0=1.d-8
-           fact1(:)=fact2(:)+eps_w0*eps_w0  
-           Kdiag0(:)=fact2(:)/fact1(:)
-! already printed in do_TS_matrix
-!           write (6,*) "Squares of resonance frequencies, in a.u."
-!           do i=1,nts_act
-!            write(6,*) i,fact1(i)
-!           enddo
-         else
-           write(6,*) "Wrong epsilon choice"
-           stop
-         endif
-!
-!        Buil S-1/2T in scr3
-         scr3=matmul(sm12,eigt)
-! SC 31/10/2016: print out total charges associated with eigenvectors
-         write (6,*) "Total charge associated to each eigenvector"
-         do i=1,nts_act
-           write(6,*) i,sum(scr3(:,i))
-         enddo
-! SC 05/11/2016 write out the transition charges in pqr format
-         call output_charge_pqr(scr3)
-!
-!        Buil T*S1/2 in scr2
-         scr2=matmul(transpose(eigt),sp12)  
-!        Buil T*S-1/2 in scr4
-         scr4=transpose(scr3)
-!        Build matqq (R for debye)
-         do i=1,nts_act
-           scr1(:,i)=scr3(:,i)*fact1(i) 
-         enddo
-         matqq=matmul(scr1,scr2)
-!        Build matqv (\tilde{Q} for debye)
-         do i=1,nts_act
-           scr1(:,i)=scr3(:,i)*fact2(i) 
-         enddo
-         matqv=-matmul(scr1,scr4) 
-!        Build Q_0 
-         do i=1,nts_act
-           scr1(:,i)=scr3(:,i)*Kdiag0(i) 
-         enddo
-         matq0=-matmul(scr1,scr4) 
-!        Build Q_d only for debye
-         do i=1,nts_act
-           scr1(:,i)=scr3(:,i)*Kdiagd(i) 
-         enddo
-         matqd=-matmul(scr1,scr4) 
-!   Print matrices in output
-         open(7,file="BEM_matrices.mat",status="unknown")
-         write(7,*) nts_act
-         do j=1,nts_act
-          do i=j,nts_act
-           write(7,'(4E26.16)')matqv(i,j),matqd(i,j),matqq(i,j),matq0(i,j)
-          enddo
-         enddo
-         close(7)
-         write(6,*) "Written out the propagation BEM matrixes"
-         open(7,file="np_bem.mat",status="unknown")
-         do j=1,nts_act
-          do i=1,nts_act
-           write(7,'(D20.12)') matq0(i,j)/cts_act(i)%area
-          enddo
-         enddo
-         close(7)
-         write(6,*) "Written out the static matrix for gamess"
-         open(7,file="np_bem.mdy",status="unknown")
-         do j=1,nts_act
-          do i=1,nts_act
-           write(7,'(D20.12)') matqd(i,j)/cts_act(i)%area
-          enddo
-         enddo
-         close(7)
-         write(6,*) "Written out the static matrix for gamess"
-      endif
-      deallocate(scr4,scr1)
-      deallocate(scr2,scr3)
-      call deallocate_TS_matrix
-      return
-      end subroutine do_PCM_propMat
-!
-      subroutine green_d (i,j,value)
-      integer(i4b), intent(in):: i,j
-      real(dbl), intent(out) :: value
-      real(dbl):: dist,diff(3)
-      if (i.ne.j) then
-         diff(1)=(cts_act(i)%x-cts_act(j)%x)
-         diff(2)=(cts_act(i)%y-cts_act(j)%y)
-         diff(3)=(cts_act(i)%z-cts_act(j)%z)
-         dist=sqrt(dot_product(diff,diff))
-         value=dot_product(cts_act(j)%n,diff)/dist**3 
-      else
-         value=-1.0694*sqrt(4.d0*pi*cts_act(i)%area)/(2.d0* &
-                cts_act(i)%rsfe)/cts_act(i)%area
-      endif
-      return
-      end subroutine green_d
-!
-      subroutine green_s (i,j,value)
-      integer(i4b), intent(in):: i,j
-      real(dbl), intent(out) :: value
-      real(dbl):: dist,diff(3)
-      if (i.ne.j) then
-        diff(1)=(cts_act(i)%x-cts_act(j)%x)
-        diff(2)=(cts_act(i)%y-cts_act(j)%y)
-        diff(3)=(cts_act(i)%z-cts_act(j)%z)
-        dist=sqrt(dot_product(diff,diff))
-        value=one/dist 
 
-      else
-        value=1.0694*sqrt(4.d0*pi/cts_act(i)%area)
-      endif
-      return
-      end subroutine green_s
-!     
-      subroutine do_ons_propMat   
-      integer(i4b) :: i,j
-      real(dbl) :: temp
-! Same read/write phylosophy as for ief
-       allocate(cals(nts_act,nts_act))
-       if(Fbem.eq."wri") then
-      ! create calderon  S matrix
-        do i=1,nts_act
-         do j=1,nts_act
-           call green_s(i,j,temp)
-           cals(i,j)=temp
-         enddo
-        enddo
-!        Form S^-1
-        sm1=inv(cals)
-        open(7,file="S_matrix.inp",status="unknown")
-        write(7,*) nts_act
-        do j=1,nts_act
-         do i=j,nts_act
-          write(7,'(4E26.16)')sm1(i,j)
-         enddo
-        enddo
-        close(7)
-        write(6,*) "Written out the propagation S matrix, now I'll stop"
-        stop
-       elseif(Fbem.eq."rea") then
-        open(7,file="S_matrix.inp",status="old")
-        write(7,*) nts_act
-        do j=1,nts_act
-         do i=j,nts_act
-          read(7,*) sm1(i,j)
-         enddo
-        enddo
-        close(7)
-        write(6,*) "Read in the propagation S matrix"
-        ! Form the f_w=-1/tau+w_0^2 and f_f=A/3                           
-        f_w=-(eps_A/3.+eps_w0*eps_w0) 
-        f_f=-eps_A/3. 
-       endif
-       if(allocated(cals)) deallocate(cals)
        return
-      end subroutine do_ons_propMat
-!
-      subroutine do_eps      
-       !eps_gm=eps_gm+f_vel/sfe_act(1)%r
-       eps=dcmplx(eps_A,zero)/dcmplx(eps_w0**2-omega**2,-omega*eps_gm)
-       eps=eps+onec
-       eps_f=(eps-onec)/(eps+twoc)
-      return
-      end subroutine do_eps
-!
-      function inv(A) result(Ainv)
-        real(dbl), dimension(:,:), intent(in) :: A
-        real(dbl), dimension(size(A,1),size(A,2)) :: Ainv
-      
-        real(dbl), dimension(size(A,1)) :: work  ! work array for LAPACK
-        integer(i4b), dimension(size(A,1)) :: ipiv   ! pivot indices
-        integer(i4b) :: n, info
-      
-        ! External procedures defined in LAPACK
-        external DGETRF
-        external DGETRI
-      
-        ! Store A in Ainv to prevent it from being overwritten by LAPACK
-        Ainv = A
-        n = size(A,1)
-      
-        ! DGETRF computes an LU factorization of a general M-by-N matrix A
-        ! using partial pivoting with row interchanges.
-        call DGETRF(n, n, Ainv, n, ipiv, info)
-      
-        if (info /= 0) then
-           stop 'Matrix is numerically singular!'
-        end if
-      
-        ! DGETRI computes the inverse of a matrix using the LU factorization
-        ! computed by DGETRF.
-        call DGETRI(n, Ainv, n, ipiv, work, n, info)
-      
-        if (info /= 0) then
-           stop 'Matrix inversion failed!'
-        end if
-      end function inv
-!
-      subroutine allocate_TS_matrix
-      allocate(eigv(nts_act))
-      allocate(eigt(nts_act,nts_act))
-      allocate(sm12(nts_act,nts_act))
-      allocate(sp12(nts_act,nts_act))
-      return
-      end subroutine allocate_TS_matrix
-!
-      subroutine deallocate_TS_matrix
-      deallocate(eigv)
-      deallocate(eigt)
-      deallocate(sm12)
-      deallocate(sp12)
-      return
-      end subroutine deallocate_TS_matrix
-!
-      subroutine do_TS_matrix
-      integer(i4b) :: i,j,info,lwork,liwork
-      real(8), allocatable :: scr1(:,:),scr2(:,:),eigt_t(:,:)
-      real(dbl) :: sgn,fac_eps0,fac_epsd
-      real(dbl):: temp,fact1,fact2
-      character jobz,uplo
-      integer(i4b), allocatable :: iwork(:)
-      real(8),allocatable :: work(:)
-      allocate(scr1(nts_act,nts_act),scr2(nts_act,nts_act))
-      allocate(eigt_t(nts_act,nts_act))
-      allocate(work(1+6*nts_act+2*nts_act*nts_act))
-      allocate(iwork(3+5*nts_act))
-      allocate(cals(nts_act,nts_act))
-      allocate(cald(nts_act,nts_act))
-      sgn=one                 
-      if(mdm.eq."nan") sgn=-one  
-!
-      open(7,file="mat_SD.inp",status="old")
-      read(7,*) nts_act
-      do j=1,nts_act
-       do i=j,nts_act
-        read(7,*) cals(i,j), cald(i,j)
-        cals(j,i)=cals(i,j)
-        cald(j,i)=cald(i,j)
-       enddo
-      enddo
-      close(7)
-      write(6,*) "Done reading in S and D"
-      ! Form S^1/2 and S^-1/2
-      ! Set parameters for diagonalization routine dsyevd
-      jobz = 'V'
-      uplo = 'U'
-      lwork = 1+6*nts_act+2*nts_act*nts_act
-      liwork = 3+5*nts_act
-      ! Copy the matrix in the eigenvector matrix
-      eigt = cals
-      call dsyevd (jobz,uplo,nts_act,eigt,nts_act,eigv,work,lwork, &
-        iwork,liwork,info)
-      do i=1,nts_act
-        if(eigv(i).lt.0.d0) then
-         write(6,*) "WARNING:",i," eig of S is negative!"
-         write(6,*) "   I put it to 1e-8"
-         eigv(i)=1.d-8
-        endif
-        scr1(:,i)=eigt(:,i)*sqrt(eigv(i))
-      enddo
-      eigt_t=transpose(eigt)
-      sp12=matmul(scr1,eigt_t)                   
-      do i=1,nts_act
-        scr1(:,i)=eigt(:,i)/sqrt(eigv(i))
-      enddo
-      sm12=matmul(scr1,eigt_t)                   
-!     Test on S Diagonal passed 
-!     
-!     Form the S^-1/2 D A S^1/2 + S^1/2 A D* S^-1/2 , and diagonalize it
-      !S^-1/2 D A S^1/2
-      do i=1,nts_act
-        scr1(:,i)=cald(:,i)*cts_act(i)%area
-      enddo
-      scr2=matmul(matmul(sm12,scr1),sp12)                   
-      !S^-1/2 D A S^1/2+S^1/2 A D* S^-1/2 and diagonalise
-      do j=1,nts_act
-       do i=1,nts_act
-        eigt(i,j)=0.5*(scr2(i,j)+scr2(j,i))
-       enddo
-      enddo
-      call dsyevd (jobz,uplo,nts_act,eigt,nts_act,eigv,work,lwork, &
-        iwork,liwork,info)
-      open(7,file="TSSK_matrices.mat",status="unknown")
-      write(7,*) nts_act
-      do j=1,nts_act
-       do i=j,nts_act
-        write(7,'(4E26.16)')eigt(i,j),sp12(i,j),sm12(i,j)
-       enddo
-      enddo
-      do j=1,nts_act
-        write(7,*)eigv(j)
-      enddo
-      close(7)
-      if (Feps.eq.'drl') then
-! Do Q0 and Qd for Gamess
-       scr1=matmul(sm12,eigt)
-       scr2=transpose(scr1)
-       write (6,*) "Squares of resonance frequencies, in a.u."
-       do i=1,nts_act
-        fact2=(twp-sgn*eigv(i))*eps_A/(two*twp)  
-        fact1=fact2+eps_w0*eps_w0  
-        if (fact1.lt.0.d0) eigv(i)=-twp
-        write(6,*) i,fact1
-        scr1(:,i)=scr1(:,i)*fact2/fact1
-       enddo
-       eigt_t=-matmul(scr1,scr2)
-         open(7,file="np_bem.mat",status="unknown")
-         do j=1,nts_act
-          do i=1,nts_act
-           write(7,'(D20.12)') eigt_t(i,j)/cts_act(i)%area
-          enddo
-         enddo
-         close(7)
-         write(6,*) "Written out the static matrix for gamess"
-         open(7,file="np_bem.mdy",status="unknown")
-         do j=1,nts_act
-          do i=1,nts_act
-           write(7,'(D20.12)') 0.d0
-          enddo
-         enddo
-         close(7)
-         write(6,*) "Written out the dynamic matrix for gamess"
-      endif
-      if(allocated(cals).and.allocated(cald)) deallocate(cals,cald)
-      deallocate(work)
-      deallocate(scr1,scr2,eigt_t)
-      write(6,*) "Done setting up T and S" 
-      return
-      end subroutine do_TS_matrix
-!
-      subroutine do_charge_freq(omega_a,pot)
-      integer(4) :: its
-      complex(16), allocatable :: q_omega(:)
-      complex(16) :: mu_omega(3)
-      real(8) :: omega_a
-      real(8) :: pot(:)
-!      real(8), allocatable :: fact1(:),fact2(:)
-      complex(16), allocatable :: Kdiag_omega(:)
-      integer(4) :: sgn,i
-      allocate(Kdiag_omega(nts_act))
-!      allocate(fact1(nts_act))
-!      allocate(fact2(nts_act))
-!      allocate(scr3(nts_act,nts_act))
-!      allocate(scr1(nts_act,nts_act))
-      sgn=-1
-      do i=1,nts_act
-       Kdiag_omega(i)=(twp-sgn*eigv(i))/ &
-          ((1.d0-omega_a*(omega_a+ui*eps_gm)*2.d0/eps_A)*twp-sgn*eigv(i))
-!       if (i.eq.2) write(6,*) omega_a,Kdiag_omega(i)
-      enddo
-!       write(6,*) 'i,Kdiag_omega(i)'
-!      do i=1,nts_act
-!       write(6,*) i,Kdiag_omega(i)
-!      enddo
-      allocate (q_omega(nts_act))
-      q_omega=matmul(sm12,pot)
-      q_omega=matmul(transpose(eigt),q_omega)
-      q_omega=Kdiag_omega*q_omega
-      q_omega=matmul(eigt,q_omega)
-      q_omega=-matmul(sm12,q_omega)
-!      write(6,*) "q_omega"
-      mu_omega=0.d0
-      do its=1,nts_act
-!       write(6,*) its,q_omega(its)
-       mu_omega(1)=mu_omega(1)+q_omega(its)*(cts_act(its)%x)
-       mu_omega(2)=mu_omega(2)+q_omega(its)*(cts_act(its)%y)
-       mu_omega(3)=mu_omega(3)+q_omega(its)*(cts_act(its)%z)
-      enddo
-      write (6,'(7d15.6)') omega_a,real(mu_omega(:)),aimag(mu_omega(:))
-      deallocate (q_omega)
-!      scr3=matmul(sm12,eigt)
-!      do i=1,nts_act
-!        scr1(:,i)=scr3(:,i)*Kdiag_omega(i) 
-!      enddo
-!      deallocate(Kdiag_omega)
-!      matq_omega=-matmul(scr1,transpose(scr3)) 
-!      deallocate(scr1,scr3)
-      return
-      end subroutine do_charge_freq
-!
-      end module BEM_medium
+
+      end subroutine
+
+      end module

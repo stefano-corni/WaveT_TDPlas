@@ -1,4 +1,4 @@
-WORK_DIR=~/WaveT/WaveT
+WORK_DIR=$PWD
 cd $WORK_DIR/TDPlas/src
 make clean
 cd -

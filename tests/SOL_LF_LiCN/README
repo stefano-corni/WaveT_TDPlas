@@ -1,0 +1,5 @@
+Reproducing the local time-dependent field in a vacuum cavity immersed in a continuum debye dielectric.
+
+E=3*eps/(2*eps+1)*E0
+
+WARNING ONS PCM and PCM-mu need to be fixed!!!

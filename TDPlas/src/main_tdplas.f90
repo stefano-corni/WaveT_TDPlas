@@ -12,9 +12,10 @@
             F10.3,"s")') real(current-st)/real(rate)
 !
 !     diagonalise matrix
-      call init_BEM
+      call do_BEM_prop
       call system_clock(current)
       write(6,'("Done , total elapsed time", &
             F10.3,"s")') real(current-st)/real(rate)
 !         
-      end program tdplas
+      stop
+      end

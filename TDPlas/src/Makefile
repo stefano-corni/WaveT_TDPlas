@@ -13,24 +13,31 @@ FFLAGS_LAP= -O3 -ftz -align -xAVX -no-prec-div
 FFLAGS_GF= -O3
 LDLAGS= 
 #LDLAGS= --static --disable-shared --enable-static
-FFLAGS= $(FFLAGS_DEB)
+#FFLAGS= $(FFLAGS_DEB)
+#FFLAGS= $(FFLAGS_GF_DEB)
+FFLAGS=$(FFLAGS_HYD_PAR) #-check bounds 
 #LIBS = -L/usr/lib -llapack  -lblas 
 #LIBS =  -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lpthread
 LIBS =  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
+#LIBS = -L/usr/lib -llapack  -lblas -lfftw3
 #LIBS =  -Wl,--start-group -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -Wl,--end-group#
 #LIBSF = -lm -L/usr/lib/i386-linux-gnu -lfftw3
-LIBSF = -lm -L/usr/lib/x86_64-linux-gnu -lfftw3
-INC = -I/usr/include/ 
-#INC = -I/usr/include/ -I/unimore/prod/fftw-3.3.4/include/
+#LIBSF = -lm -L/usr/lib/x86_64-linux-gnu -lfftw3
+#INC = -I/usr/include/ 
+INC = -I/usr/include/ -I/unimore/prod/fftw-3.3.4/include/
 
 BINPATH=../bin
+WAVET=../../WaveT/src/
 
-OBJ_TDPLAS= global_tdplas.o pedra_friends.o readio_medium.o BEM_medium.o main_tdplas.o
-OBJ_FREQ= global_tdplas.o pedra_friends.o readio_medium.o BEM_medium.o scf.o td_contmed.o main_freq.o 
+OBJ_TDPLAS= constants.o global_tdplas.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o scf.o td_contmed.o QM_coupling.o main_tdplas.o
+OBJ_FREQ= constants.o global_tdplas.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o scf.o td_contmed.o main_freq.o 
 
 # rules
 
-all: $(BINPATH)/freq_bem.x $(BINPATH)/tdplas.x
+all: $(BINPATH)  $(BINPATH)/freq_bem.x $(BINPATH)/tdplas.x
+	
+$(BINPATH):
+	mkdir $(BINPATH)
 
 $(BINPATH)/tdplas.x: $(OBJ_TDPLAS) 
 	$(FC) $(FFLAGS) -o $@ $(OBJ_TDPLAS) $(LIBS) $(LIBSF)
@@ -39,7 +46,10 @@ $(BINPATH)/freq_bem.x: $(OBJ_FREQ)
 	$(FC) $(FFLAGS) -o $@ $(OBJ_FREQ) $(LIBS) $(LIBSF)
 
 clean:
-	rm -f *.o *.mod *.il $(BINPATH)/*.x
+	rm -f *.o *.mod *.il *.optrpt $(BINPATH)/*.x
+
+constants.o: constants.f90
+	$(FC) $(FFLAGS) $(INC) -c $< -o $@
 
 global_tdplas.o: global_tdplas.f90
 	$(FC) $(FFLAGS) $(INC) -c $< -o $@
@@ -48,6 +58,9 @@ pedra_friends.o: pedra_friends.f90
 	$(FC) $(FFLAGS) $(INC) -c $< -o $@
 
 readio_medium.o: readio_medium.f90
+	$(FC) $(FFLAGS) -c $< -o $@
+
+MathTools.o: MathTools.f90
 	$(FC) $(FFLAGS) -c $< -o $@
 
 BEM_medium.o: BEM_medium.f90
@@ -68,21 +81,24 @@ main_tdplas.o: main_tdplas.f90
 main_freq.o: main_freq.f90
 	$(FC) $(FFLAGS) $(INC) -c $< -o $@
 
+
+global_wavet.o: $(WAVET)/global_wavet.f90
+	$(FC) $(FFLAGS) -c $< -o $@
 # dependencies
 
-global_tdplas.o: 
+global_tdplas.o: constants.o
 
-pedra_friends.o: global_tdplas.o
+pedra_friends.o: constants.o global_tdplas.o
 
-readio_medium.o: global_tdplas.o pedra_friends.o
+readio_medium.o: constants.o global_tdplas.o pedra_friends.o
 
-BEM_medium.o: global_tdplas.o pedra_friends.o readio_medium.o
+BEM_medium.o: constants.o global_tdplas.o pedra_friends.o readio_medium.o
 
-QM_coupling.o: global_tdplas.o pedra_friends.o readio_medium.o BEM_medium.o
+QM_coupling.o: constants.o global_tdplas.o pedra_friends.o readio_medium.o BEM_medium.o
 
-scf.o: global_tdplas.o pedra_friends.o readio_medium.o BEM_medium.o
+scf.o: constants.o global_tdplas.o pedra_friends.o readio_medium.o BEM_medium.o
 
-td_contmed.o: global_tdplas.o pedra_friends.o readio_medium.o BEM_medium.o scf.o
+td_contmed.o: constants.o global_tdplas.o pedra_friends.o readio_medium.o BEM_medium.o scf.o
 
 main_tdplas.o: readio_medium.o BEM_medium.o
 

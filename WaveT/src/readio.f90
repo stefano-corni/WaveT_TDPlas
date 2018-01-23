@@ -1,100 +1,129 @@
       module readio
+      use constants       
       implicit none
       save
 !
-      INTEGER, PARAMETER :: dbl = selected_real_kind(14,200)
-      INTEGER, PARAMETER :: sgl = selected_real_kind(6,30)
-      INTEGER, PARAMETER :: i4b = selected_int_kind(9)
-      INTEGER, PARAMETER :: cmp = dbl
-      ! constants, conversion factors, and number literals
-      real(8), parameter :: pi=3.141592653589793D+00
-      real(8), parameter :: ev_to_au=0.0367493
-      real(8), parameter :: debye_to_au=0.393456
-      real(dbl), parameter :: TOANGS=0.52917724924D+00
-      real(dbl), parameter :: ANTOAU=1.0D+00/TOANGS
-      real(dbl), parameter :: c=1.37036d2
-      real(8), parameter :: slight=137.d0
-      real(dbl), parameter :: zero=0.d0
-      real(dbl), parameter :: one=1.d0
-      real(dbl), parameter :: two=2.d0
-      real(dbl), parameter :: twp=two*pi
-      real(dbl), parameter :: pt5=0.5d0
-      integer(i4b), parameter :: one_i=1
-      complex(cmp), parameter :: zeroc=(zero,zero)
-      complex(cmp), parameter :: onec=(one,zero)                
-      complex(cmp), parameter :: twoc=(two,zero)                
-      complex(16), parameter :: ui=(zero,one)
-      integer(4) :: n_f,n_ci,n_ci_read,n_step,n_out,tdis !tdis=0 Euler, tdis=1 Matthews
-      integer(4) :: imar !imar=0 Markvian, imar=1, nonMarkovian
-      integer(4) :: i_sp=0,i_nr=0,i_de=0 !counters for quantum jump occurrences
-      integer(4) :: nrnd !the time step for Euler-Maruyama is dt/nrnd
-      integer(4) :: nr_typ !type of decay for the internal conversion
-      integer(4) :: idep !choose the dephasing operator
-      real(8), allocatable :: c_i(:),e_ci(:)  ! coeff and energy from cis
-      real(8), allocatable :: mut(:,:,:) !transition dipoles from cis
-      real(8), allocatable :: nr_gam(:), de_gam(:) !decay rates for nonradiative and dephasing events
-      real(8), allocatable :: sp_gam(:) !decay rate for spontaneous emission  
-      real(8), allocatable :: sp_fact(:) !multiplicative factor for the decay rate for spontaneous emission
-      real(8), allocatable :: tmom2_0i(:) !square transition moments i->0
-      real(8), allocatable :: delta(:) !phases randomly added during the propagation 
-      real(8), allocatable :: de_gam1(:) !combined decay rates for idep=1
-      real(8) :: dt,tau(2),start, krnd
-      logical :: dis !turns on the dissipation
-      logical :: qjump ! =.true. quantum jump, =.false. stochastic propagation
-      logical :: ernd=.false. !add normal number to E: E -> E + krnd*rnd()
+      integer(i4b) :: n_f,n_ci,n_ci_read,n_step,n_out 
+      !integer(i4b) :: imar !imar=0 Markvian, imar=1, nonMarkovian
+      integer(i4b) :: i_sp=0,i_nr=0,i_de=0 !counters for quantum jump occurrences
+      integer(i4b) :: nrnd !the time step for Euler-Maruyama is dt/nrnd
+! SP 17/07/17: Changed to char flags
+      integer(i4b) :: nr_typ !input integer for type of decay for the internal conversion
+      integer(i4b) :: idep   !input integer for the dephasing operator
+      integer(i4b) :: tdis   !input integer for Euler tdis=0, Matthews tdis=1 
+! SP270917: added for merging to newer master
+      integer(i4b)              :: npulse !number of pulses
+      integer(i4b), allocatable :: irel(:,:) !mapping for intermediate relaxations  
+      integer(i4b)              :: restart_i ! step for restart
+      integer(i4b)              :: n_restart ! frequency of restart writing
+      integer(i4b)              :: n_jump    ! number of quantum jumps along a simulation
+      integer(i4b)              :: diff_step ! effective number of steps for restart
+      real(dbl), allocatable    :: mut_np2(:,:) !squared dipole from NP
+      real(dbl)                 :: tdelay(npulsemax), pshift(npulsemax)  ! time delay and phase shift with two pulses
+!
+      !real(dbl), allocatable    :: c_i(:),e_ci(:)  ! energy from cis
+      real(dbl), allocatable    :: e_ci(:)  ! energy from cis
+      complex(cmp), allocatable :: c_i(:),c_i_prev(:),c_i_prev2(:) ! coefficients from cis
+      real(dbl)                 :: mu_i_prev(3),mu_i_prev2(3),mu_i_prev3(3),mu_i_prev4(3),mu_i_prev5(3)
+      real(dbl), allocatable    :: mut(:,:,:) !transition dipoles from cis
+      real(dbl), allocatable    :: nr_gam(:), de_gam(:) !decay rates for nonradiative and dephasing events
+      real(dbl), allocatable    :: sp_gam(:) !decay rate for spontaneous emission  
+      real(dbl), allocatable    :: sp_fact(:) !multiplicative factor for the decay rate for spontaneous emission
+      real(dbl), allocatable    :: tmom2(:) !square transition moments i->0
+      real(dbl), allocatable    :: delta(:) !phases randomly added during the propagation 
+      real(dbl), allocatable    :: de_gam1(:) !combined decay rates for idep=1
+      real(dbl), allocatable    :: tomega(:)  !generalized transition frequencies 
+      real(dbl)                 :: restart_t  ! time for restart
+      real(dbl)                 :: restart_seed  ! time for restart
+      real(dbl)                 :: dt,tau(2),start,krnd
+! SP 17/07/17: Changed to char flags
+      !logical :: dis !turns on the dissipation
+      !logical :: qjump ! =.true. quantum jump, =.false. stochastic propagation
+      !logical :: ernd=.false. !add normal number to E: E -> E + krnd*rnd()
+! Global flags        
+      character(flg) :: Fdis_rel  !< Flag for decay for internal conversion, relaxation via dipole "dip" or matrix "mat"
+      character(flg) :: Fdis_deph !< Flag for dephasing operator: exp(i delta_i)|i><i| "exp" or |i><i|-|0><0| "i-0" 
+      character(flg) :: Fdis !< Flag for dissipation type: 
+                             !! Markovian     : quantum jumps "mar-qjump", Euler-Maruyama "mar-EuMar", Leimkuhler-Matthews "mar-LeiMa"
+                             !! Non-Markovian : quantum jumps "nma-qjump", Continuous stochastic propagator "nma-cstoc"
+                             !! Random        : random energy term "ernd" 
       ! qjump works for the Markovian case
       ! Stochastic propagation from:
       ! Appl. Math. Res. Express vol. 2013 34-56 (2013)
       ! IMA J. Numer. Anal. vol. 36 13-79 (2016)
-! SP 28/10/16: improved with a vector
-!      integer(4) :: dir_ft
-      real(8) :: t_mid,sigma,dir_ft(3),fmax(3),omega,mol_cc(3)
-      character(3) :: mdm,Ffld,rad 
-      character(3) :: medium,radiative,dissipative
-      character(5) :: dis_prop
-      integer(4) :: iseed  !seed for random number generator
-      integer(4) :: nexc !number of excited states
-      integer(4) :: i,nspectra
+      real(dbl) :: t_mid,sigma(npulsemax),dir_ft(3),fmax(3,npulsemax),omega(npulsemax),mol_cc(3)
+      character(flg) :: Ffld !< Field type 
+      character(flg) :: Fmdm !< Flag for medium type, this will be defined in readio_medium after separation
+      character(flg) :: Frad !< Flag for radiative damping 
+      character(flg) :: Fres !< Flag for restart
+      character(flg) :: Fful !< Flag for relaxation matrix
+      character(flg) :: Fexp !< Flag for propagation of the energy term
+      character(flg) :: Fsim !< Flag for the dynamics length in case of restart
+! Flags read from input file
+      character(flg) :: medium,radiative,dissipative,lsim
+      character(flg) :: dis_prop
+      character(flg) :: restart 
+      character(flg) :: propa
+      character(flg) :: full ! full or only |e> -> |0> relaxation
+      integer(i4b) :: iseed  ! seed for random number generator
+      integer(i4b) :: nexc   ! number of excited states
+      integer(i4b) :: nrel   ! number of relaxation channels
+      integer(i4b) :: nf     ! number of relaxation channels (including |e> -> |0> terms) 
+      integer(i4b) :: i,nspectra
 ! kind of surrounding medium and shape of the impulse
-!     mdm=sol: solvent
-!     mdm=nan: nanoparticle
-!     mdm=vac: no medium
+!     Fmdm=sol: solvent
+!     Fmdm=nan: nanoparticle
+!     Fmdm=vac: no medium
 !
 !     Ffld=gau: gaussian impulse
 !SC
-!     rad: wheter or not to apply radiative damping
+!     Frad: wheter or not to apply radiative damping
 !     TO BE COMPLETED, SEE PROPAGATE.F90      
-      real(8) :: eps_A,eps_gm,eps_w0,f_vel
+      real(dbl) :: eps_A,eps_gm,eps_w0,f_vel
 
       
       private
-      public read_input,n_ci,n_ci_read,n_step,dt, &
-             Ffld,t_mid,sigma,omega,fmax, & 
-             mdm,mol_cc,tau,start,c_i,e_ci,mut,ui,pi,zero,one,two,twp,&
-             one_i,onec,twoc,pt5,rad,n_out,iseed,n_f,dir_ft, &
-             dis,tdis,nr_gam,de_gam,sp_gam,tmom2_0i,nexc,delta, &
-             deallocate_dis,qjump,i_sp,i_nr,i_de,nrnd,sp_fact,nr_typ, &
-             idep,imar,de_gam1,krnd,ernd,dbl,sgl,i4b,cmp,zeroc
+      public read_input,n_ci,n_ci_read,n_step,dt,           &
+             Ffld,t_mid,sigma,omega,fmax,restart,           & 
+             Fmdm,mol_cc,tau,start,c_i,e_ci,mut,            &
+             Frad,n_out,iseed,n_f,dir_ft,full,              &
+! SP 17/07/17: Changed to char flags
+             tdis,nr_gam,de_gam,sp_gam,tmom2,nexc,delta,    &
+             deallocate_dis,i_sp,i_nr,i_de,nrnd,sp_fact,    &
+!             nr_typ,idep,imar,de_gam1,krnd,ernd       
+             de_gam1,krnd,Fdis,Fdis_deph,Fdis_rel,nf,irel,  &
+             npulse,tdelay,pshift,nrel,Fful,  &
+             Fexp,Fres,restart_t,restart_i,n_restart,       &
+             c_i_prev,c_i_prev2,mu_i_prev,mu_i_prev2,       &
+             mu_i_prev3,mu_i_prev4,mu_i_prev5,restart_seed, &
+             n_jump,Fsim,diff_step
+             
 !
       contains
 !
       subroutine read_input
-      
+!------------------------------------------------------------------------
+! @brief Read input namelists 
+!
+! @date Created   : 
+! Modified  : E. Coccia 20/11/2017
+!------------------------------------------------------------------------
 
 
-       !integer(4):: i,nspectra
+       !integer(i4b):: i,nspectra
        !character(3) :: medium,radiative,dissipative
        !character(5) :: dis_prop 
      
        !Molecular parameters 
-       namelist /general/ n_ci_read,n_ci,mol_cc,n_f,medium
+       namelist /general/n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,& 
+                         dt,n_step,n_out,propa,n_restart,lsim
        !External field paramaters
-       namelist /field/ dt,n_step,n_out,Ffld,t_mid,sigma,omega,radiative,iseed,fmax
-       !Namelist spectra
-       namelist /spectra/ start,tau,dir_ft
+       namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
+                        npulse,tdelay,pshift
        !Stochastic Schroedinger equation
        namelist /sse/ dissipative,idep,dis_prop,nrnd,tdis,nr_typ,krnd
-
+       !Namelist spectra
+       namelist /spectra/ start,tau,dir_ft
 
        write(*,*) ''
        write(*,*) '*****************************************************'
@@ -123,7 +152,16 @@
        !Namelist field
        call init_nml_field()
        read(*,nml=field)
+       if (npulse.gt.npulsemax) then
+          write(*,*) 'Error: npulse', npulse,'larger than', npulsemax
+          stop 
+       endif
        call write_nml_field() 
+
+       !Namelist sse
+       call init_nml_sse()
+       read(*,nml=sse)
+       call write_nml_sse()
 
        !read gaussian output for CIS propagation
        call read_gau_out
@@ -132,22 +170,28 @@
        call init_nml_spectra()
        read(*,nml=spectra) 
        call write_nml_spectra() 
-       !start, (tau(i),i=1,nspectra) !Start point for FT calculation &  Artificial damping 
-       !(dir_ft(i),i=1,3) direction along which the field is oriented
 
-       !Namelist sse
-       call init_nml_sse() 
-       read(*,nml=sse) 
-       call write_nml_sse()
-       if (dis) call read_dis_params   
+       if (Fdis(1:5).ne."nodis") call read_dis_params   
 
        return
+
       end subroutine read_input
 !
 !
       subroutine read_gau_out
-       integer(4) :: i,j
+!------------------------------------------------------------------------
+! @brief Read input files 
+!
+! @date Created   : 
+! Modified  : E. Coccia 20/11/2017
+!------------------------------------------------------------------------
+
+       implicit none
+
+       integer(i4b) :: i,j
+       real(dbl)    :: rtmp 
        character(4) :: junk
+
 !    read ci energy
        open(7,file="ci_energy.inp",status="old")
        ! add ground state
@@ -165,17 +209,15 @@
        close(7)
 !    read transition dipoles (also for pcm: useful for analysis)
        open(7,file="ci_mut.inp",status="old")
-! SC 16/02/2016: for efficiency reasons, it would be better
-!   to define mut(3,n_ci,n_ci)
-       allocate (mut(n_ci,n_ci,3))
+       allocate (mut(3,n_ci,n_ci))
 ! SC 31/05/2016: now the GS data from gaussian is in debye and same format as others
-!       read(7,*) junk,mut(1,1,1),mut(1,1,2),mut(1,1,3)
-!       mut(1,1,:)=mut(1,1,:)*debye_to_au
+!       read(7,*) junk,mut(1,1,1),mut(2,1,1),mut(3,1,1)
+!       mut(:,1,1)=mut(:,1,1)*debye_to_au
        do i=1,n_ci_read
-!         read(7,*) junk,mut(1,i,1),mut(1,i,2),mut(1,i,3)
+!         read(7,*) junk,mut(1,1,i),mut(2,1,i),mut(3,1,i)
         if (i.le.n_ci) then
-         read(7,*)junk,junk,junk,junk,mut(1,i,1),mut(1,i,2),mut(1,i,3)
-         mut(i,1,:)=mut(1,i,:)
+         read(7,*)junk,junk,junk,junk,mut(1,1,i),mut(2,1,i),mut(3,1,i)
+         mut(:,i,1)=mut(:,1,i)
         else
          read(7,*)
         endif
@@ -183,8 +225,8 @@
        do i=2,n_ci_read
          do j=2,i   
           if (i.le.n_ci.and.j.le.n_ci) then
-           read(7,*)junk,junk,junk,junk,mut(i,j,1),mut(i,j,2),mut(i,j,3)
-           mut(j,i,:)=mut(i,j,:)
+           read(7,*)junk,junk,junk,junk,mut(1,i,j),mut(2,i,j),mut(3,i,j)
+           mut(:,j,i)=mut(:,i,j)
           else
            read(7,*)
           endif
@@ -193,20 +235,62 @@
 !       write(6,*) "mut"
 !       do i=1,n_ci
 !        do j=1,n_ci
-!         write(6,'(2i4,3f8.4)') i,j,mut(i,j,:)
+!         write(6,'(2i4,3f8.4)') i,j,mut(:,i,j)
 !        enddo
 !       enddo
        close(7)
 !    read initial coefficients for the dynamics using the Slater determinants instead of the CIS_0 states.
-       open(7,file="ci_ini.inp",status="old")
        allocate (c_i(n_ci))
-       do i=1,n_ci
-        read(7,*) c_i(i)
-       enddo
-       c_i=c_i/sqrt(dot_product(c_i,c_i))
+       if (Fres.eq.'Nonr') then
+          open(7,file="ci_ini.inp",status="old")
+          do i=1,n_ci
+             read(7,*) rtmp 
+             c_i(i) = dcmplx(rtmp,0.d0)   
+          enddo
+          c_i=c_i/sqrt(dot_product(c_i,c_i))
+       elseif (Fres.eq.'Yesr') then
+          call checkfile('restart',7)
+          read(7,*) junk 
+          read(7,*) restart_t,restart_i,diff_step
+          allocate(c_i_prev(n_ci),c_i_prev2(n_ci))
+          write(*,*) ''
+          write(*,*) 'Restart from time', restart_t
+          write(*,*) ''
+          read(7,*) junk 
+          do i=1,n_ci
+             read(7,*) c_i(i)
+          enddo
+          read(7,*) junk
+          do i=1,n_ci
+             read(7,*) c_i_prev(i)
+          enddo
+          read(7,*) junk
+          do i=1,n_ci
+             read(7,*) c_i_prev2(i)
+          enddo
+          if (Fdis(1:5).ne.'nodis') then 
+             read(7,*) junk 
+             read(7,*) restart_seed
+             iseed=restart_seed
+             write(*,*) ''
+             write(*,*) 'Used iseed:', iseed
+             write(*,*) ''
+             read(7,*) junk
+             read(7,*) n_jump
+          endif
+          read(7,*) junk 
+          read(7,*) mu_i_prev(1),mu_i_prev(2),mu_i_prev(3)
+          read(7,*) mu_i_prev2(1),mu_i_prev2(2),mu_i_prev2(3)
+          read(7,*) mu_i_prev3(1),mu_i_prev3(2),mu_i_prev3(3)
+          read(7,*) mu_i_prev4(1),mu_i_prev4(2),mu_i_prev4(3)
+          read(7,*) mu_i_prev5(1),mu_i_prev5(2),mu_i_prev5(3)
+       endif
+
        close(7)
+
        return
-      end subroutine read_gau_out
+
+      end subroutine
 !
       subroutine read_dis_params()
 !------------------------------------------------------------------------
@@ -219,8 +303,11 @@
 !------------------------------------------------------------------------
      
        implicit none
-       integer   :: i, idum, ierr0, ierr1, ierr2, ierr3, err   
-       real(8)  :: term  
+        integer   :: i, j,k,idum, ierr0, ierr1, ierr2, ierr3, ierr4, err   
+        real(dbl)  :: term   
+        real(dbl)  :: rdum
+        real(dbl)   :: rx,ry,rz
+        real(dbl)   :: ix,iy,iz
 
        open(8,file='nr_rate.inp',status="old",iostat=ierr0,err=100)
        open(9,file='de_rate.inp',status="old",iostat=ierr1,err=101)
@@ -228,6 +315,14 @@
        open(11,file='sp_rate.inp',status="old",iostat=ierr3,err=103)
 
        nexc = n_ci - 1
+       if (Fful.eq.'Yesf') then
+          nrel = nexc*(nexc-1)/2
+          allocate(irel(nrel,2))
+          call map_nrel(nexc,nrel,irel)
+       elseif (Fful.eq.'Nonf') then
+          nrel = 0 
+       endif
+       nf=nexc+nrel 
 
        if (idep.ne.0.and.idep.ne.1) then
           write(*,*) 'Invalid value for idep, must be 0 or 1'
@@ -239,7 +334,7 @@
           stop
        endif 
 
-       allocate(nr_gam(nexc))
+       allocate(nr_gam(nf))
        if (idep.eq.0) then
           allocate(de_gam(nexc+1))
           allocate(delta(nexc+1))
@@ -247,17 +342,36 @@
           allocate(de_gam(nexc))
           allocate(de_gam1(nexc+1))
        endif
-       allocate(sp_gam(nexc))
-       allocate(tmom2_0i(nexc))
-       allocate(sp_fact(nexc))
+       allocate(sp_gam(nf))
+       allocate(tmom2(nf))
+       allocate(sp_fact(nf))
+       allocate(tomega(nf))
 
-! Read nonradiative and dephasing terms
+! Transition frequencies
        do i=1,nexc
-          read(8,*) idum, nr_gam(i)
+          tomega(i) = e_ci(i+1)
+       enddo
+       if (Fful.eq.'Yesf') then 
+          k=nexc
+          do i=nexc,1,-1
+             do j=i-1,1,-1
+                k=k+1
+                tomega(k) = abs(e_ci(i+1) - e_ci(j+1))
+             enddo
+          enddo
+       endif
+
+! Read dephasing terms
+       do i=1,nexc
           read(9,*) idum, de_gam(i)
-          read(11,*) idum, sp_fact(i)
        enddo
        if (idep.eq.0) read(9,*) idum, de_gam(nexc+1)
+! Read relaxation terms
+       do i=1,nf
+          read(8,*) idum, nr_gam(i)
+          read(11,*) idum, sp_fact(i)
+       enddo
+
 ! The sigma_z operator for dephasing has an extra factor 2
 ! If idep.eq.1 S_alpha = \sum_beta M(alpha, beta) |beta><beta|
 ! if alpha.eq. beta then M(alpha,beta) = -1
@@ -267,16 +381,50 @@
           call define_gamma(de_gam,de_gam1,n_ci)
        endif
 ! Define spontaneous emission terms 
-       term=4.d0/(3.d0*slight**3)
+       term=4.d0/(3.d0*clight**3)
+       do i=1,nf
+          sp_gam(i) = sp_fact(i)*term*tomega(i)**3
+       enddo
+
+! Define tmom2 =  <i|x|j>**2 + <i|y|j>**2 + <i|z|j>**2  
        do i=1,nexc
-          sp_gam(i) = sp_fact(i)*term*e_ci(i+1)**3
+          tmom2(i) = mut(1,1,i+1)**2 + mut(2,1,i+1)**2 + mut(3,1,i+1)**2
        enddo
+       if (Fful.eq.'Yesf') then 
+          k=nexc
+          do i=nexc,1,-1
+             do j=i-1,1,-1 
+                k=k+1
+                tmom2(k) = mut(1,i+1,j+1)**2 + mut(2,i+1,j+1)**2 + mut(3,i+1,j+1)**2
+             enddo
+          enddo
+       endif
 
-! Define tmom2_0i =  <i|x|0>**2 + <i|y|0>**2 + <i|z|0>**2  
-       do i=1,nexc 
-          tmom2_0i(i) = mut(1,i+1,1)**2 + mut(1,i+1,2)**2 + mut(1,i+1,3)**2
-       enddo
+       if (Fmdm.eq.'nan') then
+          open(7,file="ci_mut_np.inp",status="old",iostat=ierr4,err=104)
+          allocate(mut_np2(nf,3))
+          do i=1,nf
+             read(7,*) rdum, rx, ry, rz, ix, iy, iz, rdum
+             mut_np2(i,1) = rx**2 + ix**2
+             mut_np2(i,2) = ry**2 + iy**2
+             mut_np2(i,3) = rz**2 + iz**2
+          enddo
+         close(7)
+         do i=1,nf
+            tmom2(i) = tmom2(i) + mut_np2(i,1) + mut_np2(i,2) + mut_np2(i,3)
+         enddo
 
+         write(*,*)"Contribution to the transition dipole <i|mu|j> ", &
+                   "from NP"
+
+104      if (ierr4.ne.0) then
+           write(*,*)
+           write(*,*) 'Dissipation and NP:'
+           write(*,*) 'An error occurred during reading ci_mut_np.inp'
+           write(*,*)
+           stop
+         endif
+       endif
 ! Read phase randomly added during the propagation
        if (idep.eq.0) then
           do i=1,nexc+1
@@ -325,6 +473,34 @@
 
       end subroutine read_dis_params
 
+      subroutine map_nrel(nexc,nrel,irel)
+!------------------------------------------------------------------------
+! @brief Map state pairs for intermediate relaxations 
+!
+! @date Created   : E. Coccia 10 Oct 2017
+! Modified  :
+!------------------------------------------------------------------------
+     
+       implicit none
+
+       integer(i4b)                  :: i,j,k,kk
+       integer(i4b),  intent(in)     :: nrel,nexc
+       integer(i4b),  intent(inout)  :: irel(nrel,2)
+
+       irel=0
+       kk=0
+       do j=nexc,1,-1
+          do k=j-1,1,-1
+             kk=kk+1
+             irel(kk,1)=j
+             irel(kk,2)=k
+          enddo
+       enddo 
+
+       return
+
+      end subroutine map_nrel
+
       subroutine deallocate_dis()
 !------------------------------------------------------------------------
 ! @brief Deallocate arrays for the dissipation 
@@ -338,8 +514,11 @@
        if (idep.eq.1) deallocate(de_gam1)
        deallocate(sp_gam)
        deallocate(sp_fact)
-       deallocate(tmom2_0i)
+       deallocate(tmom2)
+       deallocate(tomega)
        if (idep.eq.0) deallocate(delta)
+       if (Fdis.ne."nodis".and.Fmdm.eq.'nan') deallocate(mut_np2)
+       if (Fful.eq.'Yesf') deallocate(irel)
 
        return
 
@@ -359,8 +538,8 @@
        implicit none
        integer                :: i
        integer, intent(in)    :: nci
-       real(8), intent(in)    :: de_gam(nci-1)
-       real(8), intent(inout) :: de_gam1(nci)
+       real(dbl), intent(in)    :: de_gam(nci-1)
+       real(dbl), intent(inout) :: de_gam1(nci)
 
        de_gam1(1) = 0.d0
        do i=1,nexc
@@ -377,15 +556,32 @@
 !
 ! @date Created   : E. Coccia 11 May 2017
 ! Modified  :
-! @param n_ci_read,n_ci,mol_cc,n_f,medium 
+! @param n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,propa,n_restart 
 !------------------------------------------------------------------------
 
+       ! Time step in the propagation (a.u.)
+       dt=0.05
+       ! Number of steps
+       n_step=10000
+       ! Frequency in writing output files
+       n_out=1
        ! Molecular center of charge
        mol_cc=0.d0
        ! Integer to be appended in all output files
        n_f=1
        ! Vacuum calculation
        medium='vac'
+       ! Restart
+       restart='n'
+       ! Full or only |e> -> |0> relaxation
+       full='n'
+       ! Propagation of the energy term
+       propa='e'
+       ! Frequency in writing restart file
+       n_restart=10
+       ! Dynamics length in case of restart ('n' n_step from input, 'y'
+       ! n_step = n_step - restart_step)
+       lsim='n'
 
        return
 
@@ -400,26 +596,26 @@
 ! @param dt,n_step,n_out,Ffld,t_mid,sigma,omega,radiative,iseed,fmax 
 !------------------------------------------------------------------------
 
-       ! Time step in the propagation (a.u.)
-       dt=0.05
-       ! Number of steps
-       n_step=10000
-       ! Frequency in writing files
-       n_out=1
        ! Type of field
        Ffld='gau'
        ! Center of the pulse
        t_mid=200
        ! Sigma for the pulse
-       sigma=10 
+       sigma=0.d0
        ! Frequency (no oscillation)
        omega=0.d0
        ! Stochastic field
        radiative='non'
-       ! Seed for radiative and/or dissipation
+       ! ieed for radiative and/or dissipation
        iseed=12345678
        ! Amplitude of the external field
        fmax=0.d0
+       ! Number of pulses
+       npulse=1
+       ! Time delay
+       tdelay=0.d0
+       ! Phase shift
+       pshift=0.d0
 
        return
 
@@ -473,6 +669,7 @@
 
       end subroutine init_nml_sse
 
+
       subroutine write_nml_general()
 !------------------------------------------------------------------------
 ! @brief Write variables in the namelist general and put conditions 
@@ -494,16 +691,59 @@
        write(*,*) 'Molecular center of charge'
        write(*,*) mol_cc 
        write(*,*) ''
+       write (*,*) "Time step (in au), number of steps, stride",dt, &
+                 n_step,n_out
+       write(*,*) ''
        select case (medium)
         case ('sol','Sol','SOL')
           write(*,*) "Solvent as external medium"
-          mdm='sol'
+          Fmdm='Csol'
+        case ('qso','Qso','QSO')
+          write(*,*) "Quantum Solvent as external medium"
+          Fmdm='Csol'
         case ('nan','Nan','NAN')
           write(*,*) "Nanoparticle as external medium"
-          mdm='nan'
+          Fmdm='Cnan'
+        case ('Qna','qna','QNA')
+          write(*,*) "Quantum Nanoparticle as external medium"
+          Fmdm='Qnan'
         case default
           write(*,*) "No external medium, vacuum calculation"
-          mdm='vac'
+          Fmdm='vac'
+       end select
+       select case (restart)
+        case ('n', 'N')
+          write(*,*) 'No restart'
+          Fres='Nonr'
+        case ('y', 'Y')
+          write(*,*) 'Restart from a previous calculation'
+          Fres='Yesr'
+          write(*,*) 'Frequency in writing restart file:', n_restart
+!EC 15/12/17: Restart only for vacuum calculations
+          if (Fmdm.ne.'vac') Fres='Nonr'
+       end select
+       select case (full)
+        case ('n', 'N') 
+          write(*,*) 'Only |k> -> |0> relaxation'
+          Fful='Nonf'
+        case ('y', 'Y')
+          write(*,*) 'Full relaxation'
+          Fful='Yesf'
+       end select
+       select case (propa)
+        case ('e', 'E')
+          write(*,*) 'Energy term is propagated analytically'
+          Fexp='exp'
+        case ('n','N')
+          write(*,*) 'Energy term is propagated via second-order Euler'
+          Fexp='non' 
+       end select
+       select case (lsim)
+        case ('y', 'Y')
+         write(*,*) 'Effective number of steps is n_step - restart_step'
+         Fsim='y'
+        case ('n', 'N')
+         Fsim='n'
        end select
        write(*,*) ''
 
@@ -520,20 +760,35 @@
 ! @param dt,n_step,n_out,Ffld,t_mid,sigma,omega,radiative,iseed,fmax 
 !------------------------------------------------------------------------
 
-       write (*,*) "Time step (in au), number of steps, stride",dt, &
-                 n_step,n_out
+       integer :: i
+
+       if (npulse.lt.1) then
+           write(*,*) 'WARNING: number of pulses in input '
+           write(*,*) 'is less than zero'
+           write(*,*) 'Calculation will be done with one pulse'
+           npulse=1
+       endif
+
        write (*,*) "Time shape of the perturbing field",Ffld
        write (*,*) "time at the center of the pulse (au):",t_mid
-       write (*,*) "Width of the pulse (time au):",sigma
-       write (*,*) "Frequency (au):",omega
-       write (*,*) "Maximum E field",fmax
+       write (*,*) "Width of the pulse (time au):",sigma(1)
+       write (*,*) "Frequency (au):",omega(1)
+       write (*,*) "Maximum E field",fmax(:,1)
        !SC
        select case (radiative)
         case ('rad','Rad','RAD')
-         rad='arl'
+         Frad='arl'
         case default
-         rad='non'
+         Frad='non'
        end select
+       do i=2,npulse
+          write(*,*) 'Pulse no.', i
+          write(*,*) 'Frequency (au) =', omega(i)
+          write(*,*) 'Sigma pulse =', sigma(i)
+          write(*,*) 'Time delay (au) between pulse',i-1,'and pulse', i, '=', tdelay(i-1)
+          write(*,*) 'Phase shift between pulse',i-1,'and pulse', i, '=', pshift(i-1)
+          write(*,*) ''
+       enddo
        write(*,*) ''
 
        return
@@ -571,55 +826,55 @@
 
        select case (dissipative)
         case ('mar', 'Mar', 'MAR')
-          dis=.true.
-          imar=0
           select case (idep)
            case (0)
+            Fdis_deph="exp"
             write(*,*) 'Use sqrt(gamma_i) exp(i delta_i)|i><i|(i=0,nci)'
            case (1)
+            Fdis_deph="i-0"
             write(*,*) 'Use sqrt(gamma_i) (|i><i|-|0><0|)'
           end select
           write(*,*) 'Markovian dissipation'
           select case (dis_prop)
            case ('qjump', 'Qjump', 'QJump')
-             qjump=.true.
+             Fdis="mar-qjump"
              write(*,*) 'Quantum jump algorithm'
            case ('Euler', 'EUler', 'EULER', 'euler')
-             qjump=.false.
              write(*,*) 'Continuous stochastic propagator'
              write(*,*) 'Time step for the Brownian motion is:', dt/nrnd
              select case (tdis)
               case (0)
                 write(*,*) 'Euler-Maruyama algorithm'
+                Fdis="mar-EuMar"
               case (1)
                 write(*,*) 'Leimkuhler-Matthews algorithm'
+                Fdis="mar-LeiMa"
              end select
           end select
           select case (nr_typ)
            case (0)
+            Fdis_rel="dip"
             write(*,*) 'Internal conversion relaxation via dipole'
            case (1)
+            Fdis_rel="mat"
             write(*,*) 'Internal conversion relaxation via given matrix'
           end select
         case ('nma', 'NMa', 'NMA', 'Nma')
-          dis=.true.
-          imar=1
           write(*,*) 'NonMarkovian dissipation'
           read(*,*) dis_prop
           select case (dis_prop)
            case ('qjump', 'Qjump', 'QJump')
-             qjump=.true.
+             Fdis="nma-qjump"
              write(*,*) 'Quantum jump algorithm'
            case default
-             qjump=.false.
+             Fdis="nma-cstoc"
              write(*,*) 'Continuous stochastic propagator'
           end select
         case ('rnd', 'RND', 'Rnd', 'RNd')
-          dis=.false.
-          ernd=.true.
+          Fdis="ernd"
           write(*,*) "Normal random term added to CI energies"
         case default
-          dis=.false.
+          Fdis="nodis"
           write(*,*) 'No dissipation'
        end select
        write(*,*) ''
@@ -627,6 +882,31 @@
        return
 
       end subroutine write_nml_sse
+
+      subroutine checkfile(filename,channel)
+!------------------------------------------------------------------------
+! @brief Check file existence 
+!
+! @date Created   : E. Coccia 20 Nov 2017
+! Modified  :
+!------------------------------------------------------------------------
+        implicit none
+
+        character*7,  intent(in)  :: filename
+        integer(i4b),  intent(in)  :: channel   
+        logical                    :: exist
+
+        inquire(file=filename, exist=exist)
+        if (exist) then
+           open(channel, file=filename, status="old")
+        else
+           write(*,*) 'ERROR:  file', filename,'is missing'       
+           stop 
+        endif    
+
+        return 
+
+      end subroutine checkfile 
 
 
     end module readio

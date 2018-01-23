@@ -1,0 +1,36 @@
+
+&general n_ci=10,n_ci_read=10
+mol_cc=
+0.0
+0.0
+0.0
+n_f=1,
+medium='vac'
+dt=0.05
+n_step=10000
+n_out=1
+propa='e'
+/ 
+
+&field Ffld='gau',omega=0.2420,sigma=707.106781187,
+       t_mid=2500,radiative='non',iseed=123456789
+fmax=
+0.01
+0.01
+0.01 
+/
+
+&sse dissipative='mar',idep=1,dis_prop='qjump',nrnd=0,tdis=0,nr_typ=1,krnd=0.0 /
+
+&spectra start=0, 
+
+tau=
+2.0
+0.0
+
+dir_ft=
+0.0
+1.0
+0.0 
+/
+

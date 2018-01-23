@@ -1,18 +1,29 @@
 &tdplas 
-which_eps='drl'
-eps_0=1000.,
-eps_d=1.,
-eps_A=0.110224,
-eps_gm=0.00757576, 
-eps_w0=0.0,
-f_vel=0.0,
-which_cavity='bui',
-xr= 103.93 179.523
-yr= 0. 0.
-zr= 0. 0.
-rr=
-94.4858
-94.4858
-nspheres=2
+/
+
+&MEDIUM
+medium_type='nan'
+medium_pol='chr'
+bem_type='diag'
+bem_read_write='wri'
+/
+
+&SURFACE
+input_surface='bui',
+spheres_number=2
+sphere_position_x= 50. 140.
+sphere_position_y=  0.   0.
+sphere_position_z=  0.   0. 
+sphere_radius=     50.  25.       
+/
+
+&EPS_FUNCTION
+epsilon_omega='drl'
+eps_0=1000.
+eps_d=1. 
+eps_A=0.110224   
+eps_gm=0.00757576
+eps_w0=0.  
+f_vel=0. 
 /
 

@@ -1,0 +1,32 @@
+ 
+ ***************************************
+ *                                     *
+ *      Add vibrational levels         *
+ *     in harmonic approximation       *
+ *      to any normal mode of          *
+ *     a given electronic state        *
+ *                                     *
+ *                by                   *
+ *          Emanuele Coccia            *
+ *                                     *
+ ***************************************
+ 
+ Total number of states          12
+ Number of electronic states           4
+ Number of normal modes per electronic state           1
+ Number of vibrational states per normal mode           3
+ Only displacements between normal coordinates
+ 
+ Vibronic spectrum:
+    Energy range (eV):  0.000000000000000E+000   8.00000000000000     
+    Number of bins       10000
+    Gaussian sigma   10.5000000000000     
+ 
+ Maximum number of vibrational states:          15
+ 
+ 
+ Pure electronic energies:
+ 
+ 
+ Vibrational calculation terminated
+ 

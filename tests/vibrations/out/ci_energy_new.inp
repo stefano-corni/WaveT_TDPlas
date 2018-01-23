@@ -1,0 +1,13 @@
+# Total number of excited states, to be used in WaveT (rename in ci_energy.inp)
+
+ Root           1 :  1.859764172108069E-003
+ Root           2 :  3.099606953513448E-003
+ Root           3 :   2.50815976417211     
+ Root           4 :   2.51187929251632     
+ Root           5 :   2.51559882086054     
+ Root           6 :   3.29869921390703     
+ Root           7 :   3.31109764172108     
+ Root           8 :   3.32349606953513     
+ Root           9 :   6.85899882086054     
+ Root          10 :   6.87759646258162     
+ Root          11 :   6.89619410430270     

@@ -1,14 +1,17 @@
 
-&general n_ci=3,n_ci_read=3
+&general n_ci=10,n_ci_read=10
 mol_cc=
 0.0
 0.0
 0.0
-n_f=NN
+n_f=1 
 medium='vac'
+dt=0.05
+n_step=10000
+n_out=1
 / 
 
-&field dt=0.05,n_step=100000,n_out=2,Ffld='gau',omega=0.2420,sigma=1000,
+&field Ffld='gau',omega=0.2420,sigma=707.106781187,
        t_mid=2500,radiative='non',iseed=123456789
 fmax=
 0.00
@@ -16,7 +19,7 @@ fmax=
 0.00 
 /
 
-&external_medium medium='vac' /
+&sse dissipative='mar',idep=1,dis_prop='qjump',nrnd=0,tdis=0,nr_typ=1,krnd=0.0 /
 
 &spectra start=0, 
 
@@ -30,4 +33,3 @@ dir_ft=
 0.0 
 /
 
-&sse dissipative='mar',idep=1,dis_prop='qjump',nrnd=0,tdis=0,nr_typ=1,krnd=0.0 /

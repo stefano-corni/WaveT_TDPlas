@@ -1,0 +1,63 @@
+ 
+ *****************************************************
+ *****************************************************
+ **                                                 **
+ **                    WaveT                        **
+ **     Evolution of molecular wavefunctions        **
+ **   under external electromagnetic perturbations  **
+ **                                                 **
+ **                     by                          **
+ **                Stefano Corni                    **
+ **                Silvio Pipolo                    **
+ **               Emanuele Coccia                   **
+ **                 Gabriel Gil                     **
+ **                Jacopo Fregoni                   **
+ **                                                 **
+ *****************************************************
+ *****************************************************
+ 
+ Number to append to dat file           1
+ Number of CIS states to be read           2
+ Number of CIS states to be used           2
+ Molecular center of charge
+  0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
+ 
+ No external medium, vacuum calculation
+ No restart
+ Full relaxation
+ 
+ Time step (in au), number of steps, stride  5.000000074505806E-002       10000
+           1
+ Time shape of the perturbing fieldgau       
+ time at the center of the pulse (au):   2500.00000000000     
+ Width of the pulse (time au):   707.106781187000     
+ Frequency (au):  0.242000000000000     
+ Maximum E field  0.000000000000000E+000  0.000000000000000E+000
+  0.000000000000000E+000
+ One pulse
+ 
+ Excitation energies read from input, in Hartree
+           1  0.239189226989031     
+           2  0.241982406620969     
+ 
+ Starting point for FT calculation  0.000000000000000E+000
+ Artificial damping   2.00000000000000     
+ Direction along which the field is oriented   1.00000000000000     
+  0.000000000000000E+000  0.000000000000000E+000
+ 
+ Use sqrt(gamma_i) (|i><i|-|0><0|)
+ Markovian dissipation
+ Quantum jump algorithm
+ Internal conversion relaxation via given matrix
+ 
+Done reading input & setting up the field, took     3.832s
+ Jump due to nonradiative relaxation, channel n.:           1 between
+           2 and           1
+ Quantum jump at step:        7037   351.800005242229     
+ 
+ Total number of quantum jumps           1 (  9.9999997E-05 )
+ Spontaneous emission quantum jumps           0 (  0.0000000E+00 )
+ Nonradiarive relaxation quantum jumps           1 (  9.9999997E-05 )
+ Dephasing relaxation quantum jumps           0 (  0.0000000E+00 )
+ 
+Done , total elapsed time     8.841s

@@ -1,6 +1,6 @@
-      program main_freq
+      program tdcis
       use readio_medium
-      use td_contmed
+      use BEM_medium
       implicit none
       integer :: st,current,rate
       !integer(4) :: n_omega,i
@@ -22,10 +22,13 @@
             F10.3,"s")') real(current-st)/real(rate)
 !
 !     diagonalise matrix
-      call do_freq_mat(omega_list,n_omega) 
+      call do_BEM_freq(omega_list,n_omega) 
       call system_clock(current)
       write(6,'("Done , total elapsed time", &
             F10.3,"s")') real(current-st)/real(rate)
 !         
       deallocate(omega_list)
-      end program main_freq
+
+      stop
+
+      end program tdcis

@@ -1,0 +1,28 @@
+&freq
+fmax= 1.  0.  0. ! applied field E=fmax exp(-iwt)
+n_omega=5000     ! number of frequency for which calculation is done
+omega_ini=0.01   ! lowest frequency
+omega_end=0.35   ! highest freq
+/
+
+&MEDIUM
+medium_type='nan'      !nan: NP as external medium,  sol,q(uantum)so(l),q(uantum)nan(oparticle)
+medium_pol='chr'       !chr: use apaprent polarization charge, other option:dip(ole)
+bem_type='diag'        !diag: use diagonal IEF, no other option working currently
+bem_read_write='rea'   ! wri: just write matrices and boundary; rea(d) full run reading matrix and boundary
+/
+
+&SURFACE
+input_surface='fil' !gms:Surface read from file cavity.inp;  fil(e): read from file cavity.inp; bui(ld): build from spheres, to be given
+/
+
+&EPS_FUNCTION
+epsilon_omega='drl' !drl: Drude Lorentz, eps_d+eps_A/(w^2-eps_w0^2+i*eps_gm*w); deb: Debye
+eps_0=1000.
+eps_d=1. 
+eps_A=0.110224   
+eps_gm=0.00757576
+eps_w0=0.  
+f_vel=0.  !Fermi velocity, to correct eps_gm for the limited mean free path
+/
+
