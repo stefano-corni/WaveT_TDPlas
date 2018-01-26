@@ -40,16 +40,18 @@ INC = -I/usr/include/ -I/unimore/prod/fftw-3.3.4/include/
 
 BINPATH=../bin
 TDPLAS=../../TDPlas/src/
+TOOLSPATH=tools
 
 OBJ= constants.o global_wavet.o global_tdplas.o random.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o dissipation.o propagate.o main.o pedra_friends.o  
 OBJ_SPECTRA= constants.o pedra_friends.o global_wavet.o global_tdplas.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o main_spectra.o 
 OBJ_VIB= constants.o readio.o vib.o main_vib.o
-OBJ_COH= constants.o coherence_tool.o 
+OBJ_COH= constants.o $(TOOLSPATH)/coherence_tool.o 
+OBJ_FFT= constants.o $(TOOLSPATH)/fft_tool.o
 
 
 # rules
 
-all: $(BINPATH) $(BINPATH)/WaveT.x $(BINPATH)/make_spectra.x $(BINPATH)/make_vib.x $(BINPATH)/make_coherence.x
+all: $(BINPATH) $(BINPATH)/WaveT.x $(BINPATH)/make_spectra.x $(BINPATH)/make_vib.x $(BINPATH)/make_coherence.x $(BINPATH)/make_2dfft.x
 	
 $(BINPATH):
 	mkdir $(BINPATH)
@@ -65,8 +67,11 @@ $(BINPATH)/make_vib.x: $(OBJ_VIB)
 
 $(BINPATH)/make_coherence.x: $(OBJ_COH)
 	$(FC) $(FFLAGS) -o $@ $(OBJ_COH)
+
+$(BINPATH)/make_2dfft.x: $(OBJ_FFT)
+	$(FC) $(FFLAGS) -o $@ $(OBJ_FFT) $(LIBS) $(LIBSF)
 clean:
-	rm -f *.o *.mod *.il *.optrpt $(BINPATH)/*.x
+	rm -f *.o *.mod *.il *.optrpt $(BINPATH)/*.x $(TOOLSPATH)/*.o $(TOOLSPATH)/*.mod $(TOOLSPATH)/*.il $(TOOLSPATH)/*.optrpt
 
 constants.o: constants.f90
 	$(FC) $(FFLAGS) -c $< -o $@
@@ -92,8 +97,11 @@ dissipation.o: dissipation.f90
 propagate.o: propagate.f90
 	$(FC) $(FFLAGS) -c $< -o $@
 
-coherence_tool.o: coherence_tool.f90
+$(TOOLSPATH)/coherence_tool.o: $(TOOLSPATH)/coherence_tool.f90
 	$(FC) $(FFLAGS) -c $< -o $@
+
+$(TOOLSPATH)/fft_tool.o: $(TOOLSPATH)/fft_tool.f90
+	$(FC) $(FFLAGS) $(INC) -c $< -o $@
 
 vib.o: vib.f90
 	$(FC) $(FFLAGS) -c $< -o $@
@@ -150,6 +158,8 @@ vib.o: readio.o
 main_vib.o: readio.o vib.o
 
 coherence_tool.o: 
+
+fft_tool.o: 
 
 main.o: readio.o spectra.o dissipation.o propagate.o readio_medium.o QM_coupling.o  
 

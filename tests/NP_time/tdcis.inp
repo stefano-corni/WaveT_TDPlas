@@ -11,11 +11,14 @@ n_out=2
 
 &field 
 Ffld='gau'
-omega=0.262961
-sigma=2.,
+omega(1)=0.262961
+sigma(1)=2.,
 t_mid=15.,
 radiative='non'
-fmax= 0.000001 0. 0.
+npulse=1
+fmax(1,1)= 0.000001 
+fmax(1,2) = 0. 
+fmax(1,3) = 0.
 /
 
 &sse
