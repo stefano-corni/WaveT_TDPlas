@@ -1288,7 +1288,8 @@
          dist=(cts_act(its_a)%x-cts_act(jts)%x)**2+  &
               (cts_act(its_a)%y-cts_act(jts)%y)**2+ &
               (cts_act(its_a)%z-cts_act(jts)%z)**2
-         if (dist.lt.1.d-5) goto 10
+!SC 14/02/2018: commented because it may eliminate tesseras for very small particles
+!         if (dist.lt.1.d-5) goto 10
         enddo
         normal=vec((vert(:,3)-vert(:,1)),(vert(:,2)-vert(:,1)))
         area=sqrt(dot_product(normal,normal))
