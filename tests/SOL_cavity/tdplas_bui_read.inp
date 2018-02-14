@@ -1,19 +1,17 @@
-&freq
-fmax= 1.  0.  0. 
-n_omega=500 
-omega_ini=0.01 
-omega_end=0.35
-/
-
 &MEDIUM
-medium_type='nan'
+medium_type='sol'
 medium_pol='chr'
 bem_type='diag'
 bem_read_write='rea'
 /
 
 &SURFACE
-input_surface='fil'
+input_surface='bui'
+spheres_number=1
+sphere_position_x=0.
+sphere_position_y=0.
+sphere_position_z=0.
+sphere_radius=9.45
 /
 
 &EPS_FUNCTION
@@ -25,4 +23,6 @@ eps_gm=0.00757576
 eps_w0=0.  
 f_vel=0. 
 /
-
+&OUT_MATRIX
+gamess='yes'
+/
