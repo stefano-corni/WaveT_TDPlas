@@ -1,6 +1,6 @@
  &FREQ
- FMAX    =   1.00000000000000     , 2*0.000000000000000E+000  ,
- N_OMEGA =        5000,
+ FMAX    =   1.00000000000000     , 2*0.000000000000000E+000  , 27*9.999999747378752E-005  ,
+ N_OMEGA =         500,
  OMEGA_INI       =  1.000000000000000E-002,
  OMEGA_END       =  0.350000000000000     ,
  DEBUG_TYPE      = non       ,
@@ -37,4 +37,4 @@ Done reading input, took     0.001s
  Done BEM diagonal
  Written out the static matrix for gamess
  Written out the dynamic matrix for gamess
-Done , total elapsed time     1.694s
+Done , total elapsed time    36.335s

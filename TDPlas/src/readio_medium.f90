@@ -53,6 +53,7 @@
                         Fqbem,     & !< type of BEM quantization, only full diagonalization "diag-all" for the moment
                         Fwrite,    & !< Modulates the level of output "low" and "high"
                         Fmdm_relax,& !< Medium charges follow the quantum jump "rel" or not "non"
+                        Fgamess,&    !< if 'yes' write out matrix for gamess calculations of states
                         Ftest,     & !< Test Flag: see below
                         Fdeb       !< Debug Flag: see below
                         !Fmdm_res     !< Medium restart
@@ -78,7 +79,7 @@
                         bem_read_write,input_surface,medium_init,    &
                         debug_type,bem_type,local_field,medium_type, &
                         out_level,interaction_init,epsilon_omega,    &
-                        test_type,medium_relax
+                        test_type,medium_relax,gamess
       private
       public read_medium,deallocate_medium,Fint,Feps,Fprop,          &
              nsph,sph_maj,sph_min,sph_centre,sph_vrs,                &
@@ -89,7 +90,7 @@
              ncycmax,thrshld,mix_coef,                               &
              FinitBEM,Fsurf,Finit_mdm,read_medium_freq,              &
              read_medium_tdplas,n_omega,omega_ini,omega_end,         &
-             Fwrite,Fmdm_relax!,Fmdm_res,fr_i,fx_i,qr_i,qx_i,         &
+             Fwrite,Fmdm_relax,Fgamess!,Fmdm_res,fr_i,fx_i,qr_i,qx_i,         &
              !read_medium_restart 
 !
       contains
@@ -200,6 +201,7 @@
          sphere_radius,spheroid_radius                                
        namelist /eps_function/ epsilon_omega,eps_0,eps_d,eps_A,&
                                eps_gm,eps_w0,f_vel,tau_deb
+       namelist /out_matrix/ gamess
        call init_nml_all() 
        call init_nml_tdplas() 
        !read(*,nml=tdplas)
@@ -209,7 +211,8 @@
        call write_nml_surface() 
        read(*,nml=eps_function) 
        call write_nml_eps_function()
-       call write_nml_all()
+       read(*,nml=out_matrix,end=10) 
+10     call write_nml_all()
 
        return
       end subroutine read_medium_tdplas
@@ -389,6 +392,7 @@
        eps_w0=zero
        eps_gm=0.000757576
        f_vel=zero
+       gamess='no '
 
        return
 
@@ -461,7 +465,12 @@
        case default
         Fdeb='non'
        end select
-
+       select case(gamess)
+       case ('yes','Yes','YES')
+        Fgamess='yes'
+       case default
+        Fgamess='no '
+       end select
        return
 
       end subroutine

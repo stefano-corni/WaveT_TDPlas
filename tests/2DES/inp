@@ -1,0 +1,8 @@
+&fft
+dim1=2
+dim2=2
+dt1=1.
+dt2=1.
+filename='ciao'
+dir= 1. 0. 0.
+/

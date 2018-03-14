@@ -11,11 +11,14 @@ n_out=1
 
 &field 
 Ffld='snd'
-omega=0.26
-sigma=10,
+omega(1)=0.26
+sigma(1)=10,
 t_mid=5000
 radiative='non'
-fmax= 0. 0. 0.      
+npulse=1
+fmax(1,1)= 0. 
+fmax(2,1)=0. 
+fmax(3,1)=0.      
 /
 
 &sse
