@@ -1,0 +1,5 @@
+Test to build the matrixes needed for GAMESS TDCIS ans TDDFT calculations
+1. Prepare S and D matrix, and np_bem.cav
+  ../../TDPlas/tdplas.x < tdplas_bui.inp > tdplas_bui.out
+2. Read them to prepare np_bem.mat and np_bem.mdy
+  ../../TDPlas/tdplas.x < tdplas_bui_rea.inp > tdplas_bui_rea.out

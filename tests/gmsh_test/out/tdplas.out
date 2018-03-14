@@ -3,7 +3,7 @@
  Diagonal BEM furmulation
  This is a Classical BEM run
  This run just writes matrices and boundary
- Surface read from file cavity.inp
+ Surface read from file surface_msh.inp
  Essential output written.
 Done reading input, took     0.001s
  nts,nts after eliminating replica         512         512

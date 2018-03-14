@@ -64,6 +64,22 @@
 
        !Cavity read/write and S D matrices 
        call init_BEM
+       if(Fgamess.eq.'yes') then
+         allocate(BEM_Qd(nts_act,nts_act))
+         allocate(BEM_Q0(nts_act,nts_act))
+         !Standard or Diagonal BEM           
+         if(Fbem(1:4).eq.'stan') then
+           write(6,*) "Standard BEM not implemented yet"
+           stop
+         elseif(Fbem(1:4).eq.'diag') then
+           call init_BEM_diagonal
+           call do_BEM_diagonal
+         endif
+         !Write out matrices for gamess                     
+         call out_BEM_gamess
+         call finalize_BEM
+         stop
+       endif
        if(Fprop(1:6).eq."chr-ie") then
          allocate(BEM_Qd(nts_act,nts_act))
          allocate(BEM_Q0(nts_act,nts_act))
@@ -523,16 +539,16 @@
              scrd3(2)=(cts_act(i)%y-cts_act(k)%y)
              scrd3(3)=(cts_act(i)%z-cts_act(k)%z)
              dist=sqrt(dot_product(scrd3,scrd3))
-             sum_d=sum_d+dot_product(cts_act(i)%n,scrd3)/dist**3*cts_act(k)%area 
+             sum_d=sum_d+dot_product(cts_act(k)%n,scrd3)/dist**3*cts_act(k)%area 
           enddo
           do k=i+1,nts_act
              scrd3(1)=(cts_act(i)%x-cts_act(k)%x)
              scrd3(2)=(cts_act(i)%y-cts_act(k)%y)
              scrd3(3)=(cts_act(i)%z-cts_act(k)%z)
              dist=sqrt(dot_product(scrd3,scrd3))
-             sum_d=sum_d+dot_product(cts_act(i)%n,scrd3)/dist**3*cts_act(k)%area 
+             sum_d=sum_d+dot_product(cts_act(k)%n,scrd3)/dist**3*cts_act(k)%area 
           enddo
-          sum_d=-(2.0*pi-sum_d)/cts_act(i)%area
+          sum_d=-(2.0*pi+sum_d)/cts_act(i)%area
           value=sum_d
           !value=-1.0694*sqrt(4.d0*pi*cts_act(i)%area)/(2.d0* &
           !       cts_act(i)%rsfe)/cts_act(i)%area
@@ -1017,7 +1033,7 @@
        open(7,file="mat_SD.inp",status="unknown")
        write(7,*) nts_act
        do j=1,nts_act
-        do i=j,nts_act
+        do i=1,nts_act
           if (Fprop(1:7).eq.'chr-ons') then 
             write(7,'(2E26.16)')BEM_S(i,j)
           else
@@ -1046,14 +1062,12 @@
        open(7,file="mat_SD.inp",status="old")
        read(7,*) nts_act
        do j=1,nts_act
-        do i=j,nts_act
+        do i=1,nts_act
           if (Fprop(1:7).eq.'chr-ons') then 
             read(7,*) BEM_S(i,j)
           else
             read(7,*) BEM_S(i,j), BEM_D(i,j)
-            BEM_D(j,i)=BEM_D(i,j)
           endif
-          BEM_S(j,i)=BEM_S(i,j)
         enddo
        enddo
 

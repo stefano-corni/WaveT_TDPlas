@@ -8,6 +8,7 @@ medium              Presence of external medium
 dt                  Time step (au)
 n_step              Number of steps
 n_out               Frequency for writing output files
+propa               'e' analytical for energies (default)
 
 Ffld                Type of field
 omega               Pulse frequency (au)
@@ -34,7 +35,6 @@ nr_rate.inp         Nonradiative relaxation decay rate
 de_rate.inp         Pure dephasing decay rate
 de_phase.inp        Phase for exponential version of pure dephasing operator
 
-Calculations done using full numerical propagation of coefficients (it is not the default anymore, propa='n' in the namelist general)
 
 Output:
 

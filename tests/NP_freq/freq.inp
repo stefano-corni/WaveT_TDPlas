@@ -1,6 +1,6 @@
 &freq
 fmax= 1.  0.  0. 
-n_omega=5000 
+n_omega=500 
 omega_ini=0.01 
 omega_end=0.35
 /

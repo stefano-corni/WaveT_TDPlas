@@ -9,11 +9,14 @@ n_out=50
 
 &field 
 Ffld='pip'
-omega=0.262961
-sigma=20,
+omega(1)=0.262961
+sigma(1)=20,
 t_mid=250
 radiative='non'
-fmax= 0. 0. 0.
+npulse=1
+fmax(1,1)= 0. 
+fmax(2,1)=0. 
+fmax(3,1)=0.
 /
 
 &sse dissipative='non'
