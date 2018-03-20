@@ -1,1 +1,3 @@
 Reproducing free-energy fig. 1 Pipolo Corni Cammi JCP 2017
+
+WARNING It was not working because the upper diagonal matrices of S and D matrices (in file mat_SD.inp) were read as whole matrices (subroutine read_BEM_SD in BEM_medium.f90 from TDPlas).
