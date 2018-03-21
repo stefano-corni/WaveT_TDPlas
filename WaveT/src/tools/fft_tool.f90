@@ -1,8 +1,7 @@
 program twodfft
 
 !------------------------------------------------------------------------
-! @brief Energy term is propagated analytically
-! Interaction term via second-order Euler 
+! @brief 2D FFT
 ! 
 ! @date Created   : E. Coccia 22 Jan 2018
 ! Modified  :
