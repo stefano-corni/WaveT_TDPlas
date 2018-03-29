@@ -6,6 +6,9 @@
       use MathTools
       use BEM_medium    
       use, intrinsic :: iso_c_binding
+#ifdef OMP
+      use omp_lib
+#endif
 
       implicit none
       real(dbl), allocatable :: Htot(:,:)    !< Hamiltonian matrix in SCF cycle
@@ -221,9 +224,18 @@
        real(dbl), intent(OUT):: q(nts_act)     
        integer(i4b)::i    
 
+#ifdef OMP
+!$OMP PARALLEL 
+!$OMP DO 
+#endif
        do i=1,nts_act
          pot(i)=dot_product(c_c,matmul(vts(i,:,:),c_c))
        enddo 
+#ifdef OMP
+!$OMP ENDDO
+!$OMP END PARALLEL
+#endif
+
        q=(1.-mix_coef)*q+mix_coef*matmul(BEM_Q0,pot)
 ! SC 12/8/2016: apparently for NP, charge compensation is needed
        if (Fmdm(2:4).eq.'nan') q=q-sum(q)/nts_act
@@ -330,10 +342,20 @@
 
        e_scf=0.d0
        e_ini=0.d0
+
+#ifdef OMP
+!$OMP PARALLEL REDUCTION (+:e_scf,e_ini) 
+!$OMP DO 
+#endif
        do i=1,n_ci
         e_scf=e_scf+abs(c_i(i))*abs(c_i(i))*eigv_c(i)
         e_ini=e_ini+abs(c_i(i))*abs(c_i(i))*e_ci(i)
        enddo
+#ifdef OMP
+!$OMP ENDDO
+!$OMP END PARALLEL
+#endif
+
 
        return
 
@@ -387,10 +409,19 @@
 
        integer(i4b) :: its,i,j
 
+#ifdef OMP
+!$OMP PARALLEL 
+!$OMP DO 
+#endif
        do its=1,nts_act
         vts(its,:,:)=matmul(vts(its,:,:),eigt_c)
         vts(its,:,:)=matmul(transpose(eigt_c),vts(its,:,:))
        enddo
+#ifdef OMP
+!$OMP ENDDO 
+!$OMP END PARALLEL 
+#endif
+
        open(unit=7,file="ci_pot_scf.inp",status="unknown", &
           form="formatted")
        write (7,*) nts_act
