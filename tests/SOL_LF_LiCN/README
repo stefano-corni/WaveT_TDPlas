@@ -2,4 +2,6 @@ Reproducing the local time-dependent field in a vacuum cavity immersed in a cont
 
 E=3*eps/(2*eps+1)*E0
 
-WARNING ONS PCM and PCM-mu need to be fixed!!!
+WARNING PCM and PCM-mu are not working. The code needs to be fixed for these cases. The PCM-BEM matrices entering the equation of motion for polarization charges due to an external potential are different from the those corresponding to the EOM for polarization charges due to the solute molecule.
+
+N.B. Here ONS is a C-PCM model where f(eps) = (eps+1)/(eps+0.5) at difference with SOL_FreeEnergy_LiCN and SOL_RF_LiCN tests, where ONS corresponds to the Onsager model. 

@@ -1278,7 +1278,7 @@
 ! this routine read in gmsh mesh files
 !  AFTER they have been massaged by a proper
 !  gawk script. To be revised with better coding
-      integer(4) :: n_nodes,i_nodes,its,jts,j_max,its_a
+      integer(4) :: n_nodes,i_nodes,its,jts,j_max,its_a,iswap,tmp
       integer(4),allocatable :: el_nodes(:,:)
       character(6) :: line, junk
       real(8),allocatable :: c_nodes(:,:) 
@@ -1295,7 +1295,12 @@
       allocate(cts_act(nts_act))
       allocate(el_nodes(3,nts_act))
       do its=1,nts_act
-       read(7,*) el_nodes(:,its)
+       read(7,*) el_nodes(:,its),iswap
+       if(iswap.lt.0) then
+        tmp=el_nodes(3,its)
+        el_nodes(3,its)=el_nodes(1,its)
+        el_nodes(1,its)=tmp            
+       endif
       enddo
       close(7)
 !  And now do representative points, areas and normals
@@ -1320,11 +1325,11 @@
 !SC 14/02/2018: commented because it may eliminate tesseras for very small particles
 !         if (dist.lt.1.d-5) goto 10
         enddo
-        normal=vec((vert(:,3)-vert(:,1)),(vert(:,2)-vert(:,1)))
+        normal=vec((vert(:,1)-vert(:,2)),(vert(:,3)-vert(:,2)))
         area=sqrt(dot_product(normal,normal))
         cts_act(its_a)%area=area/2.d0
         area_tot=area_tot+area/2.d0
-        cts_act(its_a)%n=-normal/area
+        cts_act(its_a)%n=normal/area
 ! very big as the tessera is planar, can be improved
 ! by using info from nearby normals to estimate a local
 ! curvature, TO BE DONE
@@ -1340,6 +1345,7 @@
       write(6,*) "nts,nts after eliminating replica",nts_act,its_a-1
       write(6,*) "Tot. area",area_tot
       nts_act=its_a-1
+! SP 220218: commented the following normal direction changed with iswap 
 ! choose the outward normal, with an euristic procedure tha may not always work!!
 
 #ifdef OMP
@@ -1367,7 +1373,6 @@
 !$OMP enddo
 !$OMP END PARALLEL
 #endif
-
 
 ! Save in files for subsequent calculations or checks
       open(7,file="cavity_full.inp",status="unknown")
