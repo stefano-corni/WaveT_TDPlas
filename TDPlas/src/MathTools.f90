@@ -3,6 +3,9 @@
       use constants        
       use pedra_friends
       use readio_medium       
+#ifdef OMP
+      use omp_lib
+#endif
 
       implicit none
       save
@@ -60,9 +63,19 @@
         integer(i4b) :: i
 
         m=zero
+
+#ifdef OMP
+!$OMP PARALLEL REDUCTION(+:m)
+!$OMP DO
+#endif OMP
         do i=1,size(v)
           m=m+v(i)*v(i)
         enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif OMP
+
         m=sqrt(m)
 
       end function mdl
@@ -142,13 +155,21 @@
        real(dbl), intent(out):: pot(nts_act) 
        integer(i4b) :: its  
 
-        ! Field
-        pot(:)=zero
+       ! Field
+       pot(:)=zero
+#ifdef OMP
+!$OMP PARALLEL REDUCTION(+:pot)
+!$OMP DO 
+#endif
         do its=1,nts_act
           pot(its)=pot(its)-fld(1)*cts_act(its)%x           
           pot(its)=pot(its)-fld(2)*cts_act(its)%y          
           pot(its)=pot(its)-fld(3)*cts_act(its)%z         
         enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
 
         return
 
@@ -171,6 +192,10 @@
        integer(i4b) :: its  
 
        f(:)=zero
+#ifdef OMP
+!$OMP PARALLEL REDUCTION(+:f)
+!$OMP DO 
+#endif
        do its=1,nts_act
           diff(1)=(mol_cc(1)-cts_act(its)%x)
           diff(2)=(mol_cc(2)-cts_act(its)%y)
@@ -178,6 +203,10 @@
           dist=sqrt(dot_product(diff,diff))
           f(:)=f(:)+q(its)*diff(:)/(dist**3)
        enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
 
        return
 
@@ -199,12 +228,20 @@
        integer(i4b) :: its  
 
        qtot=zero
+#ifdef OMP
+!$OMP PARALLEL REDUCTION(+:mu,qtot)
+!$OMP DO 
+#endif
        do its=1,nts_act
          mu(1)=mu(1)+q(its)*(cts_act(its)%x)
          mu(2)=mu(2)+q(its)*(cts_act(its)%y)
          mu(3)=mu(3)+q(its)*(cts_act(its)%z)
          qtot=qtot+q(its)
        enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
 
        return
 
@@ -245,9 +282,18 @@
        real(dbl), intent(OUT) :: pot(nts_act)
        integer(i4b) :: its  
 
+
+#ifdef OMP
+!$OMP PARALLEL
+!$OMP DO 
+#endif
        do its=1,nts_act
           pot(its)=dot_product(c,matmul(vts(its,:,:),c))
        enddo 
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
 
        return
 
@@ -268,10 +314,19 @@
        real(dbl), intent(IN) :: vts(n_ci,n_ci)
        integer(i4b) :: k  
 
+#ifdef OMP
+!$OMP PARALLEL
+!$OMP DO 
+#endif
        do k=1,n_ci   
           if(Fprop(1:3).eq."chr") cpot=exp(ui*e_ci(k))*matmul(vts,c)
           if(Fprop(1:3).eq."osc") cpot=exp(ui*e_ci(k))*matmul(vts,c)
        enddo 
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
 
        return
 
@@ -316,6 +371,10 @@
        integer(i4b) :: its  
 
        pot(:)=zero
+#ifdef OMP
+!$OMP PARALLEL REDUCTION(+:pot)
+!$OMP DO
+#endif
        do its=1,nts_act
           diff(1)=-(mol_cc(1)-cts_act(its)%x)
           diff(2)=-(mol_cc(2)-cts_act(its)%y)
@@ -323,6 +382,10 @@
           dist=sqrt(dot_product(diff,diff))
           pot(its)=pot(its)+dot_product(diff,dip)/(dist**3)
        enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
 
        return
 
