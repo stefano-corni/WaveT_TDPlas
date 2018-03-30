@@ -13,14 +13,19 @@
       real(dbl), allocatable :: BEM_L(:),BEM_T(:,:)      !< $\Lambda$ and T eigenMatrices
       real(dbl), allocatable :: BEM_W2(:),BEM_Modes(:,:) !< BEM squared frequencies and Modes ($T*S^{1/2}$)
 ! SP 25/06/17: K0 and Kd are still common to 'deb' and 'drl' cases
-      real(dbl), allocatable :: K0(:),Kd(:)              !< Diagonal $K_0$ and $K_d$ matrices 
+      real(dbl), allocatable :: K0(:),Kd(:)              !< Diagonal $K_0$ and $K_d$ matrices
+      real(dbl), allocatable :: K0x(:),Kdx(:)              !< Diagonal $K_0$ and $K_d$ matrices for local (x) field
       real(dbl), allocatable :: fact1(:),fact2(:)        !< Diagonal vectors for propagation matrices
+      real(dbl), allocatable :: fact2x(:)                !< Diagonal vectors for propagation matrices for local (x) field
       real(dbl), allocatable :: Sm12T(:,:),TSm12(:,:)    !< $S^{-1/2}T$ and $T*S^{-1/2}$ matrices
       real(dbl), allocatable :: TSp12(:,:)               !< $T*S^{1/2}$ matrices
       real(dbl), allocatable :: BEM_Sm12(:,:),Sp12(:,:)  !< $S^{-1/2}$ and $S^{1/2}$ matrices
       real(dbl), allocatable :: BEM_Q0(:,:),BEM_Qd(:,:)  !< Static and Dyanamic BEM matrices $Q_0$ and $Q_d$
       real(dbl), allocatable :: BEM_Qt(:,:),BEM_R(:,:)   !< Debye propagation matrices $\tilde{Q}$ and $R$
       real(dbl), allocatable :: BEM_Qw(:,:),BEM_Qf(:,:)  !< Drude-Lorents propagation matrices $Q_\omega$ and $Q_f$
+      real(dbl), allocatable :: BEM_Q0x(:,:),BEM_Qdx(:,:)  !< Static and Dyanamic BEM matrices $Q_0$ and $Q_d$ for local (x) field
+      real(dbl), allocatable :: BEM_Qtx(:,:)						!< Debye propagation matrix $\tilde{Q}$ for local (x) field
+      real(dbl), allocatable :: BEM_Qfx(:,:)						!< Drude-Lorents propagation matrix $Q_f$ for local (x) field
       real(dbl), allocatable :: MPL_Ff(:,:,:,:),MPL_Fw(:,:)!< Onsager's Matrices with factors for reaction and local (x) field
       real(dbl), allocatable :: MPL_F0(:,:,:,:),MPL_Fx0(:,:,:) !< Onsager's Matrices with factors for reaction and local (x) field
       real(dbl), allocatable :: MPL_Ft0(:,:,:),MPL_Ftx0(:,:,:) !< Onsager's Matrices with factors/tau for reaction and local (x) field
@@ -45,6 +50,7 @@
              MPL_Tauxm1,MPL_Taum1,mat_f0,mat_fd,MPL_Ff,MPL_Fw,         &
              ONS_f0,ONS_fd,ONS_taum1,ONS_fx0,ONS_fxd,ONS_tauxm1,       &
              BEM_Qt,BEM_R,BEM_Qw,BEM_Qf,BEM_Qd,BEM_Q0,BEM_W2,BEM_Modes,&
+             BEM_Qtx,BEM_Qfx,BEM_Qdx,BEM_Q0x,                          &
              do_BEM_prop,do_BEM_freq,do_BEM_quant,do_MPL_prop,         &
              do_eps_drl,do_eps_deb,do_charge_freq,                     &
              deallocate_BEM_public,deallocate_MPL_public
@@ -83,6 +89,7 @@
        if(Fprop(1:6).eq."chr-ie") then
          allocate(BEM_Qd(nts_act,nts_act))
          allocate(BEM_Q0(nts_act,nts_act))
+         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') allocate(BEM_Q0x(nts_act,nts_act),BEM_Qdx(nts_act,nts_act))
          !Standard or Diagonal BEM           
          if(Fbem(1:4).eq.'stan') then
            write(6,*) "Standard BEM not implemented yet"
@@ -101,13 +108,15 @@
          if(Fwrite.eq."high") call out_BEM_mat
          !Build propagation Matrices 
          if(Feps.eq."deb") then
-           allocate(BEM_Qt(nts_act,nts_act))
            allocate(BEM_R(nts_act,nts_act))
+           allocate(BEM_Qt(nts_act,nts_act))
+           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') allocate(BEM_Qtx(nts_act,nts_act))
            if(Fbem(1:4).eq.'stan') call do_propBEM_dia_deb ! 'dia' to be replace by 'std' 
            if(Fbem(1:4).eq.'diag') call do_propBEM_dia_deb
          elseif(Feps.eq."drl") then
            allocate(BEM_Qw(nts_act,nts_act))
            allocate(BEM_Qf(nts_act,nts_act))
+           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') allocate(BEM_Qfx(nts_act,nts_act))
            if(Fbem(1:4).eq.'stan') call do_propBEM_dia_drl ! 'dia' to be replace by 'std' 
            if(Fbem(1:4).eq.'diag') call do_propBEM_dia_drl
          endif
@@ -269,6 +278,9 @@
        if(allocated(fact2)) deallocate(fact2)
        if(allocated(K0)) deallocate(K0)
        if(allocated(Kd)) deallocate(Kd)
+       if(allocated(fact2x)) deallocate(fact2x)
+       if(allocated(K0x)) deallocate(K0x)
+       if(allocated(Kdx)) deallocate(Kdx)
        if(allocated(Sp12)) deallocate(Sp12)
        if(allocated(Sm12T)) deallocate(Sm12T)
        if(allocated(TSm12)) deallocate(TSm12)
@@ -294,6 +306,10 @@
          if(allocated(BEM_R)) deallocate(BEM_R)
          if(allocated(BEM_Qw)) deallocate(BEM_Qw)
          if(allocated(BEM_Qf)) deallocate(BEM_Qf)
+         if(allocated(BEM_Qdx)) deallocate(BEM_Qdx)
+         if(allocated(BEM_Q0x)) deallocate(BEM_Q0x)
+         if(allocated(BEM_Qtx)) deallocate(BEM_Qtx)
+         if(allocated(BEM_Qf)) deallocate(BEM_Qfx)
          if(allocated(BEM_L)) deallocate(BEM_L)
          if(allocated(BEM_W2)) deallocate(BEM_W2)
          if(allocated(BEM_T)) deallocate(BEM_T)
@@ -645,12 +661,16 @@
          if(eps_0.ne.one) then
            fac_eps0=(eps_0+one)/(eps_0-one)
            K0(:)=(twp-sgn*BEM_L(:))/(twp*fac_eps0-sgn*BEM_L(:))
+           ! GG: analogous to K_0 matrix in the case of local-field for solvent external medium
+           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') K0x(:)=-(twp+BEM_L(:))/(twp*fac_eps0-BEM_L(:))
          else
            K0(:)=zero
          endif
          if(eps_d.ne.one) then
            fac_epsd=(eps_d+one)/(eps_d-one)
            Kd(:)=(twp-sgn*BEM_L(:))/(twp*fac_epsd-sgn*BEM_L(:))
+           ! GG: analogous to K_d matrix in the case of local-field for solvent external medium
+           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') Kdx(:)=-(twp+BEM_L(:))/(twp*fac_epsd-BEM_L(:))
          else
            Kd=zero
          endif
@@ -658,6 +678,8 @@
          fact1(:)=((twp-sgn*BEM_L(:))*eps_0+twp+BEM_L(:))/ &
                  ((twp-sgn*BEM_L(:))*eps_d+twp+BEM_L(:))/tau_deb
          fact2(:)=K0(:)*fact1(:)
+         ! GG: analogous to \tau K_0 matrix in the case of local-field for solvent external medium
+         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') fact2x(:)=K0x(:)*fact1(:)
        elseif (Feps.eq."drl") then       
 !        Drude-Lorentz dielectric function
          Kd=zero 
@@ -676,6 +698,11 @@
          if (eps_w0.eq.zero) eps_w0=1.d-8
          BEM_W2(:)=fact2(:)+eps_w0*eps_w0  
          K0(:)=fact2(:)/BEM_W2(:)
+         ! GG: analogous to K_f and K_0 matrices in the case of local-field for solvent external medium
+         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+          fact2x(:)=-(twp+BEM_L(:))*eps_A/(two*twp)
+          K0x(:)=fact2x(:)/BEM_W2(:)
+         endif
        endif
        if(Fwrite.eq."high") write(6,*) "Done BEM eigenmodes"
        Sm12T=matmul(BEM_Sm12,BEM_T)
@@ -692,6 +719,17 @@
          scr1(:,i)=Sm12T(:,i)*Kd(i) 
        enddo
        BEM_Qd=-matmul(scr1,TSm12) 
+       ! GG: analogous to Q_0 and Q_d matrices in the case of local-field for solvent external medium
+       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+        do i=1,nts_act
+         scr1(:,i)=Sm12T(:,i)*K0x(i)
+        enddo
+        BEM_Q0x=-matmul(scr1,TSm12)
+        do i=1,nts_act
+          scr1(:,i)=Sm12T(:,i)*Kdx(i)
+        enddo
+        BEM_Qdx=-matmul(scr1,TSm12)
+       endif
       ! Print matrices in output
        if(Fwrite.eq."high") call out_BEM_diagmat 
        deallocate(scr1,eigv,eigt,eigt_t)
@@ -712,6 +750,10 @@
 
        allocate(fact1(nts_act),fact2(nts_act))
        allocate(Kd(nts_act),K0(nts_act))
+       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+        allocate(fact2x(nts_act))
+        allocate(Kdx(nts_act),K0x(nts_act))
+       endif
        allocate(BEM_L(nts_act))
        allocate(BEM_W2(nts_act))
        allocate(BEM_T(nts_act,nts_act))
@@ -796,6 +838,13 @@
           scr1(:,i)=Sm12T(:,i)*fact2(i) 
         enddo
         BEM_Qt=-matmul(scr1,TSm12)
+        ! GG: analogous to \tilde{Q} matrix in the case of local-field for solvent external medium
+        if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+         do i=1,nts_act
+           scr1(:,i)=Sm12T(:,i)*fact2x(i)
+         enddo
+         BEM_Qtx=-matmul(scr1,TSm12)
+        endif
         deallocate(scr1)
 
         return
@@ -824,6 +873,12 @@
          scr1(:,i)=Sm12T(:,i)*fact2(i) 
        enddo
        BEM_Qf=-matmul(scr1,TSm12)
+       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+        do i=1,nts_act
+          scr1(:,i)=Sm12T(:,i)*fact2x(i)
+        enddo
+        BEM_Qfx=-matmul(scr1,TSm12)
+       endif
        deallocate(scr1)
 
        return
@@ -902,8 +957,7 @@
        ONS_fd=(eps_d-one)/(eps_d+pt5) 
        ONS_fx0=three*eps_0/(two*eps_0+one) 
        ONS_fxd=three*eps_d/(two*eps_d+one) 
-       ONS_taum1=(eps_0+pt5)/(eps_d+pt5)/tau_deb
-       ONS_tauxm1=(two*eps_0+one)/(two*eps_d+one)/tau_deb
+       ONS_taum1=(two*eps_0+one)/(two*eps_d+one)/tau_deb
 
        return
 
@@ -991,7 +1045,6 @@
        eps=eps+onec
        eps_f=(eps-onec)/(eps+twoc)
 
-
        return
 
       end subroutine
@@ -1009,7 +1062,6 @@
        eps=dcmplx(eps_d,zero)+dcmplx(eps_0-eps_d,zero)/ &
                               dcmplx(one,-omega(1)*tau_deb)
        eps_f=(three*eps)/(two*eps+onec)
-
 
        return
  
