@@ -1019,7 +1019,7 @@
 ! ! SP 07/07/17 updated with vv propagaton 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
 
       ! charge propagation with drude/lorentz and onsager equations
@@ -1048,7 +1048,7 @@
 ! @brief Drude-Lorentz propagation Fprop=chr-ief standard algorithm 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
 
       ! Charge propagation with drude/lorentz and IEF equations 
@@ -1097,7 +1097,7 @@
 ! algorithm 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
 
       ! Charge propagation with drude/lorentz and IEF equations 
@@ -1146,7 +1146,7 @@
 ! @brief Debye propagation Fprop=chr-ief 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
 
       ! Charge propagation with debye and IEF equations 
@@ -1177,7 +1177,7 @@
 ! @brief  Debye propagation Fprop=chr-ied  
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
 
       ! Charge propagation with dedye and IEF equations one taud 
@@ -1510,7 +1510,7 @@
 ! @brief Test for Solvent/Nanoparticle reaction/local fields    
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
 
        complex(cmp), intent(IN) :: c(n_ci)
