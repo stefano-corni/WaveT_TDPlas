@@ -1026,12 +1026,13 @@
        integer(i4b) :: its  
 
       ! Reaction Field eq.47 Corni et al. JPCA 2015
-       qr_t=qr_tp-dt*taum1*qr_tp-dt*taum1*ONS_f0*matmul(BEM_Sm1,pot_tp2)&
+       qr_t=qr_tp-dt*ONS_taum1*qr_tp-dt*ONS_taum1*ONS_f0*matmul(BEM_Sm1,pot_tp2)&
                                  -ONS_fd*matmul(BEM_Sm1,pot_tp-pot_tp2)
       ! Local Field 
        if(Floc.eq."loc") then
-         qx_t=qx_tp-dt*taum1*qx_tp-dt*taum1*ONS_fx0*matmul(BEM_Sm1 &
-              ,potf_tp2)-ONS_fxd*matmul(BEM_Sm1,potf_tp-potf_tp2)
+         call do_field_from_charges(qx_tp,fx_tp)
+         qx_t=qx_tp-dt*ONS_taum1*qx_tp+dt*ONS_taum1*ONS_fx0*matmul(BEM_Sm1 &
+              ,potf_tp2)+ONS_fxd*matmul(BEM_Sm1,potf_tp-potf_tp2)
                                   
        endif
 
@@ -1068,8 +1069,13 @@
       ! Local Field
        if(Floc.eq."loc") then
          qx_t=qx_tp+dt*dqx_tp
-         call DGEMV('N',nts_act,nts_act,dt,BEM_Qf,nts_act,potf_tp,one_i,&
-                       zero,dqx_t,one_i)
+         if(Fmdm(2:4).eq.'sol') then
+          call DGEMV('N',nts_act,nts_act,dt,BEM_Qfx,nts_act,potf_tp,one_i,&
+                        zero,dqx_t,one_i)
+         else if(Fmdm(2:4).eq.'nan') then
+          call DGEMV('N',nts_act,nts_act,dt,BEM_Qf,nts_act,potf_tp,one_i,&
+                        zero,dqx_t,one_i)
+         endif
          call DGEMV('N',nts_act,nts_act,-dt,BEM_Qw,nts_act,qx_tp,one_i,&
                        one,dqx_t,one_i)
 ! SC 17/8/2016: changed the following, 
@@ -1120,7 +1126,11 @@
       ! Local Field
        if(Floc.eq."loc") then
         qx_t=qx_tp+f1*dqx_tp+f2*fqx_tp
-        fqx_t=-matmul(BEM_Qw,qx_t)+matmul(BEM_Qf,potf_tp)
+        if(Fmdm(2:4).eq.'sol') then
+         fqx_t=-matmul(BEM_Qw,qx_t)+matmul(BEM_Qfx,potf_tp)
+        else if(Fmdm(2:4).eq.'nan') then
+         fqx_t=-matmul(BEM_Qw,qx_t)+matmul(BEM_Qf,potf_tp)
+        endif
         dqx_t=f3*dqx_tp+f4*(fqx_t+fqx_tp)-f5*fqx_tp
         fqx_tp=fqx_t
         dqx_tp=dqx_t
@@ -1147,8 +1157,14 @@
                                     +matmul(BEM_Qd,pot_tp-pot_tp2)
       ! Local Field eq.47 JPCA 2015
        if(Floc.eq."loc") then
+        if(Fmdm(2:4).eq.'sol') then
+         ! GG: BEM matrices (except R) are different in the case of local-field for solvent external medium
+         qx_t=qx_tp-dt*matmul(BEM_R,qx_tp)+dt*matmul(BEM_Qtx,potf_tp) &
+                                     +matmul(BEM_Qdx,potf_tp-potf_tp2)
+        else if(Fmdm(2:4).eq.'nan') then
          qx_t=qx_tp-dt*matmul(BEM_R,qx_tp)+dt*matmul(BEM_Qt,potf_tp) &
                                      +matmul(BEM_Qd,potf_tp-potf_tp2)
+        endif
        endif
 
        return
@@ -1172,8 +1188,14 @@
                                   +matmul(BEM_Qd,pot_tp-pot_tp2)
       ! Local Field eq.47 JPCA 2015
        if(Floc.eq."loc") then
+        if(Fmdm(2:4).eq.'sol') then
+         ! GG: BEM matrices (except taum1) are different in the case of local-field for solvent external medium
+         qx_t=qx_tp-dt*taum1*qx_tp+dt*taum1*matmul(BEM_Q0x,potf_tp) &
+                                   +matmul(BEM_Qdx,potf_tp-potf_tp2)
+        else if(Fmdm(2:4).eq.'nan') then
          qx_t=qx_tp-dt*taum1*qx_tp+dt*taum1*matmul(BEM_Q0,potf_tp) &
                                    +matmul(BEM_Qd,potf_tp-potf_tp2)
+        endif
        endif
 
        return
@@ -1492,7 +1514,7 @@
 !------------------------------------------------------------------------
 
        complex(cmp), intent(IN) :: c(n_ci)
-       complex(cmp) :: refc, eps, E0
+       complex(cmp) :: refc, E0
        integer(i4b) :: its  
        real(dbl):: dist,pos(3),dp,emol(3),rr,facd,fac0,tau
 
@@ -1547,6 +1569,7 @@
              rr=sqrt(cts_act(1)%x**2+cts_act(1)%y**2+cts_act(1)%z**2) 
            endif
            call do_eps_deb
+           if(Fmdm(2:4).eq.'sol'.and.Fprop.ne.'dip'.and.Fprop.ne.'chr-ons') eps_f=(eps-onec)/(two*eps+onec)
            !refc=eps_f*ui*exp(-ui*omega*t)
            E0=dcmplx(zero,0.5d0*sqrt(dot_product(fmax(:,1),fmax(:,1))))
            refc=eps_f*E0*exp(-ui*omega(1)*t)
