@@ -1,5 +1,5 @@
 Create the required matrix for a WaveT run or a freq_bem calculation by using the mesh provided by GMSH. To run:
 1. First create the file surface_msh.inp by
-   gawk -f gmsh.awk sfera.msh > surface_msh.inp
+   gawk -f gmsh.awk sfera.msh 
 2. Then run
    ../../TDPlas/bin/tdplas.x < tdplas.inp > tdplas.out

@@ -12,10 +12,12 @@ FFLAGS_WS= -O3 -ftz -align -xP -no-prec-div -ipo
 FFLAGS_LAP= -O3 -ftz -align -xAVX -no-prec-div 
 FFLAGS_GF= -O3
 LDLAGS= 
+FFLAGS_OMP_IF= -openmp -DOMP
+#FFLAGS_OMP_GF= -fopenmp -DOMP 
 #LDLAGS= --static --disable-shared --enable-static
 #FFLAGS= $(FFLAGS_DEB)
 #FFLAGS= $(FFLAGS_GF_DEB)
-FFLAGS=$(FFLAGS_HYD_PAR) #-check bounds 
+FFLAGS=$(FFLAGS_HYD_PAR) $(FFLAGS_OMP_IF) -pg #-check bounds 
 #LIBS = -L/usr/lib -llapack  -lblas 
 #LIBS =  -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lpthread
 LIBS =  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
@@ -23,8 +25,9 @@ LIBS =  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
 #LIBS =  -Wl,--start-group -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -Wl,--end-group#
 #LIBSF = -lm -L/usr/lib/i386-linux-gnu -lfftw3
 #LIBSF = -lm -L/usr/lib/x86_64-linux-gnu -lfftw3
+LIB_CURIE = $(MKL_LIBS_MT) ${MKL_SCA_LIBS}
 #INC = -I/usr/include/ 
-INC = -I/usr/include/ -I/unimore/prod/fftw-3.3.4/include/
+#INC = -I/usr/include/ -I/unimore/prod/fftw-3.3.4/include/
 
 BINPATH=../bin
 WAVET=../../WaveT/src/
@@ -40,10 +43,10 @@ $(BINPATH):
 	mkdir $(BINPATH)
 
 $(BINPATH)/tdplas.x: $(OBJ_TDPLAS) 
-	$(FC) $(FFLAGS) -o $@ $(OBJ_TDPLAS) $(LIBS) $(LIBSF)
+	$(FC) $(FFLAGS) -o $@ $(OBJ_TDPLAS) $(LIBS) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/freq_bem.x: $(OBJ_FREQ) 
-	$(FC) $(FFLAGS) -o $@ $(OBJ_FREQ) $(LIBS) $(LIBSF)
+	$(FC) $(FFLAGS) -o $@ $(OBJ_FREQ) $(LIBS) $(LIBSF) $(LIB_CURIE)
 
 clean:
 	rm -f *.o *.mod *.il *.optrpt $(BINPATH)/*.x

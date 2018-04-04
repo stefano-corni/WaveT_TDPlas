@@ -35,6 +35,7 @@ END{
   nrm[1]= (v12[2]*v32[3]-v12[3]*v32[2])
   nrm[2]=-(v12[1]*v32[3]-v12[3]*v32[1])
   nrm[3]= (v12[1]*v32[2]-v12[2]*v32[1])
+  mod=0.
   for(k=1;k<=3;k++) {mod+=nrm[k]*nrm[k]}
   mod=sqrt(mod)   
   for(k=1;k<=3;k++) {nrm[k]=nrm[k]/mod}
@@ -42,11 +43,10 @@ END{
   pos[1]=(xn[xts[i]]+xn[yts[i]]+xn[zts[i]])/3
   pos[2]=(yn[xts[i]]+yn[yts[i]]+yn[zts[i]])/3
   pos[3]=(zn[xts[i]]+zn[yts[i]]+zn[zts[i]])/3
-  # print xyz files with vectors as CH bonds
   inorm=1
   iswap=0
   if (stype=="1sph") {
-    # Check on normal vectors for two separated spheres
+    # Check on normal vectors for a single sphere      
     for(k=1;k<=3;k++) {v1[k]=pos[k]-c1[k]}
     sp=0.
     for(k=1;k<=3;k++) {sp+=v1[k]*nrm[k]}
@@ -66,11 +66,12 @@ END{
     }
     if(sp<0) {iswap=1}
   } 
-  if(iswap==1) { 
+  if(iswap==1) {
     if (correct=="y") {tmp=xts[i];xts[i]=zts[i];zts[i]=tmp;for(k=1;k<=3;k++){nrm[k]=-nrm[k]}}
     else {inorm=-1}
   }
   print xts[i],yts[i],zts[i],inorm > "surface_msh.inp"
+  # print xyz files with vectors as CH bonds
   printf "%3s %14.5f %14.5f %14.5f\n","C", pos[1],pos[2],pos[3] > "nanoparticle_awk.xyz"
   printf "%3s %14.5f %14.5f %14.5f\n","H", pos[1]+nrm[1],pos[2]+nrm[2],pos[3]+nrm[3] > "nanoparticle_awk.xyz"
   i++}

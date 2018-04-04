@@ -6,6 +6,7 @@
       INTEGER, PARAMETER :: cmp = dbl
       INTEGER, PARAMETER :: flg = 10 
       INTEGER, PARAMETER :: nvibmax = 1000
+      INTEGER, PARAMETER :: nelmax  = 20
       INTEGER, PARAMETER :: npulsemax = 10
 !
       ! constants, conversion factors, and number literals
