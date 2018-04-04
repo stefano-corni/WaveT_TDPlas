@@ -65,7 +65,7 @@
 ! @brief BEM driver routine for propagation
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
 
        !Cavity read/write and S D matrices 
@@ -268,7 +268,7 @@
 ! @brief BEM finalized and deallocation routine 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
 
        deallocate(scrd3)
@@ -296,7 +296,7 @@
 ! @brief BEM finalized and deallocation routine 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
 
        if (Fprop(1:3).eq.'chr') then
@@ -607,7 +607,7 @@
 ! @brief Compute BEM matrices within diagonal approach 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
 
        integer(i4b) :: i,j
@@ -745,7 +745,7 @@
 ! @brief Initialize diagonal BEM 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
 
        allocate(fact1(nts_act),fact2(nts_act))
@@ -822,7 +822,7 @@
 ! @brief Propagation of matrices for diagonal BEM (debye) 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
 
        integer(i4b) :: i
@@ -857,7 +857,7 @@
 ! @brief Propagation of matrices for diagonal BEM (drude-lorentz) 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
 
        integer(i4b) :: i
@@ -950,7 +950,7 @@
 ! @brief Onsager propagation matrix for debye 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
 
        ONS_f0=(eps_0-one)/(eps_0+pt5) 
