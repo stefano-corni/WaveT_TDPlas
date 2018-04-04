@@ -4,6 +4,9 @@
       use global_tdplas
       use pedra_friends
       use MathTools
+#ifdef OMP
+      use omp_lib
+#endif
 !      use, intrinsic :: iso_c_binding
 
       implicit none
@@ -510,7 +513,11 @@
 
        real(dbl) :: temp
        integer(i4b) :: i,j
-  
+
+#ifdef OMP 
+!$OMP PARALLEL 
+!$OMP DO 
+#endif
        do i=1,nts_act
         do j=1,nts_act
           call green_s(i,j,temp)
@@ -521,6 +528,10 @@
           endif
         enddo
        enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
 
        return
  
@@ -550,6 +561,10 @@
           value=dot_product(cts_act(j)%n,scrd3)/dist**3 
        else
           sum_d=0.d0
+#ifdef OMP
+!$OMP PARALLEL REDUCTION(+:sum_d)
+!$OMP DO 
+#endif
           do k=1,i-1
              scrd3(1)=(cts_act(i)%x-cts_act(k)%x)
              scrd3(2)=(cts_act(i)%y-cts_act(k)%y)
@@ -557,6 +572,15 @@
              dist=sqrt(dot_product(scrd3,scrd3))
              sum_d=sum_d+dot_product(cts_act(k)%n,scrd3)/dist**3*cts_act(k)%area 
           enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
+#ifdef OMP
+!$OMP PARALLEL REDUCTION(+:sum_d)
+!$OMP DO 
+#endif
           do k=i+1,nts_act
              scrd3(1)=(cts_act(i)%x-cts_act(k)%x)
              scrd3(2)=(cts_act(i)%y-cts_act(k)%y)
@@ -564,6 +588,10 @@
              dist=sqrt(dot_product(scrd3,scrd3))
              sum_d=sum_d+dot_product(cts_act(k)%n,scrd3)/dist**3*cts_act(k)%area 
           enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
           sum_d=-(2.0*pi+sum_d)/cts_act(i)%area
           value=sum_d
           !value=-1.0694*sqrt(4.d0*pi*cts_act(i)%area)/(2.d0* &
@@ -625,6 +653,10 @@
        eigt = BEM_S
        call diag_mat(eigt,eigv,nts_act)
        if(Fwrite.eq."high")write(6,*) "S matrix diagonalized "
+#ifdef OMP
+!$OMP PARALLEL 
+!$OMP DO
+#endif
        do i=1,nts_act
           if(eigv(i).le.0.d0) then
             write(6,*) "WARNING:",i," eig of S is negative or zero!"
@@ -633,25 +665,59 @@
           endif
           scr1(:,i)=eigt(:,i)*sqrt(eigv(i))
        enddo
+#ifdef OMP
+!$OMP ENDDO 
+!$OMP END PARALLEL
+#endif
        eigt_t=transpose(eigt)
        Sp12=matmul(scr1,eigt_t)                   
+
+#ifdef OMP
+!$OMP PARALLEL 
+!$OMP DO
+#endif
        do i=1,nts_act
          scr1(:,i)=eigt(:,i)/sqrt(eigv(i))
        enddo
+#ifdef OMP
+!$OMP ENDDO 
+!$OMP END PARALLEL
+#endif
+
        BEM_Sm12=matmul(scr1,eigt_t)                   
 !      Form the S^-1/2 D A S^1/2 + S^1/2 A D* S^-1/2 , and diagonalize it
        !S^-1/2 D A S^1/2
+
+#ifdef OMP
+!$OMP PARALLEL 
+!$OMP DO
+#endif
        do i=1,nts_act
          scr1(:,i)=BEM_D(:,i)*cts_act(i)%area
        enddo
+#ifdef OMP
+!$OMP ENDDO 
+!$OMP END PARALLEL
+#endif
+
        scr3=matmul(BEM_Sm12,scr1)                   
        scr2=matmul(scr3,Sp12)                   
        !S^-1/2 D A S^1/2+S^1/2 A D* S^-1/2 and diagonalize
+
+#ifdef OMP
+!$OMP PARALLEL 
+!$OMP DO
+#endif
        do j=1,nts_act
         do i=1,nts_act
          BEM_T(i,j)=0.5*(scr2(i,j)+scr2(j,i))
         enddo
        enddo
+#ifdef OMP
+!$OMP ENDDO 
+!$OMP END PARALLEL
+#endif
+
        deallocate(scr2,scr3)
        call diag_mat(BEM_T,BEM_L,nts_act)
        if(Fwrite.eq."high")&
@@ -687,6 +753,12 @@
 ! SC: the first eigenvector should be 0 for the NP
          if (Fmdm(2:4).eq.'nan') fact2(1)=0.d0
          ! SC: no spurious negative square frequencies
+
+
+#ifdef OMP
+!$OMP PARALLEL 
+!$OMP DO 
+#endif
          do i=1,nts_act
            if(fact2(i).lt.0.d0) then
              write(6,*) "WARNING: BEM_W2(",i,") is ", fact2(i)+eps_w0*eps_w0
@@ -695,6 +767,10 @@
              BEM_L(i)=-twp
            endif
          enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
          if (eps_w0.eq.zero) eps_w0=1.d-8
          BEM_W2(:)=fact2(:)+eps_w0*eps_w0  
          K0(:)=fact2(:)/BEM_W2(:)
@@ -711,13 +787,33 @@
       ! SC 05/11/2016 write out the transition charges in pqr format
        if(Fwrite.eq."high") call output_charge_pqr
       ! Do BEM_Q0 and and BEM_Qd 
+
+#ifdef OMP
+!$OMP PARALLEL 
+!$OMP DO
+#endif
        do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*K0(i) 
        enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
        BEM_Q0=-matmul(scr1,TSm12) 
+
+#ifdef OMP
+!$OMP PARALLEL 
+!$OMP DO
+#endif
        do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*Kd(i) 
        enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
        BEM_Qd=-matmul(scr1,TSm12) 
        ! GG: analogous to Q_0 and Q_d matrices in the case of local-field for solvent external medium
        if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
@@ -791,6 +887,11 @@
 ! SP 16/07/17: changed the following to avoid divergence at low omega 
 !      do its=1,nts_act
        Kdiag_omega(1)=zero                   
+
+#ifdef OMP
+!$OMP PARALLEL 
+!$OMP DO
+#endif
        do its=2,nts_act
         Kdiag_omega(its)=(twp-sgn*BEM_L(its))/ &
 !        ((one-omega_a*(omega_a+ui*eps_gm)*2.d0/eps_A)*twp-sgn*BEM_L(its))
@@ -800,17 +901,31 @@
        !b=two*twp*eps_gm*omega_a/eps_A
        !if(its.eq.1) write(6,*) a**2, b**2
        enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
        q_omega=matmul(BEM_Sm12,pot)
        q_omega=matmul(transpose(BEM_T),q_omega)
        q_omega=Kdiag_omega*q_omega
        q_omega=matmul(BEM_T,q_omega)
        q_omega=-matmul(BEM_Sm12,q_omega)
        mu_omega=0.d0
+
+#ifdef OMP
+!$OMP PARALLEL REDUCTION(+:mu_omega)
+!$OMP DO 
+#endif
        do its=1,nts_act
         mu_omega(1)=mu_omega(1)+q_omega(its)*(cts_act(its)%x)
         mu_omega(2)=mu_omega(2)+q_omega(its)*(cts_act(its)%y)
         mu_omega(3)=mu_omega(3)+q_omega(its)*(cts_act(its)%z)
        enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
 
        return
 
@@ -830,13 +945,33 @@
 
        allocate(scr1(nts_act,nts_act))
 !      Form the \tilde{Q} and R for debye propagation
+
+#ifdef OMP
+!$OMP PARALLEL 
+!$OMP DO 
+#endif
         do i=1,nts_act
           scr1(:,i)=Sm12T(:,i)*fact1(i) 
         enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
         BEM_R=matmul(scr1,TSp12)
+
+#ifdef OMP
+!$OMP PARALLEL 
+!$OMP DO
+#endif
         do i=1,nts_act
           scr1(:,i)=Sm12T(:,i)*fact2(i) 
         enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
         BEM_Qt=-matmul(scr1,TSm12)
         ! GG: analogous to \tilde{Q} matrix in the case of local-field for solvent external medium
         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
@@ -845,6 +980,7 @@
          enddo
          BEM_Qtx=-matmul(scr1,TSm12)
         endif
+
         deallocate(scr1)
 
         return
@@ -865,13 +1001,33 @@
 
        allocate(scr1(nts_act,nts_act))
 !      Form the Q_w and Q_f for drude-lorentz propagation
+
+#ifdef OMP
+!$OMP PARALLEL 
+!$OMP DO
+#endif
        do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*BEM_W2(i) 
        enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
        BEM_Qw=matmul(scr1,TSp12)
+
+#ifdef OMP
+!$OMP PARALLEL 
+!$OMP DO
+#endif
        do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*fact2(i) 
        enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
        BEM_Qf=-matmul(scr1,TSm12)
        if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
         do i=1,nts_act

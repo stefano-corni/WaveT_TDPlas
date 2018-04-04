@@ -6,6 +6,9 @@
       use MathTools 
       use BEM_medium
       use, intrinsic :: iso_c_binding
+#ifdef OMP
+      use omp_lib
+#endif
 
       implicit none
       real(dbl), allocatable :: occ(:)       !<Occupations                      
@@ -116,20 +119,38 @@
        ! H11
        if(FQBEM(1:4)=='prop') then ! propagation_semiclassical
          ! Introduces the coupling with the field for propagation
+#ifdef OMP
+!$OMP PARALLEL 
+!$OMP DO 
+#endif
          do j=1,n_ci
            do k=1,n_ci
              Hqm(k,j)=-dot_product(mut(:,k,j),fmax(:,1))
            enddo
          enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
          do i=1,nmodes 
            dp(i)=cts_act(i)%x*fmax(1,1)+cts_act(i)%y*fmax(2,1)+       &
                                       cts_act(i)%z*fmax(3,1) 
          enddo 
        endif
        ! CI energies, diagonal 
+#ifdef OMP
+!$OMP PARALLEL REDUCTION(+:Hqm)
+!$OMP DO 
+#endif
        do j=1,n_ci
          Hqm(j,j)=Hqm(j,j)+e_ci(j)
        enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
        gFi=0.d0
        do i=2,nmodes   
          omega_p=sqrt(BEM_W2(i)) 
@@ -156,6 +177,7 @@
            Hqm(j,p)=Hqm(j,p)+gFi
          enddo
        enddo
+
        if(FQBEM.eq."pr_sc") deallocate(dp) 
       return
       end subroutine

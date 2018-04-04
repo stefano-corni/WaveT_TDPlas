@@ -246,6 +246,7 @@ module vib
                  tmp = dfact(k+ke-1)
                  ik = safe_division(tmp,dw,1.d100) 
               endif
+              !if (ve.eq.171) write(888,*)  bin_coef(v,k),bin_coef(ve,ke)
               tmp1 = sqrt(nf)*bin_coef(v,k)*bin_coef(ve,ke)*hv*hve*t1**k*t2**ke*ik
               fc = fc + tmp1 
 
@@ -261,6 +262,8 @@ module vib
               !enddo
            enddo
         enddo
+
+        !write(999,*) v, ve, fc  
 
         !fc = sqrt(nf)*fc
 
@@ -346,12 +349,14 @@ module vib
        s=1.d0
 
        do k=1,n
-          s=s*k
+          s=s*dble(k)
        enddo
    
        fact=s
 
        if (n.eq.0) fact=1 
+
+       if (fact.gt.plus_inf) fact=plus_inf
  
        return 
 
@@ -413,6 +418,8 @@ module vib
         endif
 
         bin_coef=fact(n)/(fact(k)*fact(n-k))
+
+        !if (n.eq.171) write(777,*) n, fact(n), fact(k)*fact(n-k), fact(k),fact(n-k)
 
         return
 
