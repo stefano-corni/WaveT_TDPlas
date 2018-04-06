@@ -9,7 +9,7 @@
 #FFLAGS_MIO= -O3 -ftz -align -arch pn4 -tune pn4 -tpp7 -xB -ipo
 #FFLAGS_WS= -O3 -ftz -align -xP -no-prec-div -ipo
 #FFLAGS_LAP= -O3 -ftz -align -xAVX -no-prec-div 
-#FFLAGS_GF= -O3
+#FFLAGS_GF= -O3 -cpp
 #LDLAGS= 
 #FFLAGS= $(FFLAGS_GF_DEB)
 #LIBS =  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
