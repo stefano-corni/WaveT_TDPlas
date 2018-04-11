@@ -10,6 +10,7 @@
 #FFLAGS_WS= -O3 -ftz -align -xP -no-prec-div -ipo
 #FFLAGS_LAP= -O3 -ftz -align -xAVX -no-prec-div 
 #FFLAGS_GF= -O3 -cpp
+#FFLAGS_CPP_GF= -cpp
 #LDLAGS= 
 #FFLAGS= $(FFLAGS_GF_DEB)
 #LIBS =  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
@@ -29,6 +30,7 @@ FFLAGS_HYD= -O3 -ftz -align -xHost
 FFLAGS_HYD_PAR= -O3 -ftz -align -xHost -parallel -par_threshold75 -par_report3 -check bounds 
 FFLAGS_WS= -O3 -ftz -align -xP -no-prec-div -ipo
 FFLAGS_GF= -O3
+FFLAGS_CPP_IF= -fpp
 LDLAGS=
 FFLAGS= $(FFLAGS_HYD_PAR)
 #LIBS = -L/usr/lib -llapack  -lblas 
