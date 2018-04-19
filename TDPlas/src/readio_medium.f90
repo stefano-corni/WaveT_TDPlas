@@ -768,11 +768,11 @@
            ! sphere major axis = minor axis = radius           
            Fshape='sphe' ! Sphere
            do i=1,nsph
-             sph_centre(1,i)=sphere_position_x(i)*antoau
-             sph_centre(2,i)=sphere_position_y(i)*antoau
-             sph_centre(3,i)=sphere_position_z(i)*antoau
-             sph_min(i)=sphere_radius(i)*antoau
-             sph_maj(i)=sphere_radius(i)*antoau
+             sph_centre(1,i)=sphere_position_x(i)
+             sph_centre(2,i)=sphere_position_y(i)
+             sph_centre(3,i)=sphere_position_z(i)
+             sph_min(i)=sphere_radius(i)
+             sph_maj(i)=sphere_radius(i)
              sph_vrs(:,:,i)=zero
            enddo
            if(Fmdm(2:4).eq.'sol')write(*,*)'Spherical cavity'
@@ -783,13 +783,13 @@
            Fshape='spho' ! Spheroid
            ! calculate the major axis modulus and unit vector
            do i=1,nsph
-             sph_centre(1,i)=spheroid_position_x(i)*antoau
-             sph_centre(2,i)=spheroid_position_y(i)*antoau
-             sph_centre(3,i)=spheroid_position_z(i)*antoau
-             sph_min(i)=spheroid_radius(i)*antoau
-             sph_vrs(1,1,i)=spheroid_axis_x(i)*antoau
-             sph_vrs(2,1,i)=spheroid_axis_y(i)*antoau
-             sph_vrs(3,1,i)=spheroid_axis_z(i)*antoau
+             sph_centre(1,i)=spheroid_position_x(i)
+             sph_centre(2,i)=spheroid_position_y(i)
+             sph_centre(3,i)=spheroid_position_z(i)
+             sph_min(i)=spheroid_radius(i)
+             sph_vrs(1,1,i)=spheroid_axis_x(i)
+             sph_vrs(2,1,i)=spheroid_axis_y(i)
+             sph_vrs(3,1,i)=spheroid_axis_z(i)
              sph_maj(i)=sqrt(sph_vrs(1,1,i)**2+ &
                              sph_vrs(2,1,i)**2+ &    
                              sph_vrs(3,1,i)**2)     
