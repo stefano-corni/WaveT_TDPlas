@@ -15,10 +15,10 @@ program nuclear_wp
   implicit none
 
   integer(i4b)               ::  i,j,k,l,m
-  integer(i4b)               ::  ne,nv,nstep,ntot,nx,fact
+  integer(i4b)               ::  ne,nv,nstep,ntot,nx
   integer(i4b), allocatable  ::  istep(:) 
   real(dbl)                  ::  x,hk,hl,xmin,xmax,dx,mu
-  real(dbl)                  ::  expp,cc,sq,tmp
+  real(dbl)                  ::  expp,cc,sq,tmp,fact
   real(dbl),    allocatable  ::  tstep(:),hv(:,:,:),w(:),deq(:)
   complex(cmp)               ::  ctmp
   complex(cmp), allocatable  ::  c(:,:),pe(:,:,:)
@@ -223,7 +223,7 @@ real(dbl) function fact(n)
 
        fact=s
 
-       if (n.eq.0) fact=1
+       if (n.eq.0) fact=1.d0
 
        if (fact.gt.plus_inf) fact=plus_inf
 
