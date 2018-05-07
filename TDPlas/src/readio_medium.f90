@@ -767,6 +767,8 @@
            write(6,*) 'This is a Spherical Onsager run in solution'
            ! sphere major axis = minor axis = radius           
            Fshape='sphe' ! Sphere
+           if(Fmdm(2:4).eq.'sol')write(*,*)'Spherical cavity'
+           if(Fmdm(2:4).eq.'nan')write(*,*)'Spherical nanoparticle' 
            do i=1,nsph
              sph_centre(1,i)=sphere_position_x(i)
              sph_centre(2,i)=sphere_position_y(i)
@@ -774,10 +776,8 @@
              sph_min(i)=sphere_radius(i)
              sph_maj(i)=sphere_radius(i)
              sph_vrs(:,:,i)=zero
+             write(*,*) 'Radius (a.u.) ', sph_maj(i)
            enddo
-           if(Fmdm(2:4).eq.'sol')write(*,*)'Spherical cavity'
-           if(Fmdm(2:4).eq.'nan')write(*,*)'Spherical nanoparticle' 
-           write(*,*) 'Radius (a.u.) ', sph_maj(i)
          else
            write(6,*) 'This is a Spheroidal Onsager run in solution'
            Fshape='spho' ! Spheroid
@@ -828,10 +828,10 @@
              stop
           endif
           ! Build surface from spheres
-          call read_act(sphere_position_x*antoau,& 
-                        sphere_position_y*antoau,&
-                        sphere_position_z*antoau,&
-                        sphere_radius*antoau,nsph,nsmax)
+          call read_act(sphere_position_x,& 
+                        sphere_position_y,&
+                        sphere_position_z,&
+                        sphere_radius,nsph,nsmax)
          case default
           write(6,*) "Please choose: build or read surface?"
           stop
