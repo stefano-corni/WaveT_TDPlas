@@ -655,6 +655,8 @@
        call do_dip_from_coeff(c_tp,mu_tp,n_ci)
        if(Ftest.eq."s-r") mu_0=zero
        if(Ftest.eq."s-r") mu_tp=zero
+!SC 7/5/2018
+       mu_tp2=mu_tp
        if (Fmdm(2:4).eq."nan") then 
        ! SP 06/07/17: need to implement a proper scf cycle for more then a nanoparticle
        !              only non-self consistent initialization is done
