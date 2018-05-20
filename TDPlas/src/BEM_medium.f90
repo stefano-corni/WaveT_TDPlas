@@ -89,9 +89,11 @@
          call finalize_BEM
          stop
        endif
-       if(Fprop(1:6).eq."chr-ie") then
+       if(Fprop(1:3).eq."chr") then
          allocate(BEM_Qd(nts_act,nts_act))
          allocate(BEM_Q0(nts_act,nts_act))
+       endif
+       if(Fprop(1:6).eq."chr-ie") then
          if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') allocate(BEM_Q0x(nts_act,nts_act),BEM_Qdx(nts_act,nts_act))
          !Standard or Diagonal BEM           
          if(Fbem(1:4).eq.'stan') then
