@@ -1008,15 +1008,15 @@
 
       ! Reaction Field
        qr_t=qr_tp+f1*dqr_tp+f2*fqr_tp
-       ! $Q_f=-ONS_ff(1)*S{-1}$
-       fqr_t=-ONS_fw*qr_t-ONS_ff(1)*matmul(BEM_sm1,pot_tp)
+       ! SP: changed using $BEM_Qf=-ONS_ff(1)*S{-1}$
+       fqr_t=-ONS_fw*qr_t+matmul(BEM_Qf,pot_tp)
        dqr_t=f3*dqr_tp+f4*(fqr_t+fqr_tp)-f5*fqr_tp
        fqr_tp=fqr_t
        dqr_tp=dqr_t
        ! Local Field
        if(Floc.eq."loc") then
          qx_t=qx_tp+f1*dqx_tp+f2*fqx_tp
-         fqx_t=-ONS_fw*qx_t-ONS_ff(1)*matmul(BEM_sm1,potf_tp)
+         fqx_t=-ONS_fw*qx_t+matmul(BEM_Qf,potf_tp)
          dqx_t=f3*dqx_tp+f4*(fqx_t+fqx_tp)-f5*fqx_tp
          fqx_tp=fqx_t
          dqx_tp=dqx_t
@@ -1039,14 +1039,14 @@
       ! charge propagation with drude/lorentz and onsager equations
        integer(i4b) :: its  
 
-      ! Reaction Field eq.47 Corni et al. JPCA 2015
-       qr_t=qr_tp-dt*ONS_taum1*qr_tp-dt*ONS_taum1*ONS_f0*matmul(BEM_Sm1,pot_tp2)&
-                                 -ONS_fd*matmul(BEM_Sm1,pot_tp-pot_tp2)
-      ! Local Field 
+      ! SP: Reaction Field eq.46 Corni et al. JPCA 2015
+       qr_t=qr_tp-dt*ONS_taum1*qr_tp+dt*ONS_taum1*matmul(BEM_Q0,pot_tp2)&
+                                 +matmul(BEM_Qd,pot_tp-pot_tp2)
+      ! Local Field analogous equation, BEM_Q0x=ONS_fx0*Sm1 and BEM_Qdx=ONS_fxd*Sm1
        if(Floc.eq."loc") then
          call do_field_from_charges(qx_tp,fx_tp)
-         qx_t=qx_tp-dt*ONS_taum1*qx_tp+dt*ONS_taum1*ONS_fx0*matmul(BEM_Sm1 &
-              ,potf_tp2)+ONS_fxd*matmul(BEM_Sm1,potf_tp-potf_tp2)
+         qx_t=qx_tp-dt*ONS_taum1*qx_tp+dt*ONS_taum1*matmul(BEM_Q0x,potf_tp2) &
+                                 +matmul(BEM_Qdx,potf_tp-potf_tp2)
                                   
        endif
 
@@ -1194,7 +1194,7 @@
 ! Modified: G. Gil
 !------------------------------------------------------------------------
 
-      ! Charge propagation with dedye and IEF equations one taud 
+      ! Charge propagation with debye and IEF equations one taud 
        integer(i4b) :: its  
 
       ! Reaction Field
