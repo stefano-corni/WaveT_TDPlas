@@ -80,10 +80,18 @@
                         debug_type,bem_type,local_field,medium_type, &
                         out_level,interaction_init,epsilon_omega,    &
                         test_type,medium_relax,gamess
+
+      ! variables read from eps.inp in the case of the general dielectric function case (i.e., eps_omega = 'gen')
+      integer(i4b) :: npts
+      real(dbl), allocatable    :: omegas(:)          !< sampling frequencies for the complex dielectric function
+      complex(cmp), allocatable :: eps_omegas(:)      !< complex dielectric function values for the sampling frequencies
+      real(dbl), allocatable    :: re_deps_domegas(:) !< real part of the derivative of the dielectric function at the sampling frequencies
+
       private
       public read_medium,deallocate_medium,Fint,Feps,Fprop,          &
              nsph,sph_maj,sph_min,sph_centre,sph_vrs,                &
              eps_0,eps_d,tau_deb,eps_A,eps_gm,eps_w0,f_vel,          &
+             npts,omegas,eps_omegas,re_deps_domegas,                 &
              vts,n_q,Fmdm_pol,                                       &
              MPL_ord,Fbem,Fshape,fr_0,q0,Floc,                       &
              Fdeb,vtsn,Finit_int,Fqbem,Ftest,                        &
@@ -561,19 +569,30 @@
 ! @brief Write solvent and nanoparticle shared variables 
 !      
 ! @date Created: S. Pipolo
-! Modified: E. Coccia
+! Modified: E. Coccia, G. Gil
 !------------------------------------------------------------------------
 
-       real(dbl)::a,b,c
-       integer(i4b)::i,j
+       integer(i4b) :: i
 
        select case (epsilon_omega)
          case ('deb','Deb','DEB')
            Feps='deb'
          case ('drl','Drl','DRL')
            Feps='drl'
+         case ('gen','Gen','GEN','gral','Gral','GRAL')
+           Feps='gen'
+           open(1,file='eps.inp')
+           read(1,*) npts
+           allocate(omegas(npts),eps_omegas(npts),re_deps_domegas(npts))
+           do i=1, npts
+            read(1,*) omegas(i), eps_omegas(i)
+            if(i.eq.1) cycle
+            re_deps_domegas(i-1) = real(eps_omegas(i)-eps_omegas(i-1))/(omegas(i)-omegas(i-1))
+           enddo
+           re_deps_domegas(npts) = zero
+           close(1)
          case default
-           write(*,*) "Error, specify eps(omega) type DEB or DRL"
+           write(*,*) "Error, specify eps(omega) type DEB, DRL or GEN"
            stop
        end select        
 
