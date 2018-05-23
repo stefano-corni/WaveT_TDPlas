@@ -824,11 +824,20 @@
          !gamma_p(:) = abs(aimag(eps_omega_p(:))/re_deps_domega_p(:))
          !BEM_W2(:)=omega_p(:)**2+gamma_p(:)**2
          !BEM_2G(:)=two*gamma_p(:) ! keeping it for clarity
+
+#ifdef OMP
+!$OMP PARALLEL 
+!$OMP DO
+#endif
          do i=1,nts_act 
-          fact2(i)   = sum(abs(2*poles(i)%omega_p(:)*(poles(i)%eps_omega_p(:)-one)/poles(i)%re_deps_domega_p(:)))
+          fact2(i)   = sum(abs(two*poles(i)%omega_p(:)*(poles(i)%eps_omega_p(:)-one)/poles(i)%re_deps_domega_p(:)))
           BEM_W2(i)  = sum(poles(i)%omega_p(:)**2+poles(i)%gamma_p(:)**2)
           BEM_2G(i)  = sum(two*poles(i)%gamma_p(:))
          end do
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
 
 ! SC: the first eigenvector should be 0 for the NP
 !         if (Fmdm(2:4).eq.'nan') fact2(1)=0.d0
