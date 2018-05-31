@@ -12,12 +12,11 @@
       implicit none
 ! SP 25/06/17: variables starting with "BEM_" are public. 
       real(dbl), allocatable :: BEM_S(:,:),BEM_D(:,:)    !< Calderon S and D matrices 
-      real(dbl), allocatable :: BEM_Sm1(:,:)             !< Onsager $S^{-1}$ matrix
       real(dbl), allocatable :: BEM_L(:),BEM_T(:,:)      !< $\Lambda$ and T eigenMatrices
       real(dbl), allocatable :: BEM_W2(:),BEM_Modes(:,:) !< BEM squared frequencies and Modes ($T*S^{1/2}$)
 ! SP 25/06/17: K0 and Kd are still common to 'deb' and 'drl' cases
       real(dbl), allocatable :: K0(:),Kd(:)              !< Diagonal $K_0$ and $K_d$ matrices
-      real(dbl), allocatable :: K0x(:),Kdx(:)              !< Diagonal $K_0$ and $K_d$ matrices for local (x) field
+      real(dbl), allocatable :: K0x(:),Kdx(:)            !< Diagonal $K_0$ and $K_d$ matrices for local (x) field
       real(dbl), allocatable :: fact1(:),fact2(:)        !< Diagonal vectors for propagation matrices
       real(dbl), allocatable :: fact2x(:)                !< Diagonal vectors for propagation matrices for local (x) field
       real(dbl), allocatable :: Sm12T(:,:),TSm12(:,:)    !< $S^{-1/2}T$ and $T*S^{-1/2}$ matrices
@@ -68,7 +67,7 @@
 
       save
       private
-      public eps,eps_f,BEM_L,BEM_T,BEM_Sm1,ONS_ff,ONS_fw,              &
+      public eps,eps_f,BEM_L,BEM_T,ONS_ff,ONS_fw,                      &
              BEM_Sm12,MPL_F0,MPL_Ft0,MPL_Fd,MPL_Fx0,MPL_Ftx0,MPL_Fxd,  &
              MPL_Tauxm1,MPL_Taum1,mat_f0,mat_fd,MPL_Ff,MPL_Fw,         &
              ONS_f0,ONS_fd,ONS_taum1,ONS_fx0,ONS_fxd,ONS_tauxm1,       &
@@ -93,6 +92,8 @@
 ! Modified: G. Gil
 !------------------------------------------------------------------------
 
+       real(dbl), allocatable :: Sm1(:,:)  !< $S^{-1}$ Onsager matrix
+
        !Cavity read/write and S D matrices 
        call init_BEM
        if(Fgamess.eq.'yes') then
@@ -111,10 +112,15 @@
          call finalize_BEM
          stop
        endif
+       if(Fprop(1:3).eq."chr") then
+         if(.not.allocated(BEM_Qd)) allocate(BEM_Qd(nts_act,nts_act))
+         if(.not.allocated(BEM_Q0)) allocate(BEM_Q0(nts_act,nts_act))
+         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then 
+           allocate(BEM_Qdx(nts_act,nts_act))
+           allocate(BEM_Q0x(nts_act,nts_act))
+         endif
+       endif
        if(Fprop(1:6).eq."chr-ie") then
-         allocate(BEM_Qd(nts_act,nts_act))
-         allocate(BEM_Q0(nts_act,nts_act))
-         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') allocate(BEM_Q0x(nts_act,nts_act),BEM_Qdx(nts_act,nts_act))
          !Standard or Diagonal BEM           
          if(Fbem(1:4).eq.'stan') then
            write(6,*) "Standard BEM not implemented yet"
@@ -155,9 +161,9 @@
          !Write out propagation matrices         
          if(Fwrite.eq."high") call out_BEM_propmat  
        elseif(Fprop(1:7).eq."chr-ons") then
-         allocate(BEM_Sm1(nts_act,nts_act))
+         allocate(Sm1(nts_act,nts_act))
          ! Form $S^{-1}$ matrix
-         BEM_Sm1=inv(BEM_S)
+         Sm1=inv(BEM_S)
          nsph=1
          if(Feps.eq."deb") then
            call do_propfact_ons_deb
@@ -165,8 +171,18 @@
            allocate(ONS_ff(nsph))
            call do_propfact_ons_drl
          endif
-         BEM_Q0=-ONS_f0*BEM_Sm1
-         BEM_Qd=-ONS_fd*BEM_Sm1
+         ! SP: Computing matrices needed for initialization and propgation eq.2 JPCA 2015
+         BEM_Q0=-ONS_f0*Sm1
+         BEM_Qd=-ONS_fd*Sm1
+         if(Feps.eq."drl") then
+           allocate(BEM_Qf(nts_act,nts_act))
+           BEM_Qf=-ONS_ff(1)*Sm1
+         endif
+         if(Floc.eq.'loc') then
+           BEM_Q0x=ONS_fx0*Sm1
+           BEM_Qdx=ONS_fxd*Sm1
+         endif
+         deallocate(Sm1)
        endif
        !Deallocate private arrays              
        call finalize_BEM
@@ -349,7 +365,6 @@
          if(allocated(BEM_W2)) deallocate(BEM_W2)
          if(allocated(BEM_2G)) deallocate(BEM_2G)
          if(allocated(BEM_T)) deallocate(BEM_T)
-         if(allocated(BEM_Sm1)) deallocate(BEM_Sm1)
          if(allocated(BEM_Sm12)) deallocate(BEM_Sm12)
        endif
 

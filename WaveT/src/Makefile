@@ -1,22 +1,5 @@
-#FC = gfortran
-#FFLAGS_XEON= -O3 -ftz -align -arch pn4 -tune pn4 -xN -tpp7
-#FFLAGS_PAR= -parallel -par_threshold75 -par_report3
-#FFLAGS_HYD= -O3 -ftz -align -xHost
-#FFLAGS_HYD_PAR= -O3 -ftz -align -xHost -parallel -par_threshold75 -par_report3
-#FFLAGS_DEB= -debug -C -traceback
-#FFLAGS_P3= -O3 -ftz -align -arch pn3 -tune pn3 -tpp6
-#FFLAGS_P4= -O3 -ftz -align -arch pn4 -tune pn4 -tpp7 -xN
-#FFLAGS_MIO= -O3 -ftz -align -arch pn4 -tune pn4 -tpp7 -xB -ipo
-#FFLAGS_WS= -O3 -ftz -align -xP -no-prec-div -ipo
-#FFLAGS_LAP= -O3 -ftz -align -xAVX -no-prec-div 
-#FFLAGS_GF= -O3
-#LDLAGS= 
-#FFLAGS= $(FFLAGS_GF_DEB)
-#LIBS =  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
-#INC = -I/usr/include/ -I/unimore/prod/fftw-3.3.4/include/
-
-#FC = gfortran
-FC = ifort
+FC = gfortran
+#FC = ifort
 FFLAGS_XEON= -O3 -ftz -align -arch pn4 -tune pn4 -xN -tpp7
 FFLAGS_PAR= -parallel -par_threshold75 -par_report3
 #FFLAGS_DEB= -debug -C -g
@@ -28,13 +11,15 @@ FFLAGS_MIO= -O3 -ftz -align -xAVX
 FFLAGS_HYD= -O3 -ftz -align -xHost
 FFLAGS_HYD_PAR= -O3 -ftz -align -xHost -parallel -par_threshold75 -par_report3 -check bounds 
 FFLAGS_WS= -O3 -ftz -align -xP -no-prec-div -ipo
-FFLAGS_GF= -O3
+FFLAGS_GF= -O3 -cpp
+FFLAGS_CPP_IF= -fpp
 LDLAGS=
-FFLAGS= $(FFLAGS_HYD_PAR)
-#LIBS = -L/usr/lib -llapack  -lblas 
-LIBS =  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
+FFLAGS= $(FFLAGS_GF)
+LIBS = -L/usr/lib -llapack  -lblas -lfftw3
+#LIBS =  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
 #LIBSF = -lm -L/usr/lib/i386-linux-gnu -lfftw3
-INC = -I/usr/include/ -I/unimore/prod/fftw-3.3.4/include/
+#INC = -I/usr/include/ -I/unimore/prod/fftw-3.3.4/include/
+INC = -I/usr/include/ 
 
 
 

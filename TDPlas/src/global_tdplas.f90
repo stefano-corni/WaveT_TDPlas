@@ -51,7 +51,7 @@
         n_ci=this_n_ci
         n_ci_read=this_n_ci_read
         allocate(c_i(n_ci),e_ci(n_ci))
-        allocate(mut(n_ci,n_ci,3))
+        allocate(mut(3,n_ci,n_ci))
         c_i=this_c_i
         e_ci=this_e_ci
         mut=this_mut
