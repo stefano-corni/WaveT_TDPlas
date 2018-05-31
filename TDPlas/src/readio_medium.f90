@@ -786,29 +786,29 @@
            write(6,*) 'This is a Spherical Onsager run in solution'
            ! sphere major axis = minor axis = radius           
            Fshape='sphe' ! Sphere
-           do i=1,nsph
-             sph_centre(1,i)=sphere_position_x(i)*antoau
-             sph_centre(2,i)=sphere_position_y(i)*antoau
-             sph_centre(3,i)=sphere_position_z(i)*antoau
-             sph_min(i)=sphere_radius(i)*antoau
-             sph_maj(i)=sphere_radius(i)*antoau
-             sph_vrs(:,:,i)=zero
-           enddo
            if(Fmdm(2:4).eq.'sol')write(*,*)'Spherical cavity'
            if(Fmdm(2:4).eq.'nan')write(*,*)'Spherical nanoparticle' 
-           write(*,*) 'Radius (a.u.) ', sph_maj(i)
+           do i=1,nsph
+             sph_centre(1,i)=sphere_position_x(i)
+             sph_centre(2,i)=sphere_position_y(i)
+             sph_centre(3,i)=sphere_position_z(i)
+             sph_min(i)=sphere_radius(i)
+             sph_maj(i)=sphere_radius(i)
+             sph_vrs(:,:,i)=zero
+             write(*,*) 'Radius (a.u.) ', sph_maj(i)
+           enddo
          else
            write(6,*) 'This is a Spheroidal Onsager run in solution'
            Fshape='spho' ! Spheroid
            ! calculate the major axis modulus and unit vector
            do i=1,nsph
-             sph_centre(1,i)=spheroid_position_x(i)*antoau
-             sph_centre(2,i)=spheroid_position_y(i)*antoau
-             sph_centre(3,i)=spheroid_position_z(i)*antoau
-             sph_min(i)=spheroid_radius(i)*antoau
-             sph_vrs(1,1,i)=spheroid_axis_x(i)*antoau
-             sph_vrs(2,1,i)=spheroid_axis_y(i)*antoau
-             sph_vrs(3,1,i)=spheroid_axis_z(i)*antoau
+             sph_centre(1,i)=spheroid_position_x(i)
+             sph_centre(2,i)=spheroid_position_y(i)
+             sph_centre(3,i)=spheroid_position_z(i)
+             sph_min(i)=spheroid_radius(i)
+             sph_vrs(1,1,i)=spheroid_axis_x(i)
+             sph_vrs(2,1,i)=spheroid_axis_y(i)
+             sph_vrs(3,1,i)=spheroid_axis_z(i)
              sph_maj(i)=sqrt(sph_vrs(1,1,i)**2+ &
                              sph_vrs(2,1,i)**2+ &    
                              sph_vrs(3,1,i)**2)     
@@ -847,10 +847,10 @@
              stop
           endif
           ! Build surface from spheres
-          call read_act(sphere_position_x*antoau,& 
-                        sphere_position_y*antoau,&
-                        sphere_position_z*antoau,&
-                        sphere_radius*antoau,nsph,nsmax)
+          call read_act(sphere_position_x,& 
+                        sphere_position_y,&
+                        sphere_position_z,&
+                        sphere_radius,nsph,nsmax)
          case default
           write(6,*) "Please choose: build or read surface?"
           stop
