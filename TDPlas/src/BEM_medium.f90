@@ -852,7 +852,7 @@
            K0(:)=zero
          endif
          ! GG: analogous to K_f and K_0 matrices in the case of local-field for solvent external medium
-         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') fact2x(:)=-fact2(:)
+         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') fact2x(:)=-fact2(:) * fact1(:)
        endif
        if(Fwrite.eq."high") write(6,*) "Done BEM eigenmodes"
        Sm12T=matmul(BEM_Sm12,BEM_T)
