@@ -1655,7 +1655,7 @@
            else
              rr=cts_act(1)%rsfe 
            endif
-           call do_eps_drl
+           call do_eps_drl(omega(1))
            !refc=eps_f*ui*exp(-ui*omega*t)
            E0=dcmplx(zero,0.5d0*sqrt(dot_product(fmax(:,1),fmax(:,1))))
            refc=eps_f*E0*exp(-ui*omega(1)*t)
@@ -1679,7 +1679,7 @@
            else
              rr=sqrt(cts_act(1)%x**2+cts_act(1)%y**2+cts_act(1)%z**2) 
            endif
-           call do_eps_deb
+           call do_eps_deb(omega(1))
            if(Fmdm(2:4).eq.'sol'.and.Fprop.ne.'dip'.and.Fprop.ne.'chr-ons') eps_f=(eps-onec)/(two*eps+onec)
            !refc=eps_f*ui*exp(-ui*omega*t)
            E0=dcmplx(zero,0.5d0*sqrt(dot_product(fmax(:,1),fmax(:,1))))
