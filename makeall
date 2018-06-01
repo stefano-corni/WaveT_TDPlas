@@ -1,7 +1,0 @@
-WORK_DIR=$PWD
-cd $WORK_DIR/TDPlas/src
-make
-cd -
-cd $WORK_DIR/WaveT/src
-make
-
