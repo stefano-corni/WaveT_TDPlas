@@ -24,10 +24,12 @@
       real(dbl), allocatable :: BEM_Sm12(:,:),Sp12(:,:)  !< $S^{-1/2}$ and $S^{1/2}$ matrices
       real(dbl), allocatable :: BEM_Q0(:,:),BEM_Qd(:,:)  !< Static and Dyanamic BEM matrices $Q_0$ and $Q_d$
       real(dbl), allocatable :: BEM_Qt(:,:),BEM_R(:,:)   !< Debye propagation matrices $\tilde{Q}$ and $R$
-      real(dbl), allocatable :: BEM_Qw(:,:),BEM_Qf(:,:)  !< Drude-Lorents propagation matrices $Q_\omega$ and $Q_f$
-      real(dbl), allocatable :: BEM_Q0x(:,:),BEM_Qdx(:,:)  !< Static and Dyanamic BEM matrices $Q_0$ and $Q_d$ for local (x) field
-      real(dbl), allocatable :: BEM_Qtx(:,:)             !< Debye propagation matrix $\tilde{Q}$ for local (x) field
-      real(dbl), allocatable :: BEM_Qfx(:,:)             !< Drude-Lorents propagation matrix $Q_f$ for local (x) field
+      real(dbl), allocatable :: BEM_Qw(:,:),BEM_Qf(:,:)  !< Drude-Lorents (or general) propagation matrices $Q_\omega$ and $Q_f$
+      real(dbl), allocatable :: BEM_Qg(:,:)              !< General propagation matrix $Q_\gamma$
+      real(dbl), allocatable :: BEM_2G(:)                !< General BEM damping diagonal matrix with components 2\Gamma_ii
+      real(dbl), allocatable :: BEM_Q0x(:,:),BEM_Qdx(:,:) !< Static and Dyanamic BEM matrices $Q_0$ and $Q_d$ for local (x) field
+      real(dbl), allocatable :: BEM_Qtx(:,:)						  !< Debye propagation matrix $\tilde{Q}$ for local (x) field
+      real(dbl), allocatable :: BEM_Qfx(:,:)              !< Drude-Lorents propagation matrix $Q_f$ for local (x) field
       real(dbl), allocatable :: MPL_Ff(:,:,:,:),MPL_Fw(:,:)!< Onsager's Matrices with factors for reaction and local (x) field
       real(dbl), allocatable :: MPL_F0(:,:,:,:),MPL_Fx0(:,:,:) !< Onsager's Matrices with factors for reaction and local (x) field
       real(dbl), allocatable :: MPL_Ft0(:,:,:),MPL_Ftx0(:,:,:) !< Onsager's Matrices with factors/tau for reaction and local (x) field
@@ -42,9 +44,27 @@
       real(dbl) :: sgn                                   !< discriminates between BEM equations for solvent and nanoparticle
       complex(cmp) :: eps,eps_f                          !< drl complex eps(\omega) and (eps(\omega)-1)/(eps(\omega)+2) 
       real(dbl), allocatable :: lambda(:,:)              !< depolarizing factors (3,nsph)       
-      complex(cmp), allocatable :: q_omega(:)            !< Medium charges in frequency domain
-      complex(cmp), allocatable :: Kdiag_omega(:)        !< Diagonal K matrix in frequency domain
-      real(dbl), allocatable :: scrd3(:)                 ! Scratch vector dim=3
+      complex(cmp), allocatable :: q_omega(:) !< Medium charges in frequency domain
+      complex(cmp), allocatable :: Kdiag_omega(:)         !< Diagonal K matrix in frequency domain
+      real(dbl), allocatable :: scrd3(:) ! Scratch vector dim=3
+
+!      real(dbl), allocatable    ::  omega_p(:), gamma_p(:) !< real and imaginary parts of the poles of the diagonal Kernel
+                                                           !< of the PCM response matrix
+!      complex(cmp), allocatable :: eps_omega_p(:)          !< complex dielectric function valued on the real part of the
+                                                           !< aforementioned poles
+!      real(dbl), allocatable    :: re_deps_domega_p(:)     !< real part of the derivative of the complex dielectric function
+                                                           !< valued on the real part of the aforementioned poles
+
+      type poles_t
+       real(dbl), allocatable    :: omega_p(:)          !< real part of the poles of the diagonal Kernel of the PCM response matrix
+       real(dbl), allocatable    :: gamma_p(:)          !< imaginary part of the poles of the diagonal Kernel of the PCM response matrix
+       complex(cmp), allocatable :: eps_omega_p(:)      !< complex dielectric function valued on the real part of the mentioned poles
+       real(dbl), allocatable    :: re_deps_domega_p(:) !< real part of the derivative of the complex dielectric function valued on
+                                                        !< the mentioned poles
+      end type
+
+      type(poles_t), allocatable :: poles(:)
+
       save
       private
       public eps,eps_f,BEM_L,BEM_T,ONS_ff,ONS_fw,                      &
@@ -53,8 +73,10 @@
              ONS_f0,ONS_fd,ONS_taum1,ONS_fx0,ONS_fxd,ONS_tauxm1,       &
              BEM_Qt,BEM_R,BEM_Qw,BEM_Qf,BEM_Qd,BEM_Q0,BEM_W2,BEM_Modes,&
              BEM_Qtx,BEM_Qfx,BEM_Qdx,BEM_Q0x,                          &
+             BEM_Qg,BEM_2G,                                            &
              do_BEM_prop,do_BEM_freq,do_BEM_quant,do_MPL_prop,         &
              do_eps_drl,do_eps_deb,do_charge_freq,                     &
+             do_eps_gen,                                               &
              deallocate_BEM_public,deallocate_MPL_public
 
       contains
@@ -128,6 +150,13 @@
            if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') allocate(BEM_Qfx(nts_act,nts_act))
            if(Fbem(1:4).eq.'stan') call do_propBEM_dia_drl ! 'dia' to be replace by 'std' 
            if(Fbem(1:4).eq.'diag') call do_propBEM_dia_drl
+         elseif(Feps.eq."gen") then
+           allocate(BEM_Qg(nts_act,nts_act))
+           allocate(BEM_Qw(nts_act,nts_act))
+           allocate(BEM_Qf(nts_act,nts_act))
+           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') allocate(BEM_Qfx(nts_act,nts_act))
+           if(Fbem(1:4).eq.'stan') call do_propBEM_dia_gen ! 'dia' to be replace by 'std'
+           if(Fbem(1:4).eq.'diag') call do_propBEM_dia_gen
          endif
          !Write out propagation matrices         
          if(Fwrite.eq."high") call out_BEM_propmat  
@@ -305,6 +334,8 @@
        if(allocated(TSm12)) deallocate(TSm12)
        if(allocated(TSp12)) deallocate(TSp12)
 
+       if(allocated(poles)) deallocate(poles)
+
        return
  
       end subroutine
@@ -325,12 +356,14 @@
          if(allocated(BEM_R)) deallocate(BEM_R)
          if(allocated(BEM_Qw)) deallocate(BEM_Qw)
          if(allocated(BEM_Qf)) deallocate(BEM_Qf)
+         if(allocated(BEM_Qg)) deallocate(BEM_Qg)
          if(allocated(BEM_Qdx)) deallocate(BEM_Qdx)
          if(allocated(BEM_Q0x)) deallocate(BEM_Q0x)
          if(allocated(BEM_Qtx)) deallocate(BEM_Qtx)
          if(allocated(BEM_Qf)) deallocate(BEM_Qfx)
          if(allocated(BEM_L)) deallocate(BEM_L)
          if(allocated(BEM_W2)) deallocate(BEM_W2)
+         if(allocated(BEM_2G)) deallocate(BEM_2G)
          if(allocated(BEM_T)) deallocate(BEM_T)
          if(allocated(BEM_Sm12)) deallocate(BEM_Sm12)
        endif
@@ -794,6 +827,47 @@
           fact2x(:)=-(twp+BEM_L(:))*eps_A/(two*twp)
           K0x(:)=fact2x(:)/BEM_W2(:)
          endif
+       elseif (Feps.eq."gen") then
+         !GG: for a general dielectric function
+         ! finding the real part of the poles of the PCM response diagonal kernel
+         ! the values of the dielectric function
+         ! and the real part of its derivative
+         fact1(:) = (twp+sgn*BEM_L(:))/(twp-sgn*BEM_L(:))
+         call do_poles(poles,fact1)
+         Kd=zero
+
+         fact2 = zero
+         BEM_W2 = zero
+         BEM_2G = zero
+#ifdef OMP
+!$OMP PARALLEL 
+!$OMP DO
+#endif
+         do i=1,nts_act
+          if( allocated(poles(i)%omega_p) ) then 
+           fact2(i)   = sum(abs(two*poles(i)%omega_p(:)*(poles(i)%eps_omega_p(:)-one)/poles(i)%re_deps_domega_p(:)))
+           BEM_W2(i)  = sum(poles(i)%omega_p(:)**2+poles(i)%gamma_p(:)**2)
+           BEM_2G(i)  = sum(two*poles(i)%gamma_p(:))
+          endif
+         end do
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
+! SC: the first eigenvector should be 0 for the NP
+!         if (Fmdm(2:4).eq.'nan') fact2(1)=0.d0
+
+         if(eps_0.ne.one) then
+           fac_eps0=(eps_0+one)/(eps_0-one)
+           K0(:)=(twp-sgn*BEM_L(:))/(twp*fac_eps0-sgn*BEM_L(:))
+           ! GG: analogous to K_0 matrix in the case of local-field for solvent external medium
+           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') K0x(:)=-(twp+BEM_L(:))/(twp*fac_eps0-BEM_L(:))
+         else
+           K0(:)=zero
+         endif
+         ! GG: analogous to K_f and K_0 matrices in the case of local-field for solvent external medium
+         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') fact2x(:)=-fact2(:) * fact1(:)
        endif
        if(Fwrite.eq."high") write(6,*) "Done BEM eigenmodes"
        Sm12T=matmul(BEM_Sm12,BEM_T)
@@ -867,12 +941,15 @@
        endif
        allocate(BEM_L(nts_act))
        allocate(BEM_W2(nts_act))
+       allocate(BEM_2G(nts_act))
        allocate(BEM_T(nts_act,nts_act))
        allocate(BEM_Sm12(nts_act,nts_act))
        allocate(Sp12(nts_act,nts_act))
        allocate(Sm12T(nts_act,nts_act))
        allocate(TSm12(nts_act,nts_act))
        allocate(TSp12(nts_act,nts_act))
+
+       if( Feps.eq.'gen') allocate(poles(nts_act))
 
        return
 
@@ -1057,6 +1134,77 @@
       end subroutine
 
 
+      subroutine do_propBEM_dia_gen
+!------------------------------------------------------------------------------
+! @brief Propagation of matrices for diagonal BEM (general dielectric function)
+!
+! @date Created: G. Gil
+! Modified:
+! Notes: Taken from do_propBEM_dia_drl and building up also BEM_Qg
+!------------------------------------------------------------------------------
+
+       integer(i4b) :: i
+       real(8), allocatable :: scr1(:,:)
+
+       allocate(scr1(nts_act,nts_act))
+!      Form the Q_w and Q_f for general dielectric function propagation
+
+#ifdef OMP
+!$OMP PARALLEL
+!$OMP DO
+#endif
+       do i=1,nts_act
+         scr1(:,i)=Sm12T(:,i)*BEM_W2(i)
+       enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
+       BEM_Qw=matmul(scr1,TSp12)
+
+#ifdef OMP
+!$OMP PARALLEL
+!$OMP DO
+#endif
+       do i=1,nts_act
+         scr1(:,i)=Sm12T(:,i)*fact2(i)
+       enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
+       BEM_Qf=-matmul(scr1,TSm12)
+       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+        do i=1,nts_act
+          scr1(:,i)=Sm12T(:,i)*fact2x(i)
+        enddo
+        BEM_Qfx=-matmul(scr1,TSm12)
+       endif
+
+       ! addition with respect to do_propBEM_dia_drl
+#ifdef OMP
+!$OMP PARALLEL
+!$OMP DO
+#endif
+       do i=1,nts_act
+         scr1(:,i)=Sm12T(:,i)*BEM_2G(i)
+       enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
+       BEM_Qg=matmul(scr1,TSp12)
+
+       deallocate(scr1)
+
+       return
+
+      end subroutine
+
+
       subroutine do_propMPL_deb   
 !------------------------------------------------------------------------
 ! @brief Initialize factors for debye dipole propagation 
@@ -1203,7 +1351,7 @@
       end subroutine
 
 
-      subroutine do_eps_drl      
+      subroutine do_eps_drl(omega)     
 !------------------------------------------------------------------------
 ! @brief Compute drl cmplx eps(\omega) and (eps(\omega)-1)/(eps(\omega)+2) 
 !
@@ -1211,8 +1359,10 @@
 ! Modified:
 !------------------------------------------------------------------------
 
+       real(dbl) :: omega
+
        !eps_gm=eps_gm+f_vel/sfe_act(1)%r
-       eps=dcmplx(eps_A,zero)/dcmplx(eps_w0**2-omega(1)**2,-omega(1)*eps_gm)
+       eps=dcmplx(eps_A,zero)/dcmplx(eps_w0**2-omega**2,-omega*eps_gm)
        eps=eps+onec
        eps_f=(eps-onec)/(eps+twoc)
 
@@ -1221,7 +1371,7 @@
       end subroutine
 
 
-      subroutine do_eps_deb      
+      subroutine do_eps_deb(omega)      
 !------------------------------------------------------------------------
 ! @brief Compute deb cmplx eps(\omega) and (3*eps(\omega))/(2*eps(\omega)+1)
 !
@@ -1229,14 +1379,122 @@
 ! Modified:
 !------------------------------------------------------------------------
 
+       real(dbl) :: omega
+
        !eps_gm=eps_gm+f_vel/sfe_act(1)%r
        eps=dcmplx(eps_d,zero)+dcmplx(eps_0-eps_d,zero)/ &
-                              dcmplx(one,-omega(1)*tau_deb)
+                              dcmplx(one,-omega*tau_deb)
        eps_f=(three*eps)/(two*eps+onec)
 
        return
  
       end subroutine
+
+
+      subroutine do_eps_gen(omega)
+!------------------------------------------------------------------------------
+! @brief Compute gen cmplx eps(\omega) from points through linear interpolation
+!
+! @date Created: G. Gil
+! Modified:
+!------------------------------------------------------------------------------
+
+       real(dbl) :: omega
+       integer(i4b) :: min, max, half
+
+       ! bisection search of the right frequency interval
+       min = 1
+       max = npts
+       do while( min.le.max-1 )
+        half=(min+max)/2
+        if (omega.ge.omegas(half)) then
+         min=half
+        else
+         max=half
+        endif
+       enddo
+
+       ! linear interpolation in the right frequency interval
+       eps = (eps_omegas(max)-eps_omegas(min))/(omegas(max)-omegas(min))*(omega-omegas(min))+eps_omegas(min)
+
+       return
+
+      end subroutine
+
+
+      subroutine do_poles(poles,const)
+!------------------------------------------------------------------------------
+! @brief Compute the real part of the poles of the PCM response kernel
+!   * real part of the poles - frequencies
+!   * imaginary part of the poles - damping parameters
+!   * dielectric function at the poles frequencies
+!   * derivative of the dielectric function at the poles frequencies
+!
+! @date Created: G. Gil
+! Modified:
+!------------------------------------------------------------------------------
+
+       type(poles_t), intent(out) :: poles(:)
+       real(dbl),     intent(in)  :: const(:)
+
+       integer(i4b) :: i, j
+       real(dbl) :: val_omega
+       real(dbl) :: val_gamma
+       complex(cmp) :: val_eps
+       real(dbl) :: val_epsp
+       integer(i4b) :: count
+       integer(i4b) :: const_size
+
+       ! FIXME: the case of degenerate const values can be made efficient
+
+       const_size = size(const)
+
+       ! considering multiple roots - write all the solutions
+       open(2,file="poles.out")
+       open(3,file="lambda_values.out")
+       write(2,*) "tess. index ", " ref. value ", " pole idx per tess. ", " omega ", " gamma ", " eps ", " deps/domega "
+       do j=1, const_size
+        count = 0
+        write(3,*) const(j)
+        do i=1,npts-1
+         if(    ( (real(eps_omegas(i+1))+const(j).gt.zero) .and. (real(eps_omegas(i))+const(j)  .lt.zero) ) &
+            .or.( (real(eps_omegas(i+1))+const(j).lt.zero) .and. (real(eps_omegas(i))+const(j)  .gt.zero) ) ) then
+          val_omega = -(omegas(i+1)-omegas(i))/real(eps_omegas(i+1)-eps_omegas(i))*(real(eps_omegas(i))+const(j)) + &
+                        omegas(i)
+          val_eps = (eps_omegas(i+1)-eps_omegas(i))/(omegas(i+1)-omegas(i)) * (val_omega-omegas(i)) + eps_omegas(i)
+          val_epsp = re_deps_domegas(i)
+          val_gamma = abs(aimag(eps_omegas(i))/re_deps_domegas(i))
+          write(2,*) j, const(j), i, val_omega, val_gamma, val_eps, val_epsp
+          count = count + 1
+         endif
+        end do
+        if( count .ge. 1 ) then
+         write(55,*) "How many poles per PCM matrix kernel component", j,"?", count
+         allocate(poles(j)%omega_p(1:count),poles(j)%gamma_p(1:count))
+         allocate(poles(j)%eps_omega_p(1:count),poles(j)%re_deps_domega_p(1:count))
+         count = 0
+         do i=1,npts-1
+          if(    ( (real(eps_omegas(i+1))+const(j).gt.zero) .and. (real(eps_omegas(i))+const(j)  .lt.zero) ) &
+             .or.( (real(eps_omegas(i+1))+const(j).lt.zero) .and. (real(eps_omegas(i))+const(j)  .gt.zero) ) ) then
+           count = count + 1 
+           poles(j)%omega_p(count) = -(omegas(i+1)-omegas(i))/real(eps_omegas(i+1)-eps_omegas(i))*(real(eps_omegas(i))+const(j)) + &
+                                       omegas(i)
+           poles(j)%eps_omega_p(count) = (eps_omegas(i+1)-eps_omegas(i))/(omegas(i+1)-omegas(i))*(val_omega-omegas(i)) + &
+                                          eps_omegas(i)
+           poles(j)%re_deps_domega_p(count) = re_deps_domegas(i)
+           poles(j)%gamma_p(count) = abs(aimag(eps_omegas(i))/re_deps_domegas(i))
+          endif
+         end do
+        else
+         write(55,*) "Warning! No poles for the PCM matrix kernel component", j 
+        endif
+       end do
+       close(2)
+       close(3)
+
+
+      end subroutine
+
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
