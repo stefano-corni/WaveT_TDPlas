@@ -7,6 +7,8 @@
        use global_tdplas, only: set_global_tdplas
        use global_wavet, only: read_medium_input
        use QM_coupling
+       
+       CIAO!
 
        implicit none
      
