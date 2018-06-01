@@ -11,14 +11,14 @@
 #FFLAGS_LAP= -O3 -ftz -align -xAVX -no-prec-div 
 #FFLAGS_GF= -O3
 #CPP= -cpp
-#MPI= -DPARALLEL
+#MPI= 
 #LDLAGS= 
 #OMP= -fopenmp -DOMP
 #FFLAGS= $(FFLAGS_GF_DEB)
 #LIBS =  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
 #INC = -I/usr/include/ -I/unimore/prod/fftw-3.3.4/include/
 
-FC = mpif90 
+FC = ifort
 FFLAGS_XEON= -O3 -ftz -align -arch pn4 -tune pn4 -xN -tpp7
 FFLAGS_PAR= -parallel -par_threshold75 -par_report3
 #FFLAGS_DEB= -debug -C -g
@@ -33,12 +33,12 @@ FFLAGS_WS= -O3 -ftz -align -xP -no-prec-div -ipo
 FFLAGS_GF= -O3
 LDLAGS=
 OMP= -openmp -DOMP
-FFLAGS= -O3 -ftz -align all ${MPI} ${OMP} #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+FFLAGS= -O3 -ftz -align all ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
 CPP= -fpp
-MPI= -DMPI
+MPI= 
 #LIBS = -L/usr/lib -llapack  -lblas 
 #LIBS =  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
-LIB_CURIE = $(MKL_LIBS_MT) ${MKL_SCA_LIBS}
+LIB_CURIE = ${MKL_LIBS_MT} ${MKL_SCA_LIBS}
 #LIBSF = -lm -L/usr/lib/i386-linux-gnu -lfftw3
 #INC = -I/usr/include/ -I/unimore/prod/fftw-3.3.4/include/
 

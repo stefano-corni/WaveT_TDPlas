@@ -1,5 +1,5 @@
 #FC = gfortran
-FC = ifort
+FC = mpif90 
 FFLAGS_XEON= -O3 -ftz -align -arch pn4 -tune pn4 -xN -tpp7
 FFLAGS_PAR= -parallel -par_threshold75 -par_report3
 FFLAGS_HYD= -O3 -ftz -align -xHost
@@ -17,17 +17,17 @@ OMP_IF= -openmp -DOMP
 #LDLAGS= --static --disable-shared --enable-static
 #FFLAGS= $(FFLAGS_DEB)
 #FFLAGS= $(FFLAGS_GF_DEB)
-FFLAGS= -O3 -ftz -align all ${OMP_IF} #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds 
+FFLAGS= -O3 -ftz -align all ${OMP_IF}  #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds 
 CPP= -fpp
 MPI= -DMPI
 #LIBS = -L/usr/lib -llapack  -lblas 
 #LIBS =  -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lpthread
-LIBS =  $(MKL_LIBS_MT) ${MKL_SCA_LIBS}
+LIBS =  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
 #LIBS = -L/usr/lib -llapack  -lblas -lfftw3
 #LIBS =  -Wl,--start-group -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -Wl,--end-group#
 #LIBSF = -lm -L/usr/lib/i386-linux-gnu -lfftw3
 #LIBSF = -lm -L/usr/lib/x86_64-linux-gnu -lfftw3
-LIB_CURIE = $(MKL_LIBS_MT) ${MKL_SCA_LIBS}
+LIB_CURIE = $(MKL_LIBS_MT) ${MKL_SCA_LIBS} ${MPI}
 #INC = -I/usr/include/ 
 #INC = -I/usr/include/ -I/unimore/prod/fftw-3.3.4/include/
 
@@ -39,7 +39,10 @@ OBJ_FREQ= constants.o global_tdplas.o pedra_friends.o readio_medium.o MathTools.
 
 # rules
 
-all: $(BINPATH)  $(BINPATH)/freq_bem.x $(BINPATH)/tdplas.x
+serial: $(BINPATH)  $(BINPATH)/freq_bem.x $(BINPATH)/tdplas.x
+    
+parallel:
+
 	
 $(BINPATH):
 	mkdir $(BINPATH)

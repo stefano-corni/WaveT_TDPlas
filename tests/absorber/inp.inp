@@ -1,0 +1,37 @@
+&general n_ci=600,n_ci_read=600
+mol_cc=
+0.0
+0.0
+0.0
+n_f=1,
+medium='vac'
+dt=0.05
+n_step=20
+n_out=1
+n_restart=10
+full='n'
+propa='e'
+absorber='y'
+/ 
+
+&field Ffld='gau',omega(1)=0.05695419,sigma(1)=2.,
+       t_mid=33,radiative='non',iseed=16843,npulse=1
+fmax(1,1)=0.001690308509
+fmax(2,1)=0.0
+fmax(3,1)=0.0 
+/
+
+&sse dissipative='non',idep=1,dis_prop='qjump',nrnd=0,tdis=0,nr_typ=1,krnd=0.0 /
+
+&spectra start=0, 
+
+tau=
+2.0
+0.0
+
+dir_ft=
+0.0
+1.0
+0.0 
+/
+
