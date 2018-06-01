@@ -1,0 +1,5 @@
+WORK_DIR=$PWD
+cd $WORK_DIR/WaveT/src
+make clean_obj
+cp Makefile-parallel Makefile
+make parallel
