@@ -1,6 +1,9 @@
 program decoherence 
 
  use constants 
+#ifdef OMP
+      use omp_lib
+#endif
 
  implicit none
 
@@ -138,10 +141,14 @@ program decoherence
        enddo
     enddo
  enddo
+
+
  pop=pop/dble(nrep)
+
  do j=1,nsteps
     opop(j) = pop(j,1)
  enddo
+
 
  pop(:,1)=0.d0
  do j=1,nsteps
@@ -159,6 +166,7 @@ program decoherence
 
  !Error on population 
  perr=0.d0
+
  do m=1,nrep
     do k=2,nstates
        do j=1,nsteps
