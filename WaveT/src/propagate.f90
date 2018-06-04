@@ -370,6 +370,11 @@
             f(:,i)=fmax(:,1)*(cos(pi*(t_a-t_mid)/(sigma(1))))**2
           endif
          enddo
+        case ("sta")
+         ! static field
+          do i=1,n_tot
+           f(:,i)=fmax(:,1)
+          enddo
         case default
          write(*,*)  "Error: wrong field type !"
 #ifdef MPI
