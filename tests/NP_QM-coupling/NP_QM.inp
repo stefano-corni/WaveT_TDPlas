@@ -1,6 +1,6 @@
 &general 
-n_ci=1 
-n_ci_read=1  
+n_ci=10 
+n_ci_read=10  
 mol_cc= 0.0 0.0 0.0
 medium='qna'
 n_f=1

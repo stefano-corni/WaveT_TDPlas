@@ -1,0 +1,26 @@
+ Nanoparticle as external medium
+ Medium polarization described by apparent charges
+ Diagonal BEM furmulation
+ This is a Classical BEM run
+ This run just writes matrices and boundary
+ Building surface from spheres.
+ Number of spheres           2
+ I_sphere  X     Y   Z   Radius
+     1     50.0000      0.0000      0.0000     50.0000
+     2    140.0000      0.0000      0.0000     25.0000
+ Essential output written.
+Done reading input, took     0.027s
+ GEPOL-GB: COUNTING TESSERAE
+ nts_act         480
+ GEPOL-GB: GENERATING TESSERAE
+
+ TOTAL NUMBER OF SPHERES=    2
+ SPHERE             CENTER  (X,Y,Z) (A)               RADIUS (A)      AREA(A*A)
+   1   26.458862462    0.000000000    0.000000000   26.458862462
+   2   74.084814894    0.000000000    0.000000000   13.229431231
+
+ TOTAL NUMBER OF TESSERAE=     480
+ SURFACE AREA=      10996.69587986(A**2)    CAVITY VOLUME=      87288.01914665 (A**3)
+ nts_act         480
+ Created output file with surface points
+ Matrixes S D have been written out

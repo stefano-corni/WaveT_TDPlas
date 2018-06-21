@@ -1,0 +1,484 @@
+ 
+ *****************************************************
+ *****************************************************
+ **                                                 **
+ **                    WaveT                        **
+ **     Evolution of molecular wavefunctions        **
+ **   under external electromagnetic perturbations  **
+ **                                                 **
+ **                     by                          **
+ **                Stefano Corni                    **
+ **                Silvio Pipolo                    **
+ **               Emanuele Coccia                   **
+ **                 Gabriel Gil                     **
+ **                Jacopo Fregoni                   **
+ **                                                 **
+ *****************************************************
+ *****************************************************
+ 
+ Number to append to dat file           1
+ Number of CIS states to be read          10
+ Number of CIS states to be used          10
+ Molecular center of charge
+  0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
+ 
+ Time step (in au), number of steps, stride  0.200000000000000               10
+           1
+ 
+ Nanoparticle as external medium
+ No restart
+ Only |k> -> |0> relaxation
+ Energy term is propagated analytically
+ 
+ Time shape of the perturbing fieldsnd       
+ time at the center of the pulse (au):   5000.00000000000     
+ Width of the pulse (time au):   10.0000000000000     
+ Frequency (au):  0.260000000000000     
+ Maximum E field  0.000000000000000E+000  0.000000000000000E+000
+  0.000000000000000E+000
+ 
+ No dissipation
+ 
+ Excitation energies read from input, in Hartree
+           1  0.239101968089119     
+           2  0.242269757715985     
+           3  0.242269757715985     
+           4  0.248046747615561     
+           5  0.248046747615561     
+           6  0.263411629784852     
+           7  0.289389709683135     
+           8  0.289393384613097     
+           9  0.303104548299685     
+          10  0.330479101583362     
+ 
+ Starting point for FT calculation   80.0000000000000     
+ Artificial damping   2000.00000000000        2000.00000000000     
+ Direction along which the field is oriented   1.00000000000000     
+   1.00000000000000        1.00000000000000     
+ 
+ *************OMP*****************
+
+ OMP parallelization on
+The number of processors available =       28
+The number of threads available    =        1
+
+ *************OMP*****************
+ Apparent charges are propagated
+ Local field effects are NOT included
+ Medium charges do not follow the quantum jump
+ Frequency of updating the interaction potential           1
+ Do SCF calculation for the state in ci_ini.inp
+ SCF threshold   14.0000000000000     
+ Mixing coefficient  0.200000002980232     
+ Max number of SCF cycles         600
+ The coupling is of PCM type: pot \cdot chr
+ Nanoparticle as external medium
+ Medium polarization described by apparent charges
+ Diagonal BEM furmulation
+ This is a Classical BEM run
+ This is full run reading matrix and boundary
+ Medium polarization set initially to zero
+ Surface read from file cavity.inp
+ Essential output written.
+Done reading input & setting up the field, took     0.047s
+ BEM surface and Matrixes S D have been read in
+ BEM correctly initialized
+ Done BEM diagonal
+ Medium contribution to ground state free energy:  0.000000000000000E+000
+ SCF Cycle
+ Max_cycle          600
+ Threshold   1.000000000000000E-012  1.000000000000000E-014
+ Max Diff on Eigenvalue   0.000000000000000E+000
+ Max Diff on Eigenvector   0.000000000000000E+000
+ Max Diff on Eigenvalue   0.000000000000000E+000
+ Max Diff on Eigenvector   0.000000000000000E+000
+ cycle            3  1.545542594744848E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.332455439630029E-002
+ Max Diff on Eigenvector   0.375213145158706     
+ cycle            4  1.869796730295387E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.098497414066829E-002
+ Max Diff on Eigenvector   0.132632471021170     
+ cycle            5  2.129179376924029E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   8.926741568505286E-003
+ Max Diff on Eigenvector   0.118872179049709     
+ cycle            6  2.336669122500294E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   7.209054104167500E-003
+ Max Diff on Eigenvector   9.315328463593348E-002
+ cycle            7  2.502647934368319E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   5.802857115964011E-003
+ Max Diff on Eigenvector   6.163818299922752E-002
+ cycle            8  2.635420674526350E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   4.661968473020334E-003
+ Max Diff on Eigenvector   3.908655331958955E-002
+ cycle            9  2.741630672474567E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   3.740817393793033E-003
+ Max Diff on Eigenvector   2.544580099070237E-002
+ cycle           10  2.826592151192704E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.999224060136807E-003
+ Max Diff on Eigenvector   1.721341101343285E-002
+ cycle           11  2.894556142121609E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.403280181422662E-003
+ Max Diff on Eigenvector   1.205816203696178E-002
+ cycle           12  2.948923196793913E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.924965043795107E-003
+ Max Diff on Eigenvector   9.961384477840646E-003
+ cycle           13  2.992413540265297E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.541385877060514E-003
+ Max Diff on Eigenvector   0.994282417163553     
+ cycle           14  3.027203181470505E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.233965031641637E-003
+ Max Diff on Eigenvector   4.796586309118306E-003
+ cycle           15  3.055032791903383E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   9.876903313683072E-004
+ Max Diff on Eigenvector   3.647482283618830E-003
+ cycle           16  3.077294801037757E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   7.904645982731995E-004
+ Max Diff on Eigenvector   2.802475590650583E-003
+ cycle           17  3.095103066804652E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   6.325582353279569E-004
+ Max Diff on Eigenvector   2.171260045622320E-003
+ cycle           18  3.109348607378188E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   5.061563914134648E-004
+ Max Diff on Eigenvector   1.693334683443348E-003
+ cycle           19  3.120744182983652E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   4.049882501667434E-004
+ Max Diff on Eigenvector   1.327499144582800E-003
+ cycle           20  3.129859958496626E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   3.240255683516491E-004
+ Max Diff on Eigenvector   1.044996611865356E-003
+ cycle           21  3.137152031261823E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.592386191486717E-004
+ Max Diff on Eigenvector   8.253045048821350E-004
+ cycle           22  3.142985251579388E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.073992176039041E-004
+ Max Diff on Eigenvector   6.534919764748237E-004
+ cycle           23  3.147651477667191E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.659220931975181E-004
+ Max Diff on Eigenvector   5.185161804594773E-004
+ cycle           24  3.151384178498094E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.327373470881577E-004
+ Max Diff on Eigenvector   4.120953365910063E-004
+ cycle           25  3.154370115202505E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.061880231812695E-004
+ Max Diff on Eigenvector   3.279453692412448E-004
+ cycle           26  3.156758685441545E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   8.494792052329836E-005
+ Max Diff on Eigenvector   2.612513730779198E-004
+ cycle           27  3.158669398362619E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   6.795569124931622E-005
+ Max Diff on Eigenvector   2.082942771714780E-004
+ cycle           28  3.160197854107778E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   5.436202424558001E-005
+ Max Diff on Eigenvector   1.661823228875647E-004
+ cycle           29  3.161420527042513E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   4.348733300821306E-005
+ Max Diff on Eigenvector   1.326547791859201E-004
+ cycle           30  3.162398592074561E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   3.478786910246501E-005
+ Max Diff on Eigenvector   1.059363951715075E-004
+ cycle           31  3.163180985453901E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.782859000016735E-005
+ Max Diff on Eigenvector   8.462811816672966E-005
+ cycle           32  3.163806853247164E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.226143912995027E-005
+ Max Diff on Eigenvector   6.762415180228132E-005
+ cycle           33  3.164307509956945E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.780796114425609E-005
+ Max Diff on Eigenvector   5.404842335446358E-005
+ cycle           34  3.164708005307697E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.424538875577364E-005
+ Max Diff on Eigenvector   4.320553855521880E-005
+ cycle           35  3.165028377579194E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.139550896353536E-005
+ Max Diff on Eigenvector   3.454267295768809E-005
+ cycle           36  3.165284656189337E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   9.115754091265638E-006
+ Max Diff on Eigenvector   2.761980053611612E-005
+ cycle           37  3.165489663711098E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   7.292073495701601E-006
+ Max Diff on Eigenvector   2.208633140241001E-005
+ cycle           38  3.165653657440136E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   5.833230302731973E-006
+ Max Diff on Eigenvector   1.766271174255540E-005
+ cycle           39  3.165784842592832E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   4.666238463957306E-006
+ Max Diff on Eigenvector   1.412588844174056E-005
+ cycle           40  3.165889782848570E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   3.732712243825764E-006
+ Max Diff on Eigenvector   1.129779873368375E-005
+ cycle           41  3.165973728763882E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.985945758565700E-006
+ Max Diff on Eigenvector   9.036237334059116E-006
+ cycle           42  3.166040880462978E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.388576602868620E-006
+ Max Diff on Eigenvector   7.227598328829465E-006
+ cycle           43  3.166094597797252E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.910716785485933E-006
+ Max Diff on Eigenvector   5.781099646051668E-006
+ cycle           44  3.166137568443666E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.528457517385728E-006
+ Max Diff on Eigenvector   4.624182367241048E-006
+ cycle           45  3.166171942386294E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.222673085443660E-006
+ Max Diff on Eigenvector   3.698842951482817E-006
+ cycle           46  3.166199439478139E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   9.780639990963902E-007
+ Max Diff on Eigenvector   2.958707161992979E-006
+ cycle           47  3.166221435503052E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   7.823915438576190E-007
+ Max Diff on Eigenvector   2.366694465349983E-006
+ cycle           48  3.166239031004784E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   6.258654597635083E-007
+ Max Diff on Eigenvector   1.893152954013377E-006
+ cycle           49  3.166253106351748E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   5.006541168028900E-007
+ Max Diff on Eigenvector   1.514369480620781E-006
+ cycle           50  3.166264365786201E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   4.004926719980428E-007
+ Max Diff on Eigenvector   1.211379179771876E-006
+ cycle           51  3.166273372657703E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   3.203696282150226E-007
+ Max Diff on Eigenvector   9.690139856355362E-007
+ cycle           52  3.166280577615423E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.562760877400372E-007
+ Max Diff on Eigenvector   7.751421245705270E-007
+ cycle           53  3.166286341150231E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.050051737256808E-007
+ Max Diff on Eigenvector   6.200599931005524E-007
+ cycle           54  3.166290951632686E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.639915785389690E-007
+ Max Diff on Eigenvector   4.960060154268753E-007
+ cycle           55  3.166294639740479E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.311832134309743E-007
+ Max Diff on Eigenvector   3.967718672781562E-007
+ cycle           56  3.166297590006320E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.049385301710171E-007
+ Max Diff on Eigenvector   3.173915438803299E-007
+ cycle           57  3.166299950043683E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   8.394439093839523E-008
+ Max Diff on Eigenvector   2.538927355300036E-007
+ cycle           58  3.166301837930187E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   6.715036598992086E-008
+ Max Diff on Eigenvector   2.030979525946552E-007
+ cycle           59  3.166303348126855E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   5.371617572969001E-008
+ Max Diff on Eigenvector   1.624654822063309E-007
+ cycle           60  3.166304556194503E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   4.296964634109557E-008
+ Max Diff on Eigenvector   1.299621473216384E-007
+ cycle           61  3.166305522575014E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   3.437308215836765E-008
+ Max Diff on Eigenvector   1.039615783737791E-007
+ cycle           62  3.166306295621532E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.749635755194824E-008
+ Max Diff on Eigenvector   8.316277280706608E-008
+ cycle           63  3.166306914013039E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.199539989033994E-008
+ Max Diff on Eigenvector   6.652504502824286E-008
+ cycle           64  3.166307408689673E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.759497061937232E-008
+ Max Diff on Eigenvector   5.321591339813025E-008
+ cycle           65  3.166307804400507E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.407489755300695E-008
+ Max Diff on Eigenvector   4.256943633706989E-008
+ cycle           66  3.166308120945475E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.125905471632827E-008
+ Max Diff on Eigenvector   3.405291967850665E-008
+ cycle           67  3.166308374161899E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   9.006553086665647E-009
+ Max Diff on Eigenvector   2.724023179245805E-008
+ cycle           68  3.166308576721849E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   7.204690150031112E-009
+ Max Diff on Eigenvector   2.179050978545760E-008
+ cycle           69  3.166308738754980E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   5.763309912643066E-009
+ Max Diff on Eigenvector   1.743106931018090E-008
+ cycle           70  3.166308868373181E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   4.610294757068090E-009
+ Max Diff on Eigenvector   1.394377918684242E-008
+ cycle           71  3.166308972060283E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   3.687952804254380E-009
+ Max Diff on Eigenvector   1.115416753405540E-008
+ cycle           72  3.166309055003193E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.950136190893460E-009
+ Max Diff on Eigenvector   8.922647842801723E-009
+ cycle           73  3.166309121352722E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.359927780970494E-009
+ Max Diff on Eigenvector   7.137568841519837E-009
+ cycle           74  3.166309174427765E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.887797501654020E-009
+ Max Diff on Eigenvector   5.709619194105287E-009
+ cycle           75  3.166309216885516E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.510122360492971E-009
+ Max Diff on Eigenvector   4.567344863426470E-009
+ cycle           76  3.166309250849999E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.208005057096173E-009
+ Max Diff on Eigenvector   3.653593233510222E-009
+ cycle           77  3.166309278017728E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   9.663301547835346E-010
+ Max Diff on Eigenvector   2.922652203585230E-009
+ cycle           78  3.166309299751365E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   7.730046602816287E-010
+ Max Diff on Eigenvector   2.337943810770682E-009
+ cycle           79  3.166309317135499E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   6.183564771333749E-010
+ Max Diff on Eigenvector   1.870208182763733E-009
+ cycle           80  3.166309331043183E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   4.946471843236822E-010
+ Max Diff on Eigenvector   1.496053253502438E-009
+ cycle           81  3.166309342168128E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   3.956872884902651E-010
+ Max Diff on Eigenvector   1.196749782605977E-009
+ cycle           82  3.166309351067431E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   3.165257222992324E-010
+ Max Diff on Eigenvector   9.573301040788351E-010
+ cycle           83  3.166309358185520E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.532010989764188E-010
+ Max Diff on Eigenvector   7.658017275868900E-010
+ cycle           84  3.166309363881372E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.025452860987542E-010
+ Max Diff on Eigenvector   6.125963347702879E-010
+ cycle           85  3.166309368436875E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.620238387900486E-010
+ Max Diff on Eigenvector   4.900377326144678E-010
+ cycle           86  3.166309372080871E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.296092955183070E-010
+ Max Diff on Eigenvector   3.920008762037241E-010
+ cycle           87  3.166309374995681E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.036791485997668E-010
+ Max Diff on Eigenvector   3.135774695461890E-010
+ cycle           88  3.166309377326116E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   8.293737918663169E-011
+ Max Diff on Eigenvector   2.508409868706707E-010
+ cycle           89  3.166309379192572E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   6.634448546094518E-011
+ Max Diff on Eigenvector   2.006581290014964E-010
+ cycle           90  3.166309380684892E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   5.307149164579528E-011
+ Max Diff on Eigenvector   1.605156008110953E-010
+ cycle           91  3.166309381879188E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   4.245417906112436E-011
+ Max Diff on Eigenvector   1.284015394009685E-010
+ cycle           92  3.166309382832885E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   3.396055658910768E-011
+ Max Diff on Eigenvector   1.027145868359725E-010
+ cycle           93  3.166309383597887E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.716643576761157E-011
+ Max Diff on Eigenvector   8.216258229332141E-011
+ cycle           94  3.166309384208493E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.173142221728597E-011
+ Max Diff on Eigenvector   6.572634103640951E-011
+ cycle           95  3.166309384697483E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.738389987515632E-011
+ Max Diff on Eigenvector   5.257766444444201E-011
+ cycle           96  3.166309385088637E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.390598747263994E-011
+ Max Diff on Eigenvector   4.205918946453835E-011
+ cycle           97  3.166309385400467E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.112390735080737E-011
+ Max Diff on Eigenvector   3.364178380316218E-011
+ cycle           98  3.166309385650331E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   8.898576320248708E-012
+ Max Diff on Eigenvector   2.691524780829013E-011
+ cycle           99  3.166309385852070E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   7.118333700262269E-012
+ Max Diff on Eigenvector   2.201808180224418E-011
+ cycle          100  3.166309386010914E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   5.693945315243809E-012
+ Max Diff on Eigenvector   3.284961191951652E-011
+ cycle          101  3.166309386139528E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   4.555078536583324E-012
+ Max Diff on Eigenvector   1.377767344656888E-011
+ cycle          102  3.166309386241704E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   3.643696455668533E-012
+ Max Diff on Eigenvector   1.101907454170714E-011
+ cycle          103  3.166309386322878E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.914696262124039E-012
+ Max Diff on Eigenvector   1.064381915938384E-011
+ cycle          104  3.166309386387964E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.331634885166523E-012
+ Max Diff on Eigenvector   7.049139050252506E-012
+ cycle          105  3.166309386441478E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.865285703672726E-012
+ Max Diff on Eigenvector   5.641681566359580E-012
+ cycle          106  3.166309386484909E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.491806678188823E-012
+ Max Diff on Eigenvector   9.875961159977464E-012
+ cycle          107  3.166309386517222E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.193628529350121E-012
+ Max Diff on Eigenvector   1.786920611479559E-011
+ cycle          108  3.166309386543411E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   9.547640456020190E-013
+ Max Diff on Eigenvector   2.163191847870394E-011
+ cycle          109  3.166309386565410E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   7.637224186396452E-013
+ Max Diff on Eigenvector   1.068944932569593E-011
+ cycle          110  3.166309386582076E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   6.108169525731455E-013
+ Max Diff on Eigenvector   1.181765796332002E-011
+ cycle          111  3.166309386597582E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   4.889144644693033E-013
+ Max Diff on Eigenvector   2.468469872951573E-012
+ cycle          112  3.166309386607866E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   3.907985046680551E-013
+ Max Diff on Eigenvector   1.649755332344682E-011
+ cycle          113  3.166309386617860E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   3.127775816125222E-013
+ Max Diff on Eigenvector   7.807088309164101E-012
+ cycle          114  3.166309386622802E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.501054918724321E-013
+ Max Diff on Eigenvector   8.118838934478845E-012
+ cycle          115  3.166309386630251E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.002009669155314E-013
+ Max Diff on Eigenvector   6.574851774132640E-012
+ cycle          116  3.166309386632262E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.600386489997163E-013
+ Max Diff on Eigenvector   8.433809206565002E-012
+ cycle          117  3.166309386636394E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.280364703148962E-013
+ Max Diff on Eigenvector   1.278199768250943E-011
+ cycle          118  3.166309386640125E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.025290963241332E-013
+ Max Diff on Eigenvector   5.657807555792260E-012
+ cycle          119  3.166309386643029E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   8.185119249048967E-014
+ Max Diff on Eigenvector   6.277200981230635E-013
+ cycle          120  3.166309386644944E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   6.553091402849986E-014
+ Max Diff on Eigenvector   4.505174011626423E-012
+ cycle          121  3.166309386645599E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   5.245803791353865E-014
+ Max Diff on Eigenvector   1.807076710491629E-011
+ cycle          122  3.166309386648124E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   4.196643033083092E-014
+ Max Diff on Eigenvector   1.433642093928711E-011
+ cycle          123  3.166309386648601E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   3.352873534367973E-014
+ Max Diff on Eigenvector   2.507927199246751E-011
+ cycle          124  3.166309386648490E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.678413046908190E-014
+ Max Diff on Eigenvector   1.633204682605083E-011
+ cycle          125  3.166309386649627E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   2.162159340457492E-014
+ Max Diff on Eigenvector   3.834044193240516E-012
+ cycle          126  3.166309386649457E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.712519015484304E-014
+ Max Diff on Eigenvector   7.574385563202668E-012
+ cycle          127  3.166309386649820E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.362798762727380E-014
+ Max Diff on Eigenvector   1.668037930002697E-011
+ cycle          128  3.166309386649818E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   1.099120794378905E-014
+ Max Diff on Eigenvector   2.996491943463298E-012
+ cycle          129  3.166309386651018E-004  0.000000000000000E+000
+ Max Diff on Eigenvalue   8.770761894538737E-015
+ Max Diff on Eigenvector   3.883643406865644E-012
+ SCF Done
+ Written out the SCF charges
+ Written out the SCF potentials
+ Written out the SCF dipoles
+ Written out the SCF energies, GS has been given zero energy!
+ maxloc           1
+ G_neq at t=0: -1.582956427364167E-004
+ Initiated VV propagator
+Done , total elapsed time     0.836s

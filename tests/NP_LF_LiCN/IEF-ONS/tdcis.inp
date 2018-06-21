@@ -4,19 +4,20 @@ n_ci_read=10
 mol_cc= 0. 0. 0.
 medium='nan'
 n_f=1
-dt=0.20
-n_step=5000
-n_out=1
+dt=0.05
+n_step=10000
+n_out=20
 / 
 
 &field 
 Ffld='snd'
 ! 0.26
-omega=0.5 
+omega=0.2420
 sigma=10.,
-t_mid=500 
+t_mid=500.
 radiative='non'
-fmax= 0. 0. 0.000001      
+fmax= 0. 0.000001 0.0     
+iseed=1238
 /
 
 &sse
@@ -32,12 +33,12 @@ dir_ft= 1. 1. 1.
 
 ! Here starts the tdplas part
 !
-&PROPAGATE  
+&PROPAGATE
 propagation_type='ief'
 interaction_type='ons'
 interaction_stride=1
 interaction_init='non-scf'
-test_type='n-l' 
+test_type='n-l'
 local_field='loc'
 /
 
@@ -52,12 +53,13 @@ bem_read_write='rea'
 input_surface='fil'
 /
 
+
 &EPS_FUNCTION
 epsilon_omega='drl'
 eps_0=1000.
 eps_d=1. 
-eps_A=0.110224   
-eps_gm=0.000757576
+eps_A=0.05995   
+eps_gm=0.001515
 eps_w0=0.  
 f_vel=0. 
 /
