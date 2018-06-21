@@ -1,0 +1,88 @@
+ 
+ *****************************************************
+ *****************************************************
+ **                                                 **
+ **                    WaveT                        **
+ **     Evolution of molecular wavefunctions        **
+ **   under external electromagnetic perturbations  **
+ **                                                 **
+ **                     by                          **
+ **                Stefano Corni                    **
+ **                Silvio Pipolo                    **
+ **               Emanuele Coccia                   **
+ **                 Gabriel Gil                     **
+ **                Jacopo Fregoni                   **
+ **                                                 **
+ *****************************************************
+ *****************************************************
+ 
+ Number to append to dat file           1
+ Number of CIS states to be read          10
+ Number of CIS states to be used          10
+ Molecular center of charge
+  0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
+ 
+ Time step (in au), number of steps, stride  0.200000000000000              100
+           1
+ 
+ Nanoparticle as external medium
+ No restart
+ Only |k> -> |0> relaxation
+ Energy term is propagated analytically
+ 
+ Time shape of the perturbing fieldsnd       
+ time at the center of the pulse (au):   5000.00000000000     
+ Width of the pulse (time au):   10.0000000000000     
+ Frequency (au):  0.260000000000000     
+ Maximum E field  0.000000000000000E+000  0.000000000000000E+000
+  0.000000000000000E+000
+ 
+ No dissipation
+ 
+ Excitation energies read from input, in Hartree
+           1  0.239101968089119     
+           2  0.242269757715985     
+           3  0.242269757715985     
+           4  0.248046747615561     
+           5  0.248046747615561     
+           6  0.263411629784852     
+           7  0.289389709683135     
+           8  0.289393384613097     
+           9  0.303104548299685     
+          10  0.330479101583362     
+ 
+ Starting point for FT calculation   80.0000000000000     
+ Artificial damping   2000.00000000000        2000.00000000000     
+ Direction along which the field is oriented   1.00000000000000     
+   1.00000000000000        1.00000000000000     
+ 
+ *************OMP*****************
+
+ OMP parallelization on
+The number of processors available =        2
+The number of threads available    =        1
+
+ *************OMP*****************
+ Apparent charges are propagated
+ Local field effects are NOT included
+ Medium charges do not follow the quantum jump
+ Frequency of updating the interaction potential           1
+ Use GS RF as coded in the ci_energy.inp values
+ The coupling is of PCM type: pot \cdot chr
+ Nanoparticle as external medium
+ Medium polarization described by apparent charges
+ Diagonal BEM furmulation
+ This is a Classical BEM run
+ This is full run reading matrix and boundary
+ Medium polarization frozen to molecule in its GS
+ Surface read from file cavity.inp
+ Essential output written.
+ TEST: Nanoparticle reaction field
+Done reading input & setting up the field, took     0.114s
+ BEM surface and Matrixes S D have been read in
+ BEM correctly initialized
+ Done BEM diagonal
+ Medium contribution to ground state free energy: -1.583619719383561E-004
+ G_neq at t=0:  0.000000000000000E+000
+ Initiated VV propagator
+Done , total elapsed time     1.213s

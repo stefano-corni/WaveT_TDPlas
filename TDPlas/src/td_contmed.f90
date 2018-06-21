@@ -9,6 +9,9 @@
 #ifdef OMP
       use omp_lib
 #endif         
+#ifdef MPI
+      use mpi
+#endif
       use, intrinsic :: iso_c_binding
 
       implicit none
@@ -88,8 +91,12 @@
 ! OPEN FILES
       write(name_f,'(a9,i0,a4)') "medium_t_",n_f,".dat"
       !if (Fmdm_res.eq.'Nonr') then
-      open (file_med,file=name_f,status="unknown")
-      write(file_med,*) "# step  time  dipole  field  qtot  qtot0"
+      if (Fbin.ne.'bin') then
+         open (file_med,file=name_f,status="unknown")
+         write(file_med,*) "# step  time  dipole  field  qtot  qtot0"
+      else
+         open (file_med,file=name_f,status="unknown",form="unformatted") 
+      endif
       !elseif (Fmdm_res.eq.'Yesr') then
       !   open (file_med,file=name_f,status="unknown",position='append')
       !   if (Fint.eq.'pcm') then
@@ -168,9 +175,11 @@
          return
        endif
        t=(i-1)*dt
+
        call do_dip_from_coeff(c_tp,mu_tp,n_ci)
 
        if (Fprop(1:3).eq."dip") then
+
        ! Dipole propagation: 
          call prop_dip(c_tp,f_tp)
          call do_gneq(c_tp,mut,dfr_t,fr_t,fr_0,mat_fd,3,-1)
@@ -191,7 +200,6 @@
          else 
            call do_pot_from_coeff(c_tp,pot_tp)
          endif
-
          call prop_chr
          ! Calculate medium's dipole from charges 
          qtot=zero
@@ -232,7 +240,13 @@
        h_int(:,:)=h_int(:,:)+h_mdm(:,:)
 
        ! SP 24/02/16  Write output
-       if (mod(i,n_out).eq.0.or.i.eq.1) call out_mdm(i)
+       if (mod(i,n_out).eq.0.or.i.eq.1) then
+          if (Fbin.eq.'bin') then
+             call out_mdm_bin(i)
+          else
+             call out_mdm(i)
+          endif
+       endif
 
        ! EC 28/11/17 Write restart
        !if (mod(i,n_res).eq.0) call wrt_restart_mdm()
@@ -1683,8 +1697,40 @@
       
        return
 
-      end subroutine
+      end subroutine out_mdm
 
+
+      subroutine out_mdm_bin(i)
+!------------------------------------------------------------------------
+! @brief Output medium reaction/local field/dipoles in binary format   
+!
+! @date Created: E. Coccia 18/6/18 
+! Modified:
+!------------------------------------------------------------------------
+
+       integer(i4b),intent(IN) :: i
+       real(dbl):: fm(3)
+
+       select case(Ftest)
+       case ('n-r','n-l')
+         write (file_med) i,t,mu_mdm(:,1),ref
+       case ('s-r')
+         if(Fprop(1:3).eq."chr") call do_field_from_charges(qr_t,fr_t)
+         write (file_med) i,t,fr_t(:),ref
+       case ('s-l')
+         write (file_med) i,t,fx_t(:),ref
+       case default
+         if(Fprop(1:3).eq."dip") then
+           write (file_med) i,t,fr_t(:)
+         else
+           call do_field_from_charges(qr_t,fr_t)
+           write (file_med) i,t,mu_mdm(:,1),fr_t(:),qtot,qtot0
+         endif
+       end select
+
+       return
+
+      end subroutine out_mdm_bin
 
       subroutine read_charges_gau
 !------------------------------------------------------------------------

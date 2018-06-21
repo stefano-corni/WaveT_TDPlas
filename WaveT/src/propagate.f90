@@ -16,8 +16,8 @@
       implicit none
 
       integer(i4b)                :: ijump=0
-      real(dbl),allocatable       :: f(:,:)
-      complex(cmp), allocatable   :: c(:),c_prev(:),c_prev2(:),h_rnd(:,:), h_rnd2(:,:)
+      real(dbl),     allocatable  :: f(:,:)
+      complex(cmp),  allocatable  :: c(:),c_prev(:),c_prev2(:),h_rnd(:,:), h_rnd2(:,:)
       real(dbl),     allocatable  :: h_int(:,:), h_dis(:)
       real(dbl),     allocatable  :: pjump(:)
       real(dbl)                   :: f_prev(3),f_prev2(3)
@@ -52,28 +52,38 @@
        implicit none
        integer(i4b)                :: i,j,k
        complex(cmp), allocatable   :: ccexp(:) !SC 31/10/17: added to store exp(-ui*e(:)*dt), used in propagation
-       character(20)               :: name_f
+       character(20)               :: name_e,name_c,name_d,name_mu
 
 
 ! OPEN FILES
+       write(name_c,'(a4,i0,a4)') "c_t_",n_f,".dat"
+       write(name_e,'(a4,i0,a4)') "e_t_",n_f,".dat"
+       write(name_mu,'(a5,i0,a4)') "mu_t_",n_f,".dat"
+       write(name_d,'(a4,i0,a4)') "d_t_",n_f,".dat"
        if (Fres.eq.'Yesr') then
-          write(name_f,'(a4,i0,a4)') "c_t_",n_f,".dat"
-          open (file_c,file=name_f,status="unknown",access="append")
-          write(name_f,'(a4,i0,a4)') "e_t_",n_f,".dat"
-          open (file_e,file=name_f,status="unknown",access="append")
-          write(name_f,'(a5,i0,a4)') "mu_t_",n_f,".dat"
-          open (file_mu,file=name_f,status="unknown",access="append")
-          write(name_f,'(a4,i0,a4)') "d_t_",n_f,".dat"
-          open (file_d,file=name_f,status="unknown",access="append")
+          if (Fbin(1:3).ne.'bin') then
+             open (file_c,file=name_c,status="unknown",access="append")
+             open (file_e,file=name_e,status="unknown",access="append")
+             open (file_mu,file=name_mu,status="unknown",access="append")
+             open (file_d,file=name_d,status="unknown",access="append")
+          else
+             open (file_c,file=name_c,status="unknown",access="append",form="unformatted")   
+             open (file_e,file=name_e,status="unknown",access="append",form="unformatted")
+             open (file_mu,file=name_mu,status="unknown",access="append",form="unformatted")  
+             open (file_d,file=name_d,status="unknown",access="append",form="unformatted")
+          endif
        elseif (Fres.eq.'Nonr') then
-          write(name_f,'(a4,i0,a4)') "c_t_",n_f,".dat"
-          open (file_c,file=name_f,status="unknown")
-          write(name_f,'(a4,i0,a4)') "e_t_",n_f,".dat"
-          open (file_e,file=name_f,status="unknown")
-          write(name_f,'(a5,i0,a4)') "mu_t_",n_f,".dat"
-          open (file_mu,file=name_f,status="unknown")
-          write(name_f,'(a4,i0,a4)') "d_t_",n_f,".dat"
-          open (file_d,file=name_f,status="unknown")
+          if (Fbin(1:3).ne.'bin') then
+             open (file_c,file=name_c,status="unknown")
+             open (file_e,file=name_e,status="unknown")
+             open (file_mu,file=name_mu,status="unknown")
+             open (file_d,file=name_d,status="unknown")
+          else
+             open(file_c,file=name_c,status="unknown",form="unformatted")
+             open(file_e,file=name_e,status="unknown",form="unformatted")
+           open(file_mu,file=name_mu,status="unknown",form="unformatted")
+             open(file_d,file=name_d,status="unknown",form="unformatted")
+          endif
        endif
 ! ALLOCATING
        allocate (c(n_ci))
@@ -140,7 +150,7 @@
           call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
           call add_int_vac(f_prev,h_int)
 ! SP 16/07/17: added call to output at step 0 to have full output in outfiles
-          call out_header
+          if (Fbin(1:3).ne.'bin') call out_header
           call output(1,c,f_prev,h_int)
        elseif (Fres.eq.'Yesr') then
           if (Fdis.ne."nodis") call random_seq(restart_i)
@@ -244,12 +254,20 @@
 #ifndef MPI
        myrank=0
        write(name_f,'(a5,i0,a4)') "field",n_f,".dat"
-       open (7,file=name_f,status="unknown")
+       if (Fbin(1:3).ne.'bin') then
+          open (7,file=name_f,status="unknown")
+       else
+          open (7,file=name_f,status="unknown",form="unformatted")
+       endif  
 #endif
 #ifdef MPI
        if (myrank.eq.0) then
           write(name_f,'(a9)') "field.dat"
-          open (7,file=name_f,status="unknown")
+          if (Fbin(1:3).ne.'bin') then
+             open (7,file=name_f,status="unknown")
+          else
+             open (7,file=name_f,status="unknown",form="unformatted")
+          endif
        endif
 #endif
 
@@ -384,11 +402,18 @@
         end select
         if (myrank.eq.0) then
         ! write out field 
-           do i=1,n_tot
-              t_a=dt*(i-1)
-              if (mod(i,n_out).eq.0) &
-                  write (7,'(f12.2,3e22.10e3)') t_a,f(:,i)
-           enddo
+           if (Fbin(1:3).ne.'bin') then
+              do i=1,n_tot
+                 t_a=dt*(i-1)
+                 if (mod(i,n_out).eq.0) &
+                     write (7,'(f12.2,3e22.10e3)') t_a,f(:,i)
+              enddo
+           else
+              do i=1,n_tot
+                 t_a=dt*(i-1)
+                 if (mod(i,n_out).eq.0) write (7) t_a,f(:,i)
+              enddo
+           endif 
         endif
        
 
@@ -455,19 +480,34 @@
           g_neq2_t=e_a
           e_vac=e_a
           call get_energies(e_vac,g_eq_t,g_neq_t,g_neq2_t)
-          write (file_e,'(i8,f14.4,7e20.8)') i,t,e_a,e_vac, &
+          if (Fbin(1:3).ne.'bin') then
+             write (file_e,'(i8,f14.4,7e20.8)') i,t,e_a,e_vac, &
                    g_eq_t,g_neq2_t,g_neq_t,int_rad,int_rad_int
+          else
+             write (file_e) i,t,e_a,e_vac, &
+                   g_eq_t,g_neq2_t,g_neq_t,int_rad,int_rad_int
+          endif
        else
-          write (file_e,'(i8,f14.4,3e22.10)') i,t,e_a,int_rad,int_rad_int
+          if (Fbin(1:3).ne.'bin') then
+             write (file_e,'(i8,f14.4,3e22.10)') i,t,e_a,int_rad,int_rad_int
+          else
+             write (file_e) i,t,e_a,int_rad,int_rad_int
+          endif 
        endif
 
-       itmp = n_ci*(n_ci-1)/2
-       write (fmt_ci,'("(i8,f14.4,",I0,"e13.5)")') n_ci
-       write (fmt_ci2,'("(i8,f14.4,",I0,"2e13.5)")') 2*itmp
+       if (Fbin(1:3).ne.'bin') then
+          itmp = n_ci*(n_ci-1)/2
+          write (fmt_ci,'("(i8,f14.4,",I0,"e13.5)")') n_ci
+          write (fmt_ci2,'("(i8,f14.4,",I0,"2e13.5)")') 2*itmp
+          write (file_c,fmt_ci) i,t,real(c(:)*conjg(c(:)))
+          write (file_mu,'(i8,f14.4,3e22.10)') i,t,mu_a(:)
+       else
+          write (file_c) i,t,real(c(:)*conjg(c(:)))
+          write (file_mu) i,t,mu_a(:)
+       endif
+
 ! SP 10/07/17: commented the following, strange error 
        call wrt_decoherence(i,t,file_d,fmt_ci2,c,n_ci)
-       write (file_c,fmt_ci) i,t,real(c(:)*conjg(c(:)))
-       write (file_mu,'(i8,f14.4,3e22.10)') i,t,mu_a(:)
 
        j=int(dble(i)/dble(n_out))
        if(j.lt.1) j=1
@@ -619,10 +659,18 @@
            enddo
         endif
 
-        if (nci.gt.2) then
-           write(int1,char2) i, t, ((cc(j,k), k=j+1,nci),j=1,nci-1)
-        else 
-           write(int1,char2) i, t, cc(1,2)
+        if (Fbin(1:3).ne.'bin') then
+           if (nci.gt.2) then
+              write(int1,char2) i, t, ((cc(j,k), k=j+1,nci),j=1,nci-1)
+           else 
+              write(int1,char2) i, t, cc(1,2)
+           endif
+        else
+           if (nci.gt.2) then
+              write(int1) i, t, ((cc(j,k), k=j+1,nci),j=1,nci-1)
+           else
+              write(int1) i, t, cc(1,2)
+           endif
         endif
     
         return
