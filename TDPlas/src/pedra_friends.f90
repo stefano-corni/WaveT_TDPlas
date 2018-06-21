@@ -146,29 +146,34 @@
       type(tess_pcm) :: dum2(1)
 
 #ifdef MPI
-      real(8), allocatable  :: tmp(:)
+      !real(8), allocatable  :: tmp(:)
 
       call mpi_bcast(nesf_act,    1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
+      !allocate(tmp(nesf_act))
       if (myrank.ne.0) then 
-         allocate(tmp(nesf_act))
          allocate(sfe_act(nesf_act))
       endif
 
-      if (myrank.eq.0) tmp=sfe_act%x
-      call mpi_bcast(tmp,         nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-      if (myrank.ne.0) sfe_act%x=tmp
-      if (myrank.eq.0) tmp=sfe_act%y
-      call mpi_bcast(tmp,         nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-      if (myrank.ne.0) sfe_act%y=tmp
-      if (myrank.eq.0) tmp=sfe_act%z
-      call mpi_bcast(tmp,        nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-      if (myrank.ne.0) sfe_act%z=tmp
-      if (myrank.eq.0) tmp=sfe_act%r
-      call mpi_bcast(tmp,        nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-      if (myrank.ne.0) sfe_act%r=tmp
+      call mpi_bcast(sfe_act%x,    nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+      call mpi_bcast(sfe_act%y,    nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+      call mpi_bcast(sfe_act%z,    nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+      call mpi_bcast(sfe_act%r,    nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
 
-      deallocate(tmp)
+      !if (myrank.eq.0) tmp=sfe_act%x
+      !call mpi_bcast(tmp,         nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+      !if (myrank.ne.0) sfe_act%x=tmp
+      !if (myrank.eq.0) tmp=sfe_act%y
+      !call mpi_bcast(tmp,         nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+      !if (myrank.ne.0) sfe_act%y=tmp
+      !if (myrank.eq.0) tmp=sfe_act%z
+      !call mpi_bcast(tmp,        nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+      !if (myrank.ne.0) sfe_act%z=tmp
+      !if (myrank.eq.0) tmp=sfe_act%r
+      !call mpi_bcast(tmp,        nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+      !if (myrank.ne.0) sfe_act%r=tmp
+
+      !deallocate(tmp)
 
 #endif
 
@@ -1300,25 +1305,31 @@
 
            allocate(tmp(nts_act))
 
-           if (myrank.eq.0) tmp=cts_act%x
-           call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           if (myrank.ne.0) cts_act%x=tmp
+           call mpi_bcast(cts_act%x,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
+           call mpi_bcast(cts_act%y,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_bcast(cts_act%z,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_bcast(cts_act%area, nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_bcast(cts_act%rsfe, nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
 
-           if (myrank.eq.0) tmp=cts_act%y
-           call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           if (myrank.ne.0) cts_act%y=tmp
+           !if (myrank.eq.0) tmp=cts_act%x
+           !call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           !if (myrank.ne.0) cts_act%x=tmp
 
-           if (myrank.eq.0) tmp=cts_act%z
-           call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           if (myrank.ne.0) cts_act%z=tmp
+           !if (myrank.eq.0) tmp=cts_act%y
+           !call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           !if (myrank.ne.0) cts_act%y=tmp
 
-           if (myrank.eq.0) tmp=cts_act%area
-           call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           if (myrank.ne.0) cts_act%area=tmp
+           !if (myrank.eq.0) tmp=cts_act%z
+           !call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           !if (myrank.ne.0) cts_act%z=tmp
 
-           if (myrank.eq.0) tmp=cts_act%rsfe
-           call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           if (myrank.ne.0) cts_act%rsfe=tmp
+           !if (myrank.eq.0) tmp=cts_act%area
+           !call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           !if (myrank.ne.0) cts_act%area=tmp
+
+           !if (myrank.eq.0) tmp=cts_act%rsfe
+           !call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           !if (myrank.ne.0) cts_act%rsfe=tmp
 
            if (myrank.eq.0) tmp=cts_act%n(1)
            call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
