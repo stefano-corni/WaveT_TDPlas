@@ -1,6 +1,6 @@
 &general 
 n_ci=10  !# ci states to be used in the propagation
-n_ci_read=15   !# ci states written in the input files
+n_ci_read=1   !# ci states written in the input files
 mol_cc= 0. 0. 0. ! center of charge of the molecule
 medium='nan'  ! nan: do a wavet+tdplas calculation 
 n_f=1 ! nteger to be appended in all output files
@@ -11,11 +11,12 @@ n_out=2    ! stride for output
 
 &field 
 Ffld='gau'  !shape of the pulse. gau(ssian) exp(-(t-t0)^2/s^2); mdg: Gaussian modulated sinusoid exp(-(t-t0)^2/s^2) * sin(wt) ; mds: cos^2 modulated sinusoid 1/2* cos^2(pi(t-t0)/(2t0)) * sin(wt); pip: Pi-pulse cos^2(pi(t-t0)/(2s)) * cos(w(t-t0)) ; sin: sinusoid sin(wt); snd Linearly modulated (up to t0) Sinusoid; css Cos^2 pulse (only half a period): cos^2(pi*(t-t0)/(s))
-omega=0.262961
-sigma=2.,
+omega(1)=0.262961
+sigma(1)=2.,
 t_mid=15.,
 radiative='non' !non: does not include Abraham-Lorentz radiative frictional forces
 fmax= 0.000001 0. 0.
+npulse=1        ! number of pulses
 /
 
 &spectra 

@@ -1,6 +1,6 @@
 &freq
 fmax= 1.  0.  0. ! applied field E=fmax exp(-iwt)
-n_omega=5000     ! number of frequency for which calculation is done
+n_omega=500     ! number of frequency for which calculation is done
 omega_ini=0.01   ! lowest frequency
 omega_end=0.35   ! highest freq
 /

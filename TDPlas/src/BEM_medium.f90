@@ -265,7 +265,6 @@
 #ifndef MPI
        myrank=0
 #endif
-      
        allocate(scrd3(3))
        sgn=one                 
        if(Fmdm(2:4).eq."nan") sgn=-one  

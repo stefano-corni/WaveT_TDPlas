@@ -65,8 +65,9 @@
       character(flg) :: Fexp !< Flag for propagation of the energy term
       character(flg) :: Fsim !< Flag for the dynamics length in case of restart
       character(flg) :: Fabs !< Flag for the dynamics in presence of an absorber
+      character(flg) :: Fbin !< Flag for writing output files with binary format
 ! Flags read from input file
-      character(flg) :: medium,radiative,dissipative,lsim,absorber
+      character(flg) :: medium,radiative,dissipative,lsim,absorber,binary
       character(flg) :: dis_prop
       character(flg) :: restart 
       character(flg) :: propa
@@ -104,7 +105,7 @@
              mu_i_prev3,mu_i_prev4,mu_i_prev5,restart_seed, &
              n_jump,Fsim,diff_step,mpibcast_readio,         &
              mpibcast_e_dip,mpibcast_sse,mpibcast_restart,  &
-             nspectra,Fabs,ion_rate,mpibcast_ion_rate 
+             nspectra,Fabs,ion_rate,mpibcast_ion_rate,Fbin 
              
 !
       contains
@@ -124,7 +125,8 @@
      
        !Molecular parameters 
        namelist /general/n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,& 
-                         dt,n_step,n_out,propa,n_restart,lsim,absorber
+                         dt,n_step,n_out,propa,n_restart,lsim,absorber,&
+                         binary
        !External field paramaters
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
                         npulse,tdelay,pshift
@@ -687,6 +689,7 @@
 ! @date Created   : E. Coccia 11 May 2017
 ! Modified  :
 ! @param n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,propa,n_restart 
+!        lsim,absorber,binary 
 !------------------------------------------------------------------------
 
        ! Time step in the propagation (a.u.)
@@ -714,6 +717,8 @@
        lsim='n'
        ! Ionization rates
        absorber='n'
+       ! Binary output
+       binary='n'
 
        return
 
@@ -891,6 +896,13 @@
          Fabs(1:3)='abs'
         case ('n', 'N')
          Fabs(1:3)='non'
+       end select
+       select case (binary)
+        case ('y','Y')
+         write(*,*) 'Output files in binary format'
+         Fbin(1:3)='bin'
+        case ('n','N')
+         Fbin(1:3)='non'
        end select
        write(*,*) ''
 
@@ -1121,6 +1133,7 @@
        call mpi_bcast(Fdis_rel,    flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fdis_deph,   flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fabs,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Fbin,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
 #endif
 
        return 
