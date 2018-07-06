@@ -18,14 +18,15 @@
       character(flg) 	        :: Ffld				        ! shape of impulse
       character(flg)            :: Fbin                     ! binary output   
       integer(i4b) 	            :: n_out,n_f		     	! auxiliaries for output
-      !character(1)              :: medium_res              !restart for medium 
-      !integer(i4b)              :: n_res                   ! frequency for restart
+      character(1)              :: medium_res              !restart for medium 
+      integer(i4b)              :: n_res                   ! frequency for restart
 
       contains
   
       subroutine set_global_tdplas(this_dt,this_mdm,this_mol_cc,this_n_ci,this_n_ci_read,this_c_i,this_e_ci,this_mut,&
 				   this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
-                   this_Fbin)!,this_res,this_n_res)
+                   this_Fbin,this_res,this_n_res)
+
 !------------------------------------------------------------------------
 ! @brief Set global variables for medium 
 !
@@ -47,8 +48,8 @@
         character(3)  , intent(in) :: this_Ffld			           	 ! shape of impulse
         character(3)  , intent(in) :: this_Fbin                      ! binary output
         integer(i4b)  , intent(in) :: this_n_out,this_n_f	         ! auxiliaries for output
-        !character(1)  , intent(in) :: this_res                      ! restart for medium 
-        !integer(i4b)  , intent(in) :: this_n_res                    ! frequency for restart
+        character(1)  , intent(in) :: this_res                      ! restart for medium 
+        integer(i4b)  , intent(in) :: this_n_res                    ! frequency for restart
         
         dt=this_dt
         Fmdm=this_mdm
@@ -68,8 +69,8 @@
         tdelay=this_tdelay
         pshift=this_pshift
         Fbin=this_Fbin
-        !medium_res=this_res 
-        !n_res=this_n_res
+        medium_res=this_res 
+        n_res=this_n_res
 
         return
 

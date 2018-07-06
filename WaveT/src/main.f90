@@ -67,8 +67,7 @@
           if (Fmdm(1:3).ne."vac") then
              call set_global_tdplas(dt,Fmdm,mol_cc,n_ci,n_ci_read,c_i, &
                                e_ci,mut,fmax,omega,Ffld,n_out,n_f, &
-                               tdelay,pshift,Fbin)
-                               !restart,n_restart)
+                               tdelay,pshift,Fbin,restart,n_restart)
              if (myrank.eq.0) call read_medium_input
           endif
 
