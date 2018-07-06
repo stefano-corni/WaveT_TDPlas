@@ -865,7 +865,7 @@
           Fres='Yesr'
           write(*,*) 'Frequency in writing restart file:', n_restart
 !EC 15/12/17: Restart only for vacuum calculations
-          if (Fmdm.ne.'vac') Fres='Nonr'
+          !if (Fmdm.ne.'vac') Fres='Nonr'
        end select
        select case (full)
         case ('n', 'N') 
