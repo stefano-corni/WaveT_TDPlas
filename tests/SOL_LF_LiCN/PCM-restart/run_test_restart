@@ -1,0 +1,12 @@
+# 5002 iterations
+../../../WaveT/bin/WaveT-serial.x < tdcis.inp > tdcis.out
+# 5000 iterations
+cd 5000_iter_with_mdm
+../../../../WaveT/bin/WaveT-serial.x < tdcis.inp > tdcis.out
+# restart from 5000 up to 5002
+cd ../restart_with_mdm
+cp -r ../5000_iter_with_mdm/* .
+../../../../WaveT/bin/WaveT-serial.x < tdcis.inp.restart > tdcis.out.restart
+# compare 5002 direct propagation with restart
+diff c_t_1.dat ../c_t_1.dat
+# difference should return nothing
