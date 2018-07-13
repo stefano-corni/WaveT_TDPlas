@@ -1,0 +1,2 @@
+../../TDPlas/bin/tdplas.x < cavity_and_SDmatrices_builder.inp > cavity_and_SDmatrices_builder.out
+../../TDPlas/bin/freq_bem.x < pcmmatrices_builder.inp > pcmmatrices_builder.out

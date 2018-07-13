@@ -141,10 +141,10 @@
 
        if (Fmdm(1:3).ne."vac") then
            call init_medium(c_prev,f_prev,h_int)
-           !if (Fres.eq.'Nonr') then
+           if (Fres.eq.'Nonr') then
               i=1
               call prop_medium(i,c_prev,f_prev,h_int)
-           !endif
+           endif
        endif
        if (Fres.eq.'Nonr') then
           call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
@@ -886,7 +886,7 @@
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
-            if (mod(i,n_restart).eq.0.and.Fmdm.eq.'vac') then
+            if (mod(i,n_restart).eq.0) then
                t=(i-1)*dt
                call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend)
             endif
@@ -922,7 +922,7 @@
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
-            if (mod(i,n_restart).eq.0.and.Fmdm.eq.'vac') then
+            if (mod(i,n_restart).eq.0) then
                t=(i-1)*dt
                call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif
@@ -970,7 +970,7 @@
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
-            if (mod(i,n_restart).eq.0.and.Fmdm.eq.'vac') then
+            if (mod(i,n_restart).eq.0) then
                t=(i-1)*dt
                call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif
@@ -1044,7 +1044,6 @@
           endif 
        endif 
 
-
 ! PROPAGATION CYCLE: starts the propagation at timestep 3
 ! Markovian dissipation (quantum jump) -> qjump
        if (Fdis(5:9).eq."qjump") then
@@ -1117,7 +1116,7 @@
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
-            if (mod(i,n_restart).eq.0.and.Fmdm.eq.'vac') then
+            if (mod(i,n_restart).eq.0) then
                t=(i-1)*dt
                call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif
@@ -1153,7 +1152,7 @@
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
-            if (mod(i,n_restart).eq.0.and.Fmdm.eq.'vac') then
+            if (mod(i,n_restart).eq.0) then
                t=(i-1)*dt
                call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif
@@ -1201,7 +1200,7 @@
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
-            if (mod(i,n_restart).eq.0.and.Fmdm.eq.'vac') then
+            if (mod(i,n_restart).eq.0) then
                t=(i-1)*dt
                call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif 
