@@ -1,0 +1,28 @@
+Test to output PCM matrices (including those for the local field) in the case of an spherical cavity embedded in a solvent
+
+Step 1. Build-up the cavity:
+
+It is run as
+
+../../TDPlas/bin/tdplas.x < cavity_and_SDmatrices_builder.inp > cavity_and_SDmatrices_builder.out
+
+It generates
+
+cavity.inp   <- cavity input - TDPlas format
+np_bem.cav   <- cavity - GAMESS format
+mat_SD.inp   <- S and D matrices
+
+Step 2. Build-up the PCM matrices (including those for the local field)
+
+It is run as
+
+../../TDPlas/bin/tdplas.x < pcmmatrices_builder.inp > pcmmatrices_builder.out
+
+It generates
+
+np_bem.mat <- static PCM response matrix - GAMESS format
+np_bem.mdy <- dynamic PCM response matrix - GAMESS format
+np_bem.mlf <- analogous to np_bem.mat for the local field
+np_bem.mld <- analogous to np_bem.mdy for the local field
+
+
