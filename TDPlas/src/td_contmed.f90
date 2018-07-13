@@ -1570,36 +1570,6 @@
 !       de_a=0.d0
         allocate(v_avg(n_coor_or_ts))
 
-!#ifndef OMP
-!        do its=1,n_coor_or_ts
-!           ctmp(:,its)=matmul(mu_or_v(its,:,:),c) 
-!        enddo
-!#endif
-
-!#ifdef OMP
-!        if (Fopt(1:3).eq.'omp') then
-!           ctmp=0.d0
-!!$OMP PARALLEL reduction (+:ctmp)
-!!$OMP DO
-!           do k=1,n_ci
-!              do j=1,n_ci
-!                 do its=1,n_coor_or_ts
-!                    ctmp(k,its)=ctmp(k,its) + mu_or_v(its,k,j)*c(j)
-!                 enddo
-!             enddo
-!           enddo
-!!$OMP END PARALLEL
-!        else
-
-!!$OMP PARALLEL 
-!!$OMP DO
-!           do its=1,n_coor_or_ts
-!              ctmp(:,its)=matmul(mu_or_v(its,:,:),c)
-!           enddo
-!!$OMP END PARALLEL
-
-!        endif
-!#endif
 
 #ifdef OMP
 !$OMP PARALLEL REDUCTION(+:g_neq1_part,g_eq)
@@ -1608,7 +1578,6 @@
         do its=1,n_coor_or_ts
           !v_avg(its)=dot_product(c,matmul(mu_or_v(its,:,:),c))
           v_avg(its)=dot_product(c,cmat_mult(mu_or_v(its,:,:),c)) 
-          !v_avg(its)=dot_product(c,ctmp(:,its))
           g_neq1_part=g_neq1_part+sig*v_avg(its)*df_or_dq(its)
           g_eq=g_eq+sig*f_or_q(its)*v_avg(its)
 !         de_a=de_a+sig*f_or_q0(its)*v_avg(its)

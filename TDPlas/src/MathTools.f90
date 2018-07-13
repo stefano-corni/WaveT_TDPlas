@@ -568,7 +568,7 @@
 
        real(dbl),    intent(in)    :: a(n_ci,n_ci)
        complex(cmp), intent(in)    :: b(n_ci)
-       real(dbl)                   :: cmat_mult(n_ci),tmp(n_ci)
+       complex(cmp)                :: cmat_mult(n_ci),tmp(n_ci)
 
        integer(i4b)                :: i,j
 

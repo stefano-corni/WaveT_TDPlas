@@ -508,16 +508,36 @@
 
        implicit none
 
-       integer(i4b), intent(IN) :: i
-       complex(cmp), intent(IN) :: c(n_ci)
-       real(dbl), intent(IN) :: h_int(n_ci,n_ci)
-       real(dbl), intent(IN) :: f_prev(3)
-       real(dbl) :: e_a,e_vac,t,g_neq_t,g_neq2_t,g_eq_t,f_med(3)
-       character(4000) :: fmt_ci,fmt_ci2
-       integer(i4b)    :: itmp,j,k
+       integer(i4b),    intent(IN) :: i
+       complex(cmp),    intent(IN) :: c(n_ci)
+       real(dbl),       intent(IN) :: h_int(n_ci,n_ci)
+       real(dbl),       intent(IN) :: f_prev(3)
+       real(dbl)                   :: e_a,e_vac,t,g_neq_t,g_neq2_t,g_eq_t,f_med(3)
+       character(4000)             :: fmt_ci,fmt_ci2
+       integer(i4b)                :: itmp,j,k
+       complex(cmp)                :: ctmp(n_ci)
 
        t=(i-1)*dt 
+#ifdef OMP
+       if (Fopt(1:3).eq.'omp') then
+          ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp) 
+!$OMP DO
+          do k=1,n_ci
+             do j=1,n_ci
+                ctmp(k)=ctmp(k)+ h_int(k,j)*c(j)
+             enddo
+          enddo
+!$OMP END PARALLEL
+          e_a=dot_product(c,e_ci*c+ctmp)
+       else      
+          e_a=dot_product(c,e_ci*c+matmul(h_int,c))
+       endif
+#endif
+
+#ifndef OMP
        e_a=dot_product(c,e_ci*c+matmul(h_int,c))
+#endif
 
 ! SC 07/02/16: added printing of g_neq, g_eq 
        if(Fmdm(1:3).ne.'vac') then 
