@@ -7,7 +7,7 @@
       implicit none
       save
 !
-      integer(i4b) :: n_f,n_ci,n_ci_read,n_step,n_out 
+      integer(i4b) :: n_f,n_ci,n_ci_read,n_step,n_out,ncit 
       !integer(i4b) :: imar !imar=0 Markvian, imar=1, nonMarkovian
       integer(i4b) :: i_sp=0,i_nr=0,i_de=0 !counters for quantum jump occurrences
       integer(i4b) :: nrnd !the time step for Euler-Maruyama is dt/nrnd
@@ -16,8 +16,9 @@
       integer(i4b) :: idep   !input integer for the dephasing operator
       integer(i4b) :: tdis   !input integer for Euler tdis=0, Matthews tdis=1 
 ! SP270917: added for merging to newer master
-      integer(i4b)              :: npulse !number of pulses
+      integer(i4b)              :: npulse    !number of pulses
       integer(i4b), allocatable :: irel(:,:) !mapping for intermediate relaxations  
+      integer(i4b), allocatable :: ik(:,:)   !mapping for intermediate relaxations 
       integer(i4b)              :: restart_i ! step for restart
       integer(i4b)              :: n_restart ! frequency of restart writing
       integer(i4b)              :: n_jump    ! number of quantum jumps along a simulation
@@ -66,8 +67,10 @@
       character(flg) :: Fsim !< Flag for the dynamics length in case of restart
       character(flg) :: Fabs !< Flag for the dynamics in presence of an absorber
       character(flg) :: Fbin !< Flag for writing output files with binary format
+      character(flg) :: Fopt !< Flag for using OMP-optimized matrix/vector multiplication 
+      character(flg) :: Fwrt !< Flag for SSE output
 ! Flags read from input file
-      character(flg) :: medium,radiative,dissipative,lsim,absorber,binary
+      character(flg) :: medium,radiative,dissipative,lsim,absorber,binary,out_sse
       character(flg) :: dis_prop
       character(flg) :: restart 
       character(flg) :: propa
@@ -85,7 +88,7 @@
 !     Ffld=gau: gaussian impulse
 !SC
 !     Frad: wheter or not to apply radiative damping
-!     TO BE COMPLETED, SEE PROPAGATE.F90      
+!     TO BE COMPLETED, SEE PROPAGATE.F90      \
       real(dbl) :: eps_A,eps_gm,eps_w0,f_vel
       real(dbl) :: r
       
@@ -105,7 +108,8 @@
              mu_i_prev3,mu_i_prev4,mu_i_prev5,restart_seed, &
              n_jump,Fsim,diff_step,mpibcast_readio,         &
              mpibcast_e_dip,mpibcast_sse,mpibcast_restart,  &
-             nspectra,Fabs,ion_rate,mpibcast_ion_rate,Fbin 
+             nspectra,Fabs,ion_rate,mpibcast_ion_rate,Fbin, &
+             ncit,Fopt,ik,Fwrt 
              
 !
       contains
@@ -126,12 +130,12 @@
        !Molecular parameters 
        namelist /general/n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,& 
                          dt,n_step,n_out,propa,n_restart,lsim,absorber,&
-                         binary
+                         binary,ncit
        !External field paramaters
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
                         npulse,tdelay,pshift
        !Stochastic Schroedinger equation
-       namelist /sse/ dissipative,idep,dis_prop,nrnd,tdis,nr_typ,krnd
+       namelist /sse/ dissipative,idep,dis_prop,nrnd,tdis,nr_typ,krnd,out_sse
        !Namelist spectra
        namelist /spectra/ start,tau,dir_ft
 
@@ -405,9 +409,9 @@
 !------------------------------------------------------------------------
      
        implicit none
-        integer   :: i,j,k,idum,ierr0,ierr1,ierr2,ierr3,ierr4,err   
-        real(dbl)  :: term   
-        real(dbl)  :: rdum
+        integer     :: i,j,k,idum,ierr0,ierr1,ierr2,ierr3,ierr4,err,kk   
+        real(dbl)   :: term   
+        real(dbl)   :: rdum
         real(dbl)   :: rx,ry,rz
         real(dbl)   :: ix,iy,iz
 
@@ -420,7 +424,16 @@
        if (Fful.eq.'Yesf') then
           nrel = nexc*(nexc-1)/2
           allocate(irel(nrel,2))
+          allocate(ik(nexc,nexc))
           call map_nrel(nexc,nrel,irel)
+          ik=0
+          kk=nexc
+          do j=nexc,1,-1
+             do k=j-1,1,-1
+                kk=kk+1
+                ik(k,j)=kk
+             enddo
+          enddo
        elseif (Fful.eq.'Nonf') then
           nrel = 0 
        endif
@@ -543,7 +556,6 @@
           enddo 
        endif
 
-
 100    if (ierr0.ne.0) then
           write(*,*)
           write(*,*) 'Dissipation:'
@@ -588,7 +600,6 @@
           stop
        endif
 
-
        close(8)
        close(9)
        close(10) 
@@ -612,8 +623,8 @@
        integer(i4b),  intent(in)     :: nrel,nexc
        integer(i4b),  intent(inout)  :: irel(nrel,2)
 
+
        irel=0
-       kk=0
        do j=nexc,1,-1
           do k=j-1,1,-1
              kk=kk+1
@@ -648,8 +659,11 @@
        if (idep.eq.0) deallocate(delta)
        if (myrank.eq.0) then
           if (Fdis.ne."nodis".and.Fmdm.eq.'nan') deallocate(mut_np2)
-          if (Fful.eq.'Yesf') deallocate(irel)
+          if (Fful.eq.'Yesf') then
+             deallocate(irel)
+          endif
        endif
+       if (Fful.eq.'Yesf') deallocate(ik)
        if (Fabs(1:3).eq.'abs') deallocate(ion_rate)
 
        return
@@ -689,7 +703,7 @@
 ! @date Created   : E. Coccia 11 May 2017
 ! Modified  :
 ! @param n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,propa,n_restart 
-!        lsim,absorber,binary 
+!        lsim,absorber,binary,ncit 
 !------------------------------------------------------------------------
 
        ! Time step in the propagation (a.u.)
@@ -719,6 +733,8 @@
        absorber='n'
        ! Binary output
        binary='n'
+       ! Threshold value for doing matmul or explicit loop in prop()
+       ncit=150
 
        return
 
@@ -801,6 +817,8 @@
        nr_typ=1
        ! Factor is dissipation='ernd'
        krnd=1.d0
+       ! Output level
+       out_sse='n'
 
        return
 
@@ -904,6 +922,14 @@
         case ('n','N')
          Fbin(1:3)='non'
        end select
+       if (n_ci.gt.ncit.and.nthreads.gt.1) then
+           write(*,*) 'Explicit loops are used for matrix/vector'
+           write(*,*) 'for propagation, if OMP is switched on.'
+           Fopt(1:3)='omp'
+       else
+          write(*,*) 'Matmul is used in the propagation.'
+          Fopt(1:3)='non'
+       endif 
        write(*,*) ''
 
        return
@@ -1040,6 +1066,14 @@
           Fdis="nodis"
           write(*,*) 'No dissipation'
        end select
+       select case (out_sse)
+        case ('y','Y')
+          write(*,*) 'SSE quantum jumps written in output'
+          Fwrt(1:3)='yes'
+        case ('n','N')
+          write(*,*) 'SSE quantum jumps not written'
+          Fwrt(1:3)='non' 
+       end select
        write(*,*) ''
 
        return
@@ -1134,6 +1168,7 @@
        call mpi_bcast(Fdis_deph,   flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fabs,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fbin,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Fopt,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
 #endif
 
        return 
@@ -1191,6 +1226,7 @@
           allocate(tmom2(nf))
           allocate(sp_fact(nf))
           allocate(tomega(nf))
+          if (Fful.eq.'Yesf') allocate(ik(nexc,nexc))
        endif
 
        call mpi_bcast(nr_gam,     nf,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
@@ -1205,6 +1241,10 @@
        call mpi_bcast(sp_fact,    nf,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(tmom2,      nf,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
        call mpi_bcast(tomega,     nf,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
+       if (Fful.eq.'Yesf') call mpi_bcast(ik,nexc*nexc,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) 
+
+       call mpi_bcast(Fwrt,       flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+
 #endif
 
        return
