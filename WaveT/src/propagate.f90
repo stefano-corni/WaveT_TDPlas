@@ -189,8 +189,10 @@
        if (Fres.eq."Yesr") deallocate(c_i_prev,c_i_prev2)
        if (Fexp.eq."exp") deallocate(ccexp)
        if (Fdis(1:3).eq."mar".or.Fdis(1:3).eq."nma") then
-          call deallocate_dis()
-          deallocate(h_dis)
+
+          !call deallocate_dis()
+          !deallocate(h_dis)
+
           if (Fdis(5:9).ne."qjump") then
              deallocate(h_rnd)
              deallocate(h_rnd2)
@@ -205,7 +207,7 @@
                         '(',  real(i_sp+i_nr+i_de)/real(n_step),')'
              write(*,*) 'Spontaneous emission quantum jumps', i_sp,    &
                         '(',  real(i_sp)/real(n_step),')'
-             write(*,*) 'Nonradiarive relaxation quantum jumps', i_nr, &
+             write(*,*) 'Nonradiative relaxation quantum jumps', i_nr, &
                         '(', real(i_nr)/real(n_step),')'
              write(*,*) 'Dephasing relaxation quantum jumps', i_de,    &
                         '(', real(i_de)/real(n_step),')'
@@ -435,12 +437,56 @@
        implicit none
 
        complex(cmp), intent(IN) :: c(n_ci)
-       real(dbl)::mu_prev(3),mu_prev2(3),mu_prev3(3),mu_prev4(3), &
-                mu_prev5(3)
+       real(dbl)                :: mu_prev(3),mu_prev2(3),mu_prev3(3),mu_prev4(3), &
+                                   mu_prev5(3)
+       complex(cmp)             :: ctmp(n_ci)
+       integer(i4b)             :: j,k
 
+#ifdef OMP
+       if (Fopt(1:3).eq.'omp') then
+          ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp) 
+!$OMP DO
+          do k=1,n_ci
+             do j=1,n_ci
+                ctmp(k)=ctmp(k)+ mut(1,k,j)*c(j)
+             enddo
+          enddo
+!$OMP END PARALLEL
+          mu_a(1)=dot_product(c,ctmp)
+
+          ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp) 
+!$OMP DO
+          do k=1,n_ci
+             do j=1,n_ci
+                ctmp(k)=ctmp(k)+ mut(2,k,j)*c(j)
+             enddo
+          enddo
+!$OMP END PARALLEL
+          mu_a(2)=dot_product(c,ctmp)
+
+          ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp) 
+!$OMP DO
+          do k=1,n_ci
+             do j=1,n_ci
+                ctmp(k)=ctmp(k)+ mut(3,k,j)*c(j)
+             enddo
+          enddo
+!$OMP END PARALLEL
+          mu_a(3)=dot_product(c,ctmp)
+       else
+          mu_a(1)=dot_product(c,matmul(mut(1,:,:),c))
+          mu_a(2)=dot_product(c,matmul(mut(2,:,:),c))
+          mu_a(3)=dot_product(c,matmul(mut(3,:,:),c))
+       endif
+#endif
+#ifndef OMP
        mu_a(1)=dot_product(c,matmul(mut(1,:,:),c))
        mu_a(2)=dot_product(c,matmul(mut(2,:,:),c))
        mu_a(3)=dot_product(c,matmul(mut(3,:,:),c))
+#endif
 ! SC save previous mu for radiative damping
        mu_prev5=mu_prev4
        mu_prev4=mu_prev3
@@ -531,12 +577,16 @@
 
        implicit none
 
-       real(dbl), intent(IN) :: f_prev(3)
+       real(dbl), intent(IN)    :: f_prev(3)
        real(dbl), intent(INOUT) :: h_int(n_ci,n_ci)
+
+       integer(i4b)             :: i,j
+
 ! SC 16/02/2016: changed to - sign, 
 
        h_int(:,:)=h_int(:,:)-mut(1,:,:)*f_prev(1)-             &
-                   mut(2,:,:)*f_prev(2)-mut(3,:,:)*f_prev(3)
+                 mut(2,:,:)*f_prev(2)-mut(3,:,:)*f_prev(3)
+
        return
  
       end subroutine add_int_vac
@@ -552,10 +602,11 @@
 
        implicit none
 
-       real(dbl),intent(in) :: mu_prev(3),mu_prev2(3),mu_prev3(3), &
+       integer(i4b)                :: i,j
+       real(dbl),    intent(in)    :: mu_prev(3),mu_prev2(3),mu_prev3(3), &
                  mu_prev4(3), mu_prev5(3)
-       real(dbl), intent(INOUT) :: h_int(n_ci,n_ci)
-       real(dbl) :: d3_mu(3),d2_mu(3),d_mu(3),d2_mod_mu,coeff,scoeff, &
+       real(dbl),    intent(INOUT) :: h_int(n_ci,n_ci)
+       real(dbl)                   :: d3_mu(3),d2_mu(3),d_mu(3),d2_mod_mu,coeff,scoeff, &
                   force(3),de
 
 
@@ -588,8 +639,9 @@
 !       int_rad=coeff*d2_mod_mu*d2_mod_mu
        int_rad=coeff*dot_product(d2_mu,d2_mu)+de/dt
        int_rad_int=int_rad_int+int_rad*dt
+
        h_int(:,:)=h_int(:,:)-mut(1,:,:)*d3_mu(1)-             &
-                   mut(2,:,:)*d3_mu(2)-mut(3,:,:)*d3_mu(3)
+                 mut(2,:,:)*d3_mu(2)-mut(3,:,:)*d3_mu(3)
 
        return
 
@@ -692,9 +744,9 @@
         integer(i4b),  intent(in)  :: nci
         complex(cmp),  intent(in)  :: ccexp(nci) 
 
-        integer(i4b)               :: i,j,istart,iend
+        integer(i4b)               :: i,j,istart,iend,k
         real(dbl)                  :: t 
-        complex(cmp)               :: dis(nci)
+        complex(cmp)               :: dis(nci),ctmp(nci)
 
 ! Initialization only without restart
        if (Fres.eq.'Nonr') then
@@ -760,11 +812,37 @@
 ! Quantum jump (spontaneous or nonradiative relaxation, pure dephasing)
 ! Algorithm from J. Opt. Soc. Am. B. vol. 10 (1993) 524
             dis=disp(h_dis,c_prev,nci)
+#ifndef OMP
             if (i.eq.ijump+1) then
                c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev)-dt*dis)
             else 
                c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int,c_prev)-2.d0*dt*dis)
             endif 
+#endif
+#ifdef OMP
+            if (Fopt(1:3).eq.'omp') then
+               ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp) 
+!$OMP DO
+               do k=1,nci
+                  do j=1,nci
+                     ctmp(k)=ctmp(k)+ h_int(k,j)*c_prev(j)
+                  enddo
+               enddo
+!$OMP END PARALLEL
+               if (i.eq.ijump+1) then
+                  c=ccexp*(c_prev-ui*dt*ctmp-dt*dis)
+               else
+                  c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*ctmp-2.d0*dt*dis)
+               endif
+            else
+               if (i.eq.ijump+1) then
+                  c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev)-dt*dis)
+               else
+                  c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int,c_prev)-2.d0*dt*dis)
+               endif
+            endif
+#endif
 ! loss_norm computes: 
 ! norm = 1 - dtot
 ! dtot = dsp + dnr + dde
@@ -777,7 +855,7 @@
                ijump=i
                n_jump=n_jump+1
 #ifndef MPI
-               write(*,*) 'Quantum jump at step:', i, (i-1)*dt 
+              if (Fwrt(1:3).eq.'yes') write(*,*) 'Quantum jump at step:', i, (i-1)*dt 
 #endif 
                c_prev=c
             else
@@ -842,7 +920,25 @@
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
                                                 mu_prev4,mu_prev5,h_int)
 ! SC 31/10/17: modified propagation by adding the exp term
+#ifndef OMP
             c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int,c_prev))
+#endif
+#ifdef OMP
+            if (Fopt(1:3).eq.'omp') then
+               ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp) 
+!$OMP DO
+               do k=1,nci 
+                  do j=1,nci 
+                     ctmp(k)=ctmp(k)+ h_int(k,j)*c_prev(j)
+                  enddo
+               enddo
+!$OMP END PARALLEL
+               c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*ctmp)  
+            else
+               c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int,c_prev))
+            endif
+#endif
             if (Fdis.eq."ernd") then
                do j=1,n_ci
                   c(j) = c(j) - 2.d0*ccexp(j)*ui*dt*krnd*random_normal()*c_prev(j)
@@ -879,9 +975,9 @@
 
         integer(i4b), intent(in)  :: nci
 
-        integer(i4b)              :: i,j,istart,iend
+        integer(i4b)              :: i,j,istart,iend,k
         real(dbl)                 :: t
-        complex(cmp)              :: dis(nci)
+        complex(cmp)              :: dis(nci),ctmp(nci)
 
 !Initialization only without restart
        if (Fres.eq.'Nonr') then
@@ -945,11 +1041,39 @@
 ! Quantum jump (spontaneous or nonradiative relaxation, pure dephasing)
 ! Algorithm from J. Opt. Soc. Am. B. vol. 10 (1993) 524
             dis=disp(h_dis,c_prev,nci)
+#ifndef OMP
             if (i.eq.ijump+1) then
                c=c_prev-ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))-dt*dis
             else
                c=c_prev2-2.d0*ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))-2.d0*dt*dis
             endif
+#endif
+#ifdef OMP
+            if (Fopt(1:3).eq.'omp') then
+               ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp) 
+!$OMP DO
+               do k=1,nci
+                  do j=1,nci
+                     ctmp(k)=ctmp(k)+ h_int(k,j)*c_prev(j)
+                  enddo
+               enddo
+!$OMP END PARALLEL
+               if (i.eq.ijump+1) then
+                   c=c_prev-ui*dt*(e_ci*c_prev+ctmp)-dt*dis
+               else
+                   c=c_prev2-2.d0*ui*dt*(e_ci*c_prev+ctmp)-2.d0*dt*dis
+               endif
+            else
+               if (i.eq.ijump+1) then
+                   c=c_prev-ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))-dt*dis
+               else
+                   c=c_prev2-2.d0*ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))-2.d0*dt*dis
+               endif
+            endif 
+#endif
+
+
 ! loss_norm computes: 
 ! norm = 1 - dtot
 ! dtot = dsp + dnr + dde
@@ -962,7 +1086,7 @@
                ijump=i
                n_jump=n_jump+1
 #ifndef MPI
-               write(*,*) 'Quantum jump at step:', i, (i-1)*dt
+              if (Fwrt(1:3).eq.'yes') write(*,*) 'Quantum jump at step:', i, (i-1)*dt
 #endif
                c_prev=c
             else
@@ -1026,7 +1150,26 @@
 ! SC field
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
                                                 mu_prev4,mu_prev5,h_int)
+#ifndef OMP
             c=c_prev2-2.d0*ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))
+#endif
+#ifdef OMP
+            if (Fopt(1:3).eq.'omp') then
+               ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp) 
+!$OMP DO
+               do k=1,nci
+                  do j=1,nci
+                     ctmp(k)=ctmp(k)+ h_int(k,j)*c_prev(j)
+                  enddo
+               enddo
+!$OMP END PARALLEL
+               c=c_prev2-2.d0*ui*dt*(e_ci*c_prev+ctmp)
+            else
+               c=c_prev2-2.d0*ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))
+            endif
+#endif
+
             if (Fdis.eq."ernd") then
                do j=1,n_ci
                   c(j) = c(j) - 2.d0*ui*dt*krnd*random_normal()*c_prev(j)
