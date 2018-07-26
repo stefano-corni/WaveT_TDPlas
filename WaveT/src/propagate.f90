@@ -59,30 +59,40 @@
        write(name_c,'(a4,i0,a4)') "c_t_",n_f,".dat"
        write(name_e,'(a4,i0,a4)') "e_t_",n_f,".dat"
        write(name_mu,'(a5,i0,a4)') "mu_t_",n_f,".dat"
-       write(name_d,'(a4,i0,a4)') "d_t_",n_f,".dat"
+       if (Fcoh(1:3).eq.'yes') then 
+          write(name_d,'(a4,i0,a4)') "d_t_",n_f,".dat"
+       endif
        if (Fres.eq.'Yesr') then
           if (Fbin(1:3).ne.'bin') then
              open (file_c,file=name_c,status="unknown",access="append")
              open (file_e,file=name_e,status="unknown",access="append")
              open (file_mu,file=name_mu,status="unknown",access="append")
-             open (file_d,file=name_d,status="unknown",access="append")
+             if (Fcoh(1:3).eq.'yes') then 
+               open (file_d,file=name_d,status="unknown",access="append")
+             endif
           else
              open (file_c,file=name_c,status="unknown",access="append",form="unformatted")   
              open (file_e,file=name_e,status="unknown",access="append",form="unformatted")
              open (file_mu,file=name_mu,status="unknown",access="append",form="unformatted")  
-             open (file_d,file=name_d,status="unknown",access="append",form="unformatted")
+             if (Fcoh(1:3).eq.'yes') then  
+               open (file_d,file=name_d,status="unknown",access="append",form="unformatted")
+             endif
           endif
        elseif (Fres.eq.'Nonr') then
           if (Fbin(1:3).ne.'bin') then
              open (file_c,file=name_c,status="unknown")
              open (file_e,file=name_e,status="unknown")
              open (file_mu,file=name_mu,status="unknown")
-             open (file_d,file=name_d,status="unknown")
+             if (Fcoh(1:3).eq.'yes') then
+                open (file_d,file=name_d,status="unknown")
+             endif
           else
              open(file_c,file=name_c,status="unknown",form="unformatted")
              open(file_e,file=name_e,status="unknown",form="unformatted")
            open(file_mu,file=name_mu,status="unknown",form="unformatted")
+             if (Fcoh(1:3).eq.'yes') then
              open(file_d,file=name_d,status="unknown",form="unformatted")
+             endif
           endif
        endif
 ! ALLOCATING
@@ -141,10 +151,10 @@
 
        if (Fmdm(1:3).ne."vac") then
            call init_medium(c_prev,f_prev,h_int)
-           if (Fres.eq.'Nonr') then
+           !if (Fres.eq.'Nonr') then
               i=1
               call prop_medium(i,c_prev,f_prev,h_int)
-           endif
+           !endif
        endif
        if (Fres.eq.'Nonr') then
           call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
@@ -219,7 +229,7 @@
        close (file_c)
        close (file_e)
        close (file_mu)
-       close (file_d)
+       if (Fcoh(1:3).eq.'yes') close (file_d)
 
        if(Fmdm(1:3).ne.'vac') call finalize_medium
 
@@ -573,7 +583,7 @@
        endif
 
 ! SP 10/07/17: commented the following, strange error 
-       call wrt_decoherence(i,t,file_d,fmt_ci2,c,n_ci)
+       if (Fcoh(1:3).eq.'yes') call wrt_decoherence(i,t,file_d,fmt_ci2,c,n_ci)
 
        j=int(dble(i)/dble(n_out))
        if(j.lt.1) j=1
@@ -686,10 +696,11 @@
       
        write(file_mu,'(5a)') '#   istep time (au)',' dipole-x ', &
               ' dipole-y ',' dipole-z '
-       
-       write(file_d,'(3a)')'# istep   time (au)', & 
+       if (Fcoh(1:3).eq.'yes') then 
+          write(file_d,'(3a)')'# istep   time (au)', & 
                            '    Coherence (0,i=1,n_ci)', &
                            '    Coherence (j=1,n_ci,k=j+1,n_ci)'
+       endif
 
        return
     
@@ -886,7 +897,7 @@
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
-            if (mod(i,n_restart).eq.0) then
+            if (mod(i,n_restart).eq.0.and.Fmdm.eq.'vac') then
                t=(i-1)*dt
                call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend)
             endif
@@ -922,7 +933,7 @@
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
-            if (mod(i,n_restart).eq.0) then
+            if (mod(i,n_restart).eq.0.and.Fmdm.eq.'vac') then
                t=(i-1)*dt
                call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif
@@ -970,7 +981,7 @@
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
-            if (mod(i,n_restart).eq.0) then
+            if (mod(i,n_restart).eq.0.and.Fmdm.eq.'vac') then
                t=(i-1)*dt
                call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif
@@ -1044,6 +1055,7 @@
           endif 
        endif 
 
+
 ! PROPAGATION CYCLE: starts the propagation at timestep 3
 ! Markovian dissipation (quantum jump) -> qjump
        if (Fdis(5:9).eq."qjump") then
@@ -1116,7 +1128,7 @@
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
-            if (mod(i,n_restart).eq.0) then
+            if (mod(i,n_restart).eq.0.and.Fmdm.eq.'vac') then
                t=(i-1)*dt
                call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif
@@ -1152,7 +1164,7 @@
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
-            if (mod(i,n_restart).eq.0) then
+            if (mod(i,n_restart).eq.0.and.Fmdm.eq.'vac') then
                t=(i-1)*dt
                call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif
@@ -1200,7 +1212,7 @@
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
-            if (mod(i,n_restart).eq.0) then
+            if (mod(i,n_restart).eq.0.and.Fmdm.eq.'vac') then
                t=(i-1)*dt
                call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif 

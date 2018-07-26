@@ -69,12 +69,14 @@
       character(flg) :: Fbin !< Flag for writing output files with binary format
       character(flg) :: Fopt !< Flag for using OMP-optimized matrix/vector multiplication 
       character(flg) :: Fwrt !< Flag for SSE output
+      character(flg) :: Fcoh !< Flag for writing coherences
 ! Flags read from input file
       character(flg) :: medium,radiative,dissipative,lsim,absorber,binary,out_sse
       character(flg) :: dis_prop
       character(flg) :: restart 
       character(flg) :: propa
       character(flg) :: full ! full or only |e> -> |0> relaxation
+      character(flg) :: wrt_coh
       integer(i4b) :: iseed  ! seed for random number generator
       integer(i4b) :: nexc   ! number of excited states
       integer(i4b) :: nrel   ! number of relaxation channels
@@ -109,7 +111,7 @@
              n_jump,Fsim,diff_step,mpibcast_readio,         &
              mpibcast_e_dip,mpibcast_sse,mpibcast_restart,  &
              nspectra,Fabs,ion_rate,mpibcast_ion_rate,Fbin, &
-             ncit,Fopt,ik,Fwrt 
+             ncit,Fopt,ik,Fwrt,Fcoh 
              
 !
       contains
@@ -130,7 +132,7 @@
        !Molecular parameters 
        namelist /general/n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,& 
                          dt,n_step,n_out,propa,n_restart,lsim,absorber,&
-                         binary,ncit
+                         binary,ncit,wrt_coh
        !External field paramaters
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
                         npulse,tdelay,pshift
@@ -735,6 +737,8 @@
        binary='n'
        ! Threshold value for doing matmul or explicit loop in prop()
        ncit=150
+       ! Write d_t_*.dat file
+       wrt_coh='y'
 
        return
 
@@ -883,7 +887,7 @@
           Fres='Yesr'
           write(*,*) 'Frequency in writing restart file:', n_restart
 !EC 15/12/17: Restart only for vacuum calculations
-          !if (Fmdm.ne.'vac') Fres='Nonr'
+          if (Fmdm.ne.'vac') Fres='Nonr'
        end select
        select case (full)
         case ('n', 'N') 
@@ -930,6 +934,13 @@
           write(*,*) 'Matmul is used in the propagation.'
           Fopt(1:3)='non'
        endif 
+       select case (wrt_coh)
+        case ('y','Y')
+         Fcoh(1:3)='yes'
+        case ('n','N')
+         Fcoh(1:3)='non'
+         write(*,*) 'Coherences not written'
+       end select
        write(*,*) ''
 
        return
@@ -1169,6 +1180,7 @@
        call mpi_bcast(Fabs,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fbin,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fopt,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Fcoh,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
 #endif
 
        return 
