@@ -157,7 +157,7 @@
 ! @brief Medium propagation called by WaveT or other programs 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: E. Coccia 5/7/18
 !------------------------------------------------------------------------
 
        real(dbl), intent(INOUT) :: f_tp(3)
@@ -238,7 +238,6 @@
        if(Ftest(2:2).eq."-") call do_ref(c_tp)
        ! Update the interaction Hamiltonian 
        h_int(:,:)=h_int(:,:)+h_mdm(:,:)
-
        ! SP 24/02/16  Write output
        if (mod(i,n_out).eq.0.or.i.eq.1) then
           if (Fbin.eq.'bin') then
@@ -250,7 +249,6 @@
 
        ! EC 28/11/17 Write restart
        if (mod(i,n_res).eq.0) call wrt_restart_mdm()
-
 
        return
 
@@ -355,7 +353,7 @@
 ! basis 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: E. Coccia 5/7/18
 !------------------------------------------------------------------------
 
        integer(i4b):: i,j
@@ -367,28 +365,29 @@
 ! SC 19/03/2016: added a temporarty array to avoid summing the local field
 ! to ther reaction field for onsager
 ! SC 19/03/2016: moved from prop_mdm (so that h_mdm has values assined only here 
+
        h_mdm(:,:)=zero
 
        if (Fint.eq.'ons') then
          f_mdm(:)=fr_t(:)
          if(Floc.eq."loc") f_mdm(:)=f_mdm(:)+fx_t(:) 
-         h_mdm(:,:)=-h_mdm_0(:,:)-mut(1,:,:)*f_mdm(1) &
-                          -mut(2,:,:)*f_mdm(2) -mut(3,:,:)*f_mdm(3)
+           h_mdm(:,:)=-h_mdm_0(:,:)-mut(1,:,:)*f_mdm(1) &
+                     -mut(2,:,:)*f_mdm(2) -mut(3,:,:)*f_mdm(3)
        elseif(Fint.eq.'pcm') then
          q_mdm=qr_t
          if(Floc.eq."loc") q_mdm(:)=qr_t(:)+qx_t(:)
 ! SC 31/10/2016: avoid including interaction with an unwanted net charge
          q_mdm=q_mdm+(qtot0-sum(q_mdm))/nts_act
-         do j=1,n_ci   
-           do i=1,j       
-             h_mdm(i,j)=-h_mdm_0(i,j)+dot_product(q_mdm(:),vts(:,i,j))
-             h_mdm(j,i)=h_mdm(i,j)
-           enddo
+         do j=1,n_ci
+            do i=1,j   
+               h_mdm(i,j)=-h_mdm_0(i,j)+dot_product(q_mdm(:),vts(:,i,j))
+               h_mdm(j,i)=h_mdm(i,j)
+            enddo
          enddo
        else
-       if (myrank.eq.0) write(*,*) "wrong interaction type "
+         if (myrank.eq.0) write(*,*) "wrong interaction type "
 #ifdef MPI
-      call mpi_finalize(ierr_mpi) 
+         call mpi_finalize(ierr_mpi) 
 #endif
          stop
        endif
@@ -439,7 +438,6 @@
          enddo
        endif
 #endif
-
        return
 
       end subroutine
@@ -947,6 +945,8 @@
 ! Modified:
 !------------------------------------------------------------------------
 
+       implicit none
+
 #ifndef MPI
        myrank=0
 #endif
@@ -983,7 +983,12 @@
            stop
          endif
        endif
-       if(Fdeb.eq."equ") qr_t=matmul(BEM_Q0,pot_tp)
+       if(Fdeb.eq."equ") then
+!EC:  mat_mult optimizes n_ci**2-based statements 
+!     mat_mult uses matmul or explicit loops (with OMP), 
+!     according to the value of n_ci
+         qr_t=mat_mult(BEM_Q0,pot_tp)
+       endif
        qr_tp=qr_t
        pot_tp2=pot_tp
        if(Floc.eq."loc") then
@@ -1001,7 +1006,7 @@
 ! @brief Dipole and field propagation 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: 
 !------------------------------------------------------------------------
 
       ! evolve onsager field/dipole  
@@ -1069,17 +1074,21 @@
       ! charge propagation with drude/lorentz and cosmo/onsager equations
        integer(i4b) :: its  
 
+!EC:  mat_mult optimizes n_ci**2-based statements 
+!     mat_mult uses matmul or explicit loops (with OMP), 
+!     according to the value of n_ci
+
       ! Reaction Field
        qr_t=qr_tp+f1*dqr_tp+f2*fqr_tp
        ! SP: changed using $BEM_Qf=-ONS_ff(1)*S{-1}$
-       fqr_t=-ONS_fw*qr_t+matmul(BEM_Qf,pot_tp)
+       fqr_t=-ONS_fw*qr_t+mat_mult(BEM_Qf,pot_tp)
        dqr_t=f3*dqr_tp+f4*(fqr_t+fqr_tp)-f5*fqr_tp
        fqr_tp=fqr_t
        dqr_tp=dqr_t
        ! Local Field
        if(Floc.eq."loc") then
          qx_t=qx_tp+f1*dqx_tp+f2*fqx_tp
-         fqx_t=-ONS_fw*qx_t+matmul(BEM_Qf,potf_tp)
+         fqx_t=-ONS_fw*qx_t+mat_mult(BEM_Qf,potf_tp)
          dqx_t=f3*dqx_tp+f4*(fqx_t+fqx_tp)-f5*fqx_tp
          fqx_tp=fqx_t
          dqx_tp=dqx_t
@@ -1102,15 +1111,18 @@
       ! charge propagation with drude/lorentz and onsager equations
        integer(i4b) :: its  
 
+!EC:  mat_mult optimizes n_ci**2-based statements 
+!     mat_mult uses matmul or explicit loops (with OMP), 
+!     according to the value of n_ci
+
       ! SP: Reaction Field eq.46 Corni et al. JPCA 2015
-       qr_t=qr_tp-dt*ONS_taum1*qr_tp+dt*ONS_taum1*matmul(BEM_Q0,pot_tp2)&
-                                 +matmul(BEM_Qd,pot_tp-pot_tp2)
+      qr_t=qr_tp-dt*ONS_taum1*qr_tp+dt*ONS_taum1*mat_mult(BEM_Q0,pot_tp2)&
+                                 +mat_mult(BEM_Qd,pot_tp-pot_tp2)
       ! Local Field analogous equation, BEM_Q0x=ONS_fx0*Sm1 and BEM_Qdx=ONS_fxd*Sm1
        if(Floc.eq."loc") then
          call do_field_from_charges(qx_tp,fx_tp)
-         qx_t=qx_tp-dt*ONS_taum1*qx_tp+dt*ONS_taum1*matmul(BEM_Q0x,potf_tp2) &
-                                 +matmul(BEM_Qdx,potf_tp-potf_tp2)
-                                  
+         qx_t=qx_tp-dt*ONS_taum1*qx_tp+dt*ONS_taum1*mat_mult(BEM_Q0x,potf_tp2) &
+                                 +mat_mult(BEM_Qdx,potf_tp-potf_tp2)
        endif
 
        return
@@ -1194,9 +1206,15 @@
 !      f3=1.d0-dt*eps_gm*(1.d0-dt*0.5*eps_gm)
 !      f4=0.5d0*dt
 !      f5=eps_gm*f2
+
+!EC:  mat_mult optimizes n_ci**2-based statements 
+!     mat_mult uses matmul or explicit loops (with OMP), 
+!     according to the value of n_ci
+
        qr_t=qr_tp+f1*dqr_tp+f2*fqr_tp
 
-       fqr_t=-matmul(BEM_Qw,qr_t)+matmul(BEM_Qf,pot_tp)
+       fqr_t=-mat_mult(BEM_Qw,qr_t)+mat_mult(BEM_Qf,pot_tp)
+ 
        dqr_t=f3*dqr_tp+f4*(fqr_t+fqr_tp)-f5*fqr_tp
        fqr_tp=fqr_t
        dqr_tp=dqr_t
@@ -1204,9 +1222,11 @@
        if(Floc.eq."loc") then
         qx_t=qx_tp+f1*dqx_tp+f2*fqx_tp
         if(Fmdm(2:4).eq.'sol') then
-         fqx_t=-matmul(BEM_Qw,qx_t)+matmul(BEM_Qfx,potf_tp)
+         !fqx_t=-matmul(BEM_Qw,qx_t)+matmul(BEM_Qfx,potf_tp)
+         fqx_t=-mat_mult(BEM_Qw,qx_t)+mat_mult(BEM_Qfx,potf_tp)
         else if(Fmdm(2:4).eq.'nan') then
-         fqx_t=-matmul(BEM_Qw,qx_t)+matmul(BEM_Qf,potf_tp)
+         !fqx_t=-matmul(BEM_Qw,qx_t)+matmul(BEM_Qf,potf_tp)
+         fqx_t=-mat_mult(BEM_Qw,qx_t)+mat_mult(BEM_Qf,potf_tp)
         endif
         dqx_t=f3*dqx_tp+f4*(fqx_t+fqx_tp)-f5*fqx_tp
         fqx_tp=fqx_t
@@ -1229,18 +1249,22 @@
       ! Charge propagation with debye and IEF equations 
        integer(i4b) :: its  
 
+!EC:  mat_mult optimizes n_ci**2-based statements 
+!     mat_mult uses matmul or explicit loops (with OMP), 
+!     according to the value of n_ci
+
       ! Reaction Field
-       qr_t=qr_tp-dt*matmul(BEM_R,qr_tp)+dt*matmul(BEM_Qt,pot_tp) &
-                                    +matmul(BEM_Qd,pot_tp-pot_tp2)
+       qr_t=qr_tp-dt*mat_mult(BEM_R,qr_tp)+dt*mat_mult(BEM_Qt,pot_tp) &
+                                    +mat_mult(BEM_Qd,pot_tp-pot_tp2)
       ! Local Field eq.47 JPCA 2015
        if(Floc.eq."loc") then
         if(Fmdm(2:4).eq.'sol') then
          ! GG: BEM matrices (except R) are different in the case of local-field for solvent external medium
-         qx_t=qx_tp-dt*matmul(BEM_R,qx_tp)+dt*matmul(BEM_Qtx,potf_tp) &
-                                     +matmul(BEM_Qdx,potf_tp-potf_tp2)
+         qx_t=qx_tp-dt*mat_mult(BEM_R,qx_tp)+dt*mat_mult(BEM_Qtx,potf_tp) &
+                                     +mat_mult(BEM_Qdx,potf_tp-potf_tp2)
         else if(Fmdm(2:4).eq.'nan') then
-         qx_t=qx_tp-dt*matmul(BEM_R,qx_tp)+dt*matmul(BEM_Qt,potf_tp) &
-                                     +matmul(BEM_Qd,potf_tp-potf_tp2)
+         qx_t=qx_tp-dt*mat_mult(BEM_R,qx_tp)+dt*mat_mult(BEM_Qt,potf_tp) &
+                                     +mat_mult(BEM_Qd,potf_tp-potf_tp2)
         endif
        endif
 
@@ -1260,18 +1284,22 @@
       ! Charge propagation with debye and IEF equations one taud 
        integer(i4b) :: its  
 
+!EC:  mat_mult optimizes n_ci**2-based statements 
+!     mat_mult uses matmul or explicit loops (with OMP), 
+!     according to the value of n_ci
+
       ! Reaction Field
-       qr_t=qr_tp-dt*taum1*qr_tp+dt*taum1*matmul(BEM_Q0,pot_tp) &
-                                  +matmul(BEM_Qd,pot_tp-pot_tp2)
+       qr_t=qr_tp-dt*taum1*qr_tp+dt*taum1*mat_mult(BEM_Q0,pot_tp) &
+                                  +mat_mult(BEM_Qd,pot_tp-pot_tp2)
       ! Local Field eq.47 JPCA 2015
        if(Floc.eq."loc") then
         if(Fmdm(2:4).eq.'sol') then
          ! GG: BEM matrices (except taum1) are different in the case of local-field for solvent external medium
-         qx_t=qx_tp-dt*taum1*qx_tp+dt*taum1*matmul(BEM_Q0x,potf_tp) &
-                                   +matmul(BEM_Qdx,potf_tp-potf_tp2)
+         qx_t=qx_tp-dt*taum1*qx_tp+dt*taum1*mat_mult(BEM_Q0x,potf_tp) &
+                                   +mat_mult(BEM_Qdx,potf_tp-potf_tp2)
         else if(Fmdm(2:4).eq.'nan') then
-         qx_t=qx_tp-dt*taum1*qx_tp+dt*taum1*matmul(BEM_Q0,potf_tp) &
-                                   +matmul(BEM_Qd,potf_tp-potf_tp2)
+         qx_t=qx_tp-dt*taum1*qx_tp+dt*taum1*mat_mult(BEM_Q0,potf_tp) &
+                                   +mat_mult(BEM_Qd,potf_tp-potf_tp2)
         endif
        endif
 
@@ -1528,32 +1556,34 @@
 ! @brief Update non-equilibrium free energy   
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: E. Coccia 5/7/18
 !------------------------------------------------------------------------
 
         implicit none
 
-        complex(cmp), intent(in) :: c(n_ci)
-        integer(i4b),intent(in) :: n_coor_or_ts,sig
-        real(dbl),intent(in) :: mu_or_v(n_coor_or_ts,n_ci,n_ci)
-        real(dbl),intent(in) :: df_or_dq(n_coor_or_ts), &
-                               f_or_q(n_coor_or_ts),&
-                               f_or_q0(n_coor_or_ts),&
-                               fact_d(n_coor_or_ts,n_coor_or_ts)
-        real(dbl),allocatable :: v_avg(:)
+        complex(cmp),  intent(in) :: c(n_ci)
+        integer(i4b),  intent(in) :: n_coor_or_ts,sig
+        real(dbl),     intent(in) :: mu_or_v(n_coor_or_ts,n_ci,n_ci)
+        real(dbl),     intent(in) :: df_or_dq(n_coor_or_ts), &
+                                     f_or_q(n_coor_or_ts),&
+                                     f_or_q0(n_coor_or_ts),&
+                                     fact_d(n_coor_or_ts,n_coor_or_ts)
+        real(dbl),    allocatable :: v_avg(:)
 !       real(dbl) :: de_a
-        integer(i4b) :: its
+        integer(i4b)              :: its,k,j
 
         g_eq=0.d0
 !       de_a=0.d0
         allocate(v_avg(n_coor_or_ts))
+
 
 #ifdef OMP
 !$OMP PARALLEL REDUCTION(+:g_neq1_part,g_eq)
 !$OMP DO
 #endif 
         do its=1,n_coor_or_ts
-          v_avg(its)=dot_product(c,matmul(mu_or_v(its,:,:),c))
+          !v_avg(its)=dot_product(c,matmul(mu_or_v(its,:,:),c))
+          v_avg(its)=dot_product(c,cmat_mult(mu_or_v(its,:,:),c)) 
           g_neq1_part=g_neq1_part+sig*v_avg(its)*df_or_dq(its)
           g_eq=g_eq+sig*f_or_q(its)*v_avg(its)
 !         de_a=de_a+sig*f_or_q0(its)*v_avg(its)

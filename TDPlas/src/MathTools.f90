@@ -17,7 +17,7 @@
       public diag_mat,inv,do_pot_from_field,do_field_from_charges,    &
              do_dip_from_charges,do_dip_from_coeff,do_pot_from_coeff, &
              do_pot_from_dip,do_vts_from_dip,mdl,vprod,               &
-             do_cpot_from_coeff,do_field_from_dip                      
+             do_cpot_from_coeff,do_field_from_dip,mat_mult,cmat_mult                      
       contains
 
 
@@ -152,7 +152,7 @@
 ! (fld) 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: 
 !------------------------------------------------------------------------
 
        real(dbl), intent(in):: fld(3) 
@@ -257,17 +257,60 @@
 ! @brief Compute dipole from CIS coefficients 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: E. Coccia 5/7/18
 !------------------------------------------------------------------------
 
-       integer(i4b), intent(IN) :: nc  
-       complex(cmp), intent(IN) :: c(nc)
-       real(dbl), intent(OUT) :: dip(3)
-       integer(i4b) :: its  
+       integer(i4b), intent(IN)  :: nc  
+       complex(cmp), intent(IN)  :: c(nc)
+       real(dbl),    intent(OUT) :: dip(3)
+       integer(i4b)              :: its,j,k  
+       complex(cmp)              :: ctmp(nc) 
 
+#ifndef OMP
        dip(1)=dot_product(c,matmul(mut(1,:,:),c))
        dip(2)=dot_product(c,matmul(mut(2,:,:),c))
        dip(3)=dot_product(c,matmul(mut(3,:,:),c))
+#endif
+#ifdef OMP
+      if (Fopt(1:3).eq.'omp') then
+         ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp) 
+!$OMP DO
+         do k=1,nc
+            do j=1,nc
+               ctmp(k)=ctmp(k)+ mut(1,k,j)*c(j)
+            enddo
+         enddo
+!$OMP END PARALLEL
+         dip(1)=dot_product(c,ctmp)
+
+         ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp) 
+!$OMP DO
+         do k=1,nc
+            do j=1,nc
+               ctmp(k)=ctmp(k)+ mut(2,k,j)*c(j)
+            enddo
+         enddo
+!$OMP END PARALLEL
+         dip(2)=dot_product(c,ctmp)
+
+         ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp) 
+!$OMP DO
+         do k=1,nc
+            do j=1,nc
+               ctmp(k)=ctmp(k)+ mut(3,k,j)*c(j)
+            enddo
+         enddo
+!$OMP END PARALLEL
+         dip(3)=dot_product(c,ctmp)
+      else
+         dip(1)=dot_product(c,matmul(mut(1,:,:),c))
+         dip(2)=dot_product(c,matmul(mut(2,:,:),c))
+         dip(3)=dot_product(c,matmul(mut(3,:,:),c))
+      endif 
+#endif
 
        return
 
@@ -279,24 +322,48 @@
 ! @brief Compute potential on BEM surface from CIS coefficientes 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: E. Coccia 5/7/18
 !------------------------------------------------------------------------
 
-       complex(cmp), intent(IN) :: c(n_ci)
-       real(dbl), intent(OUT) :: pot(nts_act)
-       integer(i4b) :: its  
+       complex(cmp), intent(IN)  :: c(n_ci)
+       real(dbl),    intent(OUT) :: pot(nts_act)
+       integer(i4b)              :: its,k,j  
+       real(dbl)                 :: ctmp(nts_act,n_ci)
 
 
-#ifdef OMP
-!$OMP PARALLEL
-!$OMP DO 
-#endif
+#ifndef OMP
        do its=1,nts_act
           pot(its)=dot_product(c,matmul(vts(its,:,:),c))
-       enddo 
+       enddo
+#endif
+
 #ifdef OMP
-!$OMP enddo
+       if (Fopt(1:3).eq.'omp') then
+          ctmp=0.d0
+!$OMP PARALLEL reduction (+:ctmp)
+!$OMP DO 
+          do k=1,n_ci
+             do j=1,n_ci
+                do its=1,nts_act
+                   ctmp(its,k)=ctmp(its,k)+ vts(its,k,j)*c(j)
+                enddo
+             enddo
+          enddo
 !$OMP END PARALLEL
+!$OMP PARALLEL
+!$OMP DO
+         do its=1,nts_act
+            pot(its)=dot_product(c,ctmp(its,:))
+         enddo
+!$OMP END PARALLEL
+       else
+!$OMP PARALLEL
+!$OMP DO
+         do its=1,nts_act
+            pot(its)=dot_product(c,matmul(vts(its,:,:),c))
+         enddo 
+!$OMP END PARALLEL
+       endif
 #endif
 
        return
@@ -310,27 +377,44 @@
 ! coefficientes 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: E. Coccia 5/7/18
 !------------------------------------------------------------------------
 
-       complex(cmp), intent(IN) :: c(n_ci)
+       complex(cmp), intent(IN)  :: c(n_ci)
        complex(cmp), intent(OUT) :: cpot(n_ci)
-       real(dbl), intent(IN) :: vts(n_ci,n_ci)
-       integer(i4b) :: k  
+       real(dbl),    intent(IN)  :: vts(n_ci,n_ci)
+       integer(i4b)              :: i,j,k  
+       complex(cmp)              :: ctmp(n_ci)
 
-#ifdef OMP
-!$OMP PARALLEL
-!$OMP DO 
-#endif
+#ifndef OMP
        do k=1,n_ci   
           if(Fprop(1:3).eq."chr") cpot=exp(ui*e_ci(k))*matmul(vts,c)
           if(Fprop(1:3).eq."osc") cpot=exp(ui*e_ci(k))*matmul(vts,c)
        enddo 
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
 #endif
-
+#ifdef OMP
+       if (Fopt(1:3).eq.'omp') then
+          if (Fprop(1:3).eq."chr".or.Fprop(1:3).eq."osc") then
+             ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp) 
+!$OMP DO
+             do k=1,n_ci
+                do j=1,n_ci
+                   ctmp(k)=ctmp(k)+ vts(k,j)*c(j)
+                enddo
+             enddo
+!$OMP END PARALLEL
+             do k=1,n_ci
+                cpot=exp(ui*e_ci(k))*ctmp 
+             enddo
+          endif
+       else
+          do k=1,n_ci
+             if(Fprop(1:3).eq."chr") cpot=exp(ui*e_ci(k))*matmul(vts,c)
+             if(Fprop(1:3).eq."osc") cpot=exp(ui*e_ci(k))*matmul(vts,c)
+          enddo
+       endif 
+#endif
 
        return
 
@@ -405,27 +489,113 @@
 !------------------------------------------------------------------------
 
        integer(4) :: i,j,its
-       real(dbl) :: diff(3),dist,vts_dip
+       real(dbl)  :: diff(3),dist,vts_dip
 
        do its=1,nts_act
-        diff(1)=(mol_cc(1)-cts_act(its)%x)
-        diff(2)=(mol_cc(2)-cts_act(its)%y)
-        diff(3)=(mol_cc(3)-cts_act(its)%z)
-        dist=sqrt(dot_product(diff,diff))
-        do i=1,n_ci
-         do j=i,n_ci
-          vts_dip=-dot_product(mut(:,j,i),diff)/dist**3
-          if(its.eq.nts_act) write (6,'(2i6,3f8.3,2e13.5)') i,j, &
+          diff(1)=(mol_cc(1)-cts_act(its)%x)
+          diff(2)=(mol_cc(2)-cts_act(its)%y)
+          diff(3)=(mol_cc(3)-cts_act(its)%z)
+          dist=sqrt(dot_product(diff,diff))
+          do i=1,n_ci
+             do j=i,n_ci
+                vts_dip=-dot_product(mut(:,j,i),diff)/dist**3
+                if(its.eq.nts_act) write (6,'(2i6,3f8.3,2e13.5)') i,j, &
                           cts_act(its)%x,cts_act(its)%y, &
                           cts_act(its)%z,vts_dip,vts(its,i,j)
-          vts(its,j,i)=vts_dip
-          vts(its,i,j)=vts_dip
-         enddo
-        enddo
+                vts(its,j,i)=vts_dip
+                vts(its,i,j)=vts_dip
+             enddo
+          enddo
        enddo
 
        return
 
       end subroutine
+
+
+      function mat_mult(a,b)
+!------------------------------------------------------------------------
+! @brief Optimized matrix/vector multiplication for tesserae-based
+! arrays 
+!
+! @date Created: E. Coccia 5/7/18 
+! Modified:
+!------------------------------------------------------------------------
+
+       implicit none
+
+       real(dbl),    intent(in)    :: a(nts_act,nts_act),b(nts_act)
+       real(dbl)                   :: mat_mult(nts_act),tmp(nts_act)
+
+       integer(i4b)                :: i,j
+
+#ifndef OMP
+       mat_mult=matmul(a,b)
+#endif       
+#ifdef OMP
+
+       if (Fopt_chr(1:3).eq.'omp') then
+          tmp=0.d0
+!$OMP PARALLEL reduction (+:tmp)
+!$OMP DO
+          do j=1,nts_act
+             do i=1,nts_act
+                tmp(j) = tmp(j) + a(j,i)*b(i)
+             enddo
+          enddo
+!$OMP END PARALLEL
+          mat_mult=tmp
+       else
+          mat_mult=matmul(a,b)
+       endif
+#endif       
+
+       return
+
+      end function mat_mult
+
+
+      function cmat_mult(a,b)
+!------------------------------------------------------------------------
+! @brief Optimized matrix/vector multiplication for tesserae-based
+! (real and complex) arrays 
+!
+! @date Created: E. Coccia 9/7/18 
+! Modified:
+!------------------------------------------------------------------------
+
+       implicit none
+
+       real(dbl),    intent(in)    :: a(n_ci,n_ci)
+       complex(cmp), intent(in)    :: b(n_ci)
+       complex(cmp)                :: cmat_mult(n_ci),tmp(n_ci)
+
+       integer(i4b)                :: i,j
+
+#ifndef OMP
+       cmat_mult=matmul(a,b)
+#endif       
+#ifdef OMP
+       if (Fopt(1:3).eq.'omp') then
+          tmp=0.d0
+!$OMP PARALLEL reduction (+:tmp)
+!$OMP DO
+          do j=1,n_ci
+             do i=1,n_ci
+                tmp(j) = tmp(j) + a(j,i)*b(i)
+             enddo
+          enddo
+!$OMP END PARALLEL
+          cmat_mult=tmp
+       else
+          cmat_mult=matmul(a,b)
+       endif
+#endif       
+
+       return
+
+      end function cmat_mult
+
+
 
       end module

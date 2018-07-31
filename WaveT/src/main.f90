@@ -1,6 +1,6 @@
       program tdcis
 
-       use constants, only: myrank,nproc,ierr_mpi
+       use constants, only: myrank,nproc,ierr_mpi,nthreads
        use readio  
        use spectra
        use dissipation 
@@ -37,6 +37,14 @@
 !      read in the input parameter for the present evolution
           call system_clock(st,rate)
 #endif
+
+#ifdef OMP
+       nthreads=omp_get_max_threads( )
+#endif
+#ifndef OMP
+       nthreads=1
+#endif
+
        if (myrank.eq.0) call read_input
 
 
@@ -57,7 +65,7 @@
           write(*,'(a)') 
           write(*,*) 'OMP parallelization on' 
           write(*,'(a,i8)') 'The number of processors available = ', omp_get_num_procs ( )
-          write(*,'(a,i8)') 'The number of threads available    = ', omp_get_max_threads ( )
+          write(*,'(a,i8)') 'The number of threads available    = ', nthreads 
           write(*,'(a)') 
           write(*,*) '*************OMP*****************'
        endif 
@@ -67,7 +75,8 @@
           if (Fmdm(1:3).ne."vac") then
              call set_global_tdplas(dt,Fmdm,mol_cc,n_ci,n_ci_read,c_i, &
                                e_ci,mut,fmax,omega,Ffld,n_out,n_f, &
-                               tdelay,pshift,Fbin,restart,n_restart)
+                               tdelay,pshift,Fbin,Fopt,nthreads, &
+                               restart,n_restart)
              if (myrank.eq.0) call read_medium_input
           endif
 
