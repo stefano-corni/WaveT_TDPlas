@@ -14,6 +14,7 @@
 ! medium object/surface variables 
       integer(i4b) :: n_q                        !< stride in updating the medium-molecule interaction
       integer(i4b) :: nsph                       !< number of spheres/oids for both dipole propagation and building BEM surface 
+      integer(i4b) :: ntst                       !< threshold value for nts_act for optimized loops
       ! Dipole propagation
       real(dbl), allocatable :: sph_centre(:,:)  !< Centers of spheres/oids (:,nsph)
       real(dbl), allocatable :: sph_maj(:)       !< Principal axis modulus (nsph) of spheroids (spheres: sph_maj=sph_min)
@@ -58,6 +59,7 @@
                         Fgamess,&    !< if 'yes' write out matrix for gamess calculations of states
                         Ftest,     & !< Test Flag: see below
                         Fdeb,      & !< Debug Flag: see below
+                        Fopt_chr     !< Optimized loops with OMP
                         Fmdm_res     !< Medium restart
                                      !! 
       
@@ -93,7 +95,8 @@
              ncycmax,thrshld,mix_coef,                               &
              FinitBEM,Fsurf,Finit_mdm,read_medium_freq,              &
              read_medium_tdplas,n_omega,omega_ini,omega_end,         &
-             Fwrite,Fmdm_relax,Fgamess,mpibcast_readio_mdm,Fmdm_res
+             Fwrite,Fmdm_relax,Fgamess,mpibcast_readio_mdm,Fopt_chr, &
+             ntst,Fmdm_res          
 !
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -112,7 +115,7 @@
                          interaction_type,propagation_type,            &
                          scf_mix_coeff,scf_max_cycles,scf_threshold,   &
                          local_field,debug_type,out_level,test_type,   &
-                         medium_relax
+                         medium_relax,ntst
        namelist /medium/ medium_type,medium_init,medium_pol,bem_type,  &
                          bem_read_write                   
        namelist /surface/input_surface,spheres_number,spheroids_number,&
@@ -140,6 +143,14 @@
        read(*,nml=eps_function) 
        call write_nml_eps_function()
        call write_nml_all()
+
+       if (nts_act.gt.ntst.and.nthr.gt.1) then 
+          Fopt_chr(1:3)='omp'
+          write(*,*) 'OMP-optimized loops for charges'
+       else
+          Fopt_chr(1:3)='non'
+          write(*,*) 'Matmul is always used' 
+       endif
 
        return
 
@@ -261,6 +272,8 @@
        medium_init='fro'
        MPL_ord=1 ! SP 29/06/17: multipole order (not used)
        nts_act=0 
+       ! Threshold value for optimized loops
+       ntst=150
 
        return
 
@@ -1099,7 +1112,7 @@
        call mpi_bcast(Finit_mdm,            flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fshape,               flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fsurf,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
- 
+       call mpi_bcast(Fopt_chr,             flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
 
        if (Fprop(1:3).eq.'chr') call mpi_bcast(nts_act,    1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) 
        if (Fprop(1:3).eq.'dip') call mpi_bcast(nsph,       1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
@@ -1119,6 +1132,7 @@
        !Send input variables to the slaves
        call mpi_bcast(n_q,                  1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(MPL_ord,              1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(ntst,                 1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
        call mpi_bcast(interaction_stride,   1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(scf_mix_coeff,        1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)

@@ -172,10 +172,10 @@ module dissipation
 !------------------------------------------------------------------------
 
    implicit none
-   complex(cmp), intent(in)   :: c(nci)
-   integer,     intent(in)   :: nci
+   complex(cmp),  intent(in)   :: c(nci)
+   integer,       intent(in)   :: nci
    real(dbl),     intent(inout):: pjump(2*nf+nexc+1)
-   integer                   :: i,j,k
+   integer                     :: i,j,k
    real(dbl)                   :: weight, tmp, sumc
 
    dsp=0.d0
@@ -191,16 +191,41 @@ module dissipation
          dsp = dsp + sp_gam(i)*weight
          pjump(i) = sp_gam(i)*weight
       enddo
-      k=nexc
-      do i=nexc,1,-1
-         tmp=abs(c(i+1))
-         do j=i-1,1,-1
-            k=k+1
-            weight=tmom2(k)*tmp**2
-            dsp = dsp + sp_gam(k)*weight
-            pjump(k) = sp_gam(k)*weight
+      !k=nexc
+      if (Fopt(1:3).eq.'omp') then
+#ifdef OMP
+!$OMP PARALLEL reduction (+:dsp)
+!$OMP DO
+#endif
+         do i=nexc,1,-1
+            tmp=abs(c(i+1))
+            do j=i-1,1,-1
+               !k=k+1
+               !weight=tmom2(k)*tmp**2
+               !dsp = dsp + sp_gam(k)*weight
+               !pjump(k) = sp_gam(k)*weight
+               weight=tmom2(ik(j,i))*tmp**2
+               dsp = dsp + sp_gam(ik(j,i))*weight
+               pjump(ik(j,i)) = sp_gam(ik(j,i))*weight
+           enddo
          enddo
-      enddo
+#ifdef OMP
+!$OMP END PARALLEL
+#endif
+      else
+         do i=nexc,1,-1
+            tmp=abs(c(i+1))
+            do j=i-1,1,-1
+               !k=k+1
+               !weight=tmom2(k)*tmp**2
+               !dsp = dsp + sp_gam(k)*weight
+               !pjump(k) = sp_gam(k)*weight
+               weight=tmom2(ik(j,i))*tmp**2
+               dsp = dsp + sp_gam(ik(j,i))*weight
+               pjump(ik(j,i)) = sp_gam(ik(j,i))*weight
+           enddo
+         enddo
+      endif 
 
       do i=1,nexc
          tmp=abs(c(i+1))
@@ -215,22 +240,57 @@ module dissipation
             pjump(i+nf) = nr_gam(i)*tmp**2
          endif
       enddo
-      k=nexc
-      do i=nexc,1,-1
-         tmp=abs(c(i+1))
-         do j=i-1,1,-1
-            k=k+1
-            if (Fdis_rel.eq."dip") then
-               weight=tmom2(k)*tmp**2
-               dnr = dnr + nr_gam(k)*weight
-               pjump(k+nf) = nr_gam(k)*weight
+      !k=nexc
+      if (Fopt(1:3).eq.'omp') then
+#ifdef OMP
+!$OMP PARALLEL reduction (+:dnr)
+!$OMP DO
+#endif
+         do i=nexc,1,-1
+            tmp=abs(c(i+1))
+            do j=i-1,1,-1
+               !k=k+1
+               if (Fdis_rel.eq."dip") then
+                   !weight=tmom2(k)*tmp**2
+                   !dnr = dnr + nr_gam(k)*weight
+                   !pjump(k+nf) = nr_gam(k)*weight
+                   weight=tmom2(ik(j,i))*tmp**2
+                   dnr = dnr + nr_gam(ik(j,i))*weight
+                   pjump(ik(j,i)+nf) = nr_gam(ik(j,i))*weight
 !      elseif (nr_typ.eq.1) then
-            elseif (Fdis_rel.eq."mat") then
-               dnr = dnr + nr_gam(k)*tmp**2
-               pjump(k+nf) = nr_gam(k)*tmp**2
-            endif
+               elseif (Fdis_rel.eq."mat") then
+                   !dnr = dnr + nr_gam(k)*tmp**2
+                   !pjump(k+nf) = nr_gam(k)*tmp**2
+                   dnr = dnr + nr_gam(ik(j,i))*tmp**2
+                   pjump(ik(j,i)+nf) = nr_gam(ik(j,i))*tmp**2
+               endif
+            enddo
          enddo
-      enddo
+#ifdef OMP
+!$OMP END PARALLEL
+#endif
+      else
+         do i=nexc,1,-1
+            tmp=abs(c(i+1))
+            do j=i-1,1,-1
+               !k=k+1
+               if (Fdis_rel.eq."dip") then
+                   !weight=tmom2(k)*tmp**2
+                   !dnr = dnr + nr_gam(k)*weight
+                   !pjump(k+nf) = nr_gam(k)*weight
+                   weight=tmom2(ik(j,i))*tmp**2
+                   dnr = dnr + nr_gam(ik(j,i))*weight
+                   pjump(ik(j,i)+nf) = nr_gam(ik(j,i))*weight
+!      elseif (nr_typ.eq.1) then
+               elseif (Fdis_rel.eq."mat") then
+                   !dnr = dnr + nr_gam(k)*tmp**2
+                   !pjump(k+nf) = nr_gam(k)*tmp**2
+                   dnr = dnr + nr_gam(ik(j,i))*tmp**2
+                   pjump(ik(j,i)+nf) = nr_gam(ik(j,i))*tmp**2
+               endif
+            enddo
+         enddo
+      endif 
 
 !   if (idep.eq.0) then
       if (Fdis_deph.eq."exp") then
@@ -407,7 +467,9 @@ module dissipation
       !c(1)=c(1)/sqrt(pjump(istate)*dsp/dt)
       i_sp=i_sp+1
 #ifndef MPI 
+      if (Fwrt(1:3).eq.'yes') then
       write(*,*) 'Jump due to spontaneous emission, channel n.:', istate, 'between', ie, 'and', ig 
+      endif
 #endif
       !Update charges to those in equilibrium with the ground state
       if (Fmdm_relax.eq."rel") then
@@ -458,7 +520,9 @@ module dissipation
 
       i_nr = i_nr +1
 #ifndef MPI 
+      if (Fwrt(1:3).eq.'yes') then
       write(*,*) 'Jump due to nonradiative relaxation, channel n.:', istate, 'between', ie, 'and', ig
+      endif
 #endif
 ! Pure dephasing occurring 
    elseif (eta.ge.tmp2.and.eta.lt.tmp3) then
@@ -501,7 +565,9 @@ module dissipation
       endif
       i_de = i_de + 1
 #ifndef MPI 
+      if (Fwrt(1:3).eq.'yes') then 
       write(*,*) 'Jump due to pure dephasing, channel n.:', istate 
+      endif
 #endif
    endif
 
