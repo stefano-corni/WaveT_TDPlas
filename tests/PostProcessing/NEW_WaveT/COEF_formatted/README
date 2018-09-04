@@ -1,0 +1,2 @@
+Runnig WaveT produces, other than the coefficient file c_t_1.dat and the other output files, pop_coh.inp, which is the input file for the postprocessing (the exe is make_pop_coh.x in WaveT/bin).
+Populations are in the file pop_t_1.dat, coherences are in coh_t_1.dat.

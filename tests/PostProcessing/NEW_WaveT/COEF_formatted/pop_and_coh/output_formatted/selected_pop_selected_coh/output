@@ -1,0 +1,27 @@
+ 
+ **********************************************
+ *                                            *
+ *        PostProcessing Tool for             *
+ *    computing populations and coherences    *
+ *                                            *
+ *                   by                       *
+ *              Stefano Corni                 *
+ *                  and                       *
+ *             Emanuele Coccia                *
+ *                                            *
+ **********************************************
+ 
+ Compute populations and coherences
+ 
+ Compute populations selected by input
+           3 state populations requested
+ States:           0           4          10
+ 
+ Compute coherences selected by input
+           3 state-state coherences requested
+ State pairs:
+           0 and           1
+           0 and           2
+           0 and           5
+ 
+Done , total elapsed time     0.129s
