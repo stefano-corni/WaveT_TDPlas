@@ -9,11 +9,15 @@
 #ifdef OMP
       use omp_lib
 #endif
+
 #ifdef MPI
+#ifndef SCALI
       use mpi
+#endif
 #endif
 
       implicit none
+
       real(dbl), allocatable :: occ(:)       !<Occupations                      
       real(dbl), allocatable :: Hqm(:,:)     !<QM-coupling super-matrix   
       real(dbl), allocatable :: Hqm_evt(:,:) !<eigenvalues of QM-coupling super-matrix 
