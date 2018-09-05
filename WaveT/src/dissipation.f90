@@ -3,8 +3,10 @@ module dissipation
   use readio
   use random
   use global_wavet, only: set_q0charges,Fmdm_relax
-#ifdef MPI 
-  use mpi
+#ifdef MPI
+#ifndef SCALI
+      use mpi
+#endif
 #endif
   use, intrinsic :: iso_c_binding
 #ifdef OMP
@@ -14,6 +16,7 @@ module dissipation
 ! @brief Contains routines for SSE
 
   implicit none
+
   real(dbl)                :: norm, dtot, dsp, dnr, dde 
   save 
   private
