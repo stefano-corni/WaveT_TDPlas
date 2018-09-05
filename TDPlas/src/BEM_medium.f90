@@ -7,13 +7,17 @@
 #ifdef OMP
       use omp_lib
 #endif
+
 #ifdef MPI
+#ifndef SCALI
       use mpi
+#endif
 #endif
 
 !      use, intrinsic :: iso_c_binding
 
       implicit none
+
 ! SP 25/06/17: variables starting with "BEM_" are public. 
       real(dbl), allocatable :: BEM_S(:,:),BEM_D(:,:)    !< Calderon S and D matrices 
       real(dbl), allocatable :: BEM_L(:),BEM_T(:,:)      !< $\Lambda$ and T eigenMatrices
@@ -200,19 +204,11 @@
        call init_BEM
        allocate(BEM_Qd(nts_act,nts_act))
        allocate(BEM_Q0(nts_act,nts_act))
-       if(Floc=='loc'.and.Fmdm(2:4).eq.'sol') then
-        allocate(BEM_Qdx(nts_act,nts_act))
-        allocate(BEM_Q0x(nts_act,nts_act))
-       end if
        ! Using Diagonal BEM           
        call init_BEM_diagonal
        call do_BEM_diagonal
        ! Write out matrices                     
        call out_BEM_gamess
-       ! Write out local-field matrices
-       if(Floc=='loc'.and.Fmdm(2:4).eq.'sol') then
-        call out_BEM_lf
-       end if
        ! Calculate potential on tesserae
        allocate(pot(nts_act))
        call do_pot_from_field(fmax(:,1),pot)
@@ -1468,42 +1464,6 @@
        return
 
       end subroutine
-
-
-      subroutine out_BEM_lf  
-!------------------------------------------------------------------------
-! @brief Output propagation matrices 
-!
-! @date Created: S. Pipolo
-! Modified:
-!------------------------------------------------------------------------
-
-       integer(i4b):: i,j
-
-#ifndef MPI
-       myrank=0
-#endif
-
-       open(7,file="np_bem.mlf",status="unknown")
-       do j=1,nts_act
-        do i=1,nts_act
-         write(7,'(D20.12)') BEM_Q0x(i,j)/cts_act(i)%area
-        enddo
-       enddo
-       close(7)
-       if (myrank.eq.0)write(6,*) "Written the static local-field matrix in gamess format for PCM matrices"
-       open(7,file="np_bem.mld",status="unknown")
-       do j=1,nts_act
-        do i=1,nts_act
-         write(7,'(D20.12)') BEM_Qdx(i,j)/cts_act(i)%area
-        enddo
-       enddo
-       close(7)
-       if (myrank.eq.0)write(6,*)"Written the dynamic local-field matrix in gamess format for PCM matrices"
-
-       return
-
-      end subroutine out_BEM_lf
 
 
       subroutine out_BEM_diagmat 

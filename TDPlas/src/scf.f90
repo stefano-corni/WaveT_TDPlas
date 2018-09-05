@@ -9,11 +9,15 @@
 #ifdef OMP
       use omp_lib
 #endif
+
 #ifdef MPI
+#ifndef SCALI
       use mpi
+#endif
 #endif
 
       implicit none
+
       real(dbl), allocatable :: Htot(:,:)    !< Hamiltonian matrix in SCF cycle
       real(dbl), allocatable :: eigt_c(:,:)  !< Eigenvectors of Htot at current cycle
       real(dbl), allocatable :: eigv_c(:)    !< Eigenvalues of Htot at current cycle
