@@ -1,10 +1,21 @@
       module readio
       use constants       
       use random
+
 #ifdef MPI
+#ifndef SCALI
       use mpi
 #endif
+#endif
+
       implicit none
+
+#ifdef MPI
+#ifdef SCALI
+      include 'mpif.h'
+#endif
+#endif
+
       save
 !
       integer(i4b) :: n_f,n_ci,n_ci_read,n_step,n_out,ncit 
@@ -24,9 +35,10 @@
       integer(i4b)              :: n_jump    ! number of quantum jumps along a simulation
       integer(i4b)              :: diff_step ! effective number of steps for restart
       integer(i4b)              :: restart_seed  ! seed for restart
+      integer(i4b), allocatable :: pop(:) !Array for the postprocessing input
+!
       real(dbl), allocatable    :: mut_np2(:,:) !squared dipole from NP
       real(dbl)                 :: tdelay(npulsemax), pshift(npulsemax)  ! time delay and phase shift with two pulses
-!
       !real(dbl), allocatable    :: c_i(:),e_ci(:)  ! energy from cis
       real(dbl), allocatable    :: e_ci(:)  ! energy from cis
       complex(cmp), allocatable :: c_i(:),c_i_prev(:),c_i_prev2(:) ! coefficients from cis
@@ -47,6 +59,7 @@
       !logical :: qjump ! =.true. quantum jump, =.false. stochastic propagation
       !logical :: ernd=.false. !add normal number to E: E -> E + krnd*rnd()
 ! Global flags        
+      character(flg), allocatable :: coh(:) !Array for the postprocessing input
       character(flg) :: Fdis_rel  !< Flag for decay for internal conversion, relaxation via dipole "dip" or matrix "mat"
       character(flg) :: Fdis_deph !< Flag for dephasing operator: exp(i delta_i)|i><i| "exp" or |i><i|-|0><0| "i-0" 
       character(flg) :: Fdis !< Flag for dissipation type: 
@@ -69,14 +82,16 @@
       character(flg) :: Fbin !< Flag for writing output files with binary format
       character(flg) :: Fopt !< Flag for using OMP-optimized matrix/vector multiplication 
       character(flg) :: Fwrt !< Flag for SSE output
-      character(flg) :: Fcoh !< Flag for writing coherences
 ! Flags read from input file
       character(flg) :: medium,radiative,dissipative,lsim,absorber,binary,out_sse
       character(flg) :: dis_prop
       character(flg) :: restart 
       character(flg) :: propa
       character(flg) :: full ! full or only |e> -> |0> relaxation
-      character(flg) :: wrt_coh
+      character(flg) :: tar  ! flags for the postprocessing input
+      character(flg) :: all_pop ! flags for the postprocessing input
+      character(flg) :: all_coh ! flags for the postprocessing input
+      character(flg) :: write_bin ! flags for the postprocessing input
       integer(i4b) :: iseed  ! seed for random number generator
       integer(i4b) :: nexc   ! number of excited states
       integer(i4b) :: nrel   ! number of relaxation channels
@@ -111,7 +126,8 @@
              n_jump,Fsim,diff_step,mpibcast_readio,         &
              mpibcast_e_dip,mpibcast_sse,mpibcast_restart,  &
              nspectra,Fabs,ion_rate,mpibcast_ion_rate,Fbin, &
-             ncit,Fopt,ik,Fwrt,Fcoh 
+             ncit,Fopt,ik,Fwrt,tar,all_pop,all_coh,pop,coh, &
+             write_bin 
              
 !
       contains
@@ -132,7 +148,7 @@
        !Molecular parameters 
        namelist /general/n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,& 
                          dt,n_step,n_out,propa,n_restart,lsim,absorber,&
-                         binary,ncit,wrt_coh
+                         binary,ncit
        !External field paramaters
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
                         npulse,tdelay,pshift
@@ -140,6 +156,8 @@
        namelist /sse/ dissipative,idep,dis_prop,nrnd,tdis,nr_typ,krnd,out_sse
        !Namelist spectra
        namelist /spectra/ start,tau,dir_ft
+       !Namelist for postprocessing
+       namelist /pop_coh/ tar,all_pop,all_coh,pop,coh,write_bin
 
        write(*,*) ''
        write(*,*) '*****************************************************'
@@ -200,6 +218,12 @@
        endif
 
        if (Fabs(1:3).eq.'abs') call read_ion_rate
+
+       
+       !Namelist for postprocessing
+       call init_nml_pop_coh()
+       read(*,nml=pop_coh)
+       call write_nml_pop_coh()
 
        return
 
@@ -737,8 +761,6 @@
        binary='n'
        ! Threshold value for doing matmul or explicit loop in prop()
        ncit=150
-       ! Write d_t_*.dat file
-       wrt_coh='y'
 
        return
 
@@ -828,6 +850,32 @@
 
       end subroutine init_nml_sse
 
+      subroutine init_nml_pop_coh()
+!------------------------------------------------------------------------
+! @brief Read variables in the namelist pop_coh and put conditions 
+!
+! @date Created   : E. Coccia 23 Aug 2018
+! Modified  :
+! @param tar,all_pop,all_coh,pop,coh 
+!------------------------------------------------------------------------
+
+      allocate(pop(n_ci))
+      allocate(coh(n_ci*(n_ci)/2))
+ 
+      !Target for postprocessing
+      tar='all'
+      !Compute all the populations and coherences
+      all_pop='yes'
+      all_coh='yes'
+      !Initialize array for populations
+      pop=-1 
+      !Initialize array for coherence
+      coh=''
+
+
+      return
+
+      end subroutine init_nml_pop_coh  
 
       subroutine write_nml_general()
 !------------------------------------------------------------------------
@@ -934,13 +982,6 @@
           write(*,*) 'Matmul is used in the propagation.'
           Fopt(1:3)='non'
        endif 
-       select case (wrt_coh)
-        case ('y','Y')
-         Fcoh(1:3)='yes'
-        case ('n','N')
-         Fcoh(1:3)='non'
-         write(*,*) 'Coherences not written'
-       end select
        write(*,*) ''
 
        return
@@ -1091,6 +1132,62 @@
 
       end subroutine write_nml_sse
 
+      subroutine write_nml_pop_coh()
+!------------------------------------------------------------------------
+! @brief Write pop_coh namelist for postprocessing 
+!
+! @date Created   : E. Coccia 22 Aug 2018
+! Modified  :
+!------------------------------------------------------------------------
+
+       implicit none
+
+       integer(i4b)    :: i
+       character(3)    :: tmp 
+
+       open(50,file='pop_coh.inp',status='unknown')  
+    
+       write(50,*) '&pop_coh' 
+       write(50,*) 'nstates =',n_ci 
+       write(50,*) 'n_f =',n_f
+       write(50,*) 'nsteps =',n_step/n_out
+       write(50,*) 'read_bin =','"',binary(1:1),'"'
+       write(50,*) 'write_bin =','"',write_bin(1:1),'"'
+       write(50,*) 'tar =', '"',tar(1:3),'"',  ' != pop, coh or all '
+       if (tar(1:3).eq.'all'.or.tar(1:3).eq.'pop') then
+         write(50,*) 'all_pop =','"',all_pop(1:3),'"',' != yes all pop '
+       endif
+       if (tar(1:3).eq.'all'.or.tar(1:3).eq.'coh') then
+         write(50,*) 'all_coh =','"',all_coh(1:3),'"',' != yes all coh ' 
+       endif
+       if (all_pop(1:3).ne.'yes') then  
+          if (tar(1:3).eq.'all'.or.tar(1:3).eq.'pop') then 
+             write(50,*) 'pop = '
+             do i=1,n_ci
+                if (pop(i).ne.-1) write(50,*)  pop(i)
+             enddo
+          endif
+       endif
+
+       if (all_coh(1:3).ne.'yes') then
+          if (tar(1:3).eq.'all'.or.tar(1:3).eq.'coh') then
+             write(50,*) 'coh ='
+             do i=1,n_ci*(n_ci-1)/2
+                tmp=coh(i)
+                if (tmp.ne.'') write(50,*)  coh(i) 
+             enddo
+          endif 
+       endif
+       write(50,*) '/'
+
+       close(50)     
+
+       deallocate(pop,coh) 
+
+       return
+
+      end subroutine write_nml_pop_coh
+
       subroutine checkfile(filename,channel)
 !------------------------------------------------------------------------
 ! @brief Check file existence 
@@ -1180,7 +1277,6 @@
        call mpi_bcast(Fabs,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fbin,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fopt,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(Fcoh,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
 #endif
 
        return 
