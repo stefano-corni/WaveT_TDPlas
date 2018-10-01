@@ -1073,9 +1073,9 @@
       ! charge propagation with drude/lorentz and cosmo/onsager equations
        integer(i4b) :: its  
 
-!EC:  mat_mult optimizes n_ci**2-based statements 
+!EC:  mat_mult optimizes nts**2-based statements 
 !     mat_mult uses matmul or explicit loops (with OMP), 
-!     according to the value of n_ci
+!     according to the value of nts
 
       ! Reaction Field
        qr_t=qr_tp+f1*dqr_tp+f2*fqr_tp
@@ -1110,9 +1110,9 @@
       ! charge propagation with drude/lorentz and onsager equations
        integer(i4b) :: its  
 
-!EC:  mat_mult optimizes n_ci**2-based statements 
+!EC:  mat_mult optimizes nts**2-based statements 
 !     mat_mult uses matmul or explicit loops (with OMP), 
-!     according to the value of n_ci
+!     according to the value of nts
 
       ! SP: Reaction Field eq.46 Corni et al. JPCA 2015
       qr_t=qr_tp-dt*ONS_taum1*qr_tp+dt*ONS_taum1*mat_mult(BEM_Q0,pot_tp2)&
@@ -1206,9 +1206,9 @@
 !      f4=0.5d0*dt
 !      f5=eps_gm*f2
 
-!EC:  mat_mult optimizes n_ci**2-based statements 
+!EC:  mat_mult optimizes nts**2-based statements 
 !     mat_mult uses matmul or explicit loops (with OMP), 
-!     according to the value of n_ci
+!     according to the value of nts
 
        qr_t=qr_tp+f1*dqr_tp+f2*fqr_tp
 
@@ -1248,9 +1248,9 @@
       ! Charge propagation with debye and IEF equations 
        integer(i4b) :: its  
 
-!EC:  mat_mult optimizes n_ci**2-based statements 
+!EC:  mat_mult optimizes nts**2-based statements 
 !     mat_mult uses matmul or explicit loops (with OMP), 
-!     according to the value of n_ci
+!     according to the value of nts
 
       ! Reaction Field
        qr_t=qr_tp-dt*mat_mult(BEM_R,qr_tp)+dt*mat_mult(BEM_Qt,pot_tp) &
@@ -1283,9 +1283,9 @@
       ! Charge propagation with debye and IEF equations one taud 
        integer(i4b) :: its  
 
-!EC:  mat_mult optimizes n_ci**2-based statements 
+!EC:  mat_mult optimizes nts**2-based statements 
 !     mat_mult uses matmul or explicit loops (with OMP), 
-!     according to the value of n_ci
+!     according to the value of nts
 
       ! Reaction Field
        qr_t=qr_tp-dt*taum1*qr_tp+dt*taum1*mat_mult(BEM_Q0,pot_tp) &
