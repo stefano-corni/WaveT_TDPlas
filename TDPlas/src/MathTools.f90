@@ -71,17 +71,9 @@
 
         m=zero
 
-#ifdef OMP
-!$OMP PARALLEL REDUCTION(+:m)
-!$OMP DO
-#endif OMP
         do i=1,size(v)
           m=m+v(i)*v(i)
         enddo
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
-#endif OMP
 
         m=sqrt(m)
 
