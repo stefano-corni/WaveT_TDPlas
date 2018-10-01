@@ -622,10 +622,7 @@
           value=dot_product(cts_act(j)%n,scrd3)/dist**3 
        else
           sum_d=0.d0
-#ifdef OMP
-!$OMP PARALLEL REDUCTION(+:sum_d)
-!$OMP DO 
-#endif
+
           do k=1,i-1
              scrd3(1)=(cts_act(i)%x-cts_act(k)%x)
              scrd3(2)=(cts_act(i)%y-cts_act(k)%y)
@@ -633,15 +630,7 @@
              dist=sqrt(dot_product(scrd3,scrd3))
              sum_d=sum_d+dot_product(cts_act(k)%n,scrd3)/dist**3*cts_act(k)%area 
           enddo
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
-#endif
 
-#ifdef OMP
-!$OMP PARALLEL REDUCTION(+:sum_d)
-!$OMP DO 
-#endif
           do k=i+1,nts_act
              scrd3(1)=(cts_act(i)%x-cts_act(k)%x)
              scrd3(2)=(cts_act(i)%y-cts_act(k)%y)
@@ -649,10 +638,7 @@
              dist=sqrt(dot_product(scrd3,scrd3))
              sum_d=sum_d+dot_product(cts_act(k)%n,scrd3)/dist**3*cts_act(k)%area 
           enddo
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
-#endif
+
           sum_d=-(2.0*pi+sum_d)/cts_act(i)%area
           value=sum_d
           !value=-1.0694*sqrt(4.d0*pi*cts_act(i)%area)/(2.d0* &
@@ -720,10 +706,7 @@
        if(Fwrite.eq."high") then
           if (myrank.eq.0) write(6,*) "S matrix diagonalized "
        endif
-#ifdef OMP
-!$OMP PARALLEL 
-!$OMP DO
-#endif
+
        do i=1,nts_act
           if(eigv(i).le.0.d0) then
             write(6,*) "WARNING:",i," eig of S is negative or zero!"
@@ -732,10 +715,7 @@
           endif
           scr1(:,i)=eigt(:,i)*sqrt(eigv(i))
        enddo
-#ifdef OMP
-!$OMP ENDDO 
-!$OMP END PARALLEL
-#endif
+
        eigt_t=transpose(eigt)
        Sp12=matmul(scr1,eigt_t)                   
 
@@ -825,10 +805,7 @@
          ! SC: no spurious negative square frequencies
 
 
-#ifdef OMP
-!$OMP PARALLEL 
-!$OMP DO 
-#endif
+
          do i=1,nts_act
            if(fact2(i).lt.0.d0) then
              write(6,*) "WARNING: BEM_W2(",i,") is ", fact2(i)+eps_w0*eps_w0
@@ -837,10 +814,7 @@
              BEM_L(i)=-twp
            endif
          enddo
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
-#endif
+
          if (eps_w0.eq.zero) eps_w0=1.d-8
          BEM_W2(:)=fact2(:)+eps_w0*eps_w0  
          K0(:)=fact2(:)/BEM_W2(:)
