@@ -2,9 +2,6 @@
 ! Modulo copiato spudoratamente da GAMESS
       use global_tdplas
       use constants    
-#ifdef OMP
-      use omp_lib
-#endif
 
 #ifdef MPI
 #ifndef SCALI
@@ -360,10 +357,6 @@
       ZCTST(:) = ZERO
       AST(:) = ZERO
 !
-#ifdef OMP
-!$OMP PARALLEL 
-!$OMP DO 
-#endif
       DO 310 ITS = 1, 60
 !
 !
@@ -428,11 +421,6 @@
       isfet(n_tes*(its-1)+i_tes) = nsfe
       enddo
  310  CONTINUE
-
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
-#endif
 
 !
 !
@@ -516,11 +504,6 @@
 !
       VOL = ZERO
 
-#ifdef OMP
-!$OMP PARALLEL REDUCTION(+:VOL,stot)  
-!$OMP DO 
-#endif OMP
-
       DO ITS = 1, NTS
 !
 !
@@ -531,11 +514,6 @@
          VOL = VOL + cts(ITS)%area * PROD / 3.0D+00
          stot = stot + cts(ITS)%area
       ENDDO
-
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
-#endif OMP
 
 !
 !     Stampa la geometria della cavita'
@@ -1470,10 +1448,6 @@
       its_a=1
       area_tot=0.d0
 
-#ifdef OMP
-!$OMP PARALLEL
-!$OMP DO
-#endif
       do its=1,nts_act
         vert(:,1)=c_nodes(:,el_nodes(1,its))
         vert(:,2)=c_nodes(:,el_nodes(2,its))
@@ -1499,10 +1473,6 @@
         cts_act(its_a)%rsfe=1.d20   
         its_a=its_a+1
 10    enddo
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
-#endif
 
       if (myrank.eq.0) then
          write(6,*) "nts,nts after eliminating replica",nts_act,its_a-1
@@ -1511,10 +1481,6 @@
       nts_act=its_a-1
 ! choose the outward normal, with an euristic procedure tha may not always work!!
 
-#ifdef OMP
-!$OMP PARALLEL
-!$OMP DO
-#endif
       do its=1,nts_act
         dist_max=0.d0
         j_max=its
@@ -1532,10 +1498,6 @@
         dist_v(3)=cts_act(its)%z-cts_act(j_max)%z
         cts_act(its)%n=cts_act(its)%n*sign(1.d0,dot_product(cts_act(its)%n,dist_v))
       enddo
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
-#endif
 
       if (myrank.eq.0) then
 ! Save in files for subsequent calculations or checks

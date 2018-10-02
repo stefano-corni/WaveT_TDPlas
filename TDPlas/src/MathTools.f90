@@ -226,7 +226,10 @@
        real(dbl),intent(out):: qtot  
        integer(i4b) :: its  
 
-       qtot=zero
+       !qtot=zero
+!EC 13/9/18: qtot is initalized to zero outside (cumulative sum from reaction and
+!    local charges)
+
 #ifdef OMP
 !$OMP PARALLEL REDUCTION(+:mu,qtot)
 !$OMP DO 

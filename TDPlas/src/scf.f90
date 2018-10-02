@@ -6,9 +6,6 @@
       use MathTools
       use BEM_medium    
       use, intrinsic :: iso_c_binding
-#ifdef OMP
-      use omp_lib
-#endif
 
 #ifdef MPI
 #ifndef SCALI
@@ -252,17 +249,9 @@
        real(dbl), intent(OUT):: q(nts_act)     
        integer(i4b)::i    
 
-!#ifdef OMP
-!!$OMP PARALLEL 
-!!$OMP DO 
-!#endif
        do i=1,nts_act
          pot(i)=dot_product(c_c,matmul(vts(i,:,:),c_c))
        enddo 
-!#ifdef OMP
-!!$OMP ENDDO
-!!$OMP END PARALLEL
-!#endif
 
        q=(1.-mix_coef)*q+mix_coef*matmul(BEM_Q0,pot)
 ! SC 12/8/2016: apparently for NP, charge compensation is needed
