@@ -28,10 +28,10 @@
       character(flg) 	        :: Ffld				        ! shape of impulse
       character(flg)            :: Fbin                     ! binary output   
       character(flg)            :: Fopt                     ! OMP-optimized matrix/vector multiplication 
-      integer(i4b) 	            :: n_out,n_f		     	! auxiliaries for output
+      integer(i4b) 	        :: n_out,n_f		     	! auxiliaries for output
       integer(i4b)              :: nthr                     ! number of threads
-      !character(1)              :: medium_res              !restart for medium 
-      !integer(i4b)              :: n_res                   ! frequency for restart
+      character(1)              :: medium_res              !restart for medium 
+      integer(i4b)              :: n_res                   ! frequency for restart
 
       contains
   

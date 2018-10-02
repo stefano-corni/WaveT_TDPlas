@@ -65,8 +65,9 @@
                         Fgamess,&    !< if 'yes' write out matrix for gamess calculations of states
                         Ftest,     & !< Test Flag: see below
                         Fdeb,      & !< Debug Flag: see below
-                        Fopt_chr     !< Optimized loops with OMP
-                        !Fmdm_res     !< Medium restart
+                        Fopt_chr,  & !< Optimized loops with OMP
+                        Fmdm_res     !< Medium restart
+
                                      !! 
       
 ! namelists user-friendly variables 

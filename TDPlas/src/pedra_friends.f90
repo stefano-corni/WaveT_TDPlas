@@ -357,6 +357,7 @@
       ZCTST(:) = ZERO
       AST(:) = ZERO
 !
+
       DO 310 ITS = 1, 60
 !
 !
@@ -421,6 +422,7 @@
       isfet(n_tes*(its-1)+i_tes) = nsfe
       enddo
  310  CONTINUE
+
 
 !
 !
@@ -504,6 +506,7 @@
 !
       VOL = ZERO
 
+
       DO ITS = 1, NTS
 !
 !
@@ -514,6 +517,7 @@
          VOL = VOL + cts(ITS)%area * PROD / 3.0D+00
          stot = stot + cts(ITS)%area
       ENDDO
+
 
 !
 !     Stampa la geometria della cavita'
