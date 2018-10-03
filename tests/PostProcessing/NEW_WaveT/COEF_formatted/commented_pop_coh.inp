@@ -1,0 +1,17 @@
+ &pop_coh
+ nstates =          11               !total number of states from WaveT
+ n_f =           1                   !output stride
+ nsteps =        5000                !number of steps 
+ read_bin ="n"                       !c_t_(n_f).dat is formatted ('n') or unformatted ('y')
+ write_bin ="n"                      !output file(s) is(are) formatted ('n') or unformatted ('y')
+ tar ="all"                          !compute pops and cohs ('all'), only pops ('pop') or only cohs ('coh') 
+ all_pop ="yes"                      !compute all the pops ('yes') or only a selection ('non') 
+ all_coh ="yes"                      !compute all the cohs ('yes') or only a selection ('non') 
+
+
+pop = 0 2 5                          !compute pop of states 0, 2 and 5
+
+coh = 0-1 0-4 2-3                    !compute coh between states 0 and 1, 0 and 4, 2 and 3
+
+
+ /

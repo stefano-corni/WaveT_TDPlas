@@ -1,0 +1,70 @@
+ 
+ *****************************************************
+ *****************************************************
+ **                                                 **
+ **                    WaveT                        **
+ **     Evolution of molecular wavefunctions        **
+ **   under external electromagnetic perturbations  **
+ **                                                 **
+ **                     by                          **
+ **                Stefano Corni                    **
+ **                Silvio Pipolo                    **
+ **               Emanuele Coccia                   **
+ **                 Gabriel Gil                     **
+ **                Jacopo Fregoni                   **
+ **                                                 **
+ *****************************************************
+ *****************************************************
+ 
+ Number to append to dat file           1
+ Number of CIS states to be read          10
+ Number of CIS states to be used          10
+ Molecular center of charge
+  0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
+ 
+ Time step (in au), number of steps, stride  5.000000000000000E-002      100000
+          20
+ 
+ No external medium, vacuum calculation
+ No restart
+ Only |k> -> |0> relaxation
+ Energy term is propagated analytically
+ Output files in binary format
+ Matmul is used in the propagation.
+ 
+ Time shape of the perturbing fieldmdg       
+ time at the center of the pulse (au):   750.000000000000     
+ Width of the pulse (time au):   50.0000000000000     
+ Frequency (au):  0.142000000000000     
+ Maximum E field  1.000000000000000E-005  0.000000000000000E+000
+  0.000000000000000E+000
+ 
+ No dissipation
+ SSE quantum jumps not written
+ 
+ Excitation energies read from input, in Hartree
+           1  0.239189226989031     
+           2  0.240144941640188     
+           3  0.241982406620973     
+           4  0.248481326284246     
+           5  0.255831186268947     
+           6  0.264390132375462     
+           7  0.270455628548442     
+           8  0.292505208317815     
+           9  0.308951472642535     
+          10  0.330458849355420     
+ 
+ Starting point for FT calculation  0.000000000000000E+000
+ Artificial damping   2.00000000000000     
+ Direction along which the field is oriented  0.000000000000000E+000
+   1.00000000000000       0.000000000000000E+000
+ 
+ *************OMP*****************
+
+ OMP parallelization on
+The number of processors available =        8
+The number of threads available    =        1
+
+ *************OMP*****************
+Done reading input & setting up the field, took     0.046s
+Done , total elapsed time    16.376s

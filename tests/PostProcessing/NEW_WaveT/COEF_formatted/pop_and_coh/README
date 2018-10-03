@@ -1,0 +1,1 @@
+All the tests here produce a formatted output file(s). To get the unformatted one(s), use write_bin='y' in pop_coh.inp.

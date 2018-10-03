@@ -6,8 +6,11 @@
 #ifdef OMP
       use omp_lib
 #endif
-#ifdef MPI 
+
+#ifdef MPI
+#ifndef SCALI
       use mpi
+#endif
 #endif
 
       implicit none
@@ -68,17 +71,9 @@
 
         m=zero
 
-#ifdef OMP
-!$OMP PARALLEL REDUCTION(+:m)
-!$OMP DO
-#endif OMP
         do i=1,size(v)
           m=m+v(i)*v(i)
         enddo
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
-#endif OMP
 
         m=sqrt(m)
 
@@ -231,7 +226,10 @@
        real(dbl),intent(out):: qtot  
        integer(i4b) :: its  
 
-       qtot=zero
+       !qtot=zero
+!EC 13/9/18: qtot is initalized to zero outside (cumulative sum from reaction and
+!    local charges)
+
 #ifdef OMP
 !$OMP PARALLEL REDUCTION(+:mu,qtot)
 !$OMP DO 

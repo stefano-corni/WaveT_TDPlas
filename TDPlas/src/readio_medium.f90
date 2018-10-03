@@ -4,11 +4,15 @@
       use constants           
       use global_tdplas       
       use pedra_friends
+
 #ifdef MPI
+#ifndef SCALI
       use mpi
+#endif
 #endif
 
       implicit none
+
       save
 !
 ! medium object/surface variables 
@@ -26,6 +30,8 @@
       real(dbl), allocatable :: vtsn(:)          !<nuclear potential on tesserae
       real(dbl), allocatable :: q0(:)            !< Charges at time 0 defined with Finit_mdm, here because used in scf
       ! Restart
+      !real(dbl)              :: fr_i(3),fx_i(3)  !< restart Onsager 
+      !real(dbl), allocatable :: qr_i(:),qx_i(:)  !< restart pcm  
 ! Dielectric function variables 
       real(dbl) :: eps_0,eps_d                   !< $\omega \rightarrow 0$ and $\omega \rightarrow \infty$ limits of $\epsilon(\omega)$
       real(dbl) :: tau_deb                       !< Debye's $\tau_D$
@@ -61,6 +67,7 @@
                         Fdeb,      & !< Debug Flag: see below
                         Fopt_chr,  & !< Optimized loops with OMP
                         Fmdm_res     !< Medium restart
+
                                      !! 
       
 ! namelists user-friendly variables 
@@ -83,7 +90,7 @@
                         bem_read_write,input_surface,medium_init,    &
                         debug_type,bem_type,local_field,medium_type, &
                         out_level,interaction_init,epsilon_omega,    &
-                        test_type,medium_relax,gamess,print_lf_matrix
+                        test_type,medium_relax,gamess
 
       private
       public read_medium,deallocate_medium,Fint,Feps,Fprop,          &
@@ -96,7 +103,7 @@
              FinitBEM,Fsurf,Finit_mdm,read_medium_freq,              &
              read_medium_tdplas,n_omega,omega_ini,omega_end,         &
              Fwrite,Fmdm_relax,Fgamess,mpibcast_readio_mdm,Fopt_chr, &
-             ntst,Fmdm_res          
+             ntst          
 !
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -169,7 +176,7 @@
                        out_level,test_type
 ! SP 13/07/18:: medium and surface not used but added for future implementations
        namelist /medium/ medium_type,medium_init,medium_pol,bem_type,  &
-                         bem_read_write,print_lf_matrix
+                         bem_read_write                   
        namelist /surface/input_surface,spheres_number,spheroids_number,&
          sphere_position_x,sphere_position_y,sphere_position_z,        &
          spheroid_axis_x,spheroid_axis_y,spheroid_axis_z,              &
@@ -381,8 +388,6 @@
        ! The following are not 
        interaction_type='pcm'
 
-       print_lf_matrix = 'non'
-
        return
 
       end subroutine init_nml_freq
@@ -412,8 +417,6 @@
        eps_gm=0.000757576
        f_vel=zero
        gamess='no '
-
-       print_lf_matrix = 'non'       
 
        return
 
@@ -553,13 +556,14 @@
            !np_relax=.true.
        end select
 ! EC 281117: added restart for medium
-       select case(medium_res)
-          case ('y','Y')
-           write(*,*) 'Restart for medium'
-           Fmdm_res='Yesr'
-          case ('n','N')
-           Fmdm_res='Nonr' 
-       end select
+       !select case(medium_res)
+       !   case ('y','Y')
+       !    write(*,*) 'Restart for medium'
+       !    Fmdm_res='Yesr'
+       !    call read_medium_restart()
+       !   case ('n','N')
+       !    Fmdm_res='Nonr' 
+       !end select
 
        return
 
@@ -759,20 +763,6 @@
          case default
           write(*,*) "Error, specify if boundary data & matrices", &
              "are read (read) or made and written out (write) "
-#ifdef MPI
-          call mpi_finalize(ierr_mpi)
-#endif
-          stop
-         end select
-         select case(print_lf_matrix)
-         case ('yes','Yes', 'YES')
-          Floc='loc'
-          write(6,*) "This run just writes matrices and boundary"
-         case ('non','Non', 'NON')
-          Floc='non'
-         case default
-          write(*,*) "Error, specify if local-field matrix", &
-             "should be written or not. "
 #ifdef MPI
           call mpi_finalize(ierr_mpi)
 #endif
@@ -1177,5 +1167,58 @@
        return
 
       end subroutine mpibcast_readio_mdm
+
+     
+!      subroutine read_medium_restart() 
+!------------------------------------------------------------------------
+! @brief Read restart 
+!
+! @date Created   : E. Coccia 28 Nov 2017
+! Modified  :
+!------------------------------------------------------------------------
+       
+!       implicit none
+
+!       integer(i4b)     :: i
+!       character(3)     :: cdum 
+!       logical          :: exist
+
+!       inquire(file='restart_mdm', exist=exist)
+!       if (exist) then
+!          open(779, file='restart_mdm', status="old")
+!       else
+!          write(*,*) 'ERROR:  file restart_mdm is missing'
+!          stop
+!       endif
+
+       !if (Fint.eq.'ons') then
+!          read(779,*) cdum 
+!          do i=1,3
+!             read(779,*) fr_i(1), fr_i(2), fr_i(3)
+!          enddo
+!          if (Floc.eq.'loc') then
+!             read(779,*) cdum 
+!             do i=1,3
+!                read(779,*) fx_i(1), fx_i(2), fx_i(3)
+!             enddo
+!          endif
+       !elseif (Fint.eq.'pcm') then
+!          read(779,*) cdum 
+!          do i=1,nts_act
+!             read(779,*) qr_i(i)
+!          enddo
+!          if (Floc.eq.'loc') then
+!             read(779,*) cdum 
+!             do i=1,nts_act
+!                read(779,*) qx_i(i)
+!             enddo
+!          endif
+       !endif
+
+!       close(779)
+
+!       return
+
+!      end subroutine read_medium_restart
 
  end module

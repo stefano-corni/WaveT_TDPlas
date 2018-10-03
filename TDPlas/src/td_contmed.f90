@@ -9,12 +9,17 @@
 #ifdef OMP
       use omp_lib
 #endif         
+
 #ifdef MPI
+#ifndef SCALI
       use mpi
 #endif
+#endif
+
       use, intrinsic :: iso_c_binding
 
       implicit none
+
 ! 
       real(dbl) :: t !< time variable. Subscripts _t _tp _tp2 ... _0 refer respectively to dynamic variables at times t, t-dt, t-2dt, ... 0.
 ! Molecular observables and Maxwell potential/field
@@ -248,7 +253,7 @@
        endif
 
        ! EC 28/11/17 Write restart
-       if (mod(i,n_res).eq.0) call wrt_restart_mdm()
+       !if (mod(i,n_res).eq.0) call wrt_restart_mdm()
 
        return
 
@@ -506,7 +511,7 @@
 ! @brief Initialize charges for propagation 
 !
 ! @date Created: S. Pipolo
-! Modified: G. Gil 02 Jul 2018
+! Modified:
 !------------------------------------------------------------------------
 
        implicit none
@@ -612,12 +617,6 @@
          endif
        endif
        deallocate(qd)
-
-       ! FIXME: patch for restart... not efficient and needs check
-       ! initializing from file
-       if ( Fmdm_res .eq. 'Yesr' ) then
-         call read_medium_restart()
-       endif 
 
        return
 
@@ -1074,9 +1073,9 @@
       ! charge propagation with drude/lorentz and cosmo/onsager equations
        integer(i4b) :: its  
 
-!EC:  mat_mult optimizes n_ci**2-based statements 
+!EC:  mat_mult optimizes nts**2-based statements 
 !     mat_mult uses matmul or explicit loops (with OMP), 
-!     according to the value of n_ci
+!     according to the value of nts
 
       ! Reaction Field
        qr_t=qr_tp+f1*dqr_tp+f2*fqr_tp
@@ -1111,9 +1110,9 @@
       ! charge propagation with drude/lorentz and onsager equations
        integer(i4b) :: its  
 
-!EC:  mat_mult optimizes n_ci**2-based statements 
+!EC:  mat_mult optimizes nts**2-based statements 
 !     mat_mult uses matmul or explicit loops (with OMP), 
-!     according to the value of n_ci
+!     according to the value of nts
 
       ! SP: Reaction Field eq.46 Corni et al. JPCA 2015
       qr_t=qr_tp-dt*ONS_taum1*qr_tp+dt*ONS_taum1*mat_mult(BEM_Q0,pot_tp2)&
@@ -1207,9 +1206,9 @@
 !      f4=0.5d0*dt
 !      f5=eps_gm*f2
 
-!EC:  mat_mult optimizes n_ci**2-based statements 
+!EC:  mat_mult optimizes nts**2-based statements 
 !     mat_mult uses matmul or explicit loops (with OMP), 
-!     according to the value of n_ci
+!     according to the value of nts
 
        qr_t=qr_tp+f1*dqr_tp+f2*fqr_tp
 
@@ -1249,9 +1248,9 @@
       ! Charge propagation with debye and IEF equations 
        integer(i4b) :: its  
 
-!EC:  mat_mult optimizes n_ci**2-based statements 
+!EC:  mat_mult optimizes nts**2-based statements 
 !     mat_mult uses matmul or explicit loops (with OMP), 
-!     according to the value of n_ci
+!     according to the value of nts
 
       ! Reaction Field
        qr_t=qr_tp-dt*mat_mult(BEM_R,qr_tp)+dt*mat_mult(BEM_Qt,pot_tp) &
@@ -1284,9 +1283,9 @@
       ! Charge propagation with debye and IEF equations one taud 
        integer(i4b) :: its  
 
-!EC:  mat_mult optimizes n_ci**2-based statements 
+!EC:  mat_mult optimizes nts**2-based statements 
 !     mat_mult uses matmul or explicit loops (with OMP), 
-!     according to the value of n_ci
+!     according to the value of nts
 
       ! Reaction Field
        qr_t=qr_tp-dt*taum1*qr_tp+dt*taum1*mat_mult(BEM_Q0,pot_tp) &
@@ -1576,7 +1575,6 @@
 !       de_a=0.d0
         allocate(v_avg(n_coor_or_ts))
 
-
 #ifdef OMP
 !$OMP PARALLEL REDUCTION(+:g_neq1_part,g_eq)
 !$OMP DO
@@ -1852,21 +1850,21 @@
       end subroutine
 
 
-      subroutine wrt_restart_mdm()
+!      subroutine wrt_restart_mdm()
 !------------------------------------------------------------------------
 ! @brief write restart 
 !
 ! @date Created   : E. Coccia 28 Nov 2017
-! Modified  : G. Gil 02 Jul 2018
+! Modified  :
 !------------------------------------------------------------------------
-
-       implicit none
-
-       integer(i4b)     :: i
-
-       open(778, file='restart_mdm')
-
-!        if (Fint.eq.'ons') then
+!
+!       implicit none
+!
+!       integer(i4b)     :: i
+!
+!       open(778, file='restart_mdm')
+!
+!      ! if (Fint.eq.'ons') then
 !          write(778,*) 'Dipoles for Onsager' 
 !          do i=1,3
 !             write(778,*) fr_t(1), fr_t(2), fr_t(3)
@@ -1877,123 +1875,24 @@
 !                write(778,*) fx_t(1), fx_t(2), fx_t(3)
 !             enddo
 !          endif
-!       elseif (Fint.eq.'pcm') then
-       if (Fint.eq.'pcm') then
-          write(778,*) 'Reaction-field polarization charges (PCM)' 
-          do i=1,nts_act
-             write(778,*) qr_t(i)
-          enddo
-          write(778,*) 'Molecular potential - last and one but last iterations (PCM)' 
-          do i=1,nts_act
-             write(778,*) pot_tp(i), pot_tp2(i)
-          enddo
-          if (Floc.eq.'loc') then
-             write(778,*) 'Local-field polarization charges (PCM)' 
-             do i=1,nts_act
-                write(778,*) qx_t(i)
-             enddo
-             write(778,*) 'External-field potential - last and one but last iterations (PCM)' 
-             do i=1,nts_act
-                write(778,*) potf_tp(i), potf_tp2(i)
-             enddo
-          endif
-          if(Feps.eq."drl" .or. Feps.eq."gen") then
-             write(778,*) 'Increment of reaction-field polarization charges (PCM)' 
-             do i=1,nts_act
-                write(778,*) dqr_t(i)
-             enddo
-             if (Floc.eq.'loc') then
-                write(778,*) 'Increment of Local-field polarization charges (PCM)' 
-                do i=1,nts_act
-                   write(778,*) dqx_t(i)
-                enddo
-             endif
-          endif
-       else
-         write(*,*) 'Error: restart is not implemented yet for other interaction types other than PCM.'
-       endif
-
-       close(778)
-
-       return
- 
-      end subroutine wrt_restart_mdm
-
-
-      subroutine read_medium_restart() 
-!------------------------------------------------------------------------
-! @brief Read restart 
-!
-! @date Created   : E. Coccia 28 Nov 2017
-! Modified  : G. Gil 02 Jul 2018
-!------------------------------------------------------------------------
-       
-       implicit none
-
-       integer(i4b)     :: i
-       character(3)     :: cdum 
-       logical          :: exist
-
-       inquire(file='restart_mdm', exist=exist)
-       if (exist) then
-          open(779, file='restart_mdm', status="old")
-       else
-          write(*,*) 'ERROR:  file restart_mdm is missing'
-          stop
-       endif
-
-!       if (Fint.eq.'ons') then
-!          read(779,*) cdum 
-!          do i=1,3
-!             read(779,*) fr_t(1), fr_t(2), fr_t(3)
+!       !elseif (Fint.eq.'pcm') then
+!          write(778,*) 'Charges for PCM' 
+!          do i=1,nts_act
+!             write(778,*) qr_t(i)
 !          enddo
 !          if (Floc.eq.'loc') then
-!             read(779,*) cdum 
-!             do i=1,3
-!                read(779,*) fx_t(1), fx_t(2), fx_t(3)
+!             write(778,*) 'Charges for PCM (local)' 
+!             do i=1,nts_act
+!                write(778,*) qx_t(i)
 !             enddo
 !          endif
-!       elseif (Fint.eq.'pcm') then
-       if (Fint.eq.'pcm') then
-          read(779,*) cdum
-          do i=1,nts_act
-             read(779,*) qr_tp(i)
-          enddo
-          read(779,*) cdum
-          do i=1,nts_act
-             read(779,*) pot_tp(i), pot_tp2(i)
-          enddo
-          if (Floc.eq.'loc') then
-             read(779,*) cdum
-             do i=1,nts_act
-                read(779,*) qx_tp(i)
-             enddo
-             read(779,*) cdum
-             do i=1,nts_act
-                read(779,*) potf_tp(i), potf_tp2(i)
-             enddo
-          endif
-          if(Feps.eq."drl" .or. Feps.eq."gen") then
-             read(779,*) cdum
-             do i=1,nts_act
-                read(779,*) dqr_tp(i)
-             enddo
-             if (Floc.eq.'loc') then
-                read(779,*) cdum
-                do i=1,nts_act
-                   read(779,*) dqx_tp(i)
-                enddo
-             endif
-          endif
-       else
-         write(*,*) 'Error: restart is not implemented yet for other interaction types other than PCM.'
-       endif
-
-       close(779)
-
-       return
-
-      end subroutine read_medium_restart
+!       !endif
+!
+!       close(778)
+!
+!       return
+! 
+!      end subroutine wrt_restart_mdm
 
       end module
 

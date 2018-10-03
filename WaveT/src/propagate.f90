@@ -10,7 +10,9 @@
       use omp_lib
 #endif
 #ifdef MPI
+#ifndef SCALI
       use mpi
+#endif
 #endif
 
       implicit none
@@ -32,7 +34,6 @@
 !    int_rad_int is the integral of the classical radiated power at current step
       real(dbl) :: mu_a(3),int_rad,int_rad_int
       integer(i4b) :: file_c=10,file_e=8,file_mu=9 
-      integer(i4b) :: file_d=14
       save
       private
       public create_field, prop
@@ -59,40 +60,25 @@
        write(name_c,'(a4,i0,a4)') "c_t_",n_f,".dat"
        write(name_e,'(a4,i0,a4)') "e_t_",n_f,".dat"
        write(name_mu,'(a5,i0,a4)') "mu_t_",n_f,".dat"
-       if (Fcoh(1:3).eq.'yes') then 
-          write(name_d,'(a4,i0,a4)') "d_t_",n_f,".dat"
-       endif
        if (Fres.eq.'Yesr') then
           if (Fbin(1:3).ne.'bin') then
              open (file_c,file=name_c,status="unknown",access="append")
              open (file_e,file=name_e,status="unknown",access="append")
              open (file_mu,file=name_mu,status="unknown",access="append")
-             if (Fcoh(1:3).eq.'yes') then 
-               open (file_d,file=name_d,status="unknown",access="append")
-             endif
           else
              open (file_c,file=name_c,status="unknown",access="append",form="unformatted")   
              open (file_e,file=name_e,status="unknown",access="append",form="unformatted")
              open (file_mu,file=name_mu,status="unknown",access="append",form="unformatted")  
-             if (Fcoh(1:3).eq.'yes') then  
-               open (file_d,file=name_d,status="unknown",access="append",form="unformatted")
-             endif
           endif
        elseif (Fres.eq.'Nonr') then
           if (Fbin(1:3).ne.'bin') then
              open (file_c,file=name_c,status="unknown")
              open (file_e,file=name_e,status="unknown")
              open (file_mu,file=name_mu,status="unknown")
-             if (Fcoh(1:3).eq.'yes') then
-                open (file_d,file=name_d,status="unknown")
-             endif
           else
              open(file_c,file=name_c,status="unknown",form="unformatted")
              open(file_e,file=name_e,status="unknown",form="unformatted")
            open(file_mu,file=name_mu,status="unknown",form="unformatted")
-             if (Fcoh(1:3).eq.'yes') then
-             open(file_d,file=name_d,status="unknown",form="unformatted")
-             endif
           endif
        endif
 ! ALLOCATING
@@ -229,7 +215,6 @@
        close (file_c)
        close (file_e)
        close (file_mu)
-       if (Fcoh(1:3).eq.'yes') close (file_d)
 
        if(Fmdm(1:3).ne.'vac') call finalize_medium
 
@@ -523,7 +508,7 @@
        real(dbl),       intent(IN) :: h_int(n_ci,n_ci)
        real(dbl),       intent(IN) :: f_prev(3)
        real(dbl)                   :: e_a,e_vac,t,g_neq_t,g_neq2_t,g_eq_t,f_med(3)
-       character(4000)             :: fmt_ci,fmt_ci2
+       character(4000)             :: fmt_ci
        integer(i4b)                :: itmp,j,k
        complex(cmp)                :: ctmp(n_ci)
 
@@ -572,18 +557,13 @@
        endif
 
        if (Fbin(1:3).ne.'bin') then
-          itmp = n_ci*(n_ci-1)/2
-          write (fmt_ci,'("(i8,f14.4,",I0,"e13.5)")') n_ci
-          write (fmt_ci2,'("(i8,f14.4,",I0,"2e13.5)")') 2*itmp
-          write (file_c,fmt_ci) i,t,real(c(:)*conjg(c(:)))
+          write (fmt_ci,'("(i8,f14.4,",I0,"e16.8)")') 2*n_ci
+          write (file_c,fmt_ci) i,t,c(:)
           write (file_mu,'(i8,f14.4,3e22.10)') i,t,mu_a(:)
        else
-          write (file_c) i,t,real(c(:)*conjg(c(:)))
+          write (file_c) i,t,c(:)
           write (file_mu) i,t,mu_a(:)
        endif
-
-! SP 10/07/17: commented the following, strange error 
-       if (Fcoh(1:3).eq.'yes') call wrt_decoherence(i,t,file_d,fmt_ci2,c,n_ci)
 
        j=int(dble(i)/dble(n_out))
        if(j.lt.1) j=1
@@ -688,7 +668,7 @@
        implicit none
 
        write(file_c,'(2a)')'# istep   time (au)', &
-                           '    Population 0,1,...,n_ci'
+                           '    Re(C_0) Im(C_0), Re(C_1) Im(C_1),...'
 
        write(file_e,'(8a)') '#   istep time (au)',' <H(t)>-E_gs(0)', &
               ' DE_vac(t)',' DG_eq(t)',' DG_neq(t)',  '  Const', &
@@ -696,69 +676,10 @@
       
        write(file_mu,'(5a)') '#   istep time (au)',' dipole-x ', &
               ' dipole-y ',' dipole-z '
-       if (Fcoh(1:3).eq.'yes') then 
-          write(file_d,'(3a)')'# istep   time (au)', & 
-                           '    Coherence (0,i=1,n_ci)', &
-                           '    Coherence (j=1,n_ci,k=j+1,n_ci)'
-       endif
 
        return
     
       end subroutine out_header
-
-      subroutine wrt_decoherence(i,t,int1,char2,c,nci)
-!------------------------------------------------------------------------
-! @brief Print the tridiagional C*_iC_j (i.ne.j) matrix 
-! corresponding to the decoherence 
-! 
-! @date Created   : E. Coccia 3 Feb 2017
-! Modified  :
-!------------------------------------------------------------------------
-  
-        implicit none
-
-        integer(i4b),    intent(in)    :: i, nci
-        integer(i4b),    intent(in)    :: int1 
-        character(4000), intent(in)    :: char2 
-        real(dbl),       intent(in)    :: t
-        complex(cmp),    intent(in)    :: c(nci)
-        complex(cmp)                   :: cc(nci,nci)
-        integer(i4b)                   :: j, k
-        complex(cmp)                   :: tmp
-
-        tmp=cmplx(0.d0,0.d0)
-
-        do k=2,nci
-           tmp = conjg(c(k))*c(1)
-           cc(1,k) = tmp
-        enddo  
-
-        if (nci.gt.2) then
-           do j=2,nci
-              do k=j+1,nci
-                 tmp = conjg(c(k))*c(j)
-                 cc(j,k) = tmp
-              enddo
-           enddo
-        endif
-
-        if (Fbin(1:3).ne.'bin') then
-           if (nci.gt.2) then
-              write(int1,char2) i, t, ((cc(j,k), k=j+1,nci),j=1,nci-1)
-           else 
-              write(int1,char2) i, t, cc(1,2)
-           endif
-        else
-           if (nci.gt.2) then
-              write(int1) i, t, ((cc(j,k), k=j+1,nci),j=1,nci-1)
-           else
-              write(int1) i, t, cc(1,2)
-           endif
-        endif
-    
-        return
-
-      end subroutine wrt_decoherence
 
 
       subroutine exp_euler_prop(ccexp,nci)
