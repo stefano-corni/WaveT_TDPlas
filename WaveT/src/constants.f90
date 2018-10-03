@@ -7,6 +7,7 @@
       INTEGER, PARAMETER :: flg = 10 
       INTEGER, PARAMETER :: nvibmax = 1000
       INTEGER, PARAMETER :: npulsemax = 10
+      INTEGER, PARAMETER :: nstmax = 1000
 !
       ! constants, conversion factors, and number literals
       real(dbl), parameter :: pi=3.141592653589793D+00

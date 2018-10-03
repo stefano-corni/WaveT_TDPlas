@@ -53,11 +53,12 @@ OBJ_SPECTRA= constants.o pedra_friends.o global_wavet.o global_tdplas.o readio.o
 OBJ_VIB= constants.o readio.o $(TOOLSPATH)/vib.o $(TOOLSPATH)/vib_tool.o
 OBJ_COH= constants.o $(TOOLSPATH)/coherence_tool.o 
 OBJ_FFT= constants.o $(TOOLSPATH)/fft_tool.o
+OBJ_POP_COH= constants.o $(TOOLSPATH)/pop_coh_tool.o
 
 
 # rules
 
-serial: $(BINPATH) $(BINPATH)/WaveT-serial.x $(BINPATH)/make_spectra.x $(BINPATH)/make_vib.x $(BINPATH)/make_coherence.x $(BINPATH)/make_2dfft.x
+serial: $(BINPATH) $(BINPATH)/WaveT-serial.x $(BINPATH)/make_spectra.x $(BINPATH)/make_vib.x $(BINPATH)/make_coherence.x $(BINPATH)/make_2dfft.x $(BINPATH)/make_pop_coh.x
 
 parallel: $(BINPATH) $(BINPATH)/WaveT-parallel.x  
 	
@@ -81,6 +82,10 @@ $(BINPATH)/make_coherence.x: $(OBJ_COH)
 
 $(BINPATH)/make_2dfft.x: $(OBJ_FFT)
 	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_FFT) $(LIBS) $(LIBSF) $(LIB_CURIE)
+
+$(BINPATH)/make_pop_coh.x: $(OBJ_POP_COH)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_POP_COH)
+
 clean:
 	rm -f *.o *.mod *.il *.optrpt $(BINPATH)/*.x $(TOOLSPATH)/*.o $(TOOLSPATH)/*.mod $(TOOLSPATH)/*.il $(TOOLSPATH)/*.optrpt
 
@@ -121,6 +126,9 @@ $(TOOLSPATH)/vib.o: $(TOOLSPATH)/vib.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 $(TOOLSPATH)/vib_tool.o: $(TOOLSPATH)/vib_tool.f90
+	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
+
+$(TOOLSPATH)/pop_coh_tool.o: $(TOOLSPATH)/pop_coh_tool.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 main.o: main.f90
@@ -174,6 +182,8 @@ vib_tool.o: readio.o vib.o
 coherence_tool.o: 
 
 fft_tool.o: 
+
+pop_coh_tool.o:
 
 main.o: readio.o spectra.o dissipation.o propagate.o readio_medium.o QM_coupling.o  
 

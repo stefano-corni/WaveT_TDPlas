@@ -1,0 +1,15 @@
+ &pop_coh
+ nstates =          11
+ n_f =           1
+ nsteps =        5000
+ read_bin ="n"
+ write_bin ="n"
+ tar ="pop" != pop, coh or all 
+ all_pop ="non" != yes all pop 
+
+ pop = 0 4 10
+
+
+ /
+
+

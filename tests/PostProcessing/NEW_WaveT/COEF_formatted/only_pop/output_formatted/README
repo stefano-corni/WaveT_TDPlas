@@ -1,0 +1,1 @@
+In all/, the chosen quantity (pop, coh or both) is computed for all the states. In selected/, one chooses in pop_coh.inp which state(s) to use for the calculation.

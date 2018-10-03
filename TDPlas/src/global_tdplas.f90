@@ -1,11 +1,21 @@
       module global_tdplas
 
       use constants  
-#ifdef MPI 
+
+#ifdef MPI
+#ifndef SCALI
       use mpi
+#endif
 #endif
 
       implicit none
+
+#ifdef MPI
+#ifdef SCALI
+      include 'mpif.h'
+#endif
+#endif
+
       ! block of global variables to be supplied by WaveT
       real(dbl) 		        :: dt			        	! time step
       character(flg) 	        :: Fmdm				        ! kind of medium
@@ -23,13 +33,11 @@
       character(1)              :: medium_res              !restart for medium 
       integer(i4b)              :: n_res                   ! frequency for restart
 
-
       contains
   
       subroutine set_global_tdplas(this_dt,this_mdm,this_mol_cc,this_n_ci,this_n_ci_read,this_c_i,this_e_ci,this_mut,&
 				   this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
-                   this_Fbin,this_Fopt,this_nthr,this_res,this_n_res)
-
+                   this_Fbin,this_Fopt,this_nthr)!,this_res,this_n_res)
 !------------------------------------------------------------------------
 ! @brief Set global variables for medium 
 !
@@ -53,9 +61,8 @@
         character(3)  , intent(in) :: this_Fopt                      ! matrix/vector multiplication 
         integer(i4b)  , intent(in) :: this_n_out,this_n_f	         ! auxiliaries for output
         integer(i4b)  , intent(in) :: this_nthr                      ! number of threads
-        character(1)  , intent(in) :: this_res                      ! restart for medium 
-        integer(i4b)  , intent(in) :: this_n_res                    ! frequency for restart
-
+        !character(1)  , intent(in) :: this_res                      ! restart for medium 
+        !integer(i4b)  , intent(in) :: this_n_res                    ! frequency for restart
         
         dt=this_dt
         Fmdm=this_mdm
@@ -77,9 +84,8 @@
         Fbin=this_Fbin
         Fopt=this_Fopt
         nthr=this_nthr
-        medium_res=this_res 
-        n_res=this_n_res
-
+        !medium_res=this_res 
+        !n_res=this_n_res
 
         return
 
