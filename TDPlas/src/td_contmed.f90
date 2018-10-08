@@ -144,7 +144,11 @@
 ! SC: predifine the factors used in the VV propagator, used for
 ! Drude-Lorentz
       endif
-      if(Feps.eq."drl") call init_vv_propagator
+      if(Feps.eq."drl") then
+        call init_vv_propagator
+      elseif (Feps.eq."gen") then 
+         call init_vv_propagator_gen 
+      endif 
       if (Fmdm(1:3).ne.'vac') call correct_hamiltonian
 ! SC set the initial values of the solvent component of the 
 ! neq free energies
@@ -602,7 +606,7 @@
          qx_tp(:)=zero    
          dqx_t(:)=zero 
        endif
-       if(Feps.eq."drl") then
+       if(Feps.eq."drl".or.Feps.eq."gen") then
          allocate(dqr_tp(nts_act))
          allocate(fqr_tp(nts_act))
          allocate(fqr_t(nts_act))
@@ -1060,6 +1064,38 @@
 
       end subroutine
 
+      subroutine init_vv_propagator_gen
+!------------------------------------------------------------------------
+! @brief Initialization for velocity Verlet propagation (vv) 
+!
+! @date Created: G. Gil
+! Modified:
+! Notes: Taken from init_vv_propagator and replacing eps_gm by BEM_Qg 
+!------------------------------------------------------------------------
+
+       real(dbl), allocatable :: BEM_I(:,:)
+       integer :: j
+
+       allocate(BEM_I(nts_act,nts_act))
+       BEM_I = zero
+       forall(j = 1:nts_act) BEM_I(j,j) = one
+
+       ! FIXME: need to be deallocated somewhere
+       allocate(BEM_f1(nts_act,nts_act),BEM_f3(nts_act,nts_act),BEM_f5(nts_act,nts_act))
+
+       BEM_f1=dt*(BEM_I-dt*0.5d0*BEM_Qg)
+       f4=0.5d0*dt
+       f2=dt*f4
+       BEM_f3=BEM_I-matmul(BEM_Qg,BEM_f1)
+       BEM_f5=BEM_Qg*f2
+       write(6,*) "Initiated VV propagator"
+
+       deallocate(BEM_I)
+
+       return
+
+      end subroutine
+
 
       subroutine prop_ons_drl
 !------------------------------------------------------------------------
@@ -1236,6 +1272,48 @@
 
       end subroutine
 
+      subroutine prop_vv_ief_gen
+!------------------------------------------------------------------------
+! @brief General dielectric function propagation Fprop=chr-ief
+! velocity-verlet
+! algorithm 
+!
+! @date Created: G. Gil
+! Modified:
+! Notes: Taken from prop_vv_ief_drl and changing to the vv with matrix
+! factors
+!        N.B. that matrix BEM_Qg is inside the BEM_f1, BEM_f3 and BEM_f5
+!        matrices
+!------------------------------------------------------------------------
+
+      ! Charge propagation with general dielectric function and IEF
+      ! equations
+       integer(i4b) :: its
+
+
+       qr_t=qr_tp+matmul(BEM_f1,dqr_tp)+f2*fqr_tp
+
+       fqr_t=-matmul(BEM_Qw,qr_t)+matmul(BEM_Qf,pot_tp)
+       dqr_t=matmul(BEM_f3,dqr_tp)+f4*(fqr_t+fqr_tp)-matmul(BEM_f5,fqr_tp)
+       fqr_tp=fqr_t
+       dqr_tp=dqr_t
+      ! Local Field
+       if(Floc.eq."loc") then
+        qx_t=qx_tp+matmul(BEM_f1,dqx_tp)+f2*fqx_tp
+        if(Fmdm(2:4).eq.'sol') then
+         fqx_t=-matmul(BEM_Qw,qx_t)+matmul(BEM_Qfx,potf_tp)
+        else if(Fmdm(2:4).eq.'nan') then
+         fqx_t=-matmul(BEM_Qw,qx_t)+matmul(BEM_Qf,potf_tp)
+        endif
+        dqx_t=matmul(BEM_f3,dqx_tp)+f4*(fqx_t+fqx_tp)-matmul(BEM_f5,fqx_tp)
+        fqx_tp=fqx_t
+        dqx_tp=dqx_t
+       endif
+
+       return
+
+      end subroutine
+  
 
       subroutine prop_ief_deb
 !------------------------------------------------------------------------
