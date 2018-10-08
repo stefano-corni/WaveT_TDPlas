@@ -111,7 +111,7 @@
              FinitBEM,Fsurf,Finit_mdm,read_medium_freq,              &
              read_medium_tdplas,n_omega,omega_ini,omega_end,         &
              Fwrite,Fmdm_relax,Fgamess,mpibcast_readio_mdm,Fopt_chr, &
-             ntst          
+             ntst,print_lf_matrix          
 !
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -132,7 +132,7 @@
                          local_field,debug_type,out_level,test_type,   &
                          medium_relax,ntst
        namelist /medium/ medium_type,medium_init,medium_pol,bem_type,  &
-                         bem_read_write                   
+                         bem_read_write,print_lf_matrix                  
        namelist /surface/input_surface,spheres_number,spheroids_number,&
          sphere_position_x,sphere_position_y,sphere_position_z,        &
          spheroid_axis_x,spheroid_axis_y,spheroid_axis_z,              &
@@ -425,6 +425,7 @@
        eps_gm=0.000757576
        f_vel=zero
        gamess='no '
+       print_lf_matrix = 'non'
 
        return
 
@@ -564,14 +565,14 @@
            !np_relax=.true.
        end select
 ! EC 281117: added restart for medium
-       !select case(medium_res)
-       !   case ('y','Y')
-       !    write(*,*) 'Restart for medium'
-       !    Fmdm_res='Yesr'
-       !    call read_medium_restart()
-       !   case ('n','N')
-       !    Fmdm_res='Nonr' 
-       !end select
+       select case(medium_res)
+          case ('y','Y')
+           write(*,*) 'Restart for medium'
+           Fmdm_res='Yesr'
+           call read_medium_restart()
+          case ('n','N')
+           Fmdm_res='Nonr' 
+       end select
 
        return
 
@@ -783,6 +784,20 @@
          case default
           write(*,*) "Error, specify if boundary data & matrices", &
              "are read (read) or made and written out (write) "
+#ifdef MPI
+          call mpi_finalize(ierr_mpi)
+#endif
+          stop
+         end select
+         select case(print_lf_matrix)
+          case ('yes','Yes', 'YES')
+           Floc='loc'
+           write(6,*) "This run just writes matrices and boundary"
+          case ('non','Non', 'NON')
+           Floc='non'
+         case default
+           write(*,*) "Error, specify if local-field matrix", &
+             "should be written or not. "
 #ifdef MPI
           call mpi_finalize(ierr_mpi)
 #endif

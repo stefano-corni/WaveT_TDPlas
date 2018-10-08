@@ -257,7 +257,7 @@
        endif
 
        ! EC 28/11/17 Write restart
-       !if (mod(i,n_res).eq.0) call wrt_restart_mdm()
+       if (mod(i,n_res).eq.0) call wrt_restart_mdm()
 
        return
 
@@ -621,6 +621,11 @@
          endif
        endif
        deallocate(qd)
+
+       !FIXME: restart initializing from file
+       if ("Fmdm_res".eq.'Yesr') then
+          call read_medium_restart() 
+       endif 
 
        return
 
@@ -1927,22 +1932,21 @@
 
       end subroutine
 
-
-!      subroutine wrt_restart_mdm()
+subroutine wrt_restart_mdm()
 !------------------------------------------------------------------------
 ! @brief write restart 
 !
 ! @date Created   : E. Coccia 28 Nov 2017
-! Modified  :
+! Modified  : G. Gil 02 Jul 2018
 !------------------------------------------------------------------------
-!
-!       implicit none
-!
-!       integer(i4b)     :: i
-!
-!       open(778, file='restart_mdm')
-!
-!      ! if (Fint.eq.'ons') then
+
+       implicit none
+
+       integer(i4b)     :: i
+
+       open(778, file='restart_mdm')
+
+!        if (Fint.eq.'ons') then
 !          write(778,*) 'Dipoles for Onsager' 
 !          do i=1,3
 !             write(778,*) fr_t(1), fr_t(2), fr_t(3)
@@ -1953,24 +1957,126 @@
 !                write(778,*) fx_t(1), fx_t(2), fx_t(3)
 !             enddo
 !          endif
-!       !elseif (Fint.eq.'pcm') then
-!          write(778,*) 'Charges for PCM' 
-!          do i=1,nts_act
-!             write(778,*) qr_t(i)
+!       elseif (Fint.eq.'pcm') then
+       if (Fint.eq.'pcm') then
+          write(778,*) 'Reaction-field polarization charges (PCM)'
+          do i=1,nts_act
+             write(778,*) qr_t(i)
+          enddo
+          write(778,*) 'Molecular potential'
+          do i=1,nts_act
+             write(778,*) pot_tp(i), pot_tp2(i)
+          enddo
+          if (Floc.eq.'loc') then
+             write(778,*) 'Local-field polarization charges (PCM)' 
+             do i=1,nts_act
+                write(778,*) qx_t(i)
+             enddo
+             write(778,*) 'External-field potential'
+             do i=1,nts_act
+                write(778,*) potf_tp(i), potf_tp2(i)
+             enddo
+          endif
+          if(Feps.eq."drl" .or. Feps.eq."gen") then
+             write(778,*) 'Reaction-field polarization charges (PCM)' 
+             do i=1,nts_act
+                write(778,*) dqr_t(i)
+             enddo
+             if (Floc.eq.'loc') then
+                write(778,*) 'Local-field polarization charges (PCM)' 
+                do i=1,nts_act
+                   write(778,*) dqx_t(i)
+                enddo
+             endif
+          endif
+       else
+         write(*,*) 'Error: restart is not implemented yet for other
+interaction types other than PCM.'
+       endif
+
+       close(778)
+
+       return
+ 
+      end subroutine wrt_restart_mdm
+
+
+      subroutine read_medium_restart() 
+!------------------------------------------------------------------------
+! @brief Read restart 
+!
+! @date Created   : E. Coccia 28 Nov 2017
+! Modified  : G. Gil 02 Jul 2018
+!------------------------------------------------------------------------
+       
+       implicit none
+
+       integer(i4b)     :: i
+       character(3)     :: cdum 
+       logical          :: exist
+
+       inquire(file='restart_mdm', exist=exist)
+       if (exist) then
+          open(779, file='restart_mdm', status="old")
+       else
+          write(*,*) 'ERROR:  file restart_mdm is missing'
+          stop
+       endif
+
+!       if (Fint.eq.'ons') then
+!          read(779,*) cdum 
+!          do i=1,3
+!             read(779,*) fr_t(1), fr_t(2), fr_t(3)
 !          enddo
 !          if (Floc.eq.'loc') then
-!             write(778,*) 'Charges for PCM (local)' 
-!             do i=1,nts_act
-!                write(778,*) qx_t(i)
+!             read(779,*) cdum 
+!             do i=1,3
+!                read(779,*) fx_t(1), fx_t(2), fx_t(3)
 !             enddo
 !          endif
-!       !endif
-!
-!       close(778)
-!
-!       return
-! 
-!      end subroutine wrt_restart_mdm
+!       elseif (Fint.eq.'pcm') then
+       if (Fint.eq.'pcm') then
+          read(779,*) cdum
+          do i=1,nts_act
+             read(779,*) qr_tp(i)
+          enddo
+          read(779,*) cdum
+          do i=1,nts_act
+             read(779,*) pot_tp(i), pot_tp2(i)
+          enddo
+          if (Floc.eq.'loc') then
+             read(779,*) cdum
+             do i=1,nts_act
+                read(779,*) qx_tp(i)
+             enddo
+             read(779,*) cdum
+             do i=1,nts_act
+                read(779,*) potf_tp(i), potf_tp2(i)
+             enddo
+          endif
+          if(Feps.eq."drl" .or. Feps.eq."gen") then
+             read(779,*) cdum
+             do i=1,nts_act
+                read(779,*) dqr_tp(i)
+             enddo
+             if (Floc.eq.'loc') then
+                read(779,*) cdum
+                do i=1,nts_act
+                   read(779,*) dqx_tp(i)
+                enddo
+             endif
+          endif
+       else
+         write(*,*) 'Error: restart is not implemented yet for other
+interaction types other than PCM.'
+       endif
+
+       close(779)
+
+       return
+
+      end subroutine read_medium_restart
+
 
       end module
 
