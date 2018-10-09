@@ -61,6 +61,7 @@
       real(dbl) :: g_neq2,g_neq2_0,g_neq_0,g_neq1,g_neq1_part !< Non Equilibrium Free energies
 ! Working variables
       real(dbl) :: f1,f2,f3,f4,f5 !< constant factors (calculated once and for all) for velocity-verlet propagator (Drude-Lorentz) 
+      real(dbl), allocatable :: BEM_f1(:,:),BEM_f3(:,:),BEM_f5(:,:) !< matrices (calculated once and for all) for velocity-verlet propagator (gral dielec func)
       real(dbl) :: dip(3)                               !< used in a test 
       real(dbl) :: ref                                  !< reference value in different debug tests    
       real(dbl) :: qtot                                 !< total BEM charge    
@@ -1990,8 +1991,8 @@ subroutine wrt_restart_mdm()
              endif
           endif
        else
-         write(*,*) 'Error: restart is not implemented yet for other
-interaction types other than PCM.'
+         write(*,*) 'Error: restart is not implemented yet for other', &
+                    'interaction types other than PCM.'
        endif
 
        close(778)
@@ -2067,8 +2068,8 @@ interaction types other than PCM.'
              endif
           endif
        else
-         write(*,*) 'Error: restart is not implemented yet for other
-interaction types other than PCM.'
+         write(*,*) 'Error: restart is not implemented yet for other',&
+                    'interaction types other than PCM.'
        endif
 
        close(779)

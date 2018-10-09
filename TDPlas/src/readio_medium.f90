@@ -90,7 +90,7 @@
                         bem_read_write,input_surface,medium_init,    &
                         debug_type,bem_type,local_field,medium_type, &
                         out_level,interaction_init,epsilon_omega,    &
-                        test_type,medium_relax,gamess
+                        test_type,medium_relax,gamess,print_lf_matrix
 
      ! variables read from eps.inp in the case of the general
      ! dielectric function case (i.e., eps_omega = 'gen')
@@ -104,6 +104,7 @@
       public read_medium,deallocate_medium,Fint,Feps,Fprop,          &
              nsph,sph_maj,sph_min,sph_centre,sph_vrs,                &
              eps_0,eps_d,tau_deb,eps_A,eps_gm,eps_w0,f_vel,          &
+             npts,omegas,eps_omegas,re_deps_domegas,                 &
              vts,n_q,Fmdm_pol,                                       &
              MPL_ord,Fbem,Fshape,fr_0,q0,Floc,                       &
              Fdeb,vtsn,Finit_int,Fqbem,Ftest,                        &
@@ -569,7 +570,6 @@
           case ('y','Y')
            write(*,*) 'Restart for medium'
            Fmdm_res='Yesr'
-           call read_medium_restart()
           case ('n','N')
            Fmdm_res='Nonr' 
        end select
