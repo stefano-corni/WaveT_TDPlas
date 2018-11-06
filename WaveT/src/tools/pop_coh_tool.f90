@@ -144,7 +144,7 @@ program post_processing
  if (read_bin(1:1).ne.'y') then
     open (9,file=filein,status="unknown")
     read(9,*) dum
-    write (fmt_ci,'("(i8,f14.4,",I0,"e16.8)")') 2*nstates
+    write (fmt_ci,'("(i8,f14.4,",I0,"e17.8E3)")') 2*nstates
     do i=1,nsteps
        read(9,fmt_ci) ii(i), tt(i), (rc(j), ic(j), j=1,nstates)
        do j=1,nstates
@@ -179,7 +179,7 @@ program post_processing
        if (write_bin(1:1).ne.'y') then
            write(11,'(2a)')'# istep   time (au)', &
                            ' |C_i(t)|^2, i=0,1,2,...   '
-           write (fmt_ci,'("(i8,f14.4,",I0,"e13.5)")') nstates
+           write (fmt_ci,'("(i8,f14.4,",I0,"e14.5E3)")') nstates
            do i=1,nsteps 
               write (11,fmt_ci) ii(i),tt(i),real( c(:,i) * conjg(c(:,i)) )
            enddo
@@ -196,7 +196,7 @@ program post_processing
            enddo
            write(11,*)'#istep time (au)', &
                            ' |C_i(t)|^2, i=', str 
-           write (fmt_ci,'("(i8,f14.4,",I0,"e13.5)")') npop
+           write (fmt_ci,'("(i8,f14.4,",I0,"e14.5E3)")') npop
            do i=1,nsteps 
               write (11,fmt_ci) ii(i),tt(i),( real( c(popef(j)+1,i) * conjg(c(popef(j)+1,i)) ), j=1,npop )
            enddo
@@ -223,7 +223,7 @@ program post_processing
        if (write_bin(1:1).ne.'y') then
            write(12,'(2a)')'# istep   time (au)', &
                            ' C_i*(t)C_j(t), i=0,1,2,..., j=1,2,3,...   '
-           write (fmt_ci2,'("(i8,f14.4,",I0,"2e13.5)")') 2*np
+           write (fmt_ci2,'("(i8,f14.4,",I0,"2e14.5E3)")') 2*np
        endif  
        do i=1,nsteps
           call wrt_coherence(ii(i),tt(i),12,fmt_ci2,c(:,i),nstates,write_bin)
@@ -238,7 +238,7 @@ program post_processing
           write(12,*)'# istep   time (au)', &
                            ' C_i*(t)C_j(t),', print_short 
           deallocate(print_short)
-          write (fmt_ci2,'("(i8,f14.4,",I0,"2e13.5)")') 2*ncoh
+          write (fmt_ci2,'("(i8,f14.4,",I0,"2e14.5E3)")') 2*ncoh
           do i=1,nsteps
              write (12,fmt_ci2) ii(i),tt(i),(  c(icoh(2*(j-1)+1),i) * conjg(c(icoh(2*(j-1)+2),i)) , j=1,ncoh )
           enddo
