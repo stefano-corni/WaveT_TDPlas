@@ -557,7 +557,7 @@
        endif
 
        if (Fbin(1:3).ne.'bin') then
-          write (fmt_ci,'("(i8,f14.4,",I0,"e16.8)")') 2*n_ci
+          write (fmt_ci,'("(i8,f14.4,",I0,"e17.8E3)")') 2*n_ci
           write (file_c,fmt_ci) i,t,c(:)
           write (file_mu,'(i8,f14.4,3e22.10)') i,t,mu_a(:)
        else
