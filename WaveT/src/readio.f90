@@ -160,22 +160,22 @@
        namelist /pop_coh/ tar,all_pop,all_coh,pop,coh,write_bin
 
        write(*,*) ''
-       write(*,*) '*****************************************************'
-       write(*,*) '*****************************************************'
-       write(*,*) '**                                                 **' 
-       write(*,*) '**                    WaveT                        **'
-       write(*,*) '**     Evolution of molecular wavefunctions        **'
-       write(*,*) '**   under external electromagnetic perturbations  **'
-       write(*,*) '**                                                 **'
-       write(*,*) '**                     by                          **'
-       write(*,*) '**                Stefano Corni                    **'
-       write(*,*) '**                Silvio Pipolo                    **'
-       write(*,*) '**               Emanuele Coccia                   **'
-       write(*,*) '**                 Gabriel Gil                     **'
-       write(*,*) '**                Jacopo Fregoni                   **'
-       write(*,*) '**                                                 **'
-       write(*,*) '*****************************************************'
-       write(*,*) '*****************************************************'    
+       write(*,*) '****************************************************'
+       write(*,*) '****************************************************'
+       write(*,*) '**                                                **' 
+       write(*,*) '**                    WaveT                       **'
+       write(*,*) '**     Evolution of molecular wavefunctions       **'
+       write(*,*) '**   under external electromagnetic perturbations **'
+       write(*,*) '**                                                **'
+       write(*,*) '**                     by                         **'
+       write(*,*) '**                Stefano Corni                   **'
+       write(*,*) '**                Silvio Pipolo                   **'
+       write(*,*) '**               Emanuele Coccia                  **'
+       write(*,*) '**                 Gabriel Gil                    **'
+       write(*,*) '**                Jacopo Fregoni                  **'
+       write(*,*) '**                                                **'
+       write(*,*) '****************************************************'
+       write(*,*) '****************************************************'    
        write(*,*) ''
 
        !Namelist mol 
@@ -871,7 +871,8 @@
       pop=-1 
       !Initialize array for coherence
       coh=''
-
+      !Wrting unformatted files
+      write_bin(1:1)='n'
 
       return
 
