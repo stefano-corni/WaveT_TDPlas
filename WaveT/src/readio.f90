@@ -651,6 +651,7 @@
 
 
        irel=0
+       kk=0
        do j=nexc,1,-1
           do k=j-1,1,-1
              kk=kk+1
