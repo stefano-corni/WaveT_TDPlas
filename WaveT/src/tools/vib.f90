@@ -428,11 +428,12 @@ module vib
 ! Franck-Condon factors 
 ! 
 ! @date Created   : E. Coccia 11 Sep 2017
-! Modified  :
+! Modified  :       G. Dall'Osto 16 Nov 2018
 !------------------------------------------------------------------------
 
         integer(i4b)                :: i,j,k,v,v1,kk,kk1,ii,jj
         integer(i4b)                :: imap(ntot),kmap(nstates,ncomb)
+        real(dbl)                   :: egrs
 
         call gen_map(nmodes,nvib,ncomb,iv)
 
@@ -476,10 +477,11 @@ module vib
         open(71,file='ci_mut_new.inp')        
         open(72,file='e_map.dat')
         kk=0
+        egrs=ef(1)
         do i=1,nstates
            do j=1,ncomb
               kk=kk+1
-              ef(kk)=ef(kk)-ef(1)
+              ef(kk)=ef(kk)-egrs
            enddo
         enddo
         
