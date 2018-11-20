@@ -61,6 +61,7 @@
       real(dbl) :: g_neq2,g_neq2_0,g_neq_0,g_neq1,g_neq1_part !< Non Equilibrium Free energies
 ! Working variables
       real(dbl) :: f1,f2,f3,f4,f5 !< constant factors (calculated once and for all) for velocity-verlet propagator (Drude-Lorentz) 
+      real(dbl), allocatable :: BEM_f1(:,:),BEM_f3(:,:),BEM_f5(:,:) !< matrices (calculated once and for all) for velocity-verlet propagator (gral dielec func)
       real(dbl) :: dip(3)                               !< used in a test 
       real(dbl) :: ref                                  !< reference value in different debug tests    
       real(dbl) :: qtot                                 !< total BEM charge    
@@ -990,6 +991,18 @@
 #endif
            stop
          endif
+       elseif(Feps.eq."gen") then
+         if(Fprop.eq."chr-ief") then
+           call prop_vv_ief_gen
+         elseif(Fprop.eq."chr-ons") then
+           ! FIXME: add C-PCM propagation type
+           !call prop_ons_gen ! uses vv - not yet
+           write(*,*) "Wrong propagation method"
+           stop
+         else
+           write(*,*) "Wrong propagation method"
+           stop
+         endif
        endif
        if(Fdeb.eq."equ") then
 !EC:  mat_mult optimizes n_ci**2-based statements 
@@ -1094,6 +1107,7 @@
        BEM_f3=BEM_I-matmul(BEM_Qg,BEM_f1)
        BEM_f5=BEM_Qg*f2
        write(6,*) "Initiated VV propagator"
+
 
        deallocate(BEM_I)
 
@@ -1990,8 +2004,8 @@ subroutine wrt_restart_mdm()
              endif
           endif
        else
-         write(*,*) 'Error: restart is not implemented yet for other
-interaction types other than PCM.'
+         write(*,*) 'Error: restart is not implemented yet for other', &
+                    'interaction types other than PCM.'
        endif
 
        close(778)
@@ -2067,8 +2081,8 @@ interaction types other than PCM.'
              endif
           endif
        else
-         write(*,*) 'Error: restart is not implemented yet for other
-interaction types other than PCM.'
+         write(*,*) 'Error: restart is not implemented yet for other',&
+                    'interaction types other than PCM.'
        endif
 
        close(779)
