@@ -90,7 +90,7 @@
                         bem_read_write,input_surface,medium_init,    &
                         debug_type,bem_type,local_field,medium_type, &
                         out_level,interaction_init,epsilon_omega,    &
-                        test_type,medium_relax,gamess
+                        test_type,medium_relax,gamess,print_lf_matrix
 
      ! variables read from eps.inp in the case of the general
      ! dielectric function case (i.e., eps_omega = 'gen')
@@ -104,6 +104,7 @@
       public read_medium,deallocate_medium,Fint,Feps,Fprop,          &
              nsph,sph_maj,sph_min,sph_centre,sph_vrs,                &
              eps_0,eps_d,tau_deb,eps_A,eps_gm,eps_w0,f_vel,          &
+             npts,omegas,eps_omegas,re_deps_domegas,                 &
              vts,n_q,Fmdm_pol,                                       &
              MPL_ord,Fbem,Fshape,fr_0,q0,Floc,                       &
              Fdeb,vtsn,Finit_int,Fqbem,Ftest,                        &
@@ -111,7 +112,7 @@
              FinitBEM,Fsurf,Finit_mdm,read_medium_freq,              &
              read_medium_tdplas,n_omega,omega_ini,omega_end,         &
              Fwrite,Fmdm_relax,Fgamess,mpibcast_readio_mdm,Fopt_chr, &
-             ntst,print_lf_matrix          
+             ntst,Fmdm_res
 !
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -132,7 +133,7 @@
                          local_field,debug_type,out_level,test_type,   &
                          medium_relax,ntst
        namelist /medium/ medium_type,medium_init,medium_pol,bem_type,  &
-                         bem_read_write,print_lf_matrix                  
+                         bem_read_write                  
        namelist /surface/input_surface,spheres_number,spheroids_number,&
          sphere_position_x,sphere_position_y,sphere_position_z,        &
          spheroid_axis_x,spheroid_axis_y,spheroid_axis_z,              &
@@ -184,7 +185,7 @@
                        out_level,test_type
 ! SP 13/07/18:: medium and surface not used but added for future implementations
        namelist /medium/ medium_type,medium_init,medium_pol,bem_type,  &
-                         bem_read_write                   
+                         bem_read_write,print_lf_matrix                   
        namelist /surface/input_surface,spheres_number,spheroids_number,&
          sphere_position_x,sphere_position_y,sphere_position_z,        &
          spheroid_axis_x,spheroid_axis_y,spheroid_axis_z,              &
@@ -289,6 +290,7 @@
        nts_act=0 
        ! Threshold value for optimized loops
        ntst=150
+       print_lf_matrix='non'
 
        return
 
@@ -395,6 +397,7 @@
        omega_end= 0.35
        ! The following are not 
        interaction_type='pcm'
+       print_lf_matrix = 'non'
 
        return
 
@@ -569,7 +572,6 @@
           case ('y','Y')
            write(*,*) 'Restart for medium'
            Fmdm_res='Yesr'
-           call read_medium_restart()
           case ('n','N')
            Fmdm_res='Nonr' 
        end select
@@ -609,6 +611,7 @@
          case ('drl','Drl','DRL')
            Feps='drl'
          case ('gen','Gen','GEN','gral','Gral','GRAL')
+           write(*,*) 'Generic dielectric function is used'
            Feps='gen'
            open(1,file='eps.inp')
            read(1,*) npts
@@ -750,10 +753,10 @@
        ! or are produced here and just written out, with no real propagation
          select case (bem_type)
           case ('diag','Diag','DIAG')
-           write(6,*) 'Diagonal BEM furmulation'
+           write(6,*) 'Diagonal BEM formulation'
            Fbem="diag"
           case ('stan','Stan','STAN')
-           write(6,*) 'Standard BEM furmulation not implemented yet'
+           write(6,*) 'Standard BEM formulation not implemented yet'
 #ifdef MPI
            call mpi_finalize(ierr_mpi)
 #endif
@@ -791,17 +794,17 @@
          end select
          select case(print_lf_matrix)
           case ('yes','Yes', 'YES')
-           Floc='loc'
-           write(6,*) "This run just writes matrices and boundary"
+             Floc='loc'
+             write(6,*) "This run just writes matrices and boundary"
           case ('non','Non', 'NON')
-           Floc='non'
-         case default
-           write(*,*) "Error, specify if local-field matrix", &
-             "should be written or not. "
+             Floc='non'
+          case default
+	     write(*,*) "Error, specify if local-field matrix", &
+	             "should be written or not. "
 #ifdef MPI
-          call mpi_finalize(ierr_mpi)
+	     call mpi_finalize(ierr_mpi)
 #endif
-          stop
+             stop
          end select
        endif
        if (Fprop(1:3).eq.'chr'.or.Fprop(1:3).eq.'dip') then

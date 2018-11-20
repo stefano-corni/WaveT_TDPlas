@@ -651,6 +651,7 @@
 
 
        irel=0
+       kk=0
        do j=nexc,1,-1
           do k=j-1,1,-1
              kk=kk+1
@@ -871,6 +872,8 @@
       pop=-1 
       !Initialize array for coherence
       coh=''
+      !Initialize variable for formatted/unformatted output
+      write_bin(1:1)='n'
 
 
       return
@@ -1142,15 +1145,18 @@
 
        implicit none
 
-       integer(i4b)    :: i
+       integer(i4b)    :: i,inn
        character(3)    :: tmp 
 
        open(50,file='pop_coh.inp',status='unknown')  
     
+       inn=n_step/n_out
+       if (n_out.gt.1) inn=inn+1
+
        write(50,*) '&pop_coh' 
        write(50,*) 'nstates =',n_ci 
        write(50,*) 'n_f =',n_f
-       write(50,*) 'nsteps =',n_step/n_out
+       write(50,*) 'nsteps =',inn
        write(50,*) 'read_bin =','"',binary(1:1),'"'
        write(50,*) 'write_bin =','"',write_bin(1:1),'"'
        write(50,*) 'tar =', '"',tar(1:3),'"',  ' != pop, coh or all '
