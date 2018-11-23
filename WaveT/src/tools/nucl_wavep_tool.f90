@@ -15,19 +15,26 @@ program nuclear_wp
   implicit none
 
   integer(i4b)               ::  i,j,k,l,m
-  integer(i4b)               ::  ne,nv,nstep,ntot,nx
+  integer(i4b)               ::  ne,nv,nstep,ntot,nx,nout
   integer(i4b), allocatable  ::  istep(:) 
   real(dbl)                  ::  x,hk,hl,xmin,xmax,dx,mu
   real(dbl)                  ::  expp,cc,sq,tmp,fact
-  real(dbl),    allocatable  ::  tstep(:),hv(:,:,:),w(:),deq(:)
-  complex(cmp)               ::  ctmp
-  complex(cmp), allocatable  ::  c(:,:),pe(:,:,:)
+  real(dbl)                  ::  w(20),deq(20)
+  real(dbl),    allocatable  ::  tstep(:),hv(:,:),rep(:,:),imp(:,:),npe(:)
+  real(dbl)                  ::  ctmp,ccc
+  complex(cmp), allocatable  ::  c(:,:),cpe(:,:)
   character*32               ::  filename,str
   character*200              ::  cdum
 
-  namelist /nuclwp/ nstep,ne,nv,filename,dx,xmin,xmax,w,deq,mu 
+
+
+  namelist /nuclwp/ nstep,ne,nv,filename,dx,xmin,xmax,w,deq,mu,nout 
+
+  w=0.d0
+  deq=0.d0
 
   read(*,nml=nuclwp)
+
 
   write(*,*) '**********************************************'
   write(*,*) '*                                            *'
@@ -47,7 +54,7 @@ program nuclear_wp
   write(*,*) 'File of the coefficients', filename
   write(*,*) 'Number of steps', nstep
   write(*,*) 'Number of electronic states', ne
-  write(*,*) 'Total number of vibrational states per electroni state', nv
+  write(*,*) 'Total number of vibrational states per electronic state', nv
   write(*,*) 'Reduced mass (au)', mu
   write(*,*) 'Minimum x value (au)', xmin
   write(*,*) 'Maximum x value (au)', xmax
@@ -66,8 +73,8 @@ program nuclear_wp
   do i=1,ne
      write(*,*) 'Frequency (cm-1) of harmonic oscillator for state', i, w(i)
   enddo
-  do i=1,ne
-     write(*,*) 'Equilibrium distance (au) of harmonic oscillator for state', i, deq(i)
+  do i=1,ne-1
+     write(*,*) 'Displacement (bohr) for harmonic oscillators for state', i+1, deq(i+1)
   enddo
   write(*,*) ''
 
@@ -91,9 +98,11 @@ program nuclear_wp
 
   allocate(istep(nstep))
   allocate(tstep(nstep))
-  allocate(hv(nv,ne,nx))
-  allocate(w(ne))
-  allocate(pe(nx,ne,nstep))
+  allocate(hv(ntot,nx))
+  allocate(cpe(nx,nstep))
+  allocate(rep(nx,nstep))
+  allocate(imp(nx,nstep))
+  allocate(npe(nstep))
   allocate(c(ntot,nstep))
 
   w=w*cm_to_au
@@ -108,50 +117,121 @@ program nuclear_wp
   close(10)
 
   do i=1,nx
+     l=0
      do k=1,ne
         x = xmin + (i-1)*dx + deq(k)
         x = dsqrt(mu*w(k))*x
         expp=dexp(-0.5d0*x**2)
         sq=dsqrt(mu*w(k)/pi)
-        cc=sq*sq
+        cc=dsqrt(sq)
         cc=cc*expp  
         do j=1,nv
-           call hermite(j-1,x,hv(j,k,i))
+           l=l+1
+           call hermite(j-1,x,hv(l,i))
            tmp=1.d0/dsqrt(2.d0**(j-1)*fact(j-1))
-           hv(j,k,i)=tmp*cc*hv(j,k,i)
+           hv(l,i)=tmp*cc*hv(l,i)
         enddo
      enddo
   enddo
 
-  pe=0.d0
+  !pe=0.d0
+  rep=0.d0
+  imp=0.d0
   do i=1,nstep
-     do j=1,ne
-        do k=1,nv   
-           do l=1,nv
-              ctmp=conjg(c((j-1)*ne+k,i))*c((j-1)*ne+l,i)
-              do m=1,nx
-                 pe(m,j,i) = pe(m,j,i) + ctmp*hv(k,j,m)*hv(l,j,m)
-              enddo
+     do j=1,ntot
+        do m=1,nx
+           rep(m,i) = rep(m,i) + dble(c(j,i))*hv(j,m)
+           imp(m,i) = imp(m,i) + aimag(c(j,i))*hv(j,m)
+        enddo
+     enddo
+  enddo
+
+  cpe=dcmplx(0.d0,0.d0)
+  do i=1,nstep
+     do j=1,ntot
+        do k=1,ntot
+           ccc=conjg(c(j,i))*c(k,i)
+           do m=1,nx
+              cpe(m,i) = cpe(m,i) + cc*hv(j,m)*hv(k,m)
            enddo
         enddo
-     enddo
+     enddo 
   enddo
 
   do i=1,nstep
-     write(str,*) i
-     open(11+i,file=trim(str)//'nucl_wp.dat')
-     write(11+i,*) '#xstep     do i=1,nstates_el  P_i(x)'
-     do m=1,nx
-        x = xmin + (m-1)*dx
-        write(11+i,*)  x, (pe(m,j,i), j=1,ne)
-     enddo
+     npe(i) = sum(cpe(:,i))
   enddo
+
+  !Population
+  !do i=1,nstep
+  !   if (mod(i,nout).eq.0) then
+  !       write(str,*) i
+  !       open(11+i,file=trim(str)//'.dat')
+  !       write(11+i,*) '#xstep   P(x)'
+  !       do m=1,nx
+  !          x = xmin + (m-1)*dx
+  !          write(11+i,*)  x, dsqrt(rep)/npe(i)
+  !       enddo
+  !       close(11+i)
+  !   endif
+  !enddo
+
+  !do i=1,nstep
+  !   write(999,*) i, sum(rep(:,i)**2)
+  !enddo
+
+  !Real part of the wave function
+  !First step always printed out
+  open(11,file='1r.dat')
+  write(11,*) '#xstep   Re(x)'
+  do m=1,nx
+     x = xmin + (m-1)*dx
+     write(11,*)  x, rep(m,1)**2/sum(rep(:,1)**2)
+  enddo
+  close(11)
+  do i=1,nstep
+     if (mod(i,nout).eq.0) then
+         write(str,*) i
+         open(11+i,file=trim(str)//'r.dat')
+         write(11+i,*) '#xstep   Re(x)'
+         do m=1,nx
+            x = xmin + (m-1)*dx
+            write(11+i,*)  x, rep(m,i)**2/sum(rep(:,i)**2)
+         enddo
+         close(11+i)
+     endif
+  enddo
+
+  !Imaginary part of the wave function
+  !First step always printed out
+  open(11,file='1i.dat')
+  write(11,*) '#xstep   Im(x)'
+  do m=1,nx
+     x = xmin + (m-1)*dx
+     write(11,*)  x, imp(m,1)/npe(1)
+  enddo
+  close(11)
+  do i=1,nstep
+     if (mod(i,nout).eq.0) then
+         write(str,*) i
+         open(11+i,file=trim(str)//'i.dat')
+         write(11+i,*) '#xstep   Im(x)'
+         do m=1,nx
+            x = xmin + (m-1)*dx
+            write(11+i,*)  x, imp(m,i)/npe(i)
+         enddo
+         close(11+i)
+     endif
+  enddo
+
 
   deallocate(istep)
   deallocate(tstep)
   deallocate(hv)
-  deallocate(w)
-  deallocate(pe)
+  deallocate(cpe)
+  deallocate(rep)
+  deallocate(imp)
+  deallocate(npe)
   deallocate(c)
 
   stop
