@@ -748,7 +748,7 @@
        endif
 
 ! PROPAGATION CYCLE: starts the propagation at timestep 3
-! without restar, at timestep restart_i+1 otherwise
+! without restart, at timestep restart_i+1 otherwise
 ! Markovian dissipation (quantum jump) 
        if (Fdis(5:9).eq."qjump") then
           !do i=3,n_step
