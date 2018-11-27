@@ -428,7 +428,7 @@ module vib
 ! Franck-Condon factors 
 ! 
 ! @date Created   : E. Coccia 11 Sep 2017
-! Modified  :
+! Modified  :       G. Dall'Osto 16 Nov 2018
 !------------------------------------------------------------------------
 
         integer(i4b)                :: i,j,k,v,v1,kk,kk1,ii,jj
