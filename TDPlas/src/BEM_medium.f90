@@ -278,7 +278,7 @@
          if(Fsurf.eq.'fil') then 
            call read_cavity_full_file
          elseif(Fsurf.eq.'gms') then
-           call read_gmsh_file
+           call read_gmsh_file(Finv)
          else
            if(Fmdm(2:4).eq.'sol') call pedra_int('act')
            if(Fmdm(2:4).eq.'nan') call pedra_int('met')

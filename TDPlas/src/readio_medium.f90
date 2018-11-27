@@ -66,7 +66,8 @@
                         Ftest,     & !< Test Flag: see below
                         Fdeb,      & !< Debug Flag: see below
                         Fopt_chr,  & !< Optimized loops with OMP
-                        Fmdm_res     !< Medium restart
+                        Fmdm_res,  & !< Medium restart
+                        Finv         !< Apply inversion symmetry when cavity is built using gmsh
 
                                      !! 
       
@@ -90,7 +91,7 @@
                         bem_read_write,input_surface,medium_init,    &
                         debug_type,bem_type,local_field,medium_type, &
                         out_level,interaction_init,epsilon_omega,    &
-                        test_type,medium_relax,gamess
+                        test_type,medium_relax,gamess,inversion
 
       private
       public read_medium,deallocate_medium,Fint,Feps,Fprop,          &
@@ -103,7 +104,7 @@
              FinitBEM,Fsurf,Finit_mdm,read_medium_freq,              &
              read_medium_tdplas,n_omega,omega_ini,omega_end,         &
              Fwrite,Fmdm_relax,Fgamess,mpibcast_readio_mdm,Fopt_chr, &
-             ntst          
+             ntst,Finv          
 !
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -219,7 +220,7 @@
          sphere_position_x,sphere_position_y,sphere_position_z,        &
          spheroid_axis_x,spheroid_axis_y,spheroid_axis_z,              &
          spheroid_position_x,spheroid_position_y,spheroid_position_z,  &
-         sphere_radius,spheroid_radius                                
+         sphere_radius,spheroid_radius,inversion                                
        namelist /eps_function/ epsilon_omega,eps_0,eps_d,eps_A,&
                                eps_gm,eps_w0,f_vel,tau_deb
        namelist /out_matrix/ gamess
@@ -417,6 +418,7 @@
        eps_gm=0.000757576
        f_vel=zero
        gamess='no '
+       inversion='non'
 
        return
 
@@ -873,6 +875,13 @@
          case ('gms','GMS','Gms')
           Fsurf='gms'
           write(6,*) "Surface read from file surface_msh.inp"
+          select case(inversion)
+          case ('inv','Inv','INV')
+           Finv='inv'
+           write(6,*) 'Apply inversion symmetry to the cavity'
+          case ('non')
+           Finv='non'
+          end select
          case ('bui','Bui','BUI')
           Fsurf='bui'
           write(6,*) "Building surface from spheres."
@@ -1103,6 +1112,7 @@
        call mpi_bcast(Fshape,               flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fsurf,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fopt_chr,             flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Finv,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
 
        if (Fprop(1:3).eq.'chr') call mpi_bcast(nts_act,    1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) 
        if (Fprop(1:3).eq.'dip') call mpi_bcast(nsph,       1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
