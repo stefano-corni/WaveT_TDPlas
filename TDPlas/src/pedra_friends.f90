@@ -1397,13 +1397,14 @@
        return
       end subroutine
 !
-      subroutine read_gmsh_file
+      subroutine read_gmsh_file(inv)
 ! this routine read in gmsh mesh files
 !  AFTER they have been massaged by a proper
 !  gawk script. To be revised with better coding
-      integer(4) :: n_nodes,i_nodes,its,jts,j_max,its_a,iswap,tmp
+      integer(4) :: n_nodes,i_nodes,its,jts,j_max,its_a,iswap,tmp,nts_eff
       integer(4),allocatable :: el_nodes(:,:)
       character(6) :: line, junk
+      character(3) :: inv
       real(8),allocatable :: c_nodes(:,:) 
       real(8) :: vert(3,3),normal(3),area,dist,dist_v(3), &
         dist_max,area_tot 
@@ -1411,7 +1412,6 @@
 #ifndef MPI
        myrank=0
 #endif
-
 
       nesf_act=0
       if (myrank.eq.0) then
@@ -1427,15 +1427,18 @@
             read(7,*) c_nodes(:,i_nodes)
          enddo
          read(7,*) nts_act
+         nts_eff=nts_act
+         if (inv.eq.'inv') nts_act=2*nts_act
       endif
 #ifdef MPI
      call mpi_bcast(c_nodes, 3*n_nodes,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
      call mpi_bcast(nts_act, 1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+     call mpi_bcast(nts_eff, 1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 #endif 
       allocate(cts_act(nts_act))
-      allocate(el_nodes(3,nts_act))
+      allocate(el_nodes(3,nts_eff))
       if (myrank.eq.0) then
-         do its=1,nts_act
+         do its=1,nts_eff
             read(7,*) el_nodes(:,its),iswap
             if(iswap.lt.0) then
               tmp=el_nodes(3,its)
@@ -1446,19 +1449,31 @@
          close(7)
       endif
 #ifdef MPI
-     call mpi_bcast(el_nodes, 3*nts_act,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+     call mpi_bcast(el_nodes, 3*nts_eff,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 #endif
 !  And now do representative points, areas and normals
-      its_a=1
-      area_tot=0.d0
 
-      do its=1,nts_act
-        vert(:,1)=c_nodes(:,el_nodes(1,its))
-        vert(:,2)=c_nodes(:,el_nodes(2,its))
-        vert(:,3)=c_nodes(:,el_nodes(3,its))
+      do its_a=1,nts_eff
+        vert(:,1)=c_nodes(:,el_nodes(1,its_a))
+        vert(:,2)=c_nodes(:,el_nodes(2,its_a))
+        vert(:,3)=c_nodes(:,el_nodes(3,its_a))
         cts_act(its_a)%x=sum(vert(1,:))/3.d0
         cts_act(its_a)%y=sum(vert(2,:))/3.d0
         cts_act(its_a)%z=sum(vert(3,:))/3.d0
+        if (inv.eq.'inv') then
+           cts_act(its_a+nts_eff)%x=-cts_act(its_a)%x
+           cts_act(its_a+nts_eff)%y=-cts_act(its_a)%y
+           cts_act(its_a+nts_eff)%z=-cts_act(its_a)%z
+        endif
+      enddo
+
+      its_a=1
+      area_tot=0.d0
+
+      do its=1,nts_eff
+        vert(:,1)=c_nodes(:,el_nodes(1,its))
+        vert(:,2)=c_nodes(:,el_nodes(2,its))
+        vert(:,3)=c_nodes(:,el_nodes(3,its))
         do jts=1,its_a-1
          dist=(cts_act(its_a)%x-cts_act(jts)%x)**2+  &
               (cts_act(its_a)%y-cts_act(jts)%y)**2+ &
@@ -1475,8 +1490,15 @@
 ! by using info from nearby normals to estimate a local
 ! curvature, TO BE DONE
         cts_act(its_a)%rsfe=1.d20   
+        if (inv.eq.'inv') then
+           cts_act(its_a+nts_eff)%area=area/2.d0
+           area_tot=area_tot+area/2.d0
+           cts_act(its_a+nts_eff)%n=normal/area
+           cts_act(its_a+nts_eff)%rsfe=1.d20
+        endif
         its_a=its_a+1
 10    enddo
+      if (inv.eq.'inv') its_a=2*its_a-1
 
       if (myrank.eq.0) then
          write(6,*) "nts,nts after eliminating replica",nts_act,its_a-1
