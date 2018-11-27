@@ -61,6 +61,7 @@
       real(dbl) :: g_neq2,g_neq2_0,g_neq_0,g_neq1,g_neq1_part !< Non Equilibrium Free energies
 ! Working variables
       real(dbl) :: f1,f2,f3,f4,f5 !< constant factors (calculated once and for all) for velocity-verlet propagator (Drude-Lorentz) 
+      real(dbl), allocatable :: BEM_f1(:,:),BEM_f3(:,:),BEM_f5(:,:) !< matrices (calculated once and for all) for velocity-verlet propagator (gral dielec func)
       real(dbl) :: dip(3)                               !< used in a test 
       real(dbl) :: ref                                  !< reference value in different debug tests    
       real(dbl) :: qtot                                 !< total BEM charge    
@@ -144,7 +145,11 @@
 ! SC: predifine the factors used in the VV propagator, used for
 ! Drude-Lorentz
       endif
-      if(Feps.eq."drl") call init_vv_propagator
+      if(Feps.eq."drl") then
+        call init_vv_propagator
+      elseif (Feps.eq."gen") then 
+         call init_vv_propagator_gen 
+      endif 
       if (Fmdm(1:3).ne.'vac') call correct_hamiltonian
 ! SC set the initial values of the solvent component of the 
 ! neq free energies
@@ -253,7 +258,7 @@
        endif
 
        ! EC 28/11/17 Write restart
-       !if (mod(i,n_res).eq.0) call wrt_restart_mdm()
+       if (mod(i,n_res).eq.0) call wrt_restart_mdm()
 
        return
 
@@ -602,7 +607,7 @@
          qx_tp(:)=zero    
          dqx_t(:)=zero 
        endif
-       if(Feps.eq."drl") then
+       if(Feps.eq."drl".or.Feps.eq."gen") then
          allocate(dqr_tp(nts_act))
          allocate(fqr_tp(nts_act))
          allocate(fqr_t(nts_act))
@@ -617,6 +622,11 @@
          endif
        endif
        deallocate(qd)
+
+       !FIXME: restart initializing from file
+       if ("Fmdm_res".eq.'Yesr') then
+          call read_medium_restart() 
+       endif 
 
        return
 
@@ -981,6 +991,18 @@
 #endif
            stop
          endif
+       elseif(Feps.eq."gen") then
+         if(Fprop.eq."chr-ief") then
+           call prop_vv_ief_gen
+         elseif(Fprop.eq."chr-ons") then
+           ! FIXME: add C-PCM propagation type
+           !call prop_ons_gen ! uses vv - not yet
+           write(*,*) "Wrong propagation method"
+           stop
+         else
+           write(*,*) "Wrong propagation method"
+           stop
+         endif
        endif
        if(Fdeb.eq."equ") then
 !EC:  mat_mult optimizes n_ci**2-based statements 
@@ -1055,6 +1077,39 @@
        f4=0.5d0*dt
        f5=eps_gm*f2
        if (myrank.eq.0) write(6,*) "Initiated VV propagator"
+
+       return
+
+      end subroutine
+
+      subroutine init_vv_propagator_gen
+!------------------------------------------------------------------------
+! @brief Initialization for velocity Verlet propagation (vv) 
+!
+! @date Created: G. Gil
+! Modified:
+! Notes: Taken from init_vv_propagator and replacing eps_gm by BEM_Qg 
+!------------------------------------------------------------------------
+
+       real(dbl), allocatable :: BEM_I(:,:)
+       integer :: j
+
+       allocate(BEM_I(nts_act,nts_act))
+       BEM_I = zero
+       forall(j = 1:nts_act) BEM_I(j,j) = one
+
+       ! FIXME: need to be deallocated somewhere
+       allocate(BEM_f1(nts_act,nts_act),BEM_f3(nts_act,nts_act),BEM_f5(nts_act,nts_act))
+
+       BEM_f1=dt*(BEM_I-dt*0.5d0*BEM_Qg)
+       f4=0.5d0*dt
+       f2=dt*f4
+       BEM_f3=BEM_I-matmul(BEM_Qg,BEM_f1)
+       BEM_f5=BEM_Qg*f2
+       write(6,*) "Initiated VV propagator"
+
+
+       deallocate(BEM_I)
 
        return
 
@@ -1236,6 +1291,48 @@
 
       end subroutine
 
+      subroutine prop_vv_ief_gen
+!------------------------------------------------------------------------
+! @brief General dielectric function propagation Fprop=chr-ief
+! velocity-verlet
+! algorithm 
+!
+! @date Created: G. Gil
+! Modified:
+! Notes: Taken from prop_vv_ief_drl and changing to the vv with matrix
+! factors
+!        N.B. that matrix BEM_Qg is inside the BEM_f1, BEM_f3 and BEM_f5
+!        matrices
+!------------------------------------------------------------------------
+
+      ! Charge propagation with general dielectric function and IEF
+      ! equations
+       integer(i4b) :: its
+
+
+       qr_t=qr_tp+matmul(BEM_f1,dqr_tp)+f2*fqr_tp
+
+       fqr_t=-matmul(BEM_Qw,qr_t)+matmul(BEM_Qf,pot_tp)
+       dqr_t=matmul(BEM_f3,dqr_tp)+f4*(fqr_t+fqr_tp)-matmul(BEM_f5,fqr_tp)
+       fqr_tp=fqr_t
+       dqr_tp=dqr_t
+      ! Local Field
+       if(Floc.eq."loc") then
+        qx_t=qx_tp+matmul(BEM_f1,dqx_tp)+f2*fqx_tp
+        if(Fmdm(2:4).eq.'sol') then
+         fqx_t=-matmul(BEM_Qw,qx_t)+matmul(BEM_Qfx,potf_tp)
+        else if(Fmdm(2:4).eq.'nan') then
+         fqx_t=-matmul(BEM_Qw,qx_t)+matmul(BEM_Qf,potf_tp)
+        endif
+        dqx_t=matmul(BEM_f3,dqx_tp)+f4*(fqx_t+fqx_tp)-matmul(BEM_f5,fqx_tp)
+        fqx_tp=fqx_t
+        dqx_tp=dqx_t
+       endif
+
+       return
+
+      end subroutine
+  
 
       subroutine prop_ief_deb
 !------------------------------------------------------------------------
@@ -1849,22 +1946,21 @@
 
       end subroutine
 
-
-!      subroutine wrt_restart_mdm()
+subroutine wrt_restart_mdm()
 !------------------------------------------------------------------------
 ! @brief write restart 
 !
 ! @date Created   : E. Coccia 28 Nov 2017
-! Modified  :
+! Modified  : G. Gil 02 Jul 2018
 !------------------------------------------------------------------------
-!
-!       implicit none
-!
-!       integer(i4b)     :: i
-!
-!       open(778, file='restart_mdm')
-!
-!      ! if (Fint.eq.'ons') then
+
+       implicit none
+
+       integer(i4b)     :: i
+
+       open(778, file='restart_mdm')
+
+!        if (Fint.eq.'ons') then
 !          write(778,*) 'Dipoles for Onsager' 
 !          do i=1,3
 !             write(778,*) fr_t(1), fr_t(2), fr_t(3)
@@ -1875,24 +1971,126 @@
 !                write(778,*) fx_t(1), fx_t(2), fx_t(3)
 !             enddo
 !          endif
-!       !elseif (Fint.eq.'pcm') then
-!          write(778,*) 'Charges for PCM' 
-!          do i=1,nts_act
-!             write(778,*) qr_t(i)
+!       elseif (Fint.eq.'pcm') then
+       if (Fint.eq.'pcm') then
+          write(778,*) 'Reaction-field polarization charges (PCM)'
+          do i=1,nts_act
+             write(778,*) qr_t(i)
+          enddo
+          write(778,*) 'Molecular potential'
+          do i=1,nts_act
+             write(778,*) pot_tp(i), pot_tp2(i)
+          enddo
+          if (Floc.eq.'loc') then
+             write(778,*) 'Local-field polarization charges (PCM)' 
+             do i=1,nts_act
+                write(778,*) qx_t(i)
+             enddo
+             write(778,*) 'External-field potential'
+             do i=1,nts_act
+                write(778,*) potf_tp(i), potf_tp2(i)
+             enddo
+          endif
+          if(Feps.eq."drl" .or. Feps.eq."gen") then
+             write(778,*) 'Reaction-field polarization charges (PCM)' 
+             do i=1,nts_act
+                write(778,*) dqr_t(i)
+             enddo
+             if (Floc.eq.'loc') then
+                write(778,*) 'Local-field polarization charges (PCM)' 
+                do i=1,nts_act
+                   write(778,*) dqx_t(i)
+                enddo
+             endif
+          endif
+       else
+         write(*,*) 'Error: restart is not implemented yet for other', &
+                    'interaction types other than PCM.'
+       endif
+
+       close(778)
+
+       return
+ 
+      end subroutine wrt_restart_mdm
+
+
+      subroutine read_medium_restart() 
+!------------------------------------------------------------------------
+! @brief Read restart 
+!
+! @date Created   : E. Coccia 28 Nov 2017
+! Modified  : G. Gil 02 Jul 2018
+!------------------------------------------------------------------------
+       
+       implicit none
+
+       integer(i4b)     :: i
+       character(3)     :: cdum 
+       logical          :: exist
+
+       inquire(file='restart_mdm', exist=exist)
+       if (exist) then
+          open(779, file='restart_mdm', status="old")
+       else
+          write(*,*) 'ERROR:  file restart_mdm is missing'
+          stop
+       endif
+
+!       if (Fint.eq.'ons') then
+!          read(779,*) cdum 
+!          do i=1,3
+!             read(779,*) fr_t(1), fr_t(2), fr_t(3)
 !          enddo
 !          if (Floc.eq.'loc') then
-!             write(778,*) 'Charges for PCM (local)' 
-!             do i=1,nts_act
-!                write(778,*) qx_t(i)
+!             read(779,*) cdum 
+!             do i=1,3
+!                read(779,*) fx_t(1), fx_t(2), fx_t(3)
 !             enddo
 !          endif
-!       !endif
-!
-!       close(778)
-!
-!       return
-! 
-!      end subroutine wrt_restart_mdm
+!       elseif (Fint.eq.'pcm') then
+       if (Fint.eq.'pcm') then
+          read(779,*) cdum
+          do i=1,nts_act
+             read(779,*) qr_tp(i)
+          enddo
+          read(779,*) cdum
+          do i=1,nts_act
+             read(779,*) pot_tp(i), pot_tp2(i)
+          enddo
+          if (Floc.eq.'loc') then
+             read(779,*) cdum
+             do i=1,nts_act
+                read(779,*) qx_tp(i)
+             enddo
+             read(779,*) cdum
+             do i=1,nts_act
+                read(779,*) potf_tp(i), potf_tp2(i)
+             enddo
+          endif
+          if(Feps.eq."drl" .or. Feps.eq."gen") then
+             read(779,*) cdum
+             do i=1,nts_act
+                read(779,*) dqr_tp(i)
+             enddo
+             if (Floc.eq.'loc') then
+                read(779,*) cdum
+                do i=1,nts_act
+                   read(779,*) dqx_tp(i)
+                enddo
+             endif
+          endif
+       else
+         write(*,*) 'Error: restart is not implemented yet for other',&
+                    'interaction types other than PCM.'
+       endif
+
+       close(779)
+
+       return
+
+      end subroutine read_medium_restart
+
 
       end module
 
