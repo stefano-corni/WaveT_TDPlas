@@ -131,7 +131,7 @@ program post_processing
     endif
  endif
 
- nsteps=nsteps+1
+ !nsteps=nsteps+1
  np = nstates*(nstates-1)/2
 
  allocate(ii(nsteps))

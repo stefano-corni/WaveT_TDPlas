@@ -17,7 +17,7 @@ OMP_IF= -openmp -DOMP
 #LDLAGS= --static --disable-shared --enable-static
 #FFLAGS= $(FFLAGS_DEB)
 #FFLAGS= $(FFLAGS_GF_DEB)
-FFLAGS= -O3 -ftz -align all ${OMP_IF} #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds 
+FFLAGS= -O3 -ftz -align all #${OMP_IF} #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds 
 CPP= -fpp
 MPI= -DMPI
 #LIBS = -L/usr/lib -llapack  -lblas 
@@ -35,7 +35,7 @@ OBJ_FREQ= constants.o global_tdplas.o pedra_friends.o readio_medium.o MathTools.
 
 # rules
 
-all: $(BINPATH)  $(BINPATH)/freq_bem.x $(BINPATH)/tdplas.x
+all: $(BINPATH)  $(BINPATH)/freq_bem.x $(BINPATH)/tdplas.x 
 	
 $(BINPATH):
 	mkdir $(BINPATH)
@@ -85,6 +85,8 @@ main_freq.o: main_freq.f90
 global_wavet.o: $(WAVET)/global_wavet.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
+
+
 # dependencies
 
 global_tdplas.o: constants.o
@@ -104,3 +106,5 @@ td_contmed.o: constants.o global_tdplas.o pedra_friends.o readio_medium.o BEM_me
 main_tdplas.o: readio_medium.o BEM_medium.o
 
 main_freq.o: readio_medium.o td_contmed.o
+
+
