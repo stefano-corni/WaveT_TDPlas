@@ -54,6 +54,7 @@
       real(dbl), allocatable    :: ion_rate(:) !ionization rates
       real(dbl)                 :: restart_t  ! time for restart
       real(dbl)                 :: dt,tau(2),start,krnd
+      real(dbl)                 :: Ip         !ionization energy
 ! SP 17/07/17: Changed to char flags
       !logical :: dis !turns on the dissipation
       !logical :: qjump ! =.true. quantum jump, =.false. stochastic propagation
@@ -127,7 +128,7 @@
              mpibcast_e_dip,mpibcast_sse,mpibcast_restart,  &
              nspectra,Fabs,ion_rate,mpibcast_ion_rate,Fbin, &
              ncit,Fopt,ik,Fwrt,tar,all_pop,all_coh,pop,coh, &
-             write_bin 
+             write_bin,Ip 
              
 !
       contains
@@ -148,7 +149,7 @@
        !Molecular parameters 
        namelist /general/n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,& 
                          dt,n_step,n_out,propa,n_restart,lsim,absorber,&
-                         binary,ncit
+                         binary,ncit,Ip
        !External field paramaters
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
                         npulse,tdelay,pshift
@@ -762,6 +763,8 @@
        binary='n'
        ! Threshold value for doing matmul or explicit loop in prop()
        ncit=150
+       ! Iionization energy (effective only when absorber='y')
+       Ip=0.d0 
 
        return
 
@@ -1014,7 +1017,11 @@
        write (*,*) "time at the center of the pulse (au):",t_mid
        write (*,*) "Width of the pulse (time au):",sigma(1)
        write (*,*) "Frequency (au):",omega(1)
-       write (*,*) "Maximum E field",fmax(:,1)
+       write (*,*) "Maximum E field (au)",fmax(:,1)
+       write (*,*) "Maximum E field (V/m)",fmax(:,1)*au_to_vm      
+       write (*,*) "Maximum intensity (W/cm^2)", fmax(:,1)**2*au_to_wcm2 
+
+
        !SC
        select case (radiative)
         case ('rad','Rad','RAD')
@@ -1436,7 +1443,15 @@
        implicit none
 
        integer(i4b) :: ierr5,err,idum,i
-       real(dbl)    :: rdum
+       real(dbl)    :: rdum,Up
+
+       Up=9.33d-14*maxval(fmax(:,1))**2*au_to_wcm2*(1.240/(omega(1)*au_to_ev))**2
+
+       write(*,*) 'Ionization energy (eV)', Ip*au_to_ev
+       write(*,*) 'Ponderomotive energy (eV)', Up 
+       write(*,*) 'Cutoff energy (eV)', Ip*au_to_ev+3.17*Up
+       write(*,*) 'N_cutoff=(Ip+3.17 Up)/omega',(Ip+3.17*Up/au_to_ev)/omega(1)
+       write(*,*) 'Keldysh parameter',sqrt(Ip/(2.d0*Up/au_to_ev))
 
        open(12,file='ion_rate.dat',status="old",iostat=ierr5,err=105)
 
