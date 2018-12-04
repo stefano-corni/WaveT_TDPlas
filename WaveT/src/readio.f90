@@ -548,7 +548,7 @@
           enddo
        endif
 
-       if (Fmdm.eq.'nan') then
+       if (Fmdm.eq.'Cnan') then
           open(7,file="ci_mut_np.inp",status="old",iostat=ierr4,err=104)
           allocate(mut_np2(nf,3))
           do i=1,nf
@@ -686,7 +686,7 @@
        deallocate(tomega)
        if (idep.eq.0) deallocate(delta)
        if (myrank.eq.0) then
-          if (Fdis.ne."nodis".and.Fmdm.eq.'nan') deallocate(mut_np2)
+          if (Fdis.ne."nodis".and.Fmdm.eq.'Cnan') deallocate(mut_np2)
           if (Fful.eq.'Yesf') then
              deallocate(irel)
           endif
