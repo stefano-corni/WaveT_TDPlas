@@ -8,7 +8,7 @@ module vib
       save
 
       integer(i4b)              :: nstates,nvib,nmodes,ntot,ncomb,nfc,nbin
-      real(dbl)                 :: sigma,emin,emax
+      real(dbl)                 :: sigma,emin,emax,mu
       real(dbl),    allocatable :: w(:,:),q(:,:)
       real(dbl),    allocatable :: e(:),dip(:,:,:)
       real(dbl),    allocatable :: ef(:),dipf(:,:,:)
@@ -16,7 +16,7 @@ module vib
       logical                   :: coupling,mix
 
       public nstates,nvib,nmodes,w,q,e,dip,ef,dipf,fact,dfact,bin_coef, &
-             mix,coupling,iv,ncomb,nfc,sigma,nbin
+             mix,coupling,iv,ncomb,nfc,sigma,nbin,mu
        
       contains        
 
@@ -74,7 +74,7 @@ module vib
  
         integer(i4b)             :: idum,i,j 
  
-        namelist /vibrations/nstates,nvib,nmodes,coupling,mix,nfc,sigma,nbin,emax
+        namelist /vibrations/nstates,nvib,nmodes,coupling,mix,nfc,sigma,nbin,emax,mu
 
         mix=.false.
         coupling=.false.
@@ -86,6 +86,7 @@ module vib
         nbin=10000
         emin=0.d0
         emax=15.d0 !eV
+        mu=1.d0
 
         ! Read w and q for any vib level (vib.dat file)
         ! Frequency in cm-1, normal coordinates in bohr
@@ -129,6 +130,7 @@ module vib
         write(*,*) 'Number of electronic states', nstates
         write(*,*) 'Number of normal modes per electronic state', nmodes
         write(*,*) 'Number of vibrational states per normal mode', nvib
+        write(*,*) 'Reduced mass', mu
         if (mix) then
            write(*,*) 'Duschinsky rotation for normal coordinates' 
         else
@@ -163,7 +165,7 @@ module vib
 
       end subroutine read_input_vib 
 
-      subroutine compute_fc(v,ve,w,we,d,n,fc,mn)
+      subroutine compute_fc(v,ve,w,we,d,mu,n,fc,mn)
 !------------------------------------------------------------------------
 ! @brief Compute Franck-Condon factors between the vibrational 
 ! eigenstates (harmonic oscillator) of any electronic ground-excited
@@ -177,10 +179,10 @@ module vib
         implicit none
 
         integer(i4b),  intent(in)  :: v,ve,n
-        real(dbl),     intent(in)  :: w,we,d
+        real(dbl),     intent(in)  :: w,we,d,mu
         real(dbl),     intent(out) :: fc,mn
         integer(i4b)               :: k,ke,kk,k2
-        real(dbl)                  :: s,a,b,be,ik,r,nf
+        real(dbl)                  :: s,a,b,be,ik,r,nf,al,ale
         real(dbl)                  :: t1,t2,ikk,factv,factve
         real(dbl)                  :: hv,hve,ww,pow2,dw,ptmp,tmp,tmp1 
                           
@@ -216,23 +218,24 @@ module vib
 ! (v)*(v')*Hv-k(b)*Hv'-k'(b')*(2*sqrt(alpha))^k*(2*sqrt(alpha'))^k'*I(kk)
 ! (k) (k')
 
-        ww=1.d0/(w+we) 
+        al=mu*w 
+        ale=mu*we
 
-        a  = 2.d0*sqrt(w*we)*ww
-        s  = w*we*d**2*ww
+        ww=1.d0/(al+ale) 
+
+        a  = 2.d0*sqrt(al*ale)*ww
+        s  = al*ale*d**2*ww
         pow2=1.d0/2.d0**(v+ve)
         factv=1.d0/fact(v)
         factve=1.d0/fact(ve)
-        !nf = a*exp(-s)/(pow2*fact(v)*fact(ve))
         nf = a*exp(-s)*pow2
         nf = nf*factv
         nf = nf*factve
-        t1 = 2.d0*sqrt(w)
-        t2 = 2.d0*sqrt(we)
-        r  = -we*d*ww
-        b  = -we*sqrt(w)*d*ww
-        be = w*sqrt(we)*d*ww 
-        !if (nf.lt.zeromin) nf=zeromin
+        t1 = 2.d0*sqrt(al)
+        t2 = 2.d0*sqrt(ale)
+        r  = -ale*d*ww
+        b  = -ale*sqrt(al)*d*ww
+        be = al*sqrt(ale)*d*ww 
         if (nf.lt.1.d-100) nf=0.d0
 
         fc=0.d0
@@ -245,27 +248,14 @@ module vib
                  ik=0.d0
               else
                  ptmp=0.5d0*(k+ke)
-                 dw=(w+we)**ptmp
+                 dw=(al+ale)**ptmp
                  tmp = dfact(k+ke-1)
                  ik = safe_division(tmp,dw,1.d100) 
               endif
               tmp1 = sqrt(nf)*bin_coef(v,k)*bin_coef(ve,ke)*hv*hve*t1**k*t2**ke*ik
               fc = fc + tmp1 
-
-              !do k2=0,n
-              !   if (mod(k+ke+k2,2).ne.0) then
-              !       ikk=0.d0
-              !   else
-              !       ptmp=0.5d0*(k+ke+k2)
-              !       dw=(w+we)**ptmp
-              !       ikk = dfact(k+ke+k2-1)*dw
-              !   endif
-              !   mn = mn + bin_coef(v,k)*bin_coef(ve,ke)*bin_coef(n,k2)*hv*hve*t1**k*t2**ke*r**(n-k2)*ikk
-              !enddo
            enddo
         enddo
-
-        !fc = sqrt(nf)*fc
 
 ! <v|x^n|v'> = sqrt(A*exp(-S)/(2^(v+v')*v!*v'!))*sum_k=0^v * sum_k'^v' *
 ! sum_k''=0^n*
@@ -679,7 +669,7 @@ module vib
                 fc=0.d0
              endif 
           else
-             call compute_fc(v,v1,w(l,k),w(m,k),d,nfc,fc,mn)
+             call compute_fc(v,v1,w(l,k),w(m,k),d,mu,nfc,fc,mn)
           endif
           tfc=tfc*fc 
        enddo
