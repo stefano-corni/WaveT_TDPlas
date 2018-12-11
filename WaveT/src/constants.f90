@@ -21,6 +21,7 @@
       real(dbl), parameter :: cm_to_au=1.d0/au_to_cm
       real(dbl), parameter :: au_to_vm=5.142206707D+11
       real(dbl), parameter :: au_to_wcm2=3.51D+16
+      real(dbl), parameter :: uma_to_au=1836.d0
       real(dbl), parameter :: zero=0.d0
       real(dbl), parameter :: one=1.d0
       real(dbl), parameter :: two=2.d0
