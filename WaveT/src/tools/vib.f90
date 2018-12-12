@@ -88,7 +88,7 @@ module vib
         emax=15.d0 !eV
 
         ! Read w, q and mu  for any vib level (vib.dat file)
-        ! Frequency in cm-1, normal coordinates in bohr, reduced mass in uma
+        ! Frequency in cm-1, normal coordinates in bohr, reduced mass in amu 
         ! Excited state N
         ! w q mu for mode 1
         ! w q mu for mode 2
@@ -157,7 +157,7 @@ module vib
         close(60)
 
         w(:,:) = w(:,:)*cm_to_au
-        mu(:,:) = mu(:,:)*uma_to_au
+        mu(:,:) = mu(:,:)*amu_to_au
  
         allocate(ef(ntot),dipf(3,ntot,ntot)) 
 
