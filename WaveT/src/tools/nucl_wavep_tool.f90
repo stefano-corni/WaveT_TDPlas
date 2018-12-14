@@ -16,9 +16,9 @@ program nuclear_wp
   integer(i4b)               ::  i,j,k,l,m
   integer(i4b)               ::  ne,nv,nstep,ntot,nx,nout
   integer(i4b), allocatable  ::  istep(:) 
-  real(dbl)                  ::  x,hk,hl,xmin,xmax,dx,mu
+  real(dbl)                  ::  x,hk,hl,xmin,xmax,dx
   real(dbl)                  ::  expp,cc,sq,tmp,fact
-  real(dbl)                  ::  w(20),deq(20)
+  real(dbl)                  ::  w(20),deq(20),mu(20)
   real(dbl),    allocatable  ::  tstep(:),hv(:,:),rep(:,:),imp(:,:),npe(:)
   real(dbl)                  ::  ctmp,ccc
   complex(cmp), allocatable  ::  c(:,:),cpe(:,:)
@@ -31,6 +31,7 @@ program nuclear_wp
 
   w=0.d0
   deq=0.d0
+  mu=0.d0
 
   read(*,nml=nuclwp)
 
@@ -55,18 +56,12 @@ program nuclear_wp
   write(*,*) 'Number of steps', nstep
   write(*,*) 'Number of electronic states', ne
   write(*,*) 'Total number of vibrational states per electronic state', nv
-  write(*,*) 'Reduced mass (au)', mu
   write(*,*) 'Minimum x value (au)', xmin
   write(*,*) 'Maximum x value (au)', xmax
   write(*,*) 'Spatial step (au)', dx
 
   if (nstep.le.0) then
      write(*,*) 'ERROR: nstep must be positive',nstep
-     stop
-  endif
-
-  if (mu.le.0.d0) then
-     write(*,*) 'ERROR: reduced mass mu must be positive',nstep
      stop
   endif
 
@@ -125,9 +120,9 @@ program nuclear_wp
      l=0
      do k=1,ne
         x = xmin + (i-1)*dx + deq(k)
-        x = dsqrt(mu*w(k))*x
+        x = dsqrt(mu(k)*w(k))*x
         expp=dexp(-0.5d0*x**2)
-        sq=dsqrt(mu*w(k)/pi)
+        sq=dsqrt(mu(k)*w(k)/pi)
         cc=dsqrt(sq)
         cc=cc*expp  
         do j=1,nv
@@ -197,6 +192,10 @@ program nuclear_wp
   deallocate(imp)
   deallocate(npe)
   deallocate(c)
+
+  write(*,*) ''
+  write(*,*) 'End of simulation'
+  write(*,*) ''
 
   stop
 
