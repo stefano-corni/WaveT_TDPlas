@@ -1,0 +1,3 @@
+Create a 'movie' of the nuclear wave packet using make_nucl_wavep.x in WaveT/bin: snapshots are created according to a given frequency. The corresponding source files is in Wavet/src/tools.
+
+The vibrational ground state of the electronic ground state (usually the initial state) is not included in the description.
