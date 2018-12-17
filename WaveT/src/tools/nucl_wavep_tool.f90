@@ -21,9 +21,11 @@ program nuclear_wp
   real(dbl)                  ::  w(20),deq(20),mu(20)
   real(dbl),    allocatable  ::  tstep(:),hv(:,:),rep(:,:),imp(:,:),npe(:)
   real(dbl)                  ::  ctmp,ccc
+  real(dbl),    allocatable  ::  rc(:),ic(:)          
   complex(cmp), allocatable  ::  c(:,:),cpe(:,:)
   character*32               ::  filename,str
   character*200              ::  cdum
+  character*4000             ::  fmt_ci
 
 
 
@@ -104,15 +106,22 @@ program nuclear_wp
   allocate(imp(nx,nstep))
   allocate(npe(nstep))
   allocate(c(ntot,nstep))
+  allocate(rc(ntot),ic(ntot)) 
 
   w=w*cm_to_au
 
-  open(10,file=filename)
+  open(10,file=filename,status="unknown")
 
   read(10,*) cdum
+  write (fmt_ci,'("(i8,f14.4,",I0,"e17.8E3)")') 2*ntot
   do i=1,nstep
-     read(10,*) istep(i), tstep(i), (c(j,i), j=1,ntot) 
+     read(10,fmt_ci) istep(i), tstep(i), (rc(j), ic(j), j=1,ntot)
+     do j=1,ntot
+        c(j,i) = dcmplx(rc(j),ic(j))
+     enddo
   enddo
+
+  deallocate(rc,ic)
 
   close(10)
 
@@ -137,6 +146,7 @@ program nuclear_wp
   rep=0.d0
   imp=0.d0
   do i=1,nstep
+     !Do not include vibrational ground state of the electronic ground state
      do j=2,ntot
         do m=1,nx
            rep(m,i) = rep(m,i) + dble(c(j,i))*hv(j,m)
@@ -177,7 +187,8 @@ program nuclear_wp
          write(11+i,*) '#xstep   |Psi(x)|^2'
          do m=1,nx
             x = xmin + (m-1)*dx
-            write(11+i,*)  x, (rep(m,i)**2+imp(m,i)**2)/npe(i)
+            !write(11+i,*)  x, (rep(m,i)**2+imp(m,i)**2)/npe(i)
+            write(11+i,*)  x, (imp(m,i)**2)/npe(i)
          enddo
          close(11+i)
      endif
