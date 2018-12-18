@@ -2,13 +2,13 @@
 
 nstep=16537               !number of effective steps from the propagation
 ne=2                      !number of electronic states
-nv=14                     !number of vibrational states per each electronic states
-w=1500. 1500.             !vibrational frequencies (cm-1) in the two manifolds
+nv=14                     !number of vibrational states per each electronic state
+w=1500. 1500.             !vibrational frequencies (cm-1) per each electronic state 
 deq=0. .5                 !displacement (bohr)
 xmin=-5.                  !spatial grid
 xmax=5.                   !spatial grid
 dx=0.05                   !spatial grid
-mu=1.d0 1.d0              !reduced mass (amu)
+mu=1.d0 1.d0              !reduced mass (amu) per each electronic state
 nout=200                  !output frequency
 filename='c_t_1.dat'      !coefficient file from the propagation   
 /
