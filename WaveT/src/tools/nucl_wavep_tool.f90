@@ -157,8 +157,8 @@ program nuclear_wp
 
   cpe=dcmplx(0.d0,0.d0)
   do i=1,nstep
-     do j=1,ntot
-        do k=1,ntot
+     do j=2,ntot
+        do k=2,ntot
            ccc=conjg(c(j,i))*c(k,i)
            do m=1,nx
               cpe(m,i) = cpe(m,i) + ccc*hv(j,m)*hv(k,m)
