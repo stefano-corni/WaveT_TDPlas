@@ -3,7 +3,7 @@
 nstep=16537               !number of effective steps from the propagation
 ne=2                      !number of electronic states
 nv=14                     !number of vibrational states per each electronic state
-w=1500. 1500.             !vibrational frequencies (cm-1) per each electronic state 
+w=1500. 1500.             !vibrational frequencies (cm-1) per each electronic state
 deq=0. .5                 !displacement (bohr)
 xmin=-5.                  !spatial grid
 xmax=5.                   !spatial grid
