@@ -1061,6 +1061,7 @@
          enddo
         endif
        enddo
+
        close(7)
 
        return

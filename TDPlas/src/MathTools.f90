@@ -20,7 +20,10 @@
       public diag_mat,inv,do_pot_from_field,do_field_from_charges,    &
              do_dip_from_charges,do_dip_from_coeff,do_pot_from_coeff, &
              do_pot_from_dip,do_vts_from_dip,mdl,vprod,               &
-             do_cpot_from_coeff,do_field_from_dip,mat_mult,cmat_mult                      
+             !do_cpot_from_coeff,
+             do_field_from_dip,mat_mult,cmat_mult!, &
+             !mat_mat_mult                       
+
       contains
 
 
@@ -314,7 +317,6 @@
 
       end subroutine
 
-
       subroutine do_pot_from_coeff(c,pot)
 !------------------------------------------------------------------------
 ! @brief Compute potential on BEM surface from CIS coefficientes 
@@ -323,11 +325,12 @@
 ! Modified: E. Coccia 5/7/18
 !------------------------------------------------------------------------
 
-       complex(cmp), intent(IN)  :: c(n_ci)
-       real(dbl),    intent(OUT) :: pot(nts_act)
-       integer(i4b)              :: its,k,j  
-       real(dbl)                 :: ctmp(nts_act,n_ci)
+       complex(cmp), intent(IN)        :: c(n_ci)
+       real(dbl),    intent(OUT)       :: pot(nts_act)
 
+       integer(i4b)                       :: its,k,j  
+       complex(cmp), save, allocatable    :: ctmp(:)
+       complex(cmp), save                 :: cc
 
 #ifndef OMP
        do its=1,nts_act
@@ -337,29 +340,32 @@
 
 #ifdef OMP
        if (Fopt(1:3).eq.'omp') then
-          ctmp=0.d0
-!$OMP PARALLEL reduction (+:ctmp)
+          allocate(ctmp(nts_act*n_ci))
+!$OMP PARALLEL REDUCTION (+:cc)
 !$OMP DO 
-          do k=1,n_ci
-             do j=1,n_ci
-                do its=1,nts_act
-                   ctmp(its,k)=ctmp(its,k)+ vts(its,k,j)*c(j)
+          do its=1,nts_act
+             do k=1,n_ci
+                cc=0.d0
+                do j=1,n_ci
+                   cc = cc + vts(its,k,j)*c(j)
                 enddo
+                ctmp(k+(its-1)*n_ci) = cc
              enddo
           enddo
 !$OMP END PARALLEL
 !$OMP PARALLEL
 !$OMP DO
-         do its=1,nts_act
-            pot(its)=dot_product(c,ctmp(its,:))
-         enddo
+          do its=1,nts_act
+             pot(its)=dot_product(c,ctmp((its-1)*n_ci+1:its*n_ci))
+          enddo
 !$OMP END PARALLEL
+          deallocate(ctmp)
        else
 !$OMP PARALLEL
 !$OMP DO
-         do its=1,nts_act
-            pot(its)=dot_product(c,matmul(vts(its,:,:),c))
-         enddo 
+          do its=1,nts_act
+             pot(its)=dot_product(c,matmul(vts(its,:,:),c))
+          enddo 
 !$OMP END PARALLEL
        endif
 #endif
@@ -369,7 +375,7 @@
       end subroutine
 
 
-      subroutine do_cpot_from_coeff(c,cpot,vts)
+!      subroutine do_cpot_from_coeff(c,cpot,vts)
 !------------------------------------------------------------------------
 ! @brief Compute complex "potentials" on BEM surface from CIS
 ! coefficientes 
@@ -378,45 +384,45 @@
 ! Modified: E. Coccia 5/7/18
 !------------------------------------------------------------------------
 
-       complex(cmp), intent(IN)  :: c(n_ci)
-       complex(cmp), intent(OUT) :: cpot(n_ci)
-       real(dbl),    intent(IN)  :: vts(n_ci,n_ci)
-       integer(i4b)              :: i,j,k  
-       complex(cmp)              :: ctmp(n_ci)
+!       complex(cmp), intent(IN)  :: c(n_ci)
+!       complex(cmp), intent(OUT) :: cpot(n_ci)
+!       real(dbl),    intent(IN)  :: vts(n_ci,n_ci)
+!       integer(i4b)              :: i,j,k  
+!       complex(cmp)              :: ctmp(n_ci)
 
-#ifndef OMP
-       do k=1,n_ci   
-          if(Fprop(1:3).eq."chr") cpot=exp(ui*e_ci(k))*matmul(vts,c)
-          if(Fprop(1:3).eq."osc") cpot=exp(ui*e_ci(k))*matmul(vts,c)
-       enddo 
-#endif
-#ifdef OMP
-       if (Fopt(1:3).eq.'omp') then
-          if (Fprop(1:3).eq."chr".or.Fprop(1:3).eq."osc") then
-             ctmp=0.d0
-!$OMP PARALLEL REDUCTION(+:ctmp) 
-!$OMP DO
-             do k=1,n_ci
-                do j=1,n_ci
-                   ctmp(k)=ctmp(k)+ vts(k,j)*c(j)
-                enddo
-             enddo
-!$OMP END PARALLEL
-             do k=1,n_ci
-                cpot=exp(ui*e_ci(k))*ctmp 
-             enddo
-          endif
-       else
-          do k=1,n_ci
-             if(Fprop(1:3).eq."chr") cpot=exp(ui*e_ci(k))*matmul(vts,c)
-             if(Fprop(1:3).eq."osc") cpot=exp(ui*e_ci(k))*matmul(vts,c)
-          enddo
-       endif 
-#endif
+!#ifndef OMP
+!       do k=1,n_ci   
+!          if(Fprop(1:3).eq."chr") cpot=exp(ui*e_ci(k))*matmul(vts,c)
+!          if(Fprop(1:3).eq."osc") cpot=exp(ui*e_ci(k))*matmul(vts,c)
+!       enddo 
+!#endif
+!#ifdef OMP
+!       if (Fopt(1:3).eq.'omp') then
+!          if (Fprop(1:3).eq."chr".or.Fprop(1:3).eq."osc") then
+!             ctmp=0.d0
+!!$OMP PARALLEL REDUCTION(+:ctmp) 
+!!$OMP DO
+!             do k=1,n_ci
+!                do j=1,n_ci
+!                   ctmp(k)=ctmp(k)+ vts(k,j)*c(j)
+!                enddo
+!             enddo
+!!$OMP END PARALLEL
+!             do k=1,n_ci
+!                cpot=exp(ui*e_ci(k))*ctmp 
+!             enddo
+!          endif
+!       else
+!          do k=1,n_ci
+!             if(Fprop(1:3).eq."chr") cpot=exp(ui*e_ci(k))*matmul(vts,c)
+!             if(Fprop(1:3).eq."osc") cpot=exp(ui*e_ci(k))*matmul(vts,c)
+!          enddo
+!       endif 
+!#endif
 
-       return
+!       return
 
-      end subroutine
+!      end subroutine
 
 
       subroutine do_field_from_dip(d,rd,f,rf)
@@ -523,7 +529,9 @@
        implicit none
 
        real(dbl),    intent(in)    :: a(nts_act,nts_act),b(nts_act)
-       real(dbl)                   :: mat_mult(nts_act),tmp(nts_act)
+       !real(dbl)                   :: mat_mult(nts_act),tmp(nts_act)
+       real(dbl)                   :: mat_mult(nts_act)
+       real(dbl)                   :: tmp
 
        integer(i4b)                :: i,j
 
@@ -533,16 +541,19 @@
 #ifdef OMP
 
        if (Fopt_chr(1:3).eq.'omp') then
-          tmp=0.d0
+          !tmp=0.d0
 !$OMP PARALLEL reduction (+:tmp)
 !$OMP DO
           do j=1,nts_act
+             tmp=0.d0
              do i=1,nts_act
-                tmp(j) = tmp(j) + a(j,i)*b(i)
+                !tmp(j) = tmp(j) + a(j,i)*b(i)
+                tmp = tmp + a(j,i)*b(i)
              enddo
+             mat_mult(j)=tmp 
           enddo
 !$OMP END PARALLEL
-          mat_mult=tmp
+          !mat_mult=tmp
        else
           mat_mult=matmul(a,b)
        endif
@@ -566,7 +577,9 @@
 
        real(dbl),    intent(in)    :: a(n_ci,n_ci)
        complex(cmp), intent(in)    :: b(n_ci)
-       complex(cmp)                :: cmat_mult(n_ci),tmp(n_ci)
+       !complex(cmp)                :: cmat_mult(n_ci),tmp(n_ci)
+       complex(cmp)                :: cmat_mult(n_ci) 
+       complex(cmp)                :: tmp  
 
        integer(i4b)                :: i,j
 
@@ -575,16 +588,19 @@
 #endif       
 #ifdef OMP
        if (Fopt(1:3).eq.'omp') then
-          tmp=0.d0
+          !tmp=0.d0
 !$OMP PARALLEL reduction (+:tmp)
 !$OMP DO
           do j=1,n_ci
+             tmp=0.d0
              do i=1,n_ci
-                tmp(j) = tmp(j) + a(j,i)*b(i)
+                !tmp(j) = tmp(j) + a(j,i)*b(i)
+                tmp = tmp + a(j,i)*b(i)
              enddo
+             cmat_mult(j)=tmp 
           enddo
 !$OMP END PARALLEL
-          cmat_mult=tmp
+          !cmat_mult=tmp
        else
           cmat_mult=matmul(a,b)
        endif
@@ -595,5 +611,48 @@
       end function cmat_mult
 
 
+!      function mat_mat_mult(a,b)
+!------------------------------------------------------------------------
+! @brief Optimized matrix/matrix multiplication for tesserae-based
+! arrays 
+!
+! @date Created: E. Coccia 6/12/18 
+! Modified:
+!------------------------------------------------------------------------
+
+!       implicit none
+
+!       real(dbl),    intent(in)    :: a(nts_act,nts_act),b(nts_act,nts_act)
+!       real(dbl)                   :: mat_mat_mult(nts_act,nts_act),tmp
+     
+!       integer(i4b)                :: i,j,k
+
+!#ifndef OMP
+!       mat_mat_mult=matmul(a,b)
+!       write(*,*) 'CIAO' 
+!#endif       
+!#ifdef OMP
+
+!       if (Fopt_chr(1:3).eq.'omp') then
+!!$OMP PARALLEL reduction (+:tmp)
+!!$OMP DO
+!         do j=1,nts_act
+!            do i=1,nts_act
+!               tmp=0.d0  
+!               do k=1,nts_act
+!                  tmp=tmp+a(i,k)*b(k,j)
+!               enddo
+!               mat_mat_mult(i,j)=tmp
+!            enddo
+!         enddo
+!!$OMP END PARALLEL
+!       else
+!          mat_mat_mult=matmul(a,b)
+!       endif
+!#endif       
+
+!       return
+
+!      end function mat_mat_mult
 
       end module

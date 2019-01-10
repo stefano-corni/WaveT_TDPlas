@@ -2,11 +2,10 @@ program nuclear_wp
 
 !------------------------------------------------------------------------
 ! @brief Time evolution of the nuclear wave packet
-! Pe(x,t) = \sum_ve,we Cve*(t)Cwe(t) Xve(x)Xwe(x)
- 
+! 
 ! 
 ! @date Created   : E. Coccia 26 Feb 2018
-! Modified  :
+! Modified  :       E. Coccia 18 Dec 2018 
 !------------------------------------------------------------------------
 
   use constants
@@ -17,14 +16,16 @@ program nuclear_wp
   integer(i4b)               ::  i,j,k,l,m
   integer(i4b)               ::  ne,nv,nstep,ntot,nx,nout
   integer(i4b), allocatable  ::  istep(:) 
-  real(dbl)                  ::  x,hk,hl,xmin,xmax,dx,mu
+  real(dbl)                  ::  x,hk,hl,xmin,xmax,dx
   real(dbl)                  ::  expp,cc,sq,tmp,fact
-  real(dbl)                  ::  w(20),deq(20)
+  real(dbl)                  ::  w(20),deq(20),mu(20)
   real(dbl),    allocatable  ::  tstep(:),hv(:,:),rep(:,:),imp(:,:),npe(:)
   real(dbl)                  ::  ctmp,ccc
+  real(dbl),    allocatable  ::  rc(:),ic(:)          
   complex(cmp), allocatable  ::  c(:,:),cpe(:,:)
   character*32               ::  filename,str
   character*200              ::  cdum
+  character*4000             ::  fmt_ci
 
 
 
@@ -32,9 +33,11 @@ program nuclear_wp
 
   w=0.d0
   deq=0.d0
+  mu=0.d0
 
   read(*,nml=nuclwp)
 
+  mu=mu*amu_to_au
 
   write(*,*) '**********************************************'
   write(*,*) '*                                            *'
@@ -55,7 +58,6 @@ program nuclear_wp
   write(*,*) 'Number of steps', nstep
   write(*,*) 'Number of electronic states', ne
   write(*,*) 'Total number of vibrational states per electronic state', nv
-  write(*,*) 'Reduced mass (au)', mu
   write(*,*) 'Minimum x value (au)', xmin
   write(*,*) 'Maximum x value (au)', xmax
   write(*,*) 'Spatial step (au)', dx
@@ -104,15 +106,22 @@ program nuclear_wp
   allocate(imp(nx,nstep))
   allocate(npe(nstep))
   allocate(c(ntot,nstep))
+  allocate(rc(ntot),ic(ntot)) 
 
   w=w*cm_to_au
 
-  open(10,file=filename)
+  open(10,file=filename,status="unknown")
 
   read(10,*) cdum
+  write (fmt_ci,'("(i8,f14.4,",I0,"e17.8E3)")') 2*ntot
   do i=1,nstep
-     read(10,*) istep(i), tstep(i), (c(j,i), j=1,ntot) 
+     read(10,fmt_ci) istep(i), tstep(i), (rc(j), ic(j), j=1,ntot)
+     do j=1,ntot
+        c(j,i) = dcmplx(rc(j),ic(j))
+     enddo
   enddo
+
+  deallocate(rc,ic)
 
   close(10)
 
@@ -120,9 +129,9 @@ program nuclear_wp
      l=0
      do k=1,ne
         x = xmin + (i-1)*dx + deq(k)
-        x = dsqrt(mu*w(k))*x
+        x = dsqrt(mu(k)*w(k))*x
         expp=dexp(-0.5d0*x**2)
-        sq=dsqrt(mu*w(k)/pi)
+        sq=dsqrt(mu(k)*w(k)/pi)
         cc=dsqrt(sq)
         cc=cc*expp  
         do j=1,nv
@@ -134,11 +143,11 @@ program nuclear_wp
      enddo
   enddo
 
-  !pe=0.d0
   rep=0.d0
   imp=0.d0
   do i=1,nstep
-     do j=1,ntot
+     !Do not include vibrational ground state of the electronic ground state
+     do j=2,ntot
         do m=1,nx
            rep(m,i) = rep(m,i) + dble(c(j,i))*hv(j,m)
            imp(m,i) = imp(m,i) + aimag(c(j,i))*hv(j,m)
@@ -148,11 +157,11 @@ program nuclear_wp
 
   cpe=dcmplx(0.d0,0.d0)
   do i=1,nstep
-     do j=1,ntot
-        do k=1,ntot
+     do j=2,ntot
+        do k=2,ntot
            ccc=conjg(c(j,i))*c(k,i)
            do m=1,nx
-              cpe(m,i) = cpe(m,i) + cc*hv(j,m)*hv(k,m)
+              cpe(m,i) = cpe(m,i) + ccc*hv(j,m)*hv(k,m)
            enddo
         enddo
      enddo 
@@ -162,63 +171,24 @@ program nuclear_wp
      npe(i) = sum(cpe(:,i))
   enddo
 
-  !Population
-  !do i=1,nstep
-  !   if (mod(i,nout).eq.0) then
-  !       write(str,*) i
-  !       open(11+i,file=trim(str)//'.dat')
-  !       write(11+i,*) '#xstep   P(x)'
-  !       do m=1,nx
-  !          x = xmin + (m-1)*dx
-  !          write(11+i,*)  x, dsqrt(rep)/npe(i)
-  !       enddo
-  !       close(11+i)
-  !   endif
-  !enddo
-
-  !do i=1,nstep
-  !   write(999,*) i, sum(rep(:,i)**2)
-  !enddo
-
-  !Real part of the wave function
+  !Square modulus of the wave function
   !First step always printed out
-  open(11,file='1r.dat')
-  write(11,*) '#xstep   Re(x)'
+  open(11,file='1m.dat')
+  write(11,*) '#xstep   |Psi(x)|^2'
   do m=1,nx
      x = xmin + (m-1)*dx
-     write(11,*)  x, rep(m,1)**2/sum(rep(:,1)**2)
+     write(11,*)  x, (rep(m,1)**2+imp(m,1)**2)/npe(1)
   enddo
   close(11)
   do i=1,nstep
      if (mod(i,nout).eq.0) then
          write(str,*) i
-         open(11+i,file=trim(str)//'r.dat')
-         write(11+i,*) '#xstep   Re(x)'
+         open(11+i,file=trim(str)//'m.dat')
+         write(11+i,*) '#xstep   |Psi(x)|^2'
          do m=1,nx
             x = xmin + (m-1)*dx
-            write(11+i,*)  x, rep(m,i)**2/sum(rep(:,i)**2)
-         enddo
-         close(11+i)
-     endif
-  enddo
-
-  !Imaginary part of the wave function
-  !First step always printed out
-  open(11,file='1i.dat')
-  write(11,*) '#xstep   Im(x)'
-  do m=1,nx
-     x = xmin + (m-1)*dx
-     write(11,*)  x, imp(m,1)/npe(1)
-  enddo
-  close(11)
-  do i=1,nstep
-     if (mod(i,nout).eq.0) then
-         write(str,*) i
-         open(11+i,file=trim(str)//'i.dat')
-         write(11+i,*) '#xstep   Im(x)'
-         do m=1,nx
-            x = xmin + (m-1)*dx
-            write(11+i,*)  x, imp(m,i)/npe(i)
+            !write(11+i,*)  x, (rep(m,i)**2+imp(m,i)**2)/npe(i)
+            write(11+i,*)  x, (imp(m,i)**2)/npe(i)
          enddo
          close(11+i)
      endif
@@ -233,6 +203,10 @@ program nuclear_wp
   deallocate(imp)
   deallocate(npe)
   deallocate(c)
+
+  write(*,*) ''
+  write(*,*) 'End of simulation'
+  write(*,*) ''
 
   stop
 

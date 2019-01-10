@@ -217,7 +217,7 @@
        integer(i4b), intent(in):: n_omega
        real(dbl), allocatable :: pot(:)
        complex(cmp) :: mu_omega(3)
-       integer(i4b):: i
+       integer(i4b):: i,its
 
        ! Cavity read/write and S D matrices 
        call init_BEM
@@ -238,16 +238,26 @@
        end if
        ! Calculate potential on tesserae
        allocate(pot(nts_act))
-       call do_pot_from_field(fmax(:,1),pot)
+       !call do_pot_from_field(fmax(:,1),pot)
+
+       pot(:)=zero
+#ifdef OMP
+!$OMP PARALLEL REDUCTION(+:pot)
+!$OMP DO 
+#endif
+       do its=1,nts_act
+          pot(its)=pot(its)-fmax(1,1)*cts_act(its)%x
+          pot(its)=pot(its)-fmax(2,1)*cts_act(its)%y
+          pot(its)=pot(its)-fmax(3,1)*cts_act(its)%z
+       enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
        allocate(Kdiag_omega(nts_act))
        allocate(q_omega(nts_act))
-       open(7,file="dipole_freq.dat",status="unknown")
-       write (7,*)"freq re(mux) re(muy) re(muz) im(mux) im(muy) im(muz)"
-       do i=1,n_omega
-        call do_charge_freq(omega_list(i),pot,mu_omega)
-        write (7,'(7e15.6)') omega_list(i),real(mu_omega(:)),aimag(mu_omega(:))
-       enddo
-       close(7)
+       call do_charge_freq(omega_list,pot,mu_omega,n_omega)
        deallocate(pot,q_omega,Kdiag_omega)
        !Deallocate private arrays              
        call finalize_BEM
@@ -702,7 +712,6 @@
 
       end subroutine
 
-
       subroutine do_BEM_diagonal
 !------------------------------------------------------------------------
 ! @brief Compute BEM matrices within diagonal approach 
@@ -720,13 +729,14 @@
 #ifndef MPI
        myrank=0
 #endif
-
        allocate(scr1(nts_act,nts_act),scr2(nts_act,nts_act))
        allocate(scr3(nts_act,nts_act))
        allocate(eigv(nts_act))
        allocate(eigt(nts_act,nts_act),eigt_t(nts_act,nts_act))
+
        ! Form S^1/2 and S^-1/2
        ! Copy the matrix in the eigenvector matrix
+
        eigt = BEM_S
        call diag_mat(eigt,eigv,nts_act)
        if(Fwrite.eq."high") then
@@ -741,8 +751,8 @@
           endif
           scr1(:,i)=eigt(:,i)*sqrt(eigv(i))
        enddo
-
        eigt_t=transpose(eigt)
+
        Sp12=matmul(scr1,eigt_t)                   
 
 #ifdef OMP
@@ -756,10 +766,14 @@
 !$OMP ENDDO 
 !$OMP END PARALLEL
 #endif
+       deallocate(eigv)
 
        BEM_Sm12=matmul(scr1,eigt_t)                   
+
 !      Form the S^-1/2 D A S^1/2 + S^1/2 A D* S^-1/2 , and diagonalize it
        !S^-1/2 D A S^1/2
+       deallocate(eigt)
+       deallocate(eigt_t)
 
 #ifdef OMP
 !$OMP PARALLEL 
@@ -775,6 +789,7 @@
 
        scr3=matmul(BEM_Sm12,scr1)                   
        scr2=matmul(scr3,Sp12)                   
+
        !S^-1/2 D A S^1/2+S^1/2 A D* S^-1/2 and diagonalize
 
 #ifdef OMP
@@ -783,14 +798,13 @@
 #endif
        do j=1,nts_act
         do i=1,nts_act
-         BEM_T(i,j)=0.5*(scr2(i,j)+scr2(j,i))
+           BEM_T(i,j)=0.5*(scr2(i,j)+scr2(j,i))
         enddo
        enddo
 #ifdef OMP
 !$OMP ENDDO 
 !$OMP END PARALLEL
 #endif
-
        deallocate(scr2,scr3)
        call diag_mat(BEM_T,BEM_L,nts_act)
        if(Fwrite.eq."high") then
@@ -847,6 +861,7 @@
            fact2x(:)=-(twp+BEM_L(:))*eps_A/(two*twp)
            K0x(:)=fact2x(:)/BEM_W2(:)
          endif
+ 
        elseif (Feps.eq."gen") then
          !GG: for a general dielectric function
          ! finding the real part of the poles of the PCM response diagonal kernel
@@ -893,12 +908,17 @@
          if (myrank.eq.0) &
              write(6,*) "Done BEM eigenmodes"
        endif
+
        Sm12T=matmul(BEM_Sm12,BEM_T)
+
        TSm12=transpose(Sm12T)
+
        TSp12=matmul(transpose(BEM_T),Sp12)
+
       ! SC 05/11/2016 write out the transition charges in pqr format
        if(Fwrite.eq."high".and.myrank.eq.0) call output_charge_pqr
       ! Do BEM_Q0 and and BEM_Qd 
+
 
 #ifdef OMP
 !$OMP PARALLEL 
@@ -934,6 +954,7 @@
          scr1(:,i)=Sm12T(:,i)*K0x(i)
         enddo
         BEM_Q0x=-matmul(scr1,TSm12)
+        !BEM_Q0x=-mat_mat_mult(scr1,TSm12) 
         do i=1,nts_act
           scr1(:,i)=Sm12T(:,i)*Kdx(i)
         enddo
@@ -941,8 +962,10 @@
        endif
        !Print matrices in output 
        if(Fwrite.eq."high".and.myrank.eq.0) call out_BEM_diagmat 
-       deallocate(scr1,eigv,eigt,eigt_t)
+
+       deallocate(scr1)
        if (myrank.eq.0) write(6,*) "Done BEM diagonal" 
+
 
        return
  
@@ -980,19 +1003,20 @@
       end subroutine
 
 
-      subroutine do_charge_freq(omega_a,pot,mu_omega)
+      subroutine do_charge_freq(omega_a,pot,mu_omega,n_omega)
 !------------------------------------------------------------------------
 ! @brief Compute charges in the frequency domain 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: E. Coccia 4/12/18
 !------------------------------------------------------------------------
 
-       real(dbl), intent(in):: omega_a
-       real(dbl), intent(in) :: pot(:)
-       complex(cmp), intent(out) :: mu_omega(3)
+       integer(i4b),    intent(in)  :: n_omega
+       real(dbl),       intent(in)  :: omega_a(:)
+       real(dbl),       intent(in)  :: pot(:)
+       complex(cmp),    intent(out) :: mu_omega(3)
        real(dbl) :: a,b               
-       integer(4) :: its
+       integer(4) :: its,i
 ! SP 16/07/17: avoiding allocations loops
        !complex(cmp), allocatable :: q_omega(:),mu_omega(:)
        !complex(cmp), allocatable :: Kdiag_omega(:)
@@ -1004,48 +1028,59 @@
 !      do its=1,nts_act
        Kdiag_omega(1)=zero                   
 
+       open(7,file="dipole_freq.dat",status="unknown")
+       write (7,*)"freq re(mux) re(muy) re(muz) im(mux) im(muy) im(muz)"
+
+       do i=1,n_omega
+
 #ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO
 #endif
-       do its=2,nts_act
-        Kdiag_omega(its)=(twp-sgn*BEM_L(its))/ &
+          do its=2,nts_act
+             Kdiag_omega(its)=(twp-sgn*BEM_L(its))/ &
 !        ((one-omega_a*(omega_a+ui*eps_gm)*2.d0/eps_A)*twp-sgn*BEM_L(its))
-         ((one+(eps_w0**2-omega_a*(omega_a+ui*eps_gm))*two/eps_A)*twp-&
-           sgn*BEM_L(its))
+             ((one+(eps_w0**2-omega_a(i)*(omega_a(i)+ui*eps_gm))*two/eps_A)*twp-&
+              sgn*BEM_L(its))
        !a=twp+BEM_L(its)+two*twp*(eps_w0**2-omega_a**2)/eps_A
        !b=two*twp*eps_gm*omega_a/eps_A
        !if(its.eq.1) write(6,*) a**2, b**2
-       enddo
+          enddo
 #ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
 #endif
 
-       q_omega=matmul(BEM_Sm12,pot)
-       q_omega=matmul(transpose(BEM_T),q_omega)
-       q_omega=Kdiag_omega*q_omega
-       q_omega=matmul(BEM_T,q_omega)
-       q_omega=-matmul(BEM_Sm12,q_omega)
-       mu_omega=0.d0
+          q_omega=matmul(BEM_Sm12,pot)
+          q_omega=matmul(transpose(BEM_T),q_omega)
+          q_omega=Kdiag_omega*q_omega
+          q_omega=matmul(BEM_T,q_omega)
+          q_omega=-matmul(BEM_Sm12,q_omega)
+          mu_omega=0.d0
 
 #ifdef OMP
 !$OMP PARALLEL REDUCTION(+:mu_omega)
 !$OMP DO 
 #endif
-       do its=1,nts_act
-        mu_omega(1)=mu_omega(1)+q_omega(its)*(cts_act(its)%x)
-        mu_omega(2)=mu_omega(2)+q_omega(its)*(cts_act(its)%y)
-        mu_omega(3)=mu_omega(3)+q_omega(its)*(cts_act(its)%z)
-       enddo
+          do its=1,nts_act
+             mu_omega(1)=mu_omega(1)+q_omega(its)*(cts_act(its)%x)
+             mu_omega(2)=mu_omega(2)+q_omega(its)*(cts_act(its)%y)
+             mu_omega(3)=mu_omega(3)+q_omega(its)*(cts_act(its)%z)
+          enddo
 #ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
 #endif
 
+          write (7,'(7e15.6)') omega_a(i),real(mu_omega(:)),aimag(mu_omega(:))
+
+       enddo
+
+       close(7) 
+
        return
 
-      end subroutine
+      end subroutine do_charge_freq
 
 
       subroutine do_propBEM_dia_deb
