@@ -37,7 +37,7 @@
       integer(i4b)              :: restart_seed  ! seed for restart
       !integer(i4b), allocatable :: pop(:) !Array for the postprocessing input
       integer(i4b)              :: pop(nstmax) 
-!
+
       real(dbl), allocatable    :: mut_np2(:,:) !squared dipole from NP
       real(dbl)                 :: tdelay(npulsemax), pshift(npulsemax)  ! time delay and phase shift with two pulses
       !real(dbl), allocatable    :: c_i(:),e_ci(:)  ! energy from cis
@@ -63,6 +63,7 @@
 ! Global flags        
       !character(flg), allocatable :: coh(:) !Array for the postprocessing input
       character(flg) :: coh(nstmax*(nstmax-1)/2)         
+
       character(flg) :: Fdis_rel  !< Flag for decay for internal conversion, relaxation via dipole "dip" or matrix "mat"
       character(flg) :: Fdis_deph !< Flag for dephasing operator: exp(i delta_i)|i><i| "exp" or |i><i|-|0><0| "i-0" 
       character(flg) :: Fdis !< Flag for dissipation type: 
