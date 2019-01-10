@@ -73,6 +73,7 @@
 !SC 07/02/16: added output_gneq
       public init_mdm,prop_mdm,finalize_mdm,qtot,ref,get_gneq, &
              get_ons,get_mdm_dip,set_charges
+
       contains
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -202,6 +203,7 @@
        ! Charges propagation: 
          ! Calculate external potential on tesserae for local field       
          if(Floc.eq."loc") call do_pot_from_field(f_tp,potf_tp)
+
          ! Calculate the molecule potential on tesserae
 ! SP 26/06/17: changed to use general MathTools  
          if(Fint.eq.'ons') then
@@ -469,6 +471,7 @@
        real(dbl), intent(IN) :: f_tp(3)
        complex(cmp) :: c_gs(n_ci)
        integer(i4b) :: its  
+
 
        allocate(pot_tp(nts_act))
        allocate(pot_0(nts_act))
@@ -1272,6 +1275,8 @@
        dqr_t=f3*dqr_tp+f4*(fqr_t+fqr_tp)-f5*fqr_tp
        fqr_tp=fqr_t
        dqr_tp=dqr_t
+
+
       ! Local Field
        if(Floc.eq."loc") then
         qx_t=qx_tp+f1*dqx_tp+f2*fqx_tp
@@ -1823,6 +1828,7 @@
            call do_field_from_charges(qr_t,fr_t)
            write (file_med,'(i8,f12.2,9e22.10)')i,t,mu_mdm(:,1),&
                                                     fr_t(:),qtot,qtot0
+           !write(937,'(i8,f12.2,3e22.10)') i,t,fx_t(:)
          endif
        end select
       

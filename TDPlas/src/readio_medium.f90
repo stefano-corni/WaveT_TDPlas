@@ -800,7 +800,7 @@
              Floc='loc'
              write(6,*) "This run just writes matrices and boundary"
           case ('non','Non', 'NON')
-             Floc='non'
+             !Floc='non'
           case default
 	     write(*,*) "Error, specify if local-field matrix", &
 	             "should be written or not. "
@@ -1061,6 +1061,7 @@
          enddo
         endif
        enddo
+
        close(7)
 
        return
