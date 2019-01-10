@@ -35,8 +35,9 @@
       integer(i4b)              :: n_jump    ! number of quantum jumps along a simulation
       integer(i4b)              :: diff_step ! effective number of steps for restart
       integer(i4b)              :: restart_seed  ! seed for restart
-      integer(i4b)              :: pop(nstmax) !Array for the postprocessing input
-!
+      !integer(i4b), allocatable :: pop(:) !Array for the postprocessing input
+      integer(i4b)              :: pop(nstmax) 
+
       real(dbl), allocatable    :: mut_np2(:,:) !squared dipole from NP
       real(dbl)                 :: tdelay(npulsemax), pshift(npulsemax)  ! time delay and phase shift with two pulses
       !real(dbl), allocatable    :: c_i(:),e_ci(:)  ! energy from cis
@@ -60,7 +61,9 @@
       !logical :: qjump ! =.true. quantum jump, =.false. stochastic propagation
       !logical :: ernd=.false. !add normal number to E: E -> E + krnd*rnd()
 ! Global flags        
-      character(flg) :: coh(nstmax*(nstmax-1)/2) !< Array for the postprocessing input
+      !character(flg), allocatable :: coh(:) !Array for the postprocessing input
+      character(flg) :: coh(nstmax*(nstmax-1)/2)         
+
       character(flg) :: Fdis_rel  !< Flag for decay for internal conversion, relaxation via dipole "dip" or matrix "mat"
       character(flg) :: Fdis_deph !< Flag for dephasing operator: exp(i delta_i)|i><i| "exp" or |i><i|-|0><0| "i-0" 
       character(flg) :: Fdis !< Flag for dissipation type: 
@@ -549,6 +552,7 @@
        endif
 
        if (Fmdm.eq.'Cnan') then
+
           open(7,file="ci_mut_np.inp",status="old",iostat=ierr4,err=104)
           allocate(mut_np2(nf,3))
           do i=1,nf
@@ -880,7 +884,7 @@
 
       return
 
-      end subroutine init_nml_pop_coh  
+      end subroutine init_nml_pop_coh
 
       subroutine write_nml_general()
 !------------------------------------------------------------------------
@@ -920,7 +924,7 @@
           Fmdm='Csol'
         case ('qso','Qso','QSO')
           write(*,*) "Quantum Solvent as external medium"
-          Fmdm='Csol'
+          Fmdm='Qsol'
         case ('nan','Nan','NAN')
           write(*,*) "Nanoparticle as external medium"
           Fmdm='Cnan'

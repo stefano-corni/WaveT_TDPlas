@@ -1,1 +1,16 @@
 Calculation using a vibronic expansion of the molecular wave function.
+
+
+In vib.dat:
+
+
+1 1                                      !El exc state       normal modes
+10.  3.  .00054857990907002341           ! w (cm-1)   eq pos (bohr)    reduced mass (amu)
+2 1
+30.  3.2 .00054857990907002341 
+3 1
+100.   3.5 .00054857990907002341 
+4 1
+150.  4.  .00054857990907002341  
+
+

@@ -8,8 +8,8 @@ module vib
       save
 
       integer(i4b)              :: nstates,nvib,nmodes,ntot,ncomb,nfc,nbin
-      real(dbl)                 :: sigma,emin,emax,mu
-      real(dbl),    allocatable :: w(:,:),q(:,:)
+      real(dbl)                 :: sigma,emin,emax
+      real(dbl),    allocatable :: w(:,:),q(:,:),mu(:,:)
       real(dbl),    allocatable :: e(:),dip(:,:,:)
       real(dbl),    allocatable :: ef(:),dipf(:,:,:)
       integer(i4b), allocatable :: iv(:,:)
@@ -74,7 +74,7 @@ module vib
  
         integer(i4b)             :: idum,i,j 
  
-        namelist /vibrations/nstates,nvib,nmodes,coupling,mix,nfc,sigma,nbin,emax,mu
+        namelist /vibrations/nstates,nvib,nmodes,coupling,mix,nfc,sigma,nbin,emax
 
         mix=.false.
         coupling=.false.
@@ -86,17 +86,16 @@ module vib
         nbin=10000
         emin=0.d0
         emax=15.d0 !eV
-        mu=1.d0
 
-        ! Read w and q for any vib level (vib.dat file)
-        ! Frequency in cm-1, normal coordinates in bohr
+        ! Read w, q and mu  for any vib level (vib.dat file)
+        ! Frequency in cm-1, normal coordinates in bohr, reduced mass in amu 
         ! Excited state N
-        ! w q for mode 1
-        ! w q for mode 2
+        ! w q mu for mode 1
+        ! w q mu for mode 2
         ! ...
         ! Excited state N+1
-        ! w q for mode 1
-        ! w q for mode 2
+        ! w q mu for mode 1
+        ! w q mu for mode 2
         ! ...
 
         read(*,nml=vibrations)
@@ -107,7 +106,7 @@ module vib
 
         ncomb=nvib**nmodes
 
-        allocate(w(nstates,nmodes),q(nstates,nmodes))
+        allocate(w(nstates,nmodes),q(nstates,nmodes),mu(nstates,nmodes))
         allocate(iv(ncomb,nmodes))
 
         write(*,*)  
@@ -130,7 +129,6 @@ module vib
         write(*,*) 'Number of electronic states', nstates
         write(*,*) 'Number of normal modes per electronic state', nmodes
         write(*,*) 'Number of vibrational states per normal mode', nvib
-        write(*,*) 'Reduced mass', mu
         if (mix) then
            write(*,*) 'Duschinsky rotation for normal coordinates' 
         else
@@ -147,17 +145,19 @@ module vib
 
         w(:,:) = 1000.d0
         q(:,:) = 2.d0
+        mu(:,:) = 1836.d0
 
         open(60,file='vib.dat')
         do i=1,nstates
            read(60,*) idum, idum 
            do j=1,nmodes
-              read(60,*) w(i,j), q(i,j)
+              read(60,*) w(i,j), q(i,j), mu(i,j)
            enddo
         enddo
         close(60)
 
         w(:,:) = w(:,:)*cm_to_au
+        mu(:,:) = mu(:,:)*amu_to_au
  
         allocate(ef(ntot),dipf(3,ntot,ntot)) 
 
@@ -165,7 +165,7 @@ module vib
 
       end subroutine read_input_vib 
 
-      subroutine compute_fc(v,ve,w,we,d,mu,n,fc,mn)
+      subroutine compute_fc(v,ve,w,we,d,m,me,n,fc,mn)
 !------------------------------------------------------------------------
 ! @brief Compute Franck-Condon factors between the vibrational 
 ! eigenstates (harmonic oscillator) of any electronic ground-excited
@@ -179,7 +179,7 @@ module vib
         implicit none
 
         integer(i4b),  intent(in)  :: v,ve,n
-        real(dbl),     intent(in)  :: w,we,d,mu
+        real(dbl),     intent(in)  :: w,we,d,m,me
         real(dbl),     intent(out) :: fc,mn
         integer(i4b)               :: k,ke,kk,k2
         real(dbl)                  :: s,a,b,be,ik,r,nf,al,ale
@@ -218,8 +218,8 @@ module vib
 ! (v)*(v')*Hv-k(b)*Hv'-k'(b')*(2*sqrt(alpha))^k*(2*sqrt(alpha'))^k'*I(kk)
 ! (k) (k')
 
-        al=mu*w 
-        ale=mu*we
+        al=m*w 
+        ale=me*we
 
         ww=1.d0/(al+ale) 
 
@@ -669,7 +669,7 @@ module vib
                 fc=0.d0
              endif 
           else
-             call compute_fc(v,v1,w(l,k),w(m,k),d,mu,nfc,fc,mn)
+             call compute_fc(v,v1,w(l,k),w(m,k),d,mu(l,k),mu(m,k),nfc,fc,mn)
           endif
           tfc=tfc*fc 
        enddo
