@@ -16,7 +16,7 @@ Step 2. Build-up the PCM matrices (including those for the local field)
 
 It is run as
 
-../../TDPlas/bin/tdplas.x < pcmmatrices_builder.inp > pcmmatrices_builder.out
+../../TDPlas/bin/freq_bem.x < pcmmatrices_builder.inp > pcmmatrices_builder.out
 
 It generates
 
