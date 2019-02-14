@@ -148,15 +148,16 @@
        !integer(i4b):: i,nspectra
        !character(3) :: medium,radiative,dissipative
        !character(5) :: dis_prop 
+       logical :: postprocessing = .false.
      
        !Molecular parameters 
        namelist /general/n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,& 
                          dt,n_step,n_out,propa,n_restart,lsim,absorber,&
-                         binary,ncit,Ip
+                         binary,ncit,Ip,postprocessing
        !External field paramaters
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
                         npulse,tdelay,pshift
-       !Stochastic Schroedinger equation
+       !Stochastic Schroedinger equation Aspetto allora.
        namelist /sse/ dissipative,idep,dis_prop,nrnd,tdis,nr_typ,krnd,out_sse
        !Namelist spectra
        namelist /spectra/ start,tau,dir_ft
@@ -223,11 +224,12 @@
 
        if (Fabs(1:3).eq.'abs') call read_ion_rate
 
-       
-       !Namelist for postprocessing
-       call init_nml_pop_coh()
-       read(*,nml=pop_coh)
-       call write_nml_pop_coh()
+       if( postprocessing ) then
+        !Namelist for postprocessing
+        call init_nml_pop_coh()
+        read(*,nml=pop_coh) 
+        call write_nml_pop_coh()
+       endif
 
        return
 
