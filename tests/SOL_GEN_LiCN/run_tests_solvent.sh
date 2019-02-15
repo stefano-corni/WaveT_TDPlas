@@ -16,6 +16,9 @@ cd ../LF_drl_ref
 cd ../LF_drl_gen
 ../../../WaveT/bin/WaveT-serial.x < tdcis.inp > out.dat
 cd ../
-#Compare results:
+#Visualize results:
+#1) Test results:
 gnuplot plot.gnu
+#2) Compare test results with references:
+gnuplot compare.gn
 
