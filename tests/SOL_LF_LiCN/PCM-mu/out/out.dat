@@ -72,15 +72,35 @@ The number of threads available    =        4
  This is full run reading matrix and boundary
  Medium polarization set initially to zero
  Surface read from file cavity.inp
- Generic dielectric function is used
  Essential output written.
  TEST: Solvent local field
+ DEBUG: Potentials calculated from Dipoles 
  OMP-optimized loops for charges
-Done reading input & setting up the field, took     0.021s
+Done reading input & setting up the field, took     0.022s
  BEM surface and Matrixes S D have been read in
  BEM correctly initialized
  Done BEM diagonal
+     1     1   0.000   0.000  18.897 -0.10422E-01 -0.91001E-02
+     1     2   0.000   0.000  18.897 -0.00000E+00  0.00000E+00
+     1     3   0.000   0.000  18.897 -0.00000E+00  0.00000E+00
+     1     4   0.000   0.000  18.897 -0.00000E+00  0.00000E+00
+     1     5   0.000   0.000  18.897 -0.00000E+00  0.00000E+00
+     1     6   0.000   0.000  18.897 -0.00000E+00  0.99778E-16
+     2     2   0.000   0.000  18.897 -0.45869E-02 -0.37881E-02
+     2     3   0.000   0.000  18.897 -0.00000E+00  0.00000E+00
+     2     4   0.000   0.000  18.897 -0.00000E+00  0.00000E+00
+     2     5   0.000   0.000  18.897 -0.00000E+00  0.12276E-15
+     2     6   0.000   0.000  18.897 -0.00000E+00  0.00000E+00
+     3     3   0.000   0.000  18.897  0.76395E-02  0.57471E-02
+     3     4   0.000   0.000  18.897 -0.00000E+00  0.12383E-15
+     3     5   0.000   0.000  18.897 -0.00000E+00  0.00000E+00
+     3     6   0.000   0.000  18.897 -0.00000E+00  0.00000E+00
+     4     4   0.000   0.000  18.897  0.76395E-02  0.57471E-02
+     4     5   0.000   0.000  18.897 -0.00000E+00  0.00000E+00
+     4     6   0.000   0.000  18.897 -0.00000E+00  0.00000E+00
+     5     5   0.000   0.000  18.897 -0.34640E-02 -0.27743E-02
+     5     6   0.000   0.000  18.897 -0.00000E+00  0.00000E+00
+     6     6   0.000   0.000  18.897 -0.34640E-02 -0.27743E-02
  Medium contribution to ground state free energy:   0.0000000000000000     
  G_neq at t=0:   0.0000000000000000     
- Initiated VV propagator
-Done , total elapsed time    25.808s
+Done , total elapsed time    24.199s
