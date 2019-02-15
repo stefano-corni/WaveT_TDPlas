@@ -13,18 +13,18 @@ set xrange[500*0.024188:550*0.024188]
 
 set output "compareDip.png"
 p  "DIP/medium_t_1.dat"     u ($2*0.024188):5 w l ls 1 title "Test",\
-   "DIP/medium_t_1.dat" u ($2*0.024188):6 w l dt 2 title "Reference"
+   "DIP/out/medium_t_1.dat" u ($2*0.024188):5 w l dt 2 title "Reference"
 
 set output "compareOns.png"
 p  "ONS/medium_t_1.dat"     u ($2*0.024188):5 w l ls 1 title "Test",\
-   "ONS/medium_t_1.dat" u ($2*0.024188):6 w l dt 2 title "Reference"
+   "ONS/out/medium_t_1.dat" u ($2*0.024188):5 w l dt 2 title "Reference"
 
 set ylabel "Polarization field (au)"
 set output "comparePCM.png"
 p   "PCM/medium_t_1.dat"     u ($2*0.024188):5 w l ls 1 title "Test",\
-    "PCM/medium_t_1.dat" u ($2*0.024188):6 w l dt 2 title "Reference"
+    "PCM/out/medium_t_1.dat" u ($2*0.024188):5 w l dt 2 title "Reference"
 
 set output "comparePCM-mu.png"
 p   "PCM-mu/medium_t_1.dat"     u ($2*0.024188):5 w l ls 1 title "Test",\
-    "PCM-mu/medium_t_1.dat" u ($2*0.024188):6 w l dt 2 title "Reference"
+    "PCM-mu/out/medium_t_1.dat" u ($2*0.024188):5 w l dt 2 title "Reference"
 
