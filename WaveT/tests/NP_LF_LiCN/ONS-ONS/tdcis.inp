@@ -11,8 +11,7 @@ n_out=20
 
 &field 
 Ffld='snd'
-! 0.26
-omega=0.2420
+omega=0.26
 sigma=10.,
 t_mid=500.
 radiative='non'
@@ -52,6 +51,7 @@ bem_read_write='rea'
 &SURFACE
 input_surface='fil'
 /
+
 
 &EPS_FUNCTION
 epsilon_omega='drl'

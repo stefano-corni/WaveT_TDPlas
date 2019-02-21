@@ -64,7 +64,7 @@ The number of processors available =        4
 The number of threads available    =        4
 
  *************OMP*****************
- Apparent charges are propagated
+ Only the dipolar reaction field is propagated
  Local field effects are included
  Medium charges do not follow the quantum jump
  Frequency of updating the interaction potential           1
@@ -76,16 +76,18 @@ The number of threads available    =        4
  This is a Classical BEM run
  This is full run reading matrix and boundary
  Medium polarization frozen to molecule in its GS
- Surface read from file cavity.inp
+ This is a Spherical Onsager run in solution
+ Spherical nanoparticle
+ Radius (a.u.) sphere           1   93.814661345999994     
  Essential output written.
  TEST: Nanoparticle local field
- OMP-optimized loops for charges
-Done reading input & setting up the field, took     0.019s
- BEM surface and Matrixes S D have been read in
- BEM correctly initialized
- Done BEM diagonal
- Medium contribution to ground state free energy:  -1.5932630686313362E-004
- G_neq at t=0:   0.0000000000000000     
+ Matmul is always used
+Done reading input & setting up the field, took     0.006s
+ Onsager
+ eps_0,eps_d   1000.0000000000000        1.0000000000000000     
+ lambda  0.33333333333333331     
+ f0   823208.62543652393     
+ fd   0.0000000000000000     
  Initiated VV propagator
  Error: restart is not implemented yet for otherinteraction types other than PCM.
  Error: restart is not implemented yet for otherinteraction types other than PCM.
@@ -2687,4 +2689,4 @@ Done reading input & setting up the field, took     0.019s
  Error: restart is not implemented yet for otherinteraction types other than PCM.
  Error: restart is not implemented yet for otherinteraction types other than PCM.
  Error: restart is not implemented yet for otherinteraction types other than PCM.
-Done , total elapsed time    18.333s
+Done , total elapsed time     0.259s

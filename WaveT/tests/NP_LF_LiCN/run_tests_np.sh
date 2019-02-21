@@ -20,8 +20,7 @@ cd ../IEF-PCM
 cd ../
 #Visualize results:
 #1) Test results:
-#gnuplot plot.gnu
+gnuplot plot.gnu
 #2) Compare test results with references:
 gnuplot compare.gnu
-    
 
