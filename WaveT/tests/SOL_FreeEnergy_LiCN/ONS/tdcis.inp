@@ -51,7 +51,7 @@ spheres_number=1
 sphere_position_x= 0.
 sphere_position_y= 0.
 sphere_position_z= 0.
-sphere_radius= 10.      
+sphere_radius= 18.897259886      
 /
 
 &EPS_FUNCTION
