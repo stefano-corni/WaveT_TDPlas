@@ -9,10 +9,9 @@ n_step=26000
 n_out=20
 / 
 
-&field 
+&field
 Ffld='snd'
-! 0.26
-omega=0.2420
+omega=0.26
 sigma=10.,
 t_mid=500.
 radiative='non'
@@ -44,7 +43,7 @@ local_field='loc'
 
 &MEDIUM
 medium_type='nan'
-medium_init='vac'
+medium_init='fro'
 bem_type='diag'
 bem_read_write='rea'
 /

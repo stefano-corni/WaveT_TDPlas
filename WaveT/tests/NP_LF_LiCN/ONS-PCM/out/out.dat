@@ -22,7 +22,7 @@
  Molecular center of charge
    0.0000000000000000        0.0000000000000000        0.0000000000000000     
  
- Time step (in au), number of steps, stride   5.0000000000000003E-002       10000          20
+ Time step (in au), number of steps, stride  0.20000000000000001            26000          20
  
  Nanoparticle as external medium
  No restart
@@ -33,7 +33,7 @@
  Time shape of the perturbing fieldsnd       
  time at the center of the pulse (au):   500.00000000000000     
  Width of the pulse (time au):   10.000000000000000     
- Frequency (au):  0.24199999999999999     
+ Frequency (au):  0.26000000000000001     
  Maximum E field (au)   0.0000000000000000        9.9999999999999995E-007   0.0000000000000000     
  Maximum E field (V/m)   0.0000000000000000        514220.67069999996        0.0000000000000000     
  Maximum intensity (W/cm^2)   0.0000000000000000        35100.000000000000        0.0000000000000000     
@@ -80,10 +80,10 @@ The number of threads available    =        4
  Essential output written.
  TEST: Nanoparticle local field
  OMP-optimized loops for charges
-Done reading input & setting up the field, took     0.014s
+Done reading input & setting up the field, took     0.018s
  BEM surface and Matrixes S D have been read in
  BEM correctly initialized
  Medium contribution to ground state free energy:  -1.6200665429133007E-004
  G_neq at t=0:   0.0000000000000000     
  Initiated VV propagator
-Done , total elapsed time    10.841s
+Done , total elapsed time    31.888s
