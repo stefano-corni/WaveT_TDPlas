@@ -4,15 +4,14 @@ n_ci_read=10
 mol_cc= 0. 0. 0.
 medium='nan'
 n_f=1
-dt=0.05
-n_step=10000
+dt=0.2
+n_step=26000
 n_out=20
 / 
 
 &field 
 Ffld='snd'
-! 0.26
-omega=0.2420
+omega=0.26
 sigma=10.,
 t_mid=500.
 radiative='non'
@@ -53,13 +52,14 @@ bem_read_write='rea'
 input_surface='fil'
 /
 
+
 &EPS_FUNCTION
 epsilon_omega='drl'
 eps_0=1000.
-eps_d=1. 
-eps_A=0.05995   
+eps_d=1.
+eps_A=0.110224
 eps_gm=0.001515
-eps_w0=0.  
-f_vel=0. 
+eps_w0=0.
+f_vel=0.
 /
 
