@@ -157,7 +157,7 @@
        !External field paramaters
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
                         npulse,tdelay,pshift
-       !Stochastic Schroedinger equation Aspetto allora.
+       !Stochastic Schroedinger equation
        namelist /sse/ dissipative,idep,dis_prop,nrnd,tdis,nr_typ,krnd,out_sse
        !Namelist spectra
        namelist /spectra/ start,tau,dir_ft
