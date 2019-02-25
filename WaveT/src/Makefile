@@ -39,10 +39,6 @@ TOOLSPATH=tools
 
 TDPLASLIB= $(TDPLAS)/libtdplas.a
 
-# tdplas include path
-
-TDPLASINC=-I$(TDPLAS)
-
 # objects
 
 OBJ= constants.o global_wavet.o global_tdplas.o random.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o dissipation.o propagate.o main.o pedra_friends.o 
@@ -57,7 +53,10 @@ WAVETOBJ= constants.o global_wavet.o random.o readio.o spectra.o dissipation.o p
 
 # compilation and linking rules
 
-serial: $(BINPATH) $(BINPATH)/WaveT-serial.x $(BINPATH)/make_spectra.x $(BINPATH)/make_vib.x $(BINPATH)/make_coherence.x $(BINPATH)/make_2dfft.x $(BINPATH)/make_pop_coh.x $(BINPATH)/make_nucl_wavep.x
+serial: mod $(BINPATH) $(BINPATH)/WaveT-serial.x $(BINPATH)/make_spectra.x $(BINPATH)/make_vib.x $(BINPATH)/make_coherence.x $(BINPATH)/make_2dfft.x $(BINPATH)/make_pop_coh.x $(BINPATH)/make_nucl_wavep.x
+
+mod:
+	cp $(TDPLAS)/tdplas.mod .
 
 parallel: $(BINPATH) $(BINPATH)/WaveT-parallel.x
 
@@ -65,13 +64,13 @@ $(BINPATH):
 	mkdir $(BINPATH)
 
 $(BINPATH)/make_spectra.x: main_spectra.o 
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(WAVETOBJ) $(TDPLASLIB) $(TDPLASINC) $(LIB_CURIE) $(LIBS) $(LIBSF)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(WAVETOBJ) $(TDPLASLIB) $(LIB_CURIE) $(LIBS) $(LIBSF)
 
 $(BINPATH)/WaveT-serial.x: main.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(WAVETOBJ) $(TDPLASLIB) $(TDPLASINC) $(LIBS) $(LIBSF) $(LIB_CURIE)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(WAVETOBJ) $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/WaveT-parallel.x: main.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(TDPLASLIB) $(TDPLASINC) $(INCPAR) $(LIBS) $(LIBSPAR) $(LIBSF) $(LIB_CURIE)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(TDPLASLIB) $(INCPAR) $(LIBS) $(LIBSPAR) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/make_vib.x: $(OBJ_VIB)
 	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_VIB)
