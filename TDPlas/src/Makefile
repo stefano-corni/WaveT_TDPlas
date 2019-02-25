@@ -63,10 +63,7 @@ TDPLASLIB= libtdplas.a
 
 # objects to be linked with executables
 
-#OBJ= constants.o global_tdplas.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o scf.o td_contmed.o
-OBJ= td_contmed.o scf.o BEM_medium.o MathTools.o readio_medium.o pedra_friends.o global_tdplas.o constants.o QM_coupling.o
-OBJ_FREQ= $(OBJ) main_freq.o
-OBJ_TDPLAS= $(OBJ) QM_coupling.o main_tdplas.o
+OBJ= tdplas.o td_contmed.o scf.o BEM_medium.o MathTools.o readio_medium.o pedra_friends.o global_tdplas.o constants.o QM_coupling.o
 
 # compilation rules
 
@@ -75,14 +72,8 @@ all: $(BINPATH) $(TDPLASLIB) $(BINPATH)/freq_bem.x $(BINPATH)/tdplas.x
 $(BINPATH):
 	mkdir $(BINPATH)
 
-#$(BINPATH)/tdplas.x: $(OBJ_TDPLAS)
-#	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_TDPLAS) $(LIBS) $(LIBSF) $(LIB_CURIE)
-
 $(BINPATH)/tdplas.x: main_tdplas.o
 	$(FC) $(CPP) $(FFLAGS) -o $@ $< $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
-
-#$(BINPATH)/freq_bem.x: $(OBJ_FREQ)
-#	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_FREQ) $(LIBS) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/freq_bem.x: main_freq.o
 	$(FC) $(CPP) $(FFLAGS) -o $@ $< $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
@@ -123,6 +114,9 @@ scf.o: scf.f90
 td_contmed.o: td_contmed.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
+tdplas.o: tdplas.f90
+	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
+
 main_tdplas.o: main_tdplas.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
@@ -147,8 +141,8 @@ scf.o: constants.o global_tdplas.o pedra_friends.o readio_medium.o MathTools.o B
 
 td_contmed.o: constants.o global_tdplas.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o scf.o
 
-#main_tdplas.o: readio_medium.o BEM_medium.o
+tdplas.o: constants.o global_tdplas.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o
 
-main_tdplas.o:
+main_tdplas.o: tdplas.o
 
-main_freq.o: readio_medium.o td_contmed.o
+main_freq.o: tdplas.o
