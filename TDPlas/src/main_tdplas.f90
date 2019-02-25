@@ -1,6 +1,5 @@
-      program tdplas
-      use readio_medium
-      use BEM_medium
+      program main_tdplas
+      use tdplas
       implicit none
       integer :: st,current,rate
 !
