@@ -1,76 +1,77 @@
-#FC = gfortran
-#FFLAGS_XEON= -O3 -ftz -align -arch pn4 -tune pn4 -xN -tpp7
-#FFLAGS_PAR= -parallel -par_threshold75 -par_report3
-#FFLAGS_HYD= -O3 -ftz -align -xHost
-#FFLAGS_HYD_PAR= -O3 -ftz -align -xHost -parallel -par_threshold75 -par_report3
-#FFLAGS_DEB= -debug -C -traceback
-#FFLAGS_P3= -O3 -ftz -align -arch pn3 -tune pn3 -tpp6
-#FFLAGS_P4= -O3 -ftz -align -arch pn4 -tune pn4 -tpp7 -xN
-#FFLAGS_MIO= -O3 -ftz -align -arch pn4 -tune pn4 -tpp7 -xB -ipo
-#FFLAGS_WS= -O3 -ftz -align -xP -no-prec-div -ipo
-#FFLAGS_LAP= -O3 -ftz -align -xAVX -no-prec-div 
-#FFLAGS_GF= -O3
-#CPP= -cpp
-#MPI= 
-#LDLAGS= 
-#OMP= -fopenmp -DOMP
-#FFLAGS= $(FFLAGS_GF_DEB)
-#LIBS =  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
-#INC = -I/usr/include/ -I/unimore/prod/fftw-3.3.4/include/
+FC = gfortran
 
-FC = ifort
-FFLAGS_XEON= -O3 -ftz -align -arch pn4 -tune pn4 -xN -tpp7
-FFLAGS_PAR= -parallel -par_threshold75 -par_report3
-#FFLAGS_DEB= -debug -C -g
-FFLAGS_DEB= -debug -traceback -C -g -diag-disable  warn -parallel -par_threshold75 -par_report3
-FFLAGS_DEB_PAR= -g -diag-disable  warn -parallel -par_threshold75 -par_report3
-FFLAGS_P3= -O3 -ftz -align -arch pn3 -tune pn3 -tpp6
-FFLAGS_P4= -O3 -ftz -align -arch pn4 -tune pn4 -tpp7 -xN
-FFLAGS_MIO= -O3 -ftz -align -xAVX
-FFLAGS_HYD= -O3 -ftz -align -xHost
-FFLAGS_HYD_PAR= -O3 -ftz -align -xHost -parallel -par_threshold75 -par_report3 #-check bounds 
-FFLAGS_WS= -O3 -ftz -align -xP -no-prec-div -ipo
-FFLAGS_GF= -O3 
+# open mp flags
+# comment first line and uncommment the second for ifort
+
+OMP= -fopenmp -DOMP
+#OMP= -openmp -DOMP
+
+# mpi flags
+
+MPI=
+
+# other flags - to clean up?
+
 LDLAGS=
-OMP= -openmp -DOMP
-FFLAGS= -O3 -ftz -align all #${OMP} #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
-CPP= -fpp
-MPI= 
-#LIBS = -L/usr/lib -llapack  -lblas 
-#LIBS =  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
-LIBS = -L/usr/lib -llapack  -lblas -lpthread -lfftw3 -L/local/home/corni/emanuele/fftw-3.3.4/lib/ 
-INC =  -I/local/home/corni/emanuele/fftw-3.3.4/include/
 
+# actual flags used in the compilation
+FFLAGS= -O3 ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+
+# preprocessor flag
+# comment the first and uncomment the second if compiler is ifort
+
+CPP= -cpp
+
+# libraries to be linked
+
+LIBS = -L/usr/lib -llapack -lblas -lfftw3
+INC = -I/usr/include/
+LIBSPAR= -L/opt/scali/lib64 -lfmpi -lmpi
+INCPAR= -I/opt/scali/include64 -I/local/home/corni/emanuele/fftw-3.3.4/include/
+
+# executable, tools and TDPlas directories
 
 BINPATH=../bin
 TDPLAS=../../TDPlas/src/
 TOOLSPATH=tools
 
-OBJ= constants.o global_wavet.o global_tdplas.o random.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o dissipation.o propagate.o main.o pedra_friends.o  
-OBJ_SPECTRA= constants.o pedra_friends.o global_wavet.o global_tdplas.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o main_spectra.o 
+# tdplas library file
+
+TDPLASLIB= $(TDPLAS)/libtdplas.a
+
+# tdplas include path
+
+TDPLASINC=-I$(TDPLAS)
+
+# objects
+
+OBJ= constants.o global_wavet.o global_tdplas.o random.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o dissipation.o propagate.o main.o pedra_friends.o 
+OBJ_SPECTRA= constants.o pedra_friends.o global_wavet.o global_tdplas.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o main_spectra.o
 OBJ_VIB= constants.o readio.o $(TOOLSPATH)/vib.o $(TOOLSPATH)/vib_tool.o
-OBJ_COH= constants.o $(TOOLSPATH)/coherence_tool.o 
+OBJ_COH= constants.o $(TOOLSPATH)/coherence_tool.o
 OBJ_FFT= constants.o $(TOOLSPATH)/fft_tool.o
 OBJ_POP_COH= constants.o $(TOOLSPATH)/pop_coh_tool.o
+OBJ_NUCL= constants.o $(TOOLSPATH)/nucl_wavep_tool.o
 
+WAVETOBJ= constants.o global_wavet.o random.o readio.o spectra.o dissipation.o propagate.o main.o
 
-# rules
+# compilation and linking rules
 
-serial: $(BINPATH) $(BINPATH)/WaveT-serial.x $(BINPATH)/make_spectra.x $(BINPATH)/make_vib.x $(BINPATH)/make_coherence.x $(BINPATH)/make_2dfft.x $(BINPATH)/make_pop_coh.x
+serial: $(BINPATH) $(BINPATH)/WaveT-serial.x $(BINPATH)/make_spectra.x $(BINPATH)/make_vib.x $(BINPATH)/make_coherence.x $(BINPATH)/make_2dfft.x $(BINPATH)/make_pop_coh.x $(BINPATH)/make_nucl_wavep.x
 
-parallel: $(BINPATH) $(BINPATH)/WaveT-parallel.x  
-	
+parallel: $(BINPATH) $(BINPATH)/WaveT-parallel.x
+
 $(BINPATH):
 	mkdir $(BINPATH)
-	
-$(BINPATH)/make_spectra.x: $(OBJ_SPECTRA) 
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_SPECTRA) $(LIB_CURIE) $(LIBS) $(LIBSF)
 
-$(BINPATH)/WaveT-serial.x: $(OBJ) 
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(LIBS) $(LIBSF) $(LIB_CURIE)
+$(BINPATH)/make_spectra.x: main_spectra.o 
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(WAVETOBJ) $(TDPLASLIB) $(TDPLASINC) $(LIB_CURIE) $(LIBS) $(LIBSF)
 
-$(BINPATH)/WaveT-parallel.x: $(OBJ)
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(LIBS) $(LIBSF) $(LIB_CURIE)
+$(BINPATH)/WaveT-serial.x: main.o
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(WAVETOBJ) $(TDPLASLIB) $(TDPLASINC) $(LIBS) $(LIBSF) $(LIB_CURIE)
+
+$(BINPATH)/WaveT-parallel.x: main.o
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(TDPLASLIB) $(TDPLASINC) $(INCPAR) $(LIBS) $(LIBSPAR) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/make_vib.x: $(OBJ_VIB)
 	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_VIB)
@@ -84,6 +85,9 @@ $(BINPATH)/make_2dfft.x: $(OBJ_FFT)
 $(BINPATH)/make_pop_coh.x: $(OBJ_POP_COH)
 	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_POP_COH)
 
+$(BINPATH)/make_nucl_wavep.x: $(OBJ_NUCL)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_NUCL)
+
 clean:
 	rm -f *.o *.mod *.il *.optrpt $(BINPATH)/*.x $(TOOLSPATH)/*.o $(TOOLSPATH)/*.mod $(TOOLSPATH)/*.il $(TOOLSPATH)/*.optrpt
 
@@ -94,7 +98,7 @@ constants.o: constants.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 global_wavet.o: global_wavet.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
 random.o: random.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
@@ -129,72 +133,41 @@ $(TOOLSPATH)/vib_tool.o: $(TOOLSPATH)/vib_tool.f90
 $(TOOLSPATH)/pop_coh_tool.o: $(TOOLSPATH)/pop_coh_tool.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
+$(TOOLSPATH)/nucl_wavep_tool.o: $(TOOLSPATH)/nucl_wavep_tool.f90
+	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
+
 main.o: main.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
-MathTools.o: $(TDPLAS)/MathTools.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-td_contmed.o: $(TDPLAS)/td_contmed.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-global_tdplas.o: $(TDPLAS)/global_tdplas.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-pedra_friends.o: $(TDPLAS)/pedra_friends.f90
-	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
-
-readio_medium.o: $(TDPLAS)/readio_medium.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-BEM_medium.o: $(TDPLAS)/BEM_medium.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-QM_coupling.o: $(TDPLAS)/QM_coupling.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-scf.o: $(TDPLAS)/scf.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-
 # dependencies
+# all tdplas dependencies are contained in the static linking to the TDPlas library
 
-random.o: 
+random.o:
+
+constants.o:
+
+global_wavet.o: constants.o
 
 readio.o: global_wavet.o random.o
 
-global_wavet.o: td_contmed.o
+spectra.o: readio.o
 
-spectra.o: global_wavet.o readio.o pedra_friends.o readio_medium.o
+dissipation.o: random.o constants.o global_wavet.o readio.o
 
-main_spectra.o: readio.o readio_medium.o spectra.o
+propagate.o: spectra.o dissipation.o
 
-dissipation.o: global_wavet.o readio.o random.o
+main_spectra.o: global_wavet.o readio.o spectra.o
 
-propagate.o: global_wavet.o random.o readio.o spectra.o readio_medium.o pedra_friends.o td_contmed.o
+main.o: constants.o global_wavet.o readio.o spectra.o dissipation.o propagate.o
 
 vib.o: readio.o
 
 vib_tool.o: readio.o vib.o
 
-coherence_tool.o: 
+coherence_tool.o:
 
-fft_tool.o: 
+fft_tool.o:
 
 pop_coh_tool.o:
 
-main.o: readio.o spectra.o dissipation.o propagate.o readio_medium.o QM_coupling.o  
-
-global_tdplas.o: 
-
-pedra_friends.o: global_tdplas.o
-
-readio_medium.o: global_tdplas.o pedra_friends.o
-
-BEM_medium.o: global_tdplas.o pedra_friends.o readio_medium.o
-
-QM_coupling.o: global_tdplas.o pedra_friends.o readio_medium.o BEM_medium.o
-
-scf.o: global_tdplas.o pedra_friends.o readio_medium.o BEM_medium.o
-
-td_contmed.o: global_tdplas.o pedra_friends.o readio_medium.o BEM_medium.o scf.o
+nucl_wavep_tool.o:
