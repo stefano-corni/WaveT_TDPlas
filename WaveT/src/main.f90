@@ -14,14 +14,12 @@
       use mpi
 #endif
 #endif
-
-       implicit none
-
 #ifdef MPI
 #ifdef SCALI
       include 'mpif.h'
 #endif
 #endif
+       implicit none
 
        integer :: st,current,rate
 

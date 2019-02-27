@@ -29,11 +29,35 @@ INC = -I/usr/include/
 LIBSPAR= -L/opt/scali/lib64 -lfmpi -lmpi
 INCPAR= -I/opt/scali/include64 -I/local/home/corni/emanuele/fftw-3.3.4/include/
 
-# executable, tools and TDPlas directories
+# executable and tools directories
 
 BINPATH=../bin
-TDPLAS=../../TDPlas/src/
 TOOLSPATH=tools
+
+# objects
+
+WAVETOBJ = constants.o random.o readio.o spectra.o dissipation.o propagate.o main.o interface_tdplas.o
+OBJ= $(WAVETOBJ)
+OBJ_SPECTRA= constants.o pedra_friends.o global_tdplas.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o main_spectra.o
+OBJ_VIB= constants.o readio.o $(TOOLSPATH)/vib.o $(TOOLSPATH)/vib_tool.o
+OBJ_COH= constants.o $(TOOLSPATH)/coherence_tool.o
+OBJ_FFT= constants.o $(TOOLSPATH)/fft_tool.o
+OBJ_POP_COH= constants.o $(TOOLSPATH)/pop_coh_tool.o
+OBJ_NUCL= constants.o $(TOOLSPATH)/nucl_wavep_tool.o
+
+# tdplas binding flag
+# write no if you want to compile wavet without any link to tdplas
+
+TDPLASLINK= YES
+TDPLASLIB=
+TDPLASINC=
+TDPLASPP=
+
+ifeq ($(TDPLASLINK),YES)
+
+# tdplas directory
+
+TDPLAS=../../TDPlas/src/
 
 # tdplas library file
 
@@ -43,15 +67,14 @@ TDPLASLIB= $(TDPLAS)/libtdplas.a
 
 TDPLASINC= -I$(TDPLAS)
 
-# objects
+# tdplas preprocessor flag
 
-OBJ= constants.o interface_tdplas.o random.o readio.o spectra.o dissipation.o propagate.o main.o
-OBJ_SPECTRA= constants.o pedra_friends.o interface_tdplas.o global_tdplas.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o main_spectra.o
-OBJ_VIB= constants.o readio.o $(TOOLSPATH)/vib.o $(TOOLSPATH)/vib_tool.o
-OBJ_COH= constants.o $(TOOLSPATH)/coherence_tool.o
-OBJ_FFT= constants.o $(TOOLSPATH)/fft_tool.o
-OBJ_POP_COH= constants.o $(TOOLSPATH)/pop_coh_tool.o
-OBJ_NUCL= constants.o $(TOOLSPATH)/nucl_wavep_tool.o
+TDPLASPP= -DTDPLAS
+
+OBJ= $(WAVETOBJ)
+OBJ_SPECTRA= $(OBJ_SPECTRA)
+
+endif
 
 # compilation and linking rules
 
@@ -95,19 +118,16 @@ clean_obj:
 constants.o: constants.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
-interface_tdplas.o: interface_tdplas.f90
-	$(FC) $(CPP) $(FFLAGS) $(INC) $(TDPLASINC) -c $< -o $@
-
 random.o: random.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
+
+interface_tdplas.o: interface_tdplas.f90
+	$(FC) $(CPP) $(TDPLASPP) $(FFLAGS) $(INC) $(TDPLASINC) -c $< -o $@
 
 readio.o: readio.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 spectra.o: spectra.f90
-	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
-
-main_spectra.o: main_spectra.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
 dissipation.o: dissipation.f90
@@ -137,8 +157,10 @@ $(TOOLSPATH)/nucl_wavep_tool.o: $(TOOLSPATH)/nucl_wavep_tool.f90
 main.o: main.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
+main_spectra.o: main_spectra.f90
+	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
+
 # dependencies
-# all tdplas dependencies are contained in the static linking to the TDPlas library
 
 random.o:
 
@@ -146,17 +168,17 @@ constants.o:
 
 interface_tdplas.o: constants.o
 
-readio.o: interface_tdplas.o random.o
+readio.o: random.o
 
 spectra.o: readio.o
 
-dissipation.o: random.o constants.o interface_tdplas.o readio.o
+dissipation.o: random.o constants.o readio.o interface_tdplas.o
 
-propagate.o: spectra.o dissipation.o
+propagate.o: spectra.o dissipation.o interface_tdplas.o
 
-main_spectra.o: interface_tdplas.o readio.o spectra.o
+main_spectra.o: readio.o spectra.o interface_tdplas.o
 
-main.o: constants.o interface_tdplas.o readio.o spectra.o dissipation.o propagate.o
+main.o: constants.o readio.o spectra.o dissipation.o propagate.o interface_tdplas.o
 
 vib.o: readio.o
 
