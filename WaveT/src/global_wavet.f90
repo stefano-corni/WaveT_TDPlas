@@ -1,7 +1,7 @@
 module global_wavet 
       use constants
       use tdplas, only: set_charges,get_mdm_dip,get_gneq,init_mdm, &
-                            prop_mdm,finalize_mdm,q0,Fmdm_relax,read_medium,mpibcast_readio_mdm
+                            prop_mdm,finalize_mdm,q0,Fmdm_relax,read_medium,mpibcast_readio_mdm,set_global_tdplas,do_QM_coupling
 #ifdef MPI
 #ifndef SCALI
       use mpi
@@ -158,5 +158,45 @@ module global_wavet
 
       end subroutine mpibcast_read_medium 
 
+      subroutine set_global_tdplas_in_wavet(this_dt,this_mdm,this_mol_cc,this_n_ci,this_n_ci_read,this_c_i,this_e_ci,this_mut,&
+				                                    this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
+                                            this_Fbin,this_Fopt,this_nthr,this_res,this_n_res)
+
+        implicit none
+
+        real(dbl)     , intent(in) :: this_dt				         ! time step
+        character(3)  , intent(in) :: this_mdm				         ! kind of medium
+        integer(i4b)  , intent(in) :: this_n_ci,this_n_ci_read		 ! number of CIS states
+        real(dbl)     , intent(in) :: this_e_ci(:)	        	     ! CIS energies
+        real(dbl)     , intent(in) :: this_mut(:,:,:)			     ! CIS transition dipoles
+        real(dbl)     , intent(in) :: this_mol_cc(3)			     ! molecule center
+        real(dbl)     , intent(in) :: this_fmax(3,10),this_omega(10) ! field amplitude and frequency
+        real(dbl)     , intent(in) :: this_tdelay(10),this_pshift(10)! time delay and phase shift
+        complex(cmp)  , intent(in) :: this_c_i(:)                    ! CIS coefficients
+        character(3)  , intent(in) :: this_Ffld			           	 ! shape of impulse
+        character(3)  , intent(in) :: this_Fbin                      ! binary output
+        character(3)  , intent(in) :: this_Fopt                      ! matrix/vector multiplication 
+        integer(i4b)  , intent(in) :: this_n_out,this_n_f	         ! auxiliaries for output
+        integer(i4b)  , intent(in) :: this_nthr                      ! number of threads
+        character(1)  , intent(in) :: this_res                      ! restart for medium 
+        integer(i4b)  , intent(in) :: this_n_res                    ! frequency for restart
+
+        call set_global_tdplas(this_dt,this_mdm,this_mol_cc,this_n_ci,this_n_ci_read,this_c_i,this_e_ci,this_mut,&
+				                       this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
+                               this_Fbin,this_Fopt,this_nthr,this_res,this_n_res)
+
+        return
+
+      end subroutine set_global_tdplas_in_wavet
+
+      subroutine do_QM_coupling_in_wavet
+
+       implicit none
+
+       call do_QM_coupling
+
+       return
+
+      end subroutine do_QM_coupling_in_wavet
 
 end module global_wavet 

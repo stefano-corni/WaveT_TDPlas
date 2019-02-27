@@ -5,8 +5,7 @@
        use spectra
        use dissipation 
        use propagate    
-       use global_wavet, only: read_medium_input,mpibcast_read_medium
-       use tdplas, only: set_global_tdplas,do_QM_coupling
+       use global_wavet, only: read_medium_input,mpibcast_read_medium,set_global_tdplas_in_wavet,do_QM_coupling_in_wavet
 #ifdef OMP
        use omp_lib
 #endif
@@ -80,10 +79,10 @@
 
        ! Fmdm(1:3) means the first three letters of the char flag Fmdm 
           if (Fmdm(1:3).ne."vac") then
-             call set_global_tdplas(dt,Fmdm,mol_cc,n_ci,n_ci_read,c_i, &
-                               e_ci,mut,fmax,omega,Ffld,n_out,n_f, &
-                               tdelay,pshift,Fbin,Fopt,nthreads, &
-                               restart,n_restart)
+             call set_global_tdplas_in_wavet(dt,Fmdm,mol_cc,n_ci,n_ci_read,c_i, &
+                                             e_ci,mut,fmax,omega,Ffld,n_out,n_f, &
+                                             tdelay,pshift,Fbin,Fopt,nthreads, &
+                                             restart,n_restart)
              if (myrank.eq.0) call read_medium_input
           endif
 
@@ -105,7 +104,7 @@
 
 !      propagate or diagonalise matrix
        if(Fmdm(1:1).eq.'Q') then
-         call do_QM_coupling    
+         call do_QM_coupling_in_wavet
        else 
          call prop
 ! SP 10/07/17: commented the following, do_spectra gives errors 
