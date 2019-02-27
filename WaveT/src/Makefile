@@ -45,15 +45,13 @@ TDPLASINC= -I$(TDPLAS)
 
 # objects
 
-OBJ= constants.o global_wavet.o global_tdplas.o random.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o dissipation.o propagate.o main.o pedra_friends.o 
-OBJ_SPECTRA= constants.o pedra_friends.o global_wavet.o global_tdplas.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o main_spectra.o
+OBJ= constants.o interface_tdplas.o random.o readio.o spectra.o dissipation.o propagate.o main.o
+OBJ_SPECTRA= constants.o pedra_friends.o interface_tdplas.o global_tdplas.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o main_spectra.o
 OBJ_VIB= constants.o readio.o $(TOOLSPATH)/vib.o $(TOOLSPATH)/vib_tool.o
 OBJ_COH= constants.o $(TOOLSPATH)/coherence_tool.o
 OBJ_FFT= constants.o $(TOOLSPATH)/fft_tool.o
 OBJ_POP_COH= constants.o $(TOOLSPATH)/pop_coh_tool.o
 OBJ_NUCL= constants.o $(TOOLSPATH)/nucl_wavep_tool.o
-
-WAVETOBJ= constants.o global_wavet.o random.o readio.o spectra.o dissipation.o propagate.o main.o
 
 # compilation and linking rules
 
@@ -65,10 +63,10 @@ $(BINPATH):
 	mkdir $(BINPATH)
 
 $(BINPATH)/make_spectra.x: main_spectra.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(WAVETOBJ) $(TDPLASLIB) $(LIB_CURIE) $(LIBS) $(LIBSF)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(TDPLASLIB) $(LIB_CURIE) $(LIBS) $(LIBSF)
 
 $(BINPATH)/WaveT-serial.x: main.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(WAVETOBJ) $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/WaveT-parallel.x: main.o
 	$(FC) $(CPP) $(FFLAGS) -o $@ $(INCPAR) $(TDPLASLIB) $(LIBS) $(LIBSPAR) $(LIBSF) $(LIB_CURIE)
@@ -97,7 +95,7 @@ clean_obj:
 constants.o: constants.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
-global_wavet.o: global_wavet.f90
+interface_tdplas.o: interface_tdplas.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) $(TDPLASINC) -c $< -o $@
 
 random.o: random.f90
@@ -146,19 +144,19 @@ random.o:
 
 constants.o:
 
-global_wavet.o: constants.o
+interface_tdplas.o: constants.o
 
-readio.o: global_wavet.o random.o
+readio.o: interface_tdplas.o random.o
 
 spectra.o: readio.o
 
-dissipation.o: random.o constants.o global_wavet.o readio.o
+dissipation.o: random.o constants.o interface_tdplas.o readio.o
 
 propagate.o: spectra.o dissipation.o
 
-main_spectra.o: global_wavet.o readio.o spectra.o
+main_spectra.o: interface_tdplas.o readio.o spectra.o
 
-main.o: constants.o global_wavet.o readio.o spectra.o dissipation.o propagate.o
+main.o: constants.o interface_tdplas.o readio.o spectra.o dissipation.o propagate.o
 
 vib.o: readio.o
 
