@@ -1,7 +1,9 @@
 module interface_tdplas
       use constants
+#ifdef TDPLAS
       use tdplas, only: set_charges,get_mdm_dip,get_gneq,init_mdm, &
-                            prop_mdm,finalize_mdm,q0,Fmdm_relax,read_medium,mpibcast_readio_mdm,set_global_tdplas,do_QM_coupling
+                        prop_mdm,finalize_mdm,Fmdm_relax,read_medium,mpibcast_readio_mdm,set_global_tdplas,do_QM_coupling,q0
+#endif
 #ifdef MPI
 #ifndef SCALI
       use mpi
@@ -11,8 +13,12 @@ module interface_tdplas
 #endif
 #endif
 
+      implicit none
 
-      public set_q0charges,get_medium_dip,read_medium_input,mpibcast_readio_mdm
+      character(flg) :: this_Fmdm_relax
+
+      public set_q0charges,get_medium_dip,get_energies,init_medium,prop_medium,finalize_medium,this_Fmdm_relax,read_medium_input,&
+             mpibcast_read_medium,set_global_tdplas_in_wavet,do_QM_coupling_in_wavet
 
       contains
   
@@ -25,9 +31,11 @@ module interface_tdplas
 !------------------------------------------------------------------------
 
         implicit none
-
+#ifdef TDPLAS
         call set_charges(q0)
-
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
         return
 
       end subroutine set_q0charges
@@ -45,7 +53,11 @@ module interface_tdplas
 
         real(dbl), intent(inout) :: mdm_dip(3)
 
+#ifdef TDPLAS
         call get_mdm_dip(mdm_dip)
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
 
         return
 
@@ -62,7 +74,12 @@ module interface_tdplas
 
         implicit none
 
+#ifdef TDPLAS
         call read_medium
+        this_Fmdm_relax = Fmdm_relax
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
 
         return
 
@@ -80,7 +97,11 @@ module interface_tdplas
         implicit none
         real(dbl), intent(inout) :: e_vac,g_neq_t,g_neq2_t,g_eq_t
 
+#ifdef TDPLAS
         call get_gneq(e_vac,g_eq_t,g_neq_t,g_neq2_t)
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
 
         return
 
@@ -98,8 +119,11 @@ module interface_tdplas
         implicit none
         complex(cmp), intent(inout) :: c(:)
         real(dbl), intent(inout) :: h(:,:),f(3)
-
+#ifdef TDPLAS
         call init_mdm(c,f,h)
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
 
         return
 
@@ -119,7 +143,11 @@ module interface_tdplas
         real(dbl), intent(inout) :: h(:,:),f(3)
         integer(i4b), intent(inout) :: i
 
+#ifdef TDPLAS
         call prop_mdm(i,c,f,h)
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
 
         return
 
@@ -136,7 +164,11 @@ module interface_tdplas
 
         implicit none
 
+#ifdef TDPLAS
         call finalize_mdm
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
 
         return
 
@@ -152,7 +184,11 @@ module interface_tdplas
 
         implicit none
 
+#ifdef TDPLAS
         call mpibcast_readio_mdm 
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
 
         return
 
@@ -181,9 +217,13 @@ module interface_tdplas
         character(1)  , intent(in) :: this_res                      ! restart for medium 
         integer(i4b)  , intent(in) :: this_n_res                    ! frequency for restart
 
+#ifdef TDPLAS
         call set_global_tdplas(this_dt,this_mdm,this_mol_cc,this_n_ci,this_n_ci_read,this_c_i,this_e_ci,this_mut,&
 				                       this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
                                this_Fbin,this_Fopt,this_nthr,this_res,this_n_res)
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
 
         return
 
@@ -193,7 +233,11 @@ module interface_tdplas
 
        implicit none
 
+#ifdef TDPLAS
        call do_QM_coupling
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
 
        return
 

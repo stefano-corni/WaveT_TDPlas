@@ -2,7 +2,7 @@ module dissipation
   use constants   
   use readio
   use random
-  use interface_tdplas, only: set_q0charges,Fmdm_relax
+  use interface_tdplas, only: set_q0charges,this_Fmdm_relax
 #ifdef MPI
 #ifndef SCALI
       use mpi
@@ -474,10 +474,12 @@ module dissipation
       write(*,*) 'Jump due to spontaneous emission, channel n.:', istate, 'between', ie, 'and', ig 
       endif
 #endif
+
       !Update charges to those in equilibrium with the ground state
-      if (Fmdm_relax.eq."rel") then
-         call set_q0charges
+      if (Fmdm(1:3).ne."vac") then
+       if (this_Fmdm_relax.eq."rel") call set_q0charges
       endif
+
 ! Nonradiative occurring
    elseif (eta.ge.tmp1.and.eta.lt.tmp2) then
       call random_number(eta1)
