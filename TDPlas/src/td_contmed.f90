@@ -627,7 +627,7 @@
        deallocate(qd)
 
        !FIXME: restart initializing from file
-       if ("Fmdm_res".eq.'Yesr') then
+       if (Fmdm_res .eq.'Yesr') then
           call read_medium_restart() 
        endif 
 
