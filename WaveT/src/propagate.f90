@@ -1,10 +1,10 @@
       module propagate
-      use constants   
-      use global_wavet
+      use constants
       use readio
       use spectra
       use random
-      use dissipation 
+      use dissipation
+      use interface_tdplas
 #ifdef OMP
       use omp_lib
 #endif

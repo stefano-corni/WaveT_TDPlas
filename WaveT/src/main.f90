@@ -5,7 +5,7 @@
        use spectra
        use dissipation 
        use propagate    
-       use global_wavet, only: read_medium_input,mpibcast_read_medium,set_global_tdplas_in_wavet,do_QM_coupling_in_wavet
+       use interface_tdplas, only: read_medium_input,mpibcast_read_medium,set_global_tdplas_in_wavet,do_QM_coupling_in_wavet
 #ifdef OMP
        use omp_lib
 #endif
