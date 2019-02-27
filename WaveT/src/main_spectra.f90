@@ -1,7 +1,7 @@
 program make_spectra
       use readio  
-      use global_wavet
       use spectra       
+      use interface_tdplas
 
       implicit none
 

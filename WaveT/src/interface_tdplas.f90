@@ -1,4 +1,4 @@
-module global_wavet 
+module interface_tdplas
       use constants
       use tdplas, only: set_charges,get_mdm_dip,get_gneq,init_mdm, &
                             prop_mdm,finalize_mdm,q0,Fmdm_relax,read_medium,mpibcast_readio_mdm,set_global_tdplas,do_QM_coupling
@@ -199,4 +199,4 @@ module global_wavet
 
       end subroutine do_QM_coupling_in_wavet
 
-end module global_wavet 
+end module interface_tdplas

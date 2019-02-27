@@ -1,11 +1,11 @@
       Module td_ContMed       
-      use constants    
-      use global_tdplas
+      use constants
       use readio_medium
       use pedra_friends
       use MathTools
       use BEM_medium
       use scf
+      use interface_wavet
 #ifdef OMP
       use omp_lib
 #endif         
