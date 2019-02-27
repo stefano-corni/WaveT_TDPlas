@@ -2,7 +2,6 @@
       use constants   
       use global_wavet
       use readio
-      !use pedra_friends  
       use spectra
       use random
       use dissipation 

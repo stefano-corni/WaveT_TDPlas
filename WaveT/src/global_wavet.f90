@@ -1,8 +1,7 @@
 module global_wavet 
       use constants
-      use td_contmed, only: set_charges,get_mdm_dip,get_gneq,init_mdm, &
-                            prop_mdm,finalize_mdm
-      use readio_medium, only: q0,Fmdm_relax,read_medium,mpibcast_readio_mdm
+      use tdplas, only: set_charges,get_mdm_dip,get_gneq,init_mdm, &
+                            prop_mdm,finalize_mdm,q0,Fmdm_relax,read_medium,mpibcast_readio_mdm
 #ifdef MPI
 #ifndef SCALI
       use mpi
