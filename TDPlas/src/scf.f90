@@ -1,10 +1,10 @@
       Module scf            
       use constants    
-      use global_tdplas
       use readio_medium
       use pedra_friends
       use MathTools
-      use BEM_medium    
+      use BEM_medium
+      use interface_wavet   
       use, intrinsic :: iso_c_binding
 
 #ifdef MPI

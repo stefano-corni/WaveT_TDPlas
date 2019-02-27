@@ -2,7 +2,7 @@ module dissipation
   use constants   
   use readio
   use random
-  use global_wavet, only: set_q0charges,Fmdm_relax
+  use interface_tdplas, only: set_q0charges,Fmdm_relax
 #ifdef MPI
 #ifndef SCALI
       use mpi
