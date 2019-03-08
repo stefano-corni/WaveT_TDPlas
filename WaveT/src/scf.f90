@@ -1,10 +1,7 @@
       Module scf            
-      use constants    
-      use readio_medium
-      use pedra_friends
-      use MathTools
-      use BEM_medium
-      use interface_qmcode
+      use constants
+      use readio    
+      use interface_tdplas
       use, intrinsic :: iso_c_binding
 
 #ifdef MPI
@@ -189,7 +186,7 @@
        ! find the new eigenvector that is most similar to the old one
        c_c=abs(matmul(c_i,eigt_c))
        max_p=maxloc(c_c)
-       if(Fwrite.eq."high") then 
+       if(this_Fwrite.eq."high") then 
           if (myrank.eq.0) write(6,*) 'maxloc',max_p(1)
        endif
        c_c=0.d0
@@ -197,7 +194,7 @@
        ! This is the new state on the basis of the old states  
        c_c=matmul(eigt_c,c_c) 
        ! write the state
-       if(Fwrite.eq."high") then
+       if(this_Fwrite.eq."high") then
          if (myrank.eq.0) then
              write(6,*) "State on the basis of original states"
          endif
@@ -279,7 +276,7 @@
            Htot(j,k)=Htot(k,j)
          enddo
          Htot(j,j)=Htot(j,j)+e_ci(j)
-         if(Fwrite.eq."high") write(6,*) j,Htot(j,j)
+         if(this_Fwrite.eq."high") write(6,*) j,Htot(j,j)
        enddo
 
        return
@@ -304,7 +301,7 @@
            Htot(j,k)=Htot(k,j)
          enddo
          Htot(j,j)=Htot(j,j)+e_ci(j)
-         if(Fwrite.eq."high") write(6,*) j,Htot(j,j)
+         if(this_Fwrite.eq."high") write(6,*) j,Htot(j,j)
        enddo
 
        return

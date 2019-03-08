@@ -4,7 +4,7 @@
       use pedra_friends
       use MathTools
       use BEM_medium
-      use scf
+      !xxx just for a test use scf
       use interface_qmcode
 #ifdef OMP
       use omp_lib
@@ -25,10 +25,14 @@
 ! Molecular observables and Maxwell potential/field
       ! c_tp: input from propagate, coefficients of states at time tp
       ! f_tp: input from propagate, Maxwell field at time tp
+
+      ! DOWN - THIS BLOCK IS NEEDS TO ELMINATED
       real(dbl) :: f_tp2(3)                                   !< old Maxwell field stored in td_contmed  
       real(dbl) :: mu_tp(3),mu_tp2(3),mu_0(3)                 !< molecular dipole 
       real(dbl), allocatable :: pot_tp(:),pot_tp2(:),pot_0(:) !< molecular potential on BEM points
       real(dbl), allocatable :: potf_tp(:),potf_tp2(:)        !< Maxwell potential on BEM points
+      ! UP   - THIS BLOCK IS NEEDS TO ELMINATED
+
       !SP mu_0 contains mut(:,1,1)  
       !SP pot_0 contains vts(:,1,1) for Fint="ief" and potential of mu_0 if Fint='ons'
 ! Interaction and medium description
@@ -80,21 +84,25 @@
 !!!!!!!!!!!!!!!!!!!!!!!!   INTERFACE ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine init_mdm(c_tp,f_tp,h_int)   
 !------------------------------------------------------------------------
 ! @brief Medium initialization called by WaveT or other programs 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine init_mdm(c_tp, mu_t, f_tp, pot_t, potf_t, h_int)
 
-      real(dbl), intent(INOUT) :: f_tp(3)
-      complex(cmp), intent(INOUT) :: c_tp(n_ci)
-      real(dbl), intent(INOUT):: h_int(n_ci,n_ci)
+      implicit none
+
+      complex(cmp)       , intent(inout) ::  c_tp(:)         !< (1:n_ci)        - molecular wavefunction coefficients (to be deleted)
+      real(dbl), optional, intent(in)    ::  mu_t(:)         !< (1:3)           - molecular dipole
+      real(dbl), optional, intent(inout) ::   f_tp(:)        !< (1:3)           - external field ( INOUT TO BE ELIMINATED)
+      real(dbl), optional, intent(in)    :: pot_t(:)         !< (1:nts_act)     - molecular potential
+      real(dbl), optional, intent(in)    :: potf_t(:)        !< (1:nts_act)     - external  potential
+      real(dbl)          , intent(inout) :: h_int(n_ci,n_ci) !< (1:n_ci,1:n_ci) - interaction hamiltonian
       integer(i4b) :: its,i,j                   
       character(20) :: name_f
 
- 
 ! OPEN FILES
       write(name_f,'(a9,i0,a4)') "medium_t_",n_f,".dat"
       !if (Fmdm_res.eq.'Nonr') then
@@ -580,7 +588,7 @@
          qr_tp=q0+matmul(BEM_Qd,(pot_tp-pot_0))
         case ('sce')
          qr_tp=mix_coef*matmul(BEM_Q0,pot_tp)+(1.-mix_coef)*q0
-         call do_scf(qr_tp,c_tp)
+         !xxx just for a test call do_scf(qr_tp,c_tp)
 ! update the potential
 !         do its=1,nts_act
 !          pot_tp(its)=dot_product(c_tp,matmul(vts(its,:,:),c_tp))
@@ -833,7 +841,7 @@
          g_neq2_0=-0.5*dot_product(mu_0,matmul(mat_fd,mu_0))
         case ('sce')
          fr_t=mix_coef*matmul(mat_f0,mu_tp)+(1.-mix_coef)*fr_0
-         call do_scf(fr_t,c_tp)
+         !xxx just for a test call do_scf(fr_t,c_tp)
          call do_dip_from_coeff(c_tp,mu_tp,n_ci)
          g_neq_0=-0.5*dot_product(mu_tp,matmul(mat_f0,mu_tp))
          g_neq2_0=-0.5*dot_product(mu_tp,matmul(mat_fd,mu_tp))
@@ -878,7 +886,7 @@
          g_neq2_0=-0.5*ONS_fd*dot_product(mu_0,mu_0)
        case ('sce')
          fr_t=mix_coef*ONS_f0*mu_tp+(1.-mix_coef)*fr_0
-         call do_scf(fr_t,c_tp)
+         !xxx just for a test call do_scf(fr_t,c_tp)
          call do_dip_from_coeff(c_tp,mu_tp,n_ci)
          g_neq_0=-0.5*ONS_f0*dot_product(mu_tp,mu_tp)
          g_neq2_0=-0.5*ONS_fd*dot_product(mu_tp,mu_tp)
