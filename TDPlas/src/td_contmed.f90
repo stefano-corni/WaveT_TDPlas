@@ -5,7 +5,7 @@
       use MathTools
       use BEM_medium
       use scf
-      use interface_wavet
+      use interface_qmcode
 #ifdef OMP
       use omp_lib
 #endif         
