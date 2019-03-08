@@ -4,7 +4,7 @@
       use pedra_friends
       use MathTools
       use BEM_medium
-      use interface_wavet   
+      use interface_qmcode
       use, intrinsic :: iso_c_binding
 
 #ifdef MPI

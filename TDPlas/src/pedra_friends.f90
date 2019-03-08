@@ -1,7 +1,7 @@
       Module pedra_friends
 ! Modulo copiato spudoratamente da GAMESS
       use constants
-      use interface_wavet
+      use interface_qmcode
 #ifdef MPI
 #ifndef SCALI
       use mpi
