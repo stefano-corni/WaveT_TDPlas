@@ -1,8 +1,14 @@
 module interface_tdplas
       use constants
+      use readio
 #ifdef TDPLAS
-      use tdplas, only: set_charges,get_mdm_dip,get_gneq,init_mdm, &
-                        prop_mdm,finalize_mdm,Fmdm_relax,read_medium,mpibcast_readio_mdm,set_global_tdplas,do_QM_coupling,q0
+      use tdplas, only: set_charges,Fmdm_relax,&                                               ! used by dissipation
+                        get_mdm_dip,get_gneq,init_mdm,prop_mdm,finalize_mdm,&                  ! used by propagate
+                        read_medium,&                                                          ! used by main and main_spectra
+                        mpibcast_readio_mdm,set_global_tdplas,do_QM_coupling,&                 ! used by main
+                        Fwrite,fr_0,BEM_Q0,mat_f0,ncycmax,thrshld,vtsn,mix_coef,&                      ! used in scf 
+                        q0,vts,nts_act,Fprop,Fint,cts_act,tess_pcm                             ! used only here in interfaca_tdplas
+                        
 #endif
 #ifdef MPI
 #ifndef SCALI
@@ -15,13 +21,31 @@ module interface_tdplas
 
       implicit none
 
-      character(flg) :: this_Fmdm_relax
+      character(flg) :: this_Fmdm_relax, this_Fprop, this_Fint, this_Fwrite
 
-      public set_q0charges,get_medium_dip,get_energies,init_medium,prop_medium,finalize_medium,this_Fmdm_relax,read_medium_input,&
-             mpibcast_read_medium,set_global_tdplas_in_wavet,do_QM_coupling_in_wavet
+      real(dbl), allocatable :: this_vts(:,:,:), this_vtsn(:) !<transition potentials on tesserae from cis
+
+      integer(i4b) :: this_nts_act
+
+      type(tess_pcm), target, allocatable :: this_cts_act(:)
+
+      integer(i4b) :: this_ncycmax !< maximum number of SCF cycles
+      real(dbl) :: this_thrshld    !< SCF threshold on (i) eigenvalues 10^-thrshld (ii) eigenvectors 10^-(thrshld+2)
+      real(dbl), allocatable :: this_BEM_Q0(:,:)
+      real(dbl) :: this_fr_0(3)                       !< Reaction field at time 0 defined with Finit_mdm, here because used in scf
+      real(dbl), allocatable :: this_mat_f0(:,:) !< Onsager's total matrices needed for scf, free_energy and propagation
+      real(dbl) :: this_mix_coef   !< SCF mixing ratio of old (1-mix_coef) and new (mix_coef) charges/field       
+
+      public set_q0charges,this_Fmdm_relax,&                                            ! used by dissipatio
+             get_medium_dip,get_energies,init_medium,prop_medium,finalize_medium,&      ! used by propagate
+             read_medium_input,&                                                        ! used by main and main_spectra
+             mpibcast_read_medium,set_global_tdplas_in_wavet,do_QM_coupling_in_wavet,&  ! used by main
+             this_Fwrite,this_fr_0,this_BEM_Q0,this_mat_f0,this_ncycmax,this_thrshld,this_vtsn,this_mix_coef ! used in scf 
 
       contains
   
+      ! begin - wrapper subroutines
+
       subroutine set_q0charges
 !------------------------------------------------------------------------
 ! @brief Bridge subroutine to set charges qr_t to q0 during propagation 
@@ -77,6 +101,15 @@ module interface_tdplas
 #ifdef TDPLAS
         call read_medium
         this_Fmdm_relax = Fmdm_relax
+        this_nts_act=nts_act
+        allocate(this_vts(this_nts_act,n_ci,n_ci))
+        this_vts=vts
+        allocate(this_vtsn(this_nts_act))
+        this_vtsn=vtsn
+        this_Fwrite=Fwrite
+        this_ncycmax=ncycmax
+        this_thrshld=thrshld
+        this_mix_coef=mix_coef 
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
@@ -108,7 +141,7 @@ module interface_tdplas
       end subroutine get_energies
       
       
-      subroutine init_medium(c,f,h)     
+      subroutine init_medium(c,mu,f,h)     
 !------------------------------------------------------------------------
 ! @brief Initialize medium 
 !
@@ -117,10 +150,39 @@ module interface_tdplas
 !------------------------------------------------------------------------
 
         implicit none
-        complex(cmp), intent(inout) :: c(:)
-        real(dbl), intent(inout) :: h(:,:),f(3)
+
+        complex(cmp), intent(inout) :: c(:)    !< (1:n_ci)        - molecular wavefunction coefficients (INOUT TO BE ELIMINATED)
+        real(dbl)   , intent(in)    :: mu(:)   !< (1:3)           - molecular dipole
+        real(dbl)   , intent(inout) :: f(:)    !< (1:3)           - external field                      (INOUT TO BE ELIMINATED)
+        real(dbl)   , intent(inout) :: h(:,:)  !< (1:n_ci,1:n_ci) - interaction hamiltonian
+
+        real(dbl), allocatable      :: pot(:)  !< (1:nts_act)     - molecular potential
+        real(dbl), allocatable      :: potf(:) !< (1:nts_act)     - external  potential
+
 #ifdef TDPLAS
-        call init_mdm(c,f,h)
+        if(this_Fprop(1:3).eq."dip") then
+         ! initializing medium with molecular dipole and external field
+         call init_mdm(c_tp = c, mu_t = mu, f_tp = f, h_int = h)
+        else
+         allocate(pot(this_nts_act))
+         allocate(potf(this_nts_act))
+         if(this_Fint(1:3).eq."ons") then
+          ! computing molecular potential corresponding to a point-like dipole
+          call do_pot_from_dip(mu,pot)
+         else
+          ! computing molecular potential
+          call do_pot_from_coeff(c,pot)
+         endif
+         ! computing external potential in the long-wavelength limit
+         call do_pot_from_field(f,potf)
+         ! initializing medium with molecular and external potentials
+         call init_mdm(c_tp = c, pot_t = pot, potf_t = potf, h_int = h)
+        endif
+        this_fr_0=fr_0
+        allocate(this_BEM_Q0(this_nts_act,this_nts_act))
+        this_BEM_Q0=BEM_Q0
+        allocate(this_mat_f0(this_nts_act,this_nts_act))
+        this_mat_f0=mat_f0        
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
@@ -242,5 +304,197 @@ module interface_tdplas
        return
 
       end subroutine do_QM_coupling_in_wavet
+
+      ! end - wrapper subroutines
+
+      ! begin - subroutines to calculate dipoles, field and potentials from coefficients, dipoles and fields
+
+!------------------------------------------------------------------------
+! @brief Compute dipole from CIS coefficients 
+!
+! @date Created: S. Pipolo
+! Modified: E. Coccia 5/7/18
+!------------------------------------------------------------------------
+      subroutine do_dip_from_coeff(c,dip,nc)
+
+       implicit none
+
+       integer(i4b), intent(IN)  :: nc  
+       complex(cmp), intent(IN)  :: c(nc)
+       real(dbl),    intent(OUT) :: dip(3)
+       integer(i4b)              :: its,j,k  
+       complex(cmp)              :: ctmp(nc) 
+
+#ifndef OMP
+       dip(1)=dot_product(c,matmul(mut(1,:,:),c))
+       dip(2)=dot_product(c,matmul(mut(2,:,:),c))
+       dip(3)=dot_product(c,matmul(mut(3,:,:),c))
+#endif
+#ifdef OMP
+      if (Fopt(1:3).eq.'omp') then
+         ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp) 
+!$OMP DO
+         do k=1,nc
+            do j=1,nc
+               ctmp(k)=ctmp(k)+ mut(1,k,j)*c(j)
+            enddo
+         enddo
+!$OMP END PARALLEL
+         dip(1)=dot_product(c,ctmp)
+
+         ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp) 
+!$OMP DO
+         do k=1,nc
+            do j=1,nc
+               ctmp(k)=ctmp(k)+ mut(2,k,j)*c(j)
+            enddo
+         enddo
+!$OMP END PARALLEL
+         dip(2)=dot_product(c,ctmp)
+
+         ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp) 
+!$OMP DO
+         do k=1,nc
+            do j=1,nc
+               ctmp(k)=ctmp(k)+ mut(3,k,j)*c(j)
+            enddo
+         enddo
+!$OMP END PARALLEL
+         dip(3)=dot_product(c,ctmp)
+      else
+         dip(1)=dot_product(c,matmul(mut(1,:,:),c))
+         dip(2)=dot_product(c,matmul(mut(2,:,:),c))
+         dip(3)=dot_product(c,matmul(mut(3,:,:),c))
+      endif 
+#endif
+
+      end subroutine do_dip_from_coeff
+
+!------------------------------------------------------------------------
+! @brief Compute potential on BEM surface from CIS coefficientes 
+!
+! @date Created: S. Pipolo
+! Modified: E. Coccia 5/7/18
+!------------------------------------------------------------------------
+      subroutine do_pot_from_coeff(c,pot)
+
+       implicit none
+
+       complex(cmp), intent(IN)        :: c(n_ci)
+       real(dbl),    intent(OUT)       :: pot(this_nts_act)
+
+       integer(i4b)                       :: its,k,j  
+       complex(cmp), save, allocatable    :: ctmp(:)
+       complex(cmp), save                 :: cc
+
+#ifndef OMP
+       do its=1,this_nts_act
+          pot(its)=dot_product(c,matmul(this_vts(its,:,:),c))
+       enddo
+#endif
+
+#ifdef OMP
+       if (Fopt(1:3).eq.'omp') then
+          allocate(ctmp(this_nts_act*n_ci))
+!$OMP PARALLEL REDUCTION (+:cc)
+!$OMP DO 
+          do its=1,this_nts_act
+             do k=1,n_ci
+                cc=0.d0
+                do j=1,n_ci
+                   cc = cc + this_vts(its,k,j)*c(j)
+                enddo
+                ctmp(k+(its-1)*n_ci) = cc
+             enddo
+          enddo
+!$OMP END PARALLEL
+!$OMP PARALLEL
+!$OMP DO
+          do its=1,this_nts_act
+             pot(its)=dot_product(c,ctmp((its-1)*n_ci+1:its*n_ci))
+          enddo
+!$OMP END PARALLEL
+          deallocate(ctmp)
+       else
+!$OMP PARALLEL
+!$OMP DO
+          do its=1,this_nts_act
+             pot(its)=dot_product(c,matmul(this_vts(its,:,:),c))
+          enddo 
+!$OMP END PARALLEL
+       endif
+#endif
+
+      end subroutine do_pot_from_coeff
+
+!------------------------------------------------------------------------
+! @brief Compute the potential on the BEM surface generated by a field
+! (fld) 
+!
+! @date Created: S. Pipolo
+! Modified: 
+!------------------------------------------------------------------------
+      subroutine do_pot_from_field(fld,pot)
+
+       implicit none
+
+       real(dbl), intent(in):: fld(3) 
+       real(dbl), intent(out):: pot(nts_act) 
+       integer(i4b) :: its  
+
+       ! Field
+       pot(:)=zero
+#ifdef OMP
+!$OMP PARALLEL REDUCTION(+:pot)
+!$OMP DO 
+#endif
+        do its=1,nts_act
+          pot(its)=pot(its)-fld(1)*cts_act(its)%x           
+          pot(its)=pot(its)-fld(2)*cts_act(its)%y          
+          pot(its)=pot(its)-fld(3)*cts_act(its)%z         
+        enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
+      end subroutine do_pot_from_field
+
+!------------------------------------------------------------------------
+! @brief Compute potential on BEM surface from CIS coefficients (ons) 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+      subroutine do_pot_from_dip(dip,pot)
+
+
+       real(dbl), intent(IN) :: dip(3)
+       real(dbl), intent(OUT) :: pot(nts_act)
+       real(dbl):: diff(3)  
+       real(dbl):: dist
+       integer(i4b) :: its  
+
+       pot(:)=zero
+#ifdef OMP
+!$OMP PARALLEL REDUCTION(+:pot)
+!$OMP DO
+#endif
+       do its=1,nts_act
+          diff(1)=-(mol_cc(1)-cts_act(its)%x)
+          diff(2)=-(mol_cc(2)-cts_act(its)%y)
+          diff(3)=-(mol_cc(3)-cts_act(its)%z)
+          dist=sqrt(dot_product(diff,diff))
+          pot(its)=pot(its)+dot_product(diff,dip)/(dist**3)
+       enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
+      end subroutine do_pot_from_dip
 
 end module interface_tdplas
