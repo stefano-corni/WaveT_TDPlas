@@ -1,4 +1,4 @@
-      module interface_wavet
+      module interface_qmcode
 
       use constants  
 
@@ -91,4 +91,4 @@
 
       end subroutine set_global_tdplas
 
-      end module interface_wavet
+      end module interface_qmcode

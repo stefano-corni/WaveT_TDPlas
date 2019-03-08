@@ -2,7 +2,7 @@
       use constants        
       use pedra_friends
       use readio_medium
-      use interface_wavet   
+      use interface_qmcode
 #ifdef OMP
       use omp_lib
 #endif

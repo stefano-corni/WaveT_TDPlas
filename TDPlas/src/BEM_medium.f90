@@ -3,7 +3,7 @@
       use readio_medium
       use pedra_friends
       use MathTools
-      use interface_wavet
+      use interface_qmcode
 #ifdef OMP
       use omp_lib
 #endif
