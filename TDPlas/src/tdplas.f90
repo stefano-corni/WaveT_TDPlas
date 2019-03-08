@@ -5,7 +5,7 @@
       use MathTools
       use BEM_medium
       use QM_coupling
-      use scf
+      !xxx just for a test use scf
       use td_contmed
       use interface_qmcode
       implicit none

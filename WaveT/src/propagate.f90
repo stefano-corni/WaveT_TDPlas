@@ -135,7 +135,7 @@
                                call seed_random_number_sc(iseed)
 
        if (Fmdm(1:3).ne."vac") then
-           call init_medium(c_prev,f_prev,h_int)
+           call init_medium(c_prev,mu_prev,f_prev,h_int)
            if (Fres.eq.'Nonr') then
               i=1
               call prop_medium(i,c_prev,f_prev,h_int)
