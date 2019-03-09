@@ -1,10 +1,10 @@
       Module QM_coupling    
-      use constants    
-      use global_tdplas
+      use constants
       use readio_medium
       use pedra_friends
       use MathTools 
       use BEM_medium
+      use interface_wavet
       use, intrinsic :: iso_c_binding
 #ifdef OMP
       use omp_lib

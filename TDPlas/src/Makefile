@@ -63,7 +63,7 @@ TDPLASLIB= libtdplas.a
 
 # objects to be linked with executables
 
-OBJ= tdplas.o td_contmed.o scf.o BEM_medium.o MathTools.o readio_medium.o pedra_friends.o global_tdplas.o constants.o QM_coupling.o
+OBJ= tdplas.o td_contmed.o scf.o BEM_medium.o MathTools.o readio_medium.o pedra_friends.o interface_wavet.o constants.o QM_coupling.o
 
 # compilation rules
 
@@ -90,7 +90,7 @@ $(TDPLASLIB): $(OBJ)
 constants.o: constants.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
-global_tdplas.o: global_tdplas.f90
+interface_wavet.o: interface_wavet.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
 pedra_friends.o: pedra_friends.f90
@@ -125,23 +125,23 @@ main_freq.o: main_freq.f90
 
 # dependencies
 
-global_tdplas.o: constants.o
+interface_wavet.o: constants.o
 
-pedra_friends.o: constants.o global_tdplas.o
+pedra_friends.o: constants.o interface_wavet.o
 
-readio_medium.o: constants.o global_tdplas.o pedra_friends.o
+readio_medium.o: constants.o interface_wavet.o pedra_friends.o
 
-MathTools.o: constants.o global_tdplas.o pedra_friends.o readio_medium.o
+MathTools.o: constants.o interface_wavet.o pedra_friends.o readio_medium.o
 
-BEM_medium.o: constants.o global_tdplas.o pedra_friends.o readio_medium.o MathTools.o
+BEM_medium.o: constants.o interface_wavet.o pedra_friends.o readio_medium.o MathTools.o
 
-QM_coupling.o: constants.o global_tdplas.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o
+QM_coupling.o: constants.o interface_wavet.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o
 
-scf.o: constants.o global_tdplas.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o
+scf.o: constants.o interface_wavet.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o
 
-td_contmed.o: constants.o global_tdplas.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o scf.o
+td_contmed.o: constants.o interface_wavet.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o scf.o
 
-tdplas.o: constants.o global_tdplas.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o
+tdplas.o: constants.o interface_wavet.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o
 
 main_tdplas.o: tdplas.o
 
