@@ -1,10 +1,9 @@
 !> Module that reads the input of the medium. 
 !! It contains all public medium variables
       module readio_medium
-      use constants           
-      use global_tdplas       
+      use constants      
       use pedra_friends
-
+      use interface_wavet
 #ifdef MPI
 #ifndef SCALI
       use mpi

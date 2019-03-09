@@ -1,8 +1,7 @@
       Module pedra_friends
 ! Modulo copiato spudoratamente da GAMESS
-      use global_tdplas
-      use constants    
-
+      use constants
+      use interface_wavet
 #ifdef MPI
 #ifndef SCALI
       use mpi

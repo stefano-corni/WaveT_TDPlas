@@ -1,4 +1,4 @@
-      module global_tdplas
+      module interface_wavet
 
       use constants  
 
@@ -91,4 +91,4 @@
 
       end subroutine set_global_tdplas
 
-      end module global_tdplas
+      end module interface_wavet
