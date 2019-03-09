@@ -1,6 +1,5 @@
       program tdcis
-      use readio_medium
-      use BEM_medium
+      use tdplas
       implicit none
       integer :: st,current,rate
       !integer(4) :: n_omega,i
