@@ -1,9 +1,9 @@
       Module BEM_medium      
       use constants    
       use readio_medium
-      use global_tdplas
       use pedra_friends
       use MathTools
+      use interface_wavet
 #ifdef OMP
       use omp_lib
 #endif

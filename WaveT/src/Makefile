@@ -29,48 +29,70 @@ INC = -I/usr/include/
 LIBSPAR= -L/opt/scali/lib64 -lfmpi -lmpi
 INCPAR= -I/opt/scali/include64 -I/local/home/corni/emanuele/fftw-3.3.4/include/
 
-# executable, tools and TDPlas directories
+# executable and tools directories
 
 BINPATH=../bin
-TDPLAS=../../TDPlas/src/
 TOOLSPATH=tools
-
-# tdplas library file
-
-TDPLASLIB= $(TDPLAS)/libtdplas.a
 
 # objects
 
-OBJ= constants.o global_wavet.o global_tdplas.o random.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o dissipation.o propagate.o main.o pedra_friends.o 
-OBJ_SPECTRA= constants.o pedra_friends.o global_wavet.o global_tdplas.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o main_spectra.o
+WAVETOBJ = constants.o random.o readio.o spectra.o dissipation.o propagate.o main.o interface_tdplas.o
+OBJ= $(WAVETOBJ)
+OBJ_SPECTRA= constants.o pedra_friends.o global_tdplas.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o main_spectra.o
 OBJ_VIB= constants.o readio.o $(TOOLSPATH)/vib.o $(TOOLSPATH)/vib_tool.o
 OBJ_COH= constants.o $(TOOLSPATH)/coherence_tool.o
 OBJ_FFT= constants.o $(TOOLSPATH)/fft_tool.o
 OBJ_POP_COH= constants.o $(TOOLSPATH)/pop_coh_tool.o
 OBJ_NUCL= constants.o $(TOOLSPATH)/nucl_wavep_tool.o
 
-WAVETOBJ= constants.o global_wavet.o random.o readio.o spectra.o dissipation.o propagate.o main.o
+# tdplas binding flag
+# write no if you want to compile wavet without any link to tdplas
+
+TDPLASLINK= YES
+TDPLASLIB=
+TDPLASINC=
+TDPLASPP=
+
+ifeq ($(TDPLASLINK),YES)
+
+# tdplas directory
+
+TDPLAS=../../TDPlas/src/
+
+# tdplas library file
+
+TDPLASLIB= $(TDPLAS)/libtdplas.a
+
+# tdplas include statement (to fetch only tdplas.mod)
+
+TDPLASINC= -I$(TDPLAS)
+
+# tdplas preprocessor flag
+
+TDPLASPP= -DTDPLAS
+
+OBJ= $(WAVETOBJ)
+OBJ_SPECTRA= $(OBJ_SPECTRA)
+
+endif
 
 # compilation and linking rules
 
-serial: mod $(BINPATH) $(BINPATH)/WaveT-serial.x $(BINPATH)/make_spectra.x $(BINPATH)/make_vib.x $(BINPATH)/make_coherence.x $(BINPATH)/make_2dfft.x $(BINPATH)/make_pop_coh.x $(BINPATH)/make_nucl_wavep.x
-
-mod:
-	cp $(TDPLAS)/tdplas.mod .
+serial: $(BINPATH) $(BINPATH)/WaveT-serial.x $(BINPATH)/make_spectra.x $(BINPATH)/make_vib.x $(BINPATH)/make_coherence.x $(BINPATH)/make_2dfft.x $(BINPATH)/make_pop_coh.x $(BINPATH)/make_nucl_wavep.x
 
 parallel: $(BINPATH) $(BINPATH)/WaveT-parallel.x
 
 $(BINPATH):
 	mkdir $(BINPATH)
 
-$(BINPATH)/make_spectra.x: main_spectra.o 
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(WAVETOBJ) $(TDPLASLIB) $(LIB_CURIE) $(LIBS) $(LIBSF)
+$(BINPATH)/make_spectra.x: main_spectra.o
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(TDPLASLIB) $(LIB_CURIE) $(LIBS) $(LIBSF)
 
 $(BINPATH)/WaveT-serial.x: main.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(WAVETOBJ) $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/WaveT-parallel.x: main.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(TDPLASLIB) $(INCPAR) $(LIBS) $(LIBSPAR) $(LIBSF) $(LIB_CURIE)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(INCPAR) $(TDPLASLIB) $(LIBS) $(LIBSPAR) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/make_vib.x: $(OBJ_VIB)
 	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_VIB)
@@ -96,19 +118,16 @@ clean_obj:
 constants.o: constants.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
-global_wavet.o: global_wavet.f90
-	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
-
 random.o: random.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
+
+interface_tdplas.o: interface_tdplas.f90
+	$(FC) $(CPP) $(TDPLASPP) $(FFLAGS) $(INC) $(TDPLASINC) -c $< -o $@
 
 readio.o: readio.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 spectra.o: spectra.f90
-	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
-
-main_spectra.o: main_spectra.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
 dissipation.o: dissipation.f90
@@ -138,26 +157,28 @@ $(TOOLSPATH)/nucl_wavep_tool.o: $(TOOLSPATH)/nucl_wavep_tool.f90
 main.o: main.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
+main_spectra.o: main_spectra.f90
+	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
+
 # dependencies
-# all tdplas dependencies are contained in the static linking to the TDPlas library
 
 random.o:
 
 constants.o:
 
-global_wavet.o: constants.o
+interface_tdplas.o: constants.o
 
-readio.o: global_wavet.o random.o
+readio.o: random.o
 
 spectra.o: readio.o
 
-dissipation.o: random.o constants.o global_wavet.o readio.o
+dissipation.o: random.o constants.o readio.o interface_tdplas.o
 
-propagate.o: spectra.o dissipation.o
+propagate.o: spectra.o dissipation.o interface_tdplas.o
 
-main_spectra.o: global_wavet.o readio.o spectra.o
+main_spectra.o: readio.o spectra.o interface_tdplas.o
 
-main.o: constants.o global_wavet.o readio.o spectra.o dissipation.o propagate.o
+main.o: constants.o readio.o spectra.o dissipation.o propagate.o interface_tdplas.o
 
 vib.o: readio.o
 
