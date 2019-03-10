@@ -69,8 +69,7 @@ INTERFACE_MODULE= interface_$(QMCODE_OK)
 
 # objects to be linked with executables
 
-#OBJ= tdplas.o td_contmed.o scf.o BEM_medium.o MathTools.o readio_medium.o pedra_friends.o interface_qmcode.o constants.o QM_coupling.o
-OBJ= tdplas.o td_contmed.o BEM_medium.o MathTools.o readio_medium.o pedra_friends.o interface_qmcode.o constants.o QM_coupling.o
+OBJ= tdplas.o td_contmed.o BEM_medium.o MathTools.o readio_medium.o pedra_friends.o interface_qmcode.o constants.o
 
 # compilation rules
 
@@ -112,12 +111,6 @@ MathTools.o: MathTools.f90
 BEM_medium.o: BEM_medium.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
-QM_coupling.o: QM_coupling.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-#scf.o: scf.f90
-#	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
 td_contmed.o: td_contmed.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
@@ -142,14 +135,9 @@ MathTools.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o
 
 BEM_medium.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o MathTools.o
 
-QM_coupling.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o
+td_contmed.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o
 
-#scf.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o
-
-td_contmed.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o #scf.o
-
-#tdplas.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o
-tdplas.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o td_contmed.o
+tdplas.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o td_contmed.o
 
 main_tdplas.o: tdplas.o
 
