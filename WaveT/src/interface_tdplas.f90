@@ -5,10 +5,12 @@ module interface_tdplas
       use tdplas, only: set_charges,Fmdm_relax,&                                               ! used by dissipation
                         get_mdm_dip,get_gneq,init_mdm,prop_mdm,finalize_mdm,&                  ! used by propagate
                         read_medium,&                                                          ! used by main and main_spectra
-                        mpibcast_readio_mdm,set_global_tdplas,do_QM_coupling,&                 ! used by main
+                        mpibcast_readio_mdm,set_global_tdplas,&                                ! used by main
                         Fwrite,fr_0,BEM_Q0,mat_f0,ncycmax,thrshld,vtsn,mix_coef,diag_mat,&
-                        do_field_from_charges,&                      ! used in scf 
-                        q0,vts,nts_act,Fprop,Fint,cts_act,tess_pcm                             ! used only here in interfaca_tdplas
+                        do_field_from_charges,&                                                ! used in scf
+                        BEM_W2,Ftest,eps_w0,eps_A,BEM_Modes,sfe_act,&
+                        do_BEM_quant,deallocate_bem_public,do_vts_from_dip,&                   ! used by QM_coupling 
+                        q0,vts,nts_act,Fprop,Fint,cts_act,tess_pcm,sfera                       ! used only here in interface_tdplas
                         
 #endif
 #ifdef MPI
@@ -22,27 +24,33 @@ module interface_tdplas
 
       implicit none
 
-      character(flg) :: this_Fmdm_relax, this_Fprop, this_Fint, this_Fwrite
+      character(flg) :: this_Fmdm_relax, this_Fprop, this_Fint, this_Fwrite, this_Ftest
 
       real(dbl), allocatable :: this_vts(:,:,:), this_vtsn(:) !<transition potentials on tesserae from cis
 
       integer(i4b) :: this_nts_act
 
       type(tess_pcm), target, allocatable :: this_cts_act(:)
+      type(sfera), allocatable :: this_sfe_act(:)
 
       integer(i4b) :: this_ncycmax !< maximum number of SCF cycles
       real(dbl) :: this_thrshld    !< SCF threshold on (i) eigenvalues 10^-thrshld (ii) eigenvectors 10^-(thrshld+2)
       real(dbl), allocatable :: this_BEM_Q0(:,:)
+      real(dbl), allocatable :: this_BEM_W2(:)
+      real(dbl), allocatable :: this_BEM_Modes(:,:)
       real(dbl) :: this_fr_0(3)                       !< Reaction field at time 0 defined with Finit_mdm, here because used in scf
       real(dbl), allocatable :: this_mat_f0(:,:) !< Onsager's total matrices needed for scf, free_energy and propagation
       real(dbl) :: this_mix_coef   !< SCF mixing ratio of old (1-mix_coef) and new (mix_coef) charges/field       
+      real(dbl) :: this_eps_A,this_eps_w0
 
-      public set_q0charges,this_Fmdm_relax,&                                            ! used by dissipatio
+      public set_q0charges,this_Fmdm_relax,&                                            ! used by dissipation
              get_medium_dip,get_energies,init_medium,prop_medium,finalize_medium,&      ! used by propagate
              read_medium_input,&                                                        ! used by main and main_spectra
-             mpibcast_read_medium,set_global_tdplas_in_wavet,do_QM_coupling_in_wavet,&  ! used by main
+             mpibcast_read_medium,set_global_tdplas_in_wavet,&                          ! used by main
              this_Fwrite,this_fr_0,this_BEM_Q0,this_mat_f0,this_ncycmax,this_thrshld,this_vtsn,this_mix_coef,diag_mat_in_wavet,&
-             do_field_from_charges_in_wavet ! used in scf 
+             do_field_from_charges_in_wavet, &                                          ! used in scf
+             this_BEM_W2,this_Ftest,this_eps_w0,this_eps_A,this_BEM_Modes,this_sfe_act,&
+             do_BEM_quant_in_wavet,deallocate_bem_public_in_wavet,do_vts_from_dip_in_wavet ! used by QM_coupling 
 
       contains
   
@@ -112,6 +120,12 @@ module interface_tdplas
         this_ncycmax=ncycmax
         this_thrshld=thrshld
         this_mix_coef=mix_coef 
+        this_eps_w0=eps_w0
+        this_eps_A=eps_A
+        allocate(this_cts_act(this_nts_act))
+        allocate(this_sfe_act(this_nts_act))
+        this_cts_act=cts_act
+        this_sfe_act=sfe_act
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
@@ -184,7 +198,11 @@ module interface_tdplas
         allocate(this_BEM_Q0(this_nts_act,this_nts_act))
         this_BEM_Q0=BEM_Q0
         allocate(this_mat_f0(this_nts_act,this_nts_act))
-        this_mat_f0=mat_f0        
+        this_mat_f0=mat_f0
+        allocate(this_BEM_W2(this_nts_act))
+        this_BEM_W2=BEM_W2
+        allocate(this_BEM_Modes(this_nts_act,this_nts_act))
+        this_BEM_Modes=BEM_Modes
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
@@ -293,20 +311,6 @@ module interface_tdplas
 
       end subroutine set_global_tdplas_in_wavet
 
-      subroutine do_QM_coupling_in_wavet
-
-       implicit none
-
-#ifdef TDPLAS
-       call do_QM_coupling
-#else
-        stop "Error: TDPlas library has not been linked to WaveT!"
-#endif
-
-       return
-
-      end subroutine do_QM_coupling_in_wavet
-
       subroutine diag_mat_in_wavet(M,E,Md)
 
        implicit none
@@ -335,6 +339,30 @@ module interface_tdplas
        call do_field_from_charges(q,f)
 
       end subroutine do_field_from_charges_in_wavet
+
+      subroutine do_BEM_quant_in_wavet
+
+       implicit none
+
+       call do_BEM_quant
+
+      end subroutine do_BEM_quant_in_wavet
+
+      subroutine deallocate_BEM_public_in_wavet
+
+       implicit none
+
+       call deallocate_BEM_public
+
+      end subroutine deallocate_BEM_public_in_wavet
+
+      subroutine do_vts_from_dip_in_wavet
+
+       implicit none
+
+       call do_vts_from_dip
+
+      end subroutine do_vts_from_dip_in_wavet
 
       ! end - wrapper subroutines
 

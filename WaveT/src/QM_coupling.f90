@@ -1,10 +1,6 @@
       Module QM_coupling    
       use constants
-      use readio_medium
-      use pedra_friends
-      use MathTools 
-      use BEM_medium
-      use interface_qmcode
+      use interface_tdplas
       use, intrinsic :: iso_c_binding
 #ifdef OMP
       use omp_lib
@@ -17,6 +13,8 @@
 #endif
 
       implicit none
+
+      character(flg) :: FQBEM
 
       real(dbl), allocatable :: occ(:)       !<Occupations                      
       real(dbl), allocatable :: Hqm(:,:)     !<QM-coupling super-matrix   
@@ -44,7 +42,9 @@
 !     Modified  :
 !     @param  
 !----------------------------------------------------------------------------
-       ! allocate matrices and initialize                                   
+       ! allocate matrices and initialize                                  
+
+       implicit none 
 
 #ifndef MPI
        myrank=0
@@ -55,13 +55,13 @@
        ! Build Hamiltonian Super-matrix
        call do_matrix
        if (myrank.eq.0) write(6,*) "Super matrix has been built"
-       if(Ftest.eq."qmt") then
-         call do_vts_from_dip
+       if(this_Ftest.eq."qmt") then
+         call do_vts_from_dip_in_wavet
          if (myrank.eq.0) call test_QM_coupling
        elseif(FQBEM(1:4)=='diag') then 
          ! Diagonalize Super-matrix        
          Hqm_evt=Hqm
-         call diag_mat(Hqm_evt,Hqm_evl,Hqm_dim)
+         call diag_mat_in_wavet(Hqm_evt,Hqm_evl,Hqm_dim)
          if (myrank.eq.0)write(6,*) "Super matrix has been diagonalized"
          ! Print Output                    
          if (myrank.eq.0) call out_QM_coupling
@@ -85,7 +85,10 @@
 !     Modified  :
 !     @param Hqm_dim,Hqm,Hqm_evt,Hqm_evl
 !----------------------------------------------------------------------------
-       call do_BEM_quant
+
+       implicit none
+
+       call do_BEM_quant_in_wavet
        if(FQBEM(1:8)=='diag-all') then ! couple with all modes but only one occupied
          ! Mode 1 is the charge mode w=0
          nmodes=nts_act
@@ -114,7 +117,8 @@
 !     Modified  :
 !     @param Hqm,Hqm_evt,Hqm_evl
 !----------------------------------------------------------------------------
-       call deallocate_BEM_public
+       implicit none
+       call deallocate_BEM_public_in_wavet
        deallocate(Hqm,Hqm_evt,Hqm_evl)
        deallocate(occ)
       return
@@ -127,6 +131,7 @@
 !     Modified  :
 !     @param Hqm,Hqm_evt,Hqm_evl
 !----------------------------------------------------------------------------
+       implicit none
        real(dbl):: omega_p  !< mode frequency 
        real(dbl):: we  !< energy factor in coupling 
        real(dbl):: gFi !< molecule-semiclassical_field coupling 
@@ -158,10 +163,10 @@
 
        gFi=0.d0
        do i=2,nmodes   
-         omega_p=sqrt(BEM_W2(i)) 
-         we=sqrt((omega_p**2-eps_w0**2)/(two*omega_p))
+         omega_p=sqrt(this_BEM_W2(i)) 
+         we=sqrt((omega_p**2-this_eps_w0**2)/(two*omega_p))
          ! Introduces the coupling with the field for propagation
-         if(FQBEM(1:4)=='prop') gFi=-dot_product(BEM_Modes(i,:),dp(:))*we
+         if(FQBEM(1:4)=='prop') gFi=-dot_product(this_BEM_Modes(i,:),dp(:))*we
          do j=1,n_ci
            p=(i-1)*n_ci+j
            do k=j,n_ci
@@ -170,7 +175,7 @@
              Hqm(s,p)=Hqm(k,j)
              Hqm(p,s)=Hqm(s,p)
              ! H1i checked indices j,s simmetrize k,p in H1i block
-             Hqm(k,p)=dot_product(BEM_Modes(i,:),vts(:,k,j))*we
+             Hqm(k,p)=dot_product(this_BEM_Modes(i,:),vts(:,k,j))*we
              Hqm(j,s)=Hqm(k,p)
              ! Hi1 checked indices p,k simmetrize s,j in Hi1 block
              Hqm(s,j)=Hqm(j,s)
@@ -196,6 +201,7 @@
 !     Modified  :
 !     @param Hqm_evl  
 !----------------------------------------------------------------------------
+       implicit none
        integer(i4b) :: i,j   
        character(len=32) :: my_fmt
        open(7,file="Hqm.mat",status="unknown")
@@ -208,7 +214,7 @@
        enddo
        do i=1,Hqm_dim
          if(i.le.n_ci) then
-           write(8,"(i0,3F10.6)") i,Hqm_evl(i),e_ci(i),sqrt(BEM_W2(i))
+           write(8,"(i0,3F10.6)") i,Hqm_evl(i),e_ci(i),sqrt(this_BEM_W2(i))
          else
            write(8,"(i0,F10.6)") i, Hqm_evl(i)
          endif
@@ -226,6 +232,7 @@
 !     Modified  :
 !     @param Hqm_evl  
 !----------------------------------------------------------------------------
+       implicit none
        real(dbl):: omega_p,we,g,g_ref,r,mud                
        integer(i4b) :: i,j,k   
        real(dbl), allocatable :: sp(:)               
@@ -238,28 +245,28 @@
        allocate(sp(3),tot(n_ci,n_ci),ref(n_ci,n_ci))
        open(7,file="g.mat",status="unknown")
        write(7,*) "# Test for dipolar-mode couplings" 
-       r=sqrt(sfe_act(1)%x**2+sfe_act(1)%y**2+sfe_act(1)%z**2)
-       sp(1)=sfe_act(1)%x 
-       sp(2)=sfe_act(1)%y 
-       sp(3)=sfe_act(1)%z 
+       r=sqrt(this_sfe_act(1)%x**2+this_sfe_act(1)%y**2+this_sfe_act(1)%z**2)
+       sp(1)=this_sfe_act(1)%x 
+       sp(2)=this_sfe_act(1)%y 
+       sp(3)=this_sfe_act(1)%z 
        write(7,*) "# Sphere radius distance (bohr) and position"
        write(7,"(5F10.4)") cts_act(1)%rsfe,r,sp(1),sp(2),sp(3)
-       write(7,*) "# g=dot_product(BEM_Modes(p,:),vts(:,i,j))*we" 
+       write(7,*) "# g=dot_product(this_BEM_Modes(p,:),vts(:,i,j))*we" 
        write(7,*) "# g_ref=mud*sqrt(2*omega_p*cts_act(1)%rsfe^3)/(r^3)"
        write(7,*) "#" 
        write(7,*) "#  p    i    j            g                 g_ref" 
        tot=0.0d0
        do i=1,4        
-         omega_p=sqrt(BEM_W2(i)) 
-         we=sqrt((omega_p**2-eps_w0**2)/(two*omega_p))
+         omega_p=sqrt(this_BEM_W2(i)) 
+         we=sqrt((omega_p**2-this_eps_w0**2)/(two*omega_p))
          do j=1,n_ci
            do k=j,n_ci
              mud=dot_product(mut(:,k,j),sp(:))/r
-             g=dot_product(BEM_Modes(i,:),vts(:,k,j))*we
+             g=dot_product(this_BEM_Modes(i,:),vts(:,k,j))*we
              tot(k,j)=tot(k,j)+g*g
              !g_ref: Garcia-Vidal PRL 112, 253601 (2014)
              !g_ref=sqrt(2*mut(i-1,k,j)**2*omega_p*cts_act(1)%rsfe**3)/(r**3)
-             g_ref=mud*sqrt(2*sqrt(eps_A/3)*cts_act(1)%rsfe**3)/(r**3)
+             g_ref=mud*sqrt(2*sqrt(this_eps_A/3)*cts_act(1)%rsfe**3)/(r**3)
              ref(k,j)=g_ref
              write(7,"(3i5, 3F20.12)") i,j,k,g,g_ref
            enddo
@@ -275,7 +282,7 @@
        write(7,*) "# Dipolar resonance frequancy (a.u.)"
        write(7,*) "#  p          omega_p            sqrt(A/3)" 
        do i=2,4        
-         write(7,"(i5, 2F20.12)")i, sqrt(BEM_W2(i)), sqrt(eps_A/3)
+         write(7,"(i5, 2F20.12)")i, sqrt(this_BEM_W2(i)), sqrt(this_eps_A/3)
        enddo
        close(7)
        if (myrank.eq.0) then 
