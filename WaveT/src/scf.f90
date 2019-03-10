@@ -112,8 +112,8 @@
           call out_energies
        endif
        !  find the new eigenvector that is most similar to the old one
-       c_i=abs(matmul(c_i,eigt_c))
-       max_p=maxloc(c_i)
+       c_c=abs(matmul(c_i,eigt_c))
+       max_p=maxloc(c_c)
        if (myrank.eq.0) write(6,*) 'maxloc',max_p(1)
        c_i=0.d0
        c_i(max_p(1))=1.d0
