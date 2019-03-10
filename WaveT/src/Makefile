@@ -36,7 +36,7 @@ TOOLSPATH=tools
 
 # objects
 
-WAVETOBJ = random.o constants.o readio.o spectra.o interface_tdplas.o scf.o dissipation.o propagate.o
+WAVETOBJ = random.o constants.o readio.o spectra.o interface_tdplas.o scf.o QM_coupling.o dissipation.o propagate.o
 OBJ= $(WAVETOBJ) main.o
 OBJ_SPECTRA= $(WAVETOBJ) main_spectra.o
 OBJ_VIB= constants.o readio.o $(TOOLSPATH)/vib.o $(TOOLSPATH)/vib_tool.o
@@ -127,6 +127,9 @@ readio.o: readio.f90
 spectra.o: spectra.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
+QM_coupling.o: QM_coupling.f90
+	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
+
 scf.o: scf.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
@@ -172,6 +175,8 @@ readio.o: random.o
 
 spectra.o: readio.o
 
+QM_coupling.o: constants.o interface_tdplas.o
+
 scf.o: constants.o readio.o interface_tdplas.o
 
 dissipation.o: random.o constants.o readio.o interface_tdplas.o
@@ -180,7 +185,7 @@ propagate.o: spectra.o dissipation.o interface_tdplas.o
 
 main_spectra.o: readio.o spectra.o interface_tdplas.o
 
-main.o: constants.o readio.o spectra.o dissipation.o propagate.o interface_tdplas.o
+main.o: constants.o readio.o spectra.o QM_coupling.o dissipation.o propagate.o interface_tdplas.o
 
 vib.o: readio.o
 
