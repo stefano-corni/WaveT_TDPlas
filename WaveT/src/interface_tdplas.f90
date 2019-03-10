@@ -6,7 +6,8 @@ module interface_tdplas
                         get_mdm_dip,get_gneq,init_mdm,prop_mdm,finalize_mdm,&                  ! used by propagate
                         read_medium,&                                                          ! used by main and main_spectra
                         mpibcast_readio_mdm,set_global_tdplas,do_QM_coupling,&                 ! used by main
-                        Fwrite,fr_0,BEM_Q0,mat_f0,ncycmax,thrshld,vtsn,mix_coef,&                      ! used in scf 
+                        Fwrite,fr_0,BEM_Q0,mat_f0,ncycmax,thrshld,vtsn,mix_coef,diag_mat,&
+                        do_field_from_charges,&                      ! used in scf 
                         q0,vts,nts_act,Fprop,Fint,cts_act,tess_pcm                             ! used only here in interfaca_tdplas
                         
 #endif
@@ -40,7 +41,8 @@ module interface_tdplas
              get_medium_dip,get_energies,init_medium,prop_medium,finalize_medium,&      ! used by propagate
              read_medium_input,&                                                        ! used by main and main_spectra
              mpibcast_read_medium,set_global_tdplas_in_wavet,do_QM_coupling_in_wavet,&  ! used by main
-             this_Fwrite,this_fr_0,this_BEM_Q0,this_mat_f0,this_ncycmax,this_thrshld,this_vtsn,this_mix_coef ! used in scf 
+             this_Fwrite,this_fr_0,this_BEM_Q0,this_mat_f0,this_ncycmax,this_thrshld,this_vtsn,this_mix_coef,diag_mat_in_wavet,&
+             do_field_from_charges_in_wavet ! used in scf 
 
       contains
   
@@ -304,6 +306,35 @@ module interface_tdplas
        return
 
       end subroutine do_QM_coupling_in_wavet
+
+      subroutine diag_mat_in_wavet(M,E,Md)
+
+       implicit none
+
+       integer(i4b), intent(in) :: Md
+       real(dbl), intent(inout) :: M(Md)
+       real(dbl), intent(out) :: E(Md)
+
+#ifdef TDPLAS
+       call diag_mat(M,E,Md)
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
+
+       return
+
+      end subroutine diag_mat_in_wavet
+
+      subroutine do_field_from_charges_in_wavet(q,f)
+
+       implicit none
+
+       real(dbl),intent(inout):: f(3)  
+       real(dbl),intent(in):: q(nts_act)  
+
+       call do_field_from_charges(q,f)
+
+      end subroutine do_field_from_charges_in_wavet
 
       ! end - wrapper subroutines
 
