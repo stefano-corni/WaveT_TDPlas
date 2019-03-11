@@ -3,14 +3,15 @@ module interface_tdplas
       use readio
 #ifdef TDPLAS
       use tdplas, only: set_charges,Fmdm_relax,&                                               ! used by dissipation
-                        get_mdm_dip,get_gneq,init_mdm,prop_mdm,finalize_mdm,&                  ! used by propagate
+                        get_mdm_dip,get_gneq,init_mdm,prop_mdm,finalize_mdm,&
+                        preparing_for_scf,init_after_scf,& ! used by propagate
                         read_medium,&                                                          ! used by main and main_spectra
                         mpibcast_readio_mdm,set_global_tdplas,&                                ! used by main
                         Fwrite,fr_0,BEM_Q0,mat_f0,ncycmax,thrshld,vtsn,mix_coef,diag_mat,&
                         do_field_from_charges,&                                                ! used in scf
                         BEM_W2,Ftest,eps_w0,eps_A,BEM_Modes,sfe_act,&
                         do_BEM_quant,deallocate_bem_public,do_vts_from_dip,&                   ! used by QM_coupling 
-                        q0,vts,nts_act,Fprop,Fint,cts_act,tess_pcm,sfera                       ! used only here in interface_tdplas
+                        q0,vts,nts_act,Fprop,Fint,cts_act,tess_pcm,sfera,Finit_int ! used only here in interface_tdplas
                         
 #endif
 #ifdef MPI
@@ -24,7 +25,7 @@ module interface_tdplas
 
       implicit none
 
-      character(flg) :: this_Fmdm_relax, this_Fprop, this_Fint, this_Fwrite, this_Ftest
+      character(flg) :: this_Fmdm_relax, this_Fprop, this_Fint, this_Fwrite, this_Ftest, this_Finit_int
 
       real(dbl), allocatable :: this_vts(:,:,:), this_vtsn(:) !<transition potentials on tesserae from cis
 
@@ -44,7 +45,8 @@ module interface_tdplas
       real(dbl) :: this_eps_A,this_eps_w0
 
       public set_q0charges,this_Fmdm_relax,&                                            ! used by dissipation
-             get_medium_dip,get_energies,init_medium,prop_medium,finalize_medium,&      ! used by propagate
+             get_medium_dip,get_energies,init_medium,prop_medium,finalize_medium,this_Finit_int,this_Fprop,&
+             preparing_for_scf_in_wavet,init_after_scf_in_wavet,& ! used by propagate (also this_mix_coef)
              read_medium_input,&                                                        ! used by main and main_spectra
              mpibcast_read_medium,set_global_tdplas_in_wavet,&                          ! used by main
              this_Fwrite,this_fr_0,this_BEM_Q0,this_mat_f0,this_ncycmax,this_thrshld,this_vtsn,this_mix_coef,diag_mat_in_wavet,&
@@ -167,9 +169,9 @@ module interface_tdplas
 
         implicit none
 
-        complex(cmp), intent(inout) :: c(:)    !< (1:n_ci)        - molecular wavefunction coefficients (INOUT TO BE ELIMINATED)
-        real(dbl)   , intent(in)    :: mu(:)   !< (1:3)           - molecular dipole
-        real(dbl)   , intent(inout) :: f(:)    !< (1:3)           - external field                      (INOUT TO BE ELIMINATED)
+        complex(cmp), intent(in) :: c(:)    !< (1:n_ci)           - molecular wavefunction coefficients
+        real(dbl)   , intent(in) :: mu(:)   !< (1:3)              - molecular dipole
+        real(dbl)   , intent(in) :: f(:)    !< (1:3)              - external field
         real(dbl)   , intent(inout) :: h(:,:)  !< (1:n_ci,1:n_ci) - interaction hamiltonian
 
         real(dbl), allocatable      :: pot(:)  !< (1:nts_act)     - molecular potential
@@ -178,7 +180,7 @@ module interface_tdplas
 #ifdef TDPLAS
         if(this_Fprop(1:3).eq."dip") then
          ! initializing medium with molecular dipole and external field
-         call init_mdm(c_tp = c, mu_t = mu, f_tp = f, h_int = h)
+         call init_mdm(mu_t = mu, f_tp = f, h_int = h)
         else
          allocate(pot(this_nts_act))
          allocate(potf(this_nts_act))
@@ -188,12 +190,12 @@ module interface_tdplas
          else
           ! computing molecular potential
           call do_pot_from_coeff(c,pot)
-         endif
+         end if
          ! computing external potential in the long-wavelength limit
          call do_pot_from_field(f,potf)
          ! initializing medium with molecular and external potentials
-         call init_mdm(c_tp = c, pot_t = pot, potf_t = potf, h_int = h)
-        endif
+         call init_mdm(pot_t = pot, potf_t = potf, h_int = h)
+        end if
         this_fr_0=fr_0
         allocate(this_BEM_Q0(this_nts_act,this_nts_act))
         this_BEM_Q0=BEM_Q0
@@ -363,6 +365,25 @@ module interface_tdplas
        call do_vts_from_dip
 
       end subroutine do_vts_from_dip_in_wavet
+
+      subroutine preparing_for_scf_in_wavet(mix,pot)
+
+       implicit none
+
+       real(dbl), intent(in) :: mix
+       real(dbl), intent(in) :: pot(:)
+
+       call preparing_for_scf(mix,pot)
+
+      end subroutine preparing_for_scf_in_wavet
+
+      subroutine init_after_scf_in_wavet
+
+       implicit none
+
+       call init_after_scf
+
+      end subroutine init_after_scf_in_wavet
 
       ! end - wrapper subroutines
 
