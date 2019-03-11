@@ -4,6 +4,7 @@
       use spectra
       use random
       use dissipation
+      use scf
       use interface_tdplas
 #ifdef OMP
       use omp_lib
@@ -54,6 +55,9 @@
        complex(cmp), allocatable   :: ccexp(:) !SC 31/10/17: added to store exp(-ui*e(:)*dt), used in propagation
        character(20)               :: name_e,name_c,name_d,name_mu
 
+       ! GG: 11/03/2019
+       real(dbl), allocatable      :: q_or_f(:) !< reaction field or reaction-field polarization charges
+       real(dbl), allocatable      :: pot_prev(:) 
 
 ! OPEN FILES
        write(name_c,'(a4,i0,a4)') "c_t_",n_f,".dat"
@@ -135,7 +139,30 @@
                                call seed_random_number_sc(iseed)
 
        if (Fmdm(1:3).ne."vac") then
+           ! GG: 11/03/2019 begin changes
            call init_medium(c_prev,mu_prev,f_prev,h_int)
+           if(this_Finit_int.eq.'sce') then
+            if(this_Fprop(1:3).eq."dip") then
+             ! mixing iter 1 and 0
+             call preparing_for_scf_in_wavet(this_mix_coef,mu_prev)
+             ! reaction field
+             allocate(q_or_f(3))
+            else
+             allocate(pot_prev(this_nts_act))
+             call do_pot_from_coeff(c_prev,pot_prev)
+             ! mixing iter 1 and 0
+             call preparing_for_scf_in_wavet(this_mix_coef,pot_prev)
+             ! reaction-field polarization charges
+             allocate(q_or_f(this_nts_act))
+            endif
+            ! compute the molecular state in equilibrium with the medium starting from an excited state in the frozen approximation
+            ! onsager model ("dip") or pcm model
+            call do_scf(q_or_f,c_prev)
+            ! compute the molecular dipole
+            call do_dip_from_coeff(c_prev,mu_prev,n_ci)
+            call init_after_scf_in_wavet
+           end if
+           ! GG: 11/03/2019 end changes
            if (Fres.eq.'Nonr') then
               i=1
               call prop_medium(i,c_prev,f_prev,h_int)

@@ -76,7 +76,7 @@
       private
 !SC 07/02/16: added output_gneq
       public init_mdm,prop_mdm,finalize_mdm,qtot,ref,get_gneq, &
-             get_ons,get_mdm_dip,set_charges
+             get_ons,get_mdm_dip,set_charges,preparing_for_scf,init_after_scf
 
       contains
 !
@@ -90,13 +90,12 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-      subroutine init_mdm(c_tp, mu_t, f_tp, pot_t, potf_t, h_int)
+      subroutine init_mdm(mu_t, f_tp, pot_t, potf_t, h_int)
 
       implicit none
 
-      complex(cmp)       , intent(inout) ::  c_tp(:)         !< (1:n_ci)        - molecular wavefunction coefficients (to be deleted)
       real(dbl), optional, intent(in)    ::  mu_t(:)         !< (1:3)           - molecular dipole
-      real(dbl), optional, intent(inout) ::   f_tp(:)        !< (1:3)           - external field ( INOUT TO BE ELIMINATED)
+      real(dbl), optional, intent(in)    ::  f_tp(:)         !< (1:3)           - external field
       real(dbl), optional, intent(in)    :: pot_t(:)         !< (1:nts_act)     - molecular potential
       real(dbl), optional, intent(in)    :: potf_t(:)        !< (1:nts_act)     - external  potential
       real(dbl)          , intent(inout) :: h_int(n_ci,n_ci) !< (1:n_ci,1:n_ci) - interaction hamiltonian
@@ -123,11 +122,11 @@
       allocate(h_mdm(n_ci,n_ci),h_mdm_0(n_ci,n_ci))
       h_mdm=zero
       h_mdm_0=zero
-      f_tp2=f_tp
       if(Fprop(1:3).eq."dip") then
+        f_tp2=f_tp
 ! SC: First dipole propagation...
         call do_MPL_prop  !in BEM_medium
-        call init_dip_and_field(c_tp,f_tp)
+        call init_dip_and_field(mu_t)
       else 
         if(.not.allocated(mu_mdm))allocate(mu_mdm(3,1))
 ! SC: ...then charges propagation        
@@ -135,8 +134,8 @@
 ! SC 03/05/2016: create a new BEM_Q0=BEM_Qw^-1*BEM_Qf that should avoid
 !                spurious charge dynamics for stationary states
 !        call init_BEM_Q0
-        call init_potential(c_tp,f_tp)
-        call init_charges(c_tp)
+        call init_potential(pot_t,potf_tp)
+        call init_charges(pot_t)
 !EC: restart values
         !if (Fmdm_res.eq.'Yesr') then
          !if (Fint.eq.'ons') then
@@ -467,7 +466,7 @@
 !!!!!!!!!!!!!!!!! Initialization/deallocation !!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine init_potential(c_tp,f_tp)
+      subroutine init_potential(pot_t,potf_tp)
 !------------------------------------------------------------------------
 ! @brief Initialize potentials for propaagation 
 !
@@ -475,25 +474,17 @@
 ! Modified:
 !------------------------------------------------------------------------
 
-       complex(cmp), intent(IN) :: c_tp(n_ci)
-       real(dbl), intent(IN) :: f_tp(3)
+       real(dbl), intent(IN) :: pot_t(:)
+       real(dbl), intent(IN)    :: potf_tp(:)
        complex(cmp) :: c_gs(n_ci)
        integer(i4b) :: its  
 
-
        allocate(pot_tp(nts_act))
+       pot_tp = pot_t
+
        allocate(pot_0(nts_act))
 ! SC 08/04/2016: a routine to test by calculating the potentials from the dipoles
        if (Fdeb.eq.'vmu') call do_vts_from_dip
-! SP 26/06/17: changed to use general MathTools  
-       if(Fint.eq.'ons') then
-         call do_dip_from_coeff(c_tp,dip,n_ci)
-         call do_pot_from_dip(dip,pot_tp)
-! SP 10/07/17: commented the following, is it really needed here? Should stay in the init_charges
-         !call do_field_from_charges(q0,fr_tp)
-       else 
-         call do_pot_from_coeff(c_tp,pot_tp)
-       endif
        c_gs(:)=zeroc
        c_gs(1)=onec
 ! SP 26/06/17: changed to use general MathTools  
@@ -509,9 +500,7 @@
        allocate(pot_tp2(nts_act))
        pot_tp2=pot_tp
        if(Floc.eq."loc") then
-         allocate(potf_tp(nts_act))
          allocate(potf_tp2(nts_act))      
-         call do_pot_from_field(f_tp,potf_tp)
          potf_tp2=potf_tp    
 ! SP 09/07/16 commented the following 
          !fx_t(:)=zero
@@ -522,7 +511,7 @@
       end subroutine
 
 
-      subroutine init_charges(c_tp)
+      subroutine init_charges(pot_t)
 !------------------------------------------------------------------------
 ! @brief Initialize charges for propagation 
 !
@@ -532,13 +521,15 @@
 
        implicit none
 
-       complex(cmp), intent(INOUT) :: c_tp(n_ci)
+       real(dbl), intent(IN) :: pot_t(:)
        integer(i4b):: its
        real(dbl), allocatable :: qd(:)
 
 #ifndef MPI
        myrank=0
 #endif
+
+       pot_tp = pot_t
 
        allocate(qd(nts_act))
        allocate(qr_t(nts_act))
@@ -569,8 +560,7 @@
                    g_eq_gs
        endif
        ! see readio_medium for Finit_int
-       select case (Finit_int)
-        case ('nsc')
+       if(Finit_int.eq.'nsc') then
 
 !         g_neq_0=0.5*MPL_fd*dot_product(mu_tp,mu_tp) &
 !                -MPL_fd*dot_product(mu_tp,mu_0) &
@@ -586,25 +576,7 @@
          qd=matmul(BEM_Qd,pot_tp)
          g_neq_0=g_neq_0+0.5d0*dot_product(qd,pot_tp)
          qr_tp=q0+matmul(BEM_Qd,(pot_tp-pot_0))
-        case ('sce')
-         qr_tp=mix_coef*matmul(BEM_Q0,pot_tp)+(1.-mix_coef)*q0
-         !xxx just for a test call do_scf(qr_tp,c_tp)
-! update the potential
-!         do its=1,nts_act
-!          pot_tp(its)=dot_product(c_tp,matmul(vts(its,:,:),c_tp))
-!         enddo
-! SP 26/06/17: changed to use general MathTools  
-         if(Fint.eq.'ons') then
-           call do_dip_from_coeff(c_tp,dip,n_ci)
-           call do_pot_from_dip(dip,pot_tp)
-         else 
-           call do_pot_from_coeff(c_tp,pot_tp)
-         endif
-         g_neq_0=0.5*dot_product(qr_tp,pot_tp)
-         qr_tp=matmul(BEM_Qd,pot_tp)
-         g_neq2_0=0.5*dot_product(qr_tp,pot_tp)
-         qr_tp=matmul(BEM_Q0,pot_tp)
-       end select
+       end if
        if (myrank.eq.0) write(6,*) 'G_neq at t=0:',g_neq_0
        qr_t(:)=qr_tp(:)
        dqr_t(:)=zero  
@@ -643,8 +615,7 @@
 
       end subroutine
 
-
-      subroutine init_dip_and_field(c_tp,f_tp)
+      subroutine init_dip_and_field(mu_t)
 !------------------------------------------------------------------------
 ! @brief Initialize dipoles and field for propagation  
 !
@@ -652,8 +623,7 @@
 ! Modified:
 !------------------------------------------------------------------------
 
-       complex(cmp), intent(INOUT) :: c_tp(n_ci)
-       real(dbl), intent(INOUT) :: f_tp(3)
+       real(dbl), intent(IN) :: mu_t(3)
 
        allocate(mu_mdm(3,nsph))
        allocate(mr_0(3,nsph))
@@ -680,8 +650,8 @@
          endif
        endif
        ! The following subroutines should be merged!!
-       if(Fshape.eq."sphe") call init_dip_sphe(c_tp,f_tp)
-       if(Fshape.eq."spho") call init_dip_spho(c_tp,f_tp)
+       if(Fshape.eq."sphe") call init_dip_sphe(mu_t)
+       if(Fshape.eq."spho") call init_dip_spho(mu_t)
 
        return
 
@@ -690,7 +660,7 @@
 !------------------------------------------------------------------------
 !> Initialize Dipole for propagation with spherical object                
 !------------------------------------------------------------------------
-      subroutine init_dip_sphe(c_tp,f_tp)
+      subroutine init_dip_sphe(mu_t)
 !------------------------------------------------------------------------
 ! @brief Initialize dipole for propagation with spherical object
 !
@@ -700,15 +670,15 @@
 
        implicit none
 
-       complex(cmp), intent(INOUT) :: c_tp(:)
-       real(dbl), intent(IN) :: f_tp(3)
+       real(dbl), intent(IN) :: mu_t(3)
        real(dbl) :: fld(3),fld0(3)
        integer(i4b) :: i
+
+       mu_tp=mu_t
 
        mu_0(:)=mut(:,1,1)
        mr_0=zero
        fr_0=zero
-       call do_dip_from_coeff(c_tp,mu_tp,n_ci)
        if(Ftest.eq."s-r") mu_0=zero
        if(Ftest.eq."s-r") mu_tp=zero
 !SC 7/5/2018
@@ -734,7 +704,7 @@
          endif
        elseif (Fmdm(2:4).eq."sol") then 
          if(Finit_mdm.eq."fro") fr_0(:)=ONS_f0*mu_0(:)
-         call init_dip_sphe_sol(c_tp)
+         call init_dip_sphe_sol(mu_tp)
        endif
        fr_tp=fr_t
        if(Floc.eq."loc") then
@@ -749,7 +719,7 @@
 !------------------------------------------------------------------------
 !> Initialize Dipole for propagation with spheroidal object                
 !------------------------------------------------------------------------
-      subroutine init_dip_spho(c_tp,f_tp)
+      subroutine init_dip_spho(mu_t)
 !------------------------------------------------------------------------
 ! @brief Initialize dipole for propagation with spheroidal object 
 !
@@ -760,16 +730,16 @@
       ! inizialize onsager 
        implicit none
 
-       complex(cmp), intent(INOUT) :: c_tp(n_ci)
-       real(dbl), intent(IN) :: f_tp(3)
+       real(dbl), intent(IN) :: mu_t(3)
        real(dbl) :: fld(3),fld0(3)
        integer(i4b) :: i
+
+       mu_tp=mu_t
 
        ! Init molecular dipole 
        mu_0(:)=mut(:,1,1)
        mr_0=zero
        fr_0=zero
-       call do_dip_from_coeff(c_tp,mu_tp,n_ci)
        if(Ftest.eq."s-r") mu_0=zero
        if(Ftest.eq."s-r") mu_tp=zero
        if (Fmdm(2:4).eq."nan") then 
@@ -792,7 +762,7 @@
          endif
        elseif (Fmdm(2:4).eq."sol") then 
          if(Finit_mdm.eq."fro") fr_0=matmul(mat_f0,mu_0)
-         call init_dip_spho_sol(c_tp,f_tp)
+         call init_dip_spho_sol(mu_tp)
          fr_tp=fr_t
        endif
        if(Floc.eq."loc") then
@@ -805,7 +775,7 @@
       end subroutine
 
 
-      subroutine init_dip_spho_sol(c_tp,f_tp)
+      subroutine init_dip_spho_sol(mu_t)
 !------------------------------------------------------------------------
 ! @brief Initialize free energy (spheroidal) 
 !
@@ -815,20 +785,20 @@
 
        implicit none
 
-       complex(cmp), intent(INOUT) :: c_tp(n_ci)
-       real(dbl), intent(IN) :: f_tp(3)
+       real(dbl), intent(IN) :: mu_t(:)
 
 #ifndef MPI
        myrank=0
 #endif
+
+       mu_tp=mu_t
 
        g_eq_gs=-0.5d0*dot_product(fr_0,mu_0)
        if (myrank.eq.0) then
           write(6,*) 'Medium contribution to ground state free energy:', &
                    g_eq_gs
        endif
-       select case (Finit_int)
-        case ('nsc')
+       if (Finit_int.eq.'nsc') then
 ! SC in principle a non equilibrium self consistency if eps_d=1 is needed
 !    here we use the non self-consitent dipole but use the correct RF
          fr_t=fr_0+matmul(mat_fd,mu_tp-mu_0)
@@ -839,13 +809,7 @@
                 +0.5*dot_product(mu_0,matmul(mat_fd,mu_0))
          g_neq_0=-g_neq_0
          g_neq2_0=-0.5*dot_product(mu_0,matmul(mat_fd,mu_0))
-        case ('sce')
-         fr_t=mix_coef*matmul(mat_f0,mu_tp)+(1.-mix_coef)*fr_0
-         !xxx just for a test call do_scf(fr_t,c_tp)
-         call do_dip_from_coeff(c_tp,mu_tp,n_ci)
-         g_neq_0=-0.5*dot_product(mu_tp,matmul(mat_f0,mu_tp))
-         g_neq2_0=-0.5*dot_product(mu_tp,matmul(mat_fd,mu_tp))
-       end select
+       end if
        if (myrank.eq.0) write(6,*) 'G_neq at t=0:',g_neq_0
 
        return
@@ -853,7 +817,7 @@
       end subroutine
 
 
-      subroutine init_dip_sphe_sol(c_tp)
+      subroutine init_dip_sphe_sol(mu_t)
 !------------------------------------------------------------------------
 ! @brief Initialize free energy (spherical) 
 !
@@ -863,19 +827,20 @@
 
        implicit none
 
-       complex(cmp), intent(INOUT) :: c_tp(n_ci)
+       real(dbl), intent(IN) :: mu_t(:)
 
 #ifndef MPI
        myrank=0
 #endif
+
+       mu_tp=mu_t
 
        g_eq_gs=-0.5d0*dot_product(fr_0,mu_0)
        if (myrank.eq.0) then
            write(6,*) 'Medium contribution to ground state free energy:', &
                     g_eq_gs
        endif
-       select case (Finit_int)
-       case ('nsc')
+       if(Finit_int.eq.'nsc') then
 ! SC in principle a non equilibrium self consistency if eps_d=1 is needed
 !    here we use the non self-consitent dipole but use the correct RF
          fr_t=fr_0+ONS_fd*(mu_tp-mu_0)
@@ -884,19 +849,62 @@
                 +0.5*ONS_fd*dot_product(mu_0,mu_0)
          g_neq_0=-g_neq_0
          g_neq2_0=-0.5*ONS_fd*dot_product(mu_0,mu_0)
-       case ('sce')
-         fr_t=mix_coef*ONS_f0*mu_tp+(1.-mix_coef)*fr_0
-         !xxx just for a test call do_scf(fr_t,c_tp)
-         call do_dip_from_coeff(c_tp,mu_tp,n_ci)
-         g_neq_0=-0.5*ONS_f0*dot_product(mu_tp,mu_tp)
-         g_neq2_0=-0.5*ONS_fd*dot_product(mu_tp,mu_tp)
-       end select
+       end if
        if (myrank.eq.0) write(6,*) 'G_neq at t=0:',g_neq_0
 
        return
 
       end subroutine
 
+      subroutine preparing_for_scf(mix,mu_t,pot_t)
+
+       implicit none
+
+       real(dbl) :: mix
+
+       real(dbl), optional :: mu_t(:)
+       real(dbl), optional :: pot_t(:)
+
+       if (Fprop.eq."dip") then
+        if( .not.present(mu_t) ) stop "Error: in preparing for scf."
+        if(Fshape.eq."sphe") then
+         fr_t=mix*ONS_f0*mu_t+(1.-mix)*fr_0
+        else if(Fshape.eq."spho") then
+         fr_t=mix_coef*matmul(mat_f0,mu_t)+(1.-mix_coef)*fr_0
+        end if
+       else
+        if( .not.present(pot_t) ) stop "Error: in preparing for scf."
+        qr_tp=mix*matmul(BEM_Q0,pot_tp)+(1.-mix)*q0
+       endif
+
+      end subroutine preparing_for_scf
+
+      subroutine init_after_scf
+
+       implicit none
+
+       if (Fprop.eq."dip") then
+        if(Fshape.eq."sphe") then
+         g_neq_0=-0.5*ONS_f0*dot_product(mu_tp,mu_tp)
+         g_neq2_0=-0.5*ONS_fd*dot_product(mu_tp,mu_tp)
+        else if(Fshape.eq."spho") then
+         g_neq_0=-0.5*dot_product(mu_tp,matmul(mat_f0,mu_tp))
+         g_neq2_0=-0.5*dot_product(mu_tp,matmul(mat_fd,mu_tp))
+        end if
+       else
+        qr_tp=matmul(BEM_Q0,pot_tp)
+        g_neq_0=0.5*dot_product(qr_tp,pot_tp)
+        qr_tp=matmul(BEM_Qd,pot_tp)
+        g_neq2_0=0.5*dot_product(qr_tp,pot_tp)
+        qr_tp=matmul(BEM_Q0,pot_tp)
+        qr_t(:)=qr_tp(:)
+        dqr_t(:)=zero  
+        if(Fint.eq."ons") call do_field_from_charges(qr_t,fr_0)
+       endif
+
+       if (myrank.eq.0) write(6,*) 'G_neq at t=0:',g_neq_0
+
+      end subroutine init_after_scf
 
       subroutine finalize_prop
 !------------------------------------------------------------------------
