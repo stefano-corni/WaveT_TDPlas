@@ -11,7 +11,7 @@ module interface_tdplas
                         do_field_from_charges,&                                                ! used in scf
                         BEM_W2,Ftest,eps_w0,eps_A,BEM_Modes,sfe_act,&
                         do_BEM_quant,deallocate_bem_public,do_vts_from_dip,&                   ! used by QM_coupling 
-                        q0,vts,nts_act,Fprop,Fint,cts_act,tess_pcm,sfera,Finit_int ! used only here in interface_tdplas
+                        q0,vts,nts_act,Fprop,Fint,cts_act,tess_pcm,sfera,Finit_int,nesf_act,Fbem ! used only here in interface_tdplas
                         
 #endif
 #ifdef MPI
@@ -25,11 +25,11 @@ module interface_tdplas
 
       implicit none
 
-      character(flg) :: this_Fmdm_relax, this_Fprop, this_Fint, this_Fwrite, this_Ftest, this_Finit_int
+      character(flg) :: this_Fmdm_relax, this_Fprop, this_Fint, this_Fwrite, this_Ftest, this_Finit_int, this_Fbem
 
       real(dbl), allocatable :: this_vts(:,:,:), this_vtsn(:) !<transition potentials on tesserae from cis
 
-      integer(i4b) :: this_nts_act
+      integer(i4b) :: this_nts_act, this_nesf_act
 
       type(tess_pcm), target, allocatable :: this_cts_act(:)
       type(sfera), allocatable :: this_sfe_act(:)
@@ -110,24 +110,44 @@ module interface_tdplas
 
         implicit none
 
+        integer :: ii
+
 #ifdef TDPLAS
         call read_medium
-        this_Fmdm_relax = Fmdm_relax
-        this_nts_act=nts_act
-        allocate(this_vts(this_nts_act,n_ci,n_ci))
-        this_vts=vts
-        allocate(this_vtsn(this_nts_act))
-        this_vtsn=vtsn
+        this_Fprop=Fprop
         this_Fwrite=Fwrite
+        this_Finit_int=Finit_int
+        this_Fmdm_relax = Fmdm_relax
+        if(this_Fprop(1:3).eq."chr") then 
+         this_nts_act=nts_act
+         allocate(this_vts(this_nts_act,n_ci,n_ci))
+         this_vts=vts
+         allocate(this_vtsn(this_nts_act))
+         this_vtsn=vtsn
+        end if
         this_ncycmax=ncycmax
         this_thrshld=thrshld
         this_mix_coef=mix_coef 
         this_eps_w0=eps_w0
         this_eps_A=eps_A
+        this_nesf_act=nesf_act
+        allocate(this_sfe_act(this_nesf_act))
+        !this_sfe_act=sfe_act
+        do ii=1, this_nesf_act
+         this_sfe_act(ii)%x=sfe_act(ii)%x
+         this_sfe_act(ii)%y=sfe_act(ii)%y
+         this_sfe_act(ii)%z=sfe_act(ii)%z
+         this_sfe_act(ii)%r=sfe_act(ii)%r
+        end do
         allocate(this_cts_act(this_nts_act))
-        allocate(this_sfe_act(this_nts_act))
-        this_cts_act=cts_act
-        this_sfe_act=sfe_act
+        !this_cts_act=cts_act
+        do ii=1, this_nts_act
+         this_cts_act(ii)%x=cts_act(ii)%x
+         this_cts_act(ii)%y=cts_act(ii)%y
+         this_cts_act(ii)%z=cts_act(ii)%z
+         this_cts_act(ii)%rsfe=cts_act(ii)%rsfe
+         this_cts_act(ii)%n(:)=cts_act(ii)%n(:)
+        end do
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
@@ -177,10 +197,15 @@ module interface_tdplas
         real(dbl), allocatable      :: pot(:)  !< (1:nts_act)     - molecular potential
         real(dbl), allocatable      :: potf(:) !< (1:nts_act)     - external  potential
 
+        integer :: ii
+
 #ifdef TDPLAS
         if(this_Fprop(1:3).eq."dip") then
          ! initializing medium with molecular dipole and external field
          call init_mdm(mu_t = mu, f_tp = f, h_int = h)
+         allocate(this_mat_f0(this_nts_act,this_nts_act))
+         this_mat_f0=mat_f0
+         this_fr_0=fr_0
         else
          allocate(pot(this_nts_act))
          allocate(potf(this_nts_act))
@@ -195,16 +220,17 @@ module interface_tdplas
          call do_pot_from_field(f,potf)
          ! initializing medium with molecular and external potentials
          call init_mdm(pot_t = pot, potf_t = potf, h_int = h)
+         allocate(this_BEM_Q0(this_nts_act,this_nts_act))
+         this_BEM_Q0=BEM_Q0
+         if(this_Fbem(1:4).eq.'diag') then
+          allocate(this_BEM_W2(this_nts_act))
+          this_BEM_W2=BEM_W2
+         end if
+         if(Fmdm(1:1).eq."Q") then
+          allocate(this_BEM_Modes(this_nts_act,this_nts_act))
+          this_BEM_Modes=BEM_Modes
+         end if
         end if
-        this_fr_0=fr_0
-        allocate(this_BEM_Q0(this_nts_act,this_nts_act))
-        this_BEM_Q0=BEM_Q0
-        allocate(this_mat_f0(this_nts_act,this_nts_act))
-        this_mat_f0=mat_f0
-        allocate(this_BEM_W2(this_nts_act))
-        this_BEM_W2=BEM_W2
-        allocate(this_BEM_Modes(this_nts_act,this_nts_act))
-        this_BEM_Modes=BEM_Modes
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
@@ -366,14 +392,20 @@ module interface_tdplas
 
       end subroutine do_vts_from_dip_in_wavet
 
-      subroutine preparing_for_scf_in_wavet(mix,pot)
+      subroutine preparing_for_scf_in_wavet(mix,mu,pot)
 
        implicit none
 
        real(dbl), intent(in) :: mix
-       real(dbl), intent(in) :: pot(:)
+       real(dbl), optional, intent(in) :: mu(:)
+       real(dbl), optional, intent(in) :: pot(:)
 
-       call preparing_for_scf(mix,pot)
+
+       if (this_Fprop.eq."dip") then
+        call preparing_for_scf(mix, mu_t = mu)
+       else
+        call preparing_for_scf(mix, pot_t = pot)
+       endif
 
       end subroutine preparing_for_scf_in_wavet
 
@@ -532,9 +564,9 @@ module interface_tdplas
 !$OMP DO 
 #endif
         do its=1,nts_act
-          pot(its)=pot(its)-fld(1)*cts_act(its)%x           
-          pot(its)=pot(its)-fld(2)*cts_act(its)%y          
-          pot(its)=pot(its)-fld(3)*cts_act(its)%z         
+          pot(its)=pot(its)-fld(1)*this_cts_act(its)%x           
+          pot(its)=pot(its)-fld(2)*this_cts_act(its)%y          
+          pot(its)=pot(its)-fld(3)*this_cts_act(its)%z         
         enddo
 #ifdef OMP
 !$OMP enddo
@@ -564,9 +596,9 @@ module interface_tdplas
 !$OMP DO
 #endif
        do its=1,nts_act
-          diff(1)=-(mol_cc(1)-cts_act(its)%x)
-          diff(2)=-(mol_cc(2)-cts_act(its)%y)
-          diff(3)=-(mol_cc(3)-cts_act(its)%z)
+          diff(1)=-(mol_cc(1)-this_cts_act(its)%x)
+          diff(2)=-(mol_cc(2)-this_cts_act(its)%y)
+          diff(3)=-(mol_cc(3)-this_cts_act(its)%z)
           dist=sqrt(dot_product(diff,diff))
           pot(its)=pot(its)+dot_product(diff,dip)/(dist**3)
        enddo

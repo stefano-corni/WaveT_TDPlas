@@ -36,7 +36,8 @@ LDLAGS=
 # actual flags used in the compilation
 # comment the first and uncomment the second if compiler is ifort
 
-FFLAGS= $(FFLAGS_GF) ${OMP} #-heap-arrays 1024
+#FFLAGS= $(FFLAGS_GF) ${OMP} #-heap-arrays 1024
+FFLAGS= -Og -g ${OMP} #-heap-arrays 1024
 #FFLAGS= -O3 -ftz -align all ${OMP_IF} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds
 
 # preprocessor flag
