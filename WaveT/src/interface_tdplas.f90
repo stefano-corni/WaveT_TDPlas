@@ -197,8 +197,6 @@ module interface_tdplas
         real(dbl), allocatable      :: pot(:)  !< (1:nts_act)     - molecular potential
         real(dbl), allocatable      :: potf(:) !< (1:nts_act)     - external  potential
 
-        integer :: ii
-
 #ifdef TDPLAS
         if(this_Fprop(1:3).eq."dip") then
          ! initializing medium with molecular dipole and external field
@@ -220,6 +218,8 @@ module interface_tdplas
          call do_pot_from_field(f,potf)
          ! initializing medium with molecular and external potentials
          call init_mdm(pot_t = pot, potf_t = potf, h_int = h)
+         deallocate(pot)
+         deallocate(potf)
          allocate(this_BEM_Q0(this_nts_act,this_nts_act))
          this_BEM_Q0=BEM_Q0
          if(this_Fbem(1:4).eq.'diag') then
@@ -240,7 +240,7 @@ module interface_tdplas
       end subroutine init_medium
       
       
-      subroutine prop_medium(i,c,f,h)     
+      subroutine prop_medium(i,c,mu,f,h)     
 !------------------------------------------------------------------------
 ! @brief Propagate medium 
 !
@@ -249,12 +249,42 @@ module interface_tdplas
 !------------------------------------------------------------------------
 
         implicit none
-        complex(cmp), intent(inout) :: c(:)
-        real(dbl), intent(inout) :: h(:,:),f(3)
+
+        complex(cmp), intent(in) :: c(:)    !< (1:n_ci)           - molecular wavefunction coefficients
+        real(dbl)   , intent(in) :: mu(:)   !< (1:3)              - molecular dipole
+        real(dbl)   , intent(in) :: f(:)    !< (1:3)              - external field
+        real(dbl)   , intent(inout) :: h(:,:)  !< (1:n_ci,1:n_ci) - interaction hamiltonian
+
+        real(dbl), allocatable      :: pot(:)  !< (1:nts_act)     - molecular potential
+        real(dbl), allocatable      :: potf(:) !< (1:nts_act)     - external  potential
+
         integer(i4b), intent(inout) :: i
 
 #ifdef TDPLAS
-        call prop_mdm(i,c,f,h)
+        if(this_Fprop(1:3).eq."dip") then
+         ! propagating medium with molecular dipole and external field
+         call prop_mdm(i, mu_t = mu, f_tp = f, h_int = h)
+        else
+         allocate(pot(this_nts_act))
+         allocate(potf(this_nts_act))
+         if(this_Fint(1:3).eq."ons") then
+          ! computing molecular potential corresponding to a point-like dipole
+          call do_pot_from_dip(mu,pot)
+         else
+          ! computing molecular potential
+          call do_pot_from_coeff(c,pot)
+         end if
+         ! computing external potential in the long-wavelength limit
+         call do_pot_from_field(f,potf)
+         ! propagating medium with molecular and external potentials
+         if(this_Ftest.eq."n-r") then
+          call prop_mdm(i, mu_t = mu, pot_t = pot, potf_t = potf, h_int = h)
+         else
+          call prop_mdm(i, pot_t = pot, potf_t = potf, h_int = h)
+         end if
+         deallocate(pot)
+         deallocate(potf)
+        end if
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
