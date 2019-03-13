@@ -134,8 +134,8 @@
 ! SC 03/05/2016: create a new BEM_Q0=BEM_Qw^-1*BEM_Qf that should avoid
 !                spurious charge dynamics for stationary states
 !        call init_BEM_Q0
-        call init_potential(pot_t,potf_tp)
-        call init_charges(pot_t)
+        call init_potential(pot_t,potf_t)
+        call init_charges
 !EC: restart values
         !if (Fmdm_res.eq.'Yesr') then
          !if (Fint.eq.'ons') then
@@ -466,7 +466,7 @@
 !!!!!!!!!!!!!!!!! Initialization/deallocation !!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine init_potential(pot_t,potf_tp)
+      subroutine init_potential(pot_t,potf_t)
 !------------------------------------------------------------------------
 ! @brief Initialize potentials for propaagation 
 !
@@ -475,7 +475,7 @@
 !------------------------------------------------------------------------
 
        real(dbl), intent(IN) :: pot_t(:)
-       real(dbl), intent(IN)    :: potf_tp(:)
+       real(dbl), intent(IN) :: potf_t(:)
        complex(cmp) :: c_gs(n_ci)
        integer(i4b) :: its  
 
@@ -500,7 +500,9 @@
        allocate(pot_tp2(nts_act))
        pot_tp2=pot_tp
        if(Floc.eq."loc") then
-         allocate(potf_tp2(nts_act))      
+         allocate(potf_tp(nts_act))
+         allocate(potf_tp2(nts_act))    
+         potf_tp=potf_t  
          potf_tp2=potf_tp    
 ! SP 09/07/16 commented the following 
          !fx_t(:)=zero
@@ -511,7 +513,7 @@
       end subroutine
 
 
-      subroutine init_charges(pot_t)
+      subroutine init_charges
 !------------------------------------------------------------------------
 ! @brief Initialize charges for propagation 
 !
@@ -521,15 +523,12 @@
 
        implicit none
 
-       real(dbl), intent(IN) :: pot_t(:)
        integer(i4b):: its
        real(dbl), allocatable :: qd(:)
 
 #ifndef MPI
        myrank=0
 #endif
-
-       pot_tp = pot_t
 
        allocate(qd(nts_act))
        allocate(qr_t(nts_act))
@@ -623,7 +622,11 @@
 ! Modified:
 !------------------------------------------------------------------------
 
-       real(dbl), intent(IN) :: mu_t(3)
+       implicit none
+
+       real(dbl), intent(in) :: mu_t(:)
+
+       mu_tp=mu_t
 
        allocate(mu_mdm(3,nsph))
        allocate(mr_0(3,nsph))
@@ -650,8 +653,8 @@
          endif
        endif
        ! The following subroutines should be merged!!
-       if(Fshape.eq."sphe") call init_dip_sphe(mu_t)
-       if(Fshape.eq."spho") call init_dip_spho(mu_t)
+       if(Fshape.eq."sphe") call init_dip_sphe
+       if(Fshape.eq."spho") call init_dip_spho
 
        return
 
@@ -660,7 +663,7 @@
 !------------------------------------------------------------------------
 !> Initialize Dipole for propagation with spherical object                
 !------------------------------------------------------------------------
-      subroutine init_dip_sphe(mu_t)
+      subroutine init_dip_sphe
 !------------------------------------------------------------------------
 ! @brief Initialize dipole for propagation with spherical object
 !
@@ -670,11 +673,8 @@
 
        implicit none
 
-       real(dbl), intent(IN) :: mu_t(3)
        real(dbl) :: fld(3),fld0(3)
        integer(i4b) :: i
-
-       mu_tp=mu_t
 
        mu_0(:)=mut(:,1,1)
        mr_0=zero
@@ -704,7 +704,7 @@
          endif
        elseif (Fmdm(2:4).eq."sol") then 
          if(Finit_mdm.eq."fro") fr_0(:)=ONS_f0*mu_0(:)
-         call init_dip_sphe_sol(mu_tp)
+         call init_dip_sphe_sol
        endif
        fr_tp=fr_t
        if(Floc.eq."loc") then
@@ -719,7 +719,7 @@
 !------------------------------------------------------------------------
 !> Initialize Dipole for propagation with spheroidal object                
 !------------------------------------------------------------------------
-      subroutine init_dip_spho(mu_t)
+      subroutine init_dip_spho
 !------------------------------------------------------------------------
 ! @brief Initialize dipole for propagation with spheroidal object 
 !
@@ -730,11 +730,8 @@
       ! inizialize onsager 
        implicit none
 
-       real(dbl), intent(IN) :: mu_t(3)
        real(dbl) :: fld(3),fld0(3)
        integer(i4b) :: i
-
-       mu_tp=mu_t
 
        ! Init molecular dipole 
        mu_0(:)=mut(:,1,1)
@@ -762,7 +759,7 @@
          endif
        elseif (Fmdm(2:4).eq."sol") then 
          if(Finit_mdm.eq."fro") fr_0=matmul(mat_f0,mu_0)
-         call init_dip_spho_sol(mu_tp)
+         call init_dip_spho_sol
          fr_tp=fr_t
        endif
        if(Floc.eq."loc") then
@@ -775,7 +772,7 @@
       end subroutine
 
 
-      subroutine init_dip_spho_sol(mu_t)
+      subroutine init_dip_spho_sol
 !------------------------------------------------------------------------
 ! @brief Initialize free energy (spheroidal) 
 !
@@ -785,13 +782,9 @@
 
        implicit none
 
-       real(dbl), intent(IN) :: mu_t(:)
-
 #ifndef MPI
        myrank=0
 #endif
-
-       mu_tp=mu_t
 
        g_eq_gs=-0.5d0*dot_product(fr_0,mu_0)
        if (myrank.eq.0) then
@@ -817,7 +810,7 @@
       end subroutine
 
 
-      subroutine init_dip_sphe_sol(mu_t)
+      subroutine init_dip_sphe_sol
 !------------------------------------------------------------------------
 ! @brief Initialize free energy (spherical) 
 !
@@ -827,13 +820,9 @@
 
        implicit none
 
-       real(dbl), intent(IN) :: mu_t(:)
-
 #ifndef MPI
        myrank=0
 #endif
-
-       mu_tp=mu_t
 
        g_eq_gs=-0.5d0*dot_product(fr_0,mu_0)
        if (myrank.eq.0) then
@@ -874,7 +863,7 @@
         end if
        else
         if( .not.present(pot_t) ) stop "Error: in preparing for scf."
-        qr_tp=mix*matmul(BEM_Q0,pot_tp)+(1.-mix)*q0
+        qr_tp=mix*matmul(BEM_Q0,pot_t)+(1.-mix)*q0
        endif
 
       end subroutine preparing_for_scf
