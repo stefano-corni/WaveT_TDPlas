@@ -144,14 +144,14 @@
            if(this_Finit_int.eq.'sce') then
             if(this_Fprop(1:3).eq."dip") then
              ! mixing iter 1 and 0
-             call preparing_for_scf_in_wavet(this_mix_coef,mu_prev)
+             call preparing_for_scf_in_wavet(this_mix_coef, mu = mu_prev)
              ! reaction field
              allocate(q_or_f(3))
             else
              allocate(pot_prev(this_nts_act))
              call do_pot_from_coeff(c_prev,pot_prev)
              ! mixing iter 1 and 0
-             call preparing_for_scf_in_wavet(this_mix_coef,pot_prev)
+             call preparing_for_scf_in_wavet(this_mix_coef, pot = pot_prev)
              ! reaction-field polarization charges
              allocate(q_or_f(this_nts_act))
             endif
