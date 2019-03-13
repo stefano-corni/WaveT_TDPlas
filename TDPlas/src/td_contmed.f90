@@ -169,8 +169,7 @@
 
       end subroutine init_mdm
 
-
-      subroutine prop_mdm(i,c_tp,f_tp,h_int)   
+      subroutine prop_mdm(i, mu_t, f_tp, pot_t, potf_t, h_int)
 !------------------------------------------------------------------------
 ! @brief Medium propagation called by WaveT or other programs 
 !
@@ -178,9 +177,13 @@
 ! Modified: E. Coccia 5/7/18
 !------------------------------------------------------------------------
 
-       real(dbl), intent(INOUT) :: f_tp(3)
-       complex(cmp), intent(IN) :: c_tp(n_ci)
-       real(dbl), intent(INOUT):: h_int(n_ci,n_ci)
+      implicit none
+
+      real(dbl), optional, intent(in)    ::  mu_t(:)         !< (1:3)           - molecular dipole
+      real(dbl), optional, intent(in)    ::  f_tp(:)         !< (1:3)           - external field
+      real(dbl), optional, intent(in)    :: pot_t(:)         !< (1:nts_act)     - molecular potential
+      real(dbl), optional, intent(in)    :: potf_t(:)        !< (1:nts_act)     - external  potential
+      real(dbl)          , intent(inout) :: h_int(n_ci,n_ci) !< (1:n_ci,1:n_ci) - interaction hamiltonian
        integer(i4b), intent(IN) :: i                    
        integer(i4b) :: its,k,j                    
 
@@ -194,31 +197,24 @@
        endif
        t=(i-1)*dt
 
-       call do_dip_from_coeff(c_tp,mu_tp,n_ci)
-
        if (Fprop(1:3).eq."dip") then
 
+        mu_tp = mu_t
+
        ! Dipole propagation: 
-         call prop_dip(c_tp,f_tp)
-         call do_gneq(c_tp,mut,dfr_t,fr_t,fr_0,mat_fd,3,-1)
+         call prop_dip(f_tp)
+         call do_gneq(mu_t,mut,dfr_t,fr_t,fr_0,mat_fd,3,-1)
          if(Fmdm(2:4).eq."nan") then
            mu_mdm=mr_t
            if((Ftest(2:3).eq."-l").or.(Fdeb.eq."off")) mu_mdm=zero
            if(Floc.eq."loc") mu_mdm=mu_mdm+mx_t
          endif
        else
-       ! Charges propagation: 
-         ! Calculate external potential on tesserae for local field       
-         if(Floc.eq."loc") call do_pot_from_field(f_tp,potf_tp)
+ 
+         pot_tp  = pot_t
+         potf_tp = potf_t
 
-         ! Calculate the molecule potential on tesserae
-! SP 26/06/17: changed to use general MathTools  
-         if(Fint.eq.'ons') then
-           call do_dip_from_coeff(c_tp,dip,n_ci)
-           call do_pot_from_dip(dip,pot_tp)
-         else 
-           call do_pot_from_coeff(c_tp,pot_tp)
-         endif
+       ! Charges propagation: 
          call prop_chr
          ! Calculate medium's dipole from charges 
          qtot=zero
@@ -236,9 +232,9 @@
        ! SC calculate free energy:
          if (Fint.eq.'ons') then 
 ! SP 10/07/17: commented the following, with Fint=ons do_gneq should be changed
-           !call do_gneq(c_tp,mut,dfr_t,fr_t,fr_0,mat_fd,3,-1)
+           !call do_gneq(mu_t,mut,dfr_t,fr_t,fr_0,mat_fd,3,-1)
          else
-           call do_gneq(c_tp,vts,dqr_t,qr_t,q0,BEM_Qd,nts_act,1)
+           call do_gneq(pot_t,vts,dqr_t,qr_t,q0,BEM_Qd,nts_act,1)
          endif
        endif
        ! Build the interaction Hamiltonian Reaction/Local
@@ -254,7 +250,13 @@
        endif
 #endif
        ! SP 230916: added to perform tests on the local/reaction field
-       if(Ftest(2:2).eq."-") call do_ref(c_tp)
+       if(Ftest(2:2).eq."-") then
+        if(Ftest.eq."n-r") then  
+         call do_ref(mu_t)
+        else
+         call do_ref
+        end if
+       end if
        ! Update the interaction Hamiltonian 
        h_int(:,:)=h_int(:,:)+h_mdm(:,:)
        ! SP 24/02/16  Write output
@@ -1030,7 +1032,7 @@
       end subroutine
 
 
-      subroutine prop_dip(c_tp,f_tp)
+      subroutine prop_dip(f_tp)
 !------------------------------------------------------------------------
 ! @brief Dipole and field propagation 
 !
@@ -1041,7 +1043,6 @@
       ! evolve onsager field/dipole  
        implicit none
 
-       complex(cmp), intent(IN) :: c_tp(n_ci)
        real(dbl), intent(IN):: f_tp(3)  
 
        ! calculate molecular dipole from CI coefficients
@@ -1656,7 +1657,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-      subroutine do_gneq(c,mu_or_v,df_or_dq,f_or_q,f_or_q0,fact_d, &
+      subroutine do_gneq(v_avg,mu_or_v,df_or_dq,f_or_q,f_or_q0,fact_d, &
                            n_coor_or_ts,sig)
 !------------------------------------------------------------------------
 ! @brief Update non-equilibrium free energy   
@@ -1667,32 +1668,25 @@
 
         implicit none
 
-        complex(cmp),  intent(in) :: c(n_ci)
         integer(i4b),  intent(in) :: n_coor_or_ts,sig
         real(dbl),     intent(in) :: mu_or_v(n_coor_or_ts,n_ci,n_ci)
         real(dbl),     intent(in) :: df_or_dq(n_coor_or_ts), &
                                      f_or_q(n_coor_or_ts),&
                                      f_or_q0(n_coor_or_ts),&
                                      fact_d(n_coor_or_ts,n_coor_or_ts)
-        real(dbl),    allocatable :: v_avg(:)
+        real(dbl),     intent(in) :: v_avg(:) !< molecular potential or dipole depending on the case (changing name!)
 !       real(dbl) :: de_a
         integer(i4b)              :: its,k,j
 
         g_eq=0.d0
 !       de_a=0.d0
-        allocate(v_avg(n_coor_or_ts))
 
 #ifdef OMP
 !$OMP PARALLEL REDUCTION(+:g_neq1_part,g_eq)
 !$OMP DO
 #endif 
-        do its=1,n_coor_or_ts
-          !v_avg(its)=dot_product(c,matmul(mu_or_v(its,:,:),c))
-          v_avg(its)=dot_product(c,cmat_mult(mu_or_v(its,:,:),c)) 
-          g_neq1_part=g_neq1_part+sig*v_avg(its)*df_or_dq(its)
-          g_eq=g_eq+sig*f_or_q(its)*v_avg(its)
-!         de_a=de_a+sig*f_or_q0(its)*v_avg(its)
-        enddo
+        g_neq1_part=sig*dot_product(v_avg,df_or_dq)
+        g_eq=sig*dot_product(v_avg,f_or_q)
 #ifdef OMP
 !$OMP ENDDO
 !$OMP END PARALLEL
@@ -1716,7 +1710,6 @@
         g_eq=-g_eq_gs+g_eq+e_vac
 ! SC to be completed with other means to calculate gneq
 ! SC: Caricato et al. JCP 2006, currently only for Onsager
-        deallocate(v_avg)
 
         return
 
@@ -1727,7 +1720,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!! Test/Debug    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine do_ref(c)      
+      subroutine do_ref(mu)      
 !------------------------------------------------------------------------
 ! @brief Test for Solvent/Nanoparticle reaction/local fields    
 !
@@ -1735,7 +1728,7 @@
 ! Modified: G. Gil
 !------------------------------------------------------------------------
 
-       complex(cmp), intent(IN) :: c(n_ci)
+       real(dbl), optional, intent(IN) :: mu(3)
        complex(cmp) :: refc, E0
        integer(i4b) :: its  
        real(dbl):: dist,pos(3),dp,emol(3),rr,facd,fac0,tau
@@ -1743,7 +1736,6 @@
        select case (Ftest)
          ! Spherical Nanoparticle reaction field
          case ("n-r")
-           call do_dip_from_coeff(c,dip,n_ci)
            if(Fprop.eq."dip") then
              pos(1)=sph_centre(1,1)-mol_cc(1)   
              pos(2)=sph_centre(2,1)-mol_cc(2) 
@@ -1756,8 +1748,8 @@
              rr=cts_act(1)%rsfe
            endif
            dist=sqrt(dot_product(pos,pos))
-           dp=dot_product(dip,pos)
-           emol(:)=(3*dp*pos(:)/dist**2-dip(:))/dist**3
+           dp=dot_product(mu,pos)
+           emol(:)=(3*dp*pos(:)/dist**2-mu(:))/dist**3
            ref=emol(3)*rr**3
          ! Spherical Nanoparticle local field
          case ("n-l")
