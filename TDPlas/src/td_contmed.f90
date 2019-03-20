@@ -197,6 +197,7 @@
        endif
        t=(i-1)*dt
 
+       if(Ftest.eq."s-r") mu_tp=mut(:,1,1) !Only for debug purposes
        if (Fprop(1:3).eq."dip") then
 
         mu_tp = mu_t
