@@ -1,7 +1,7 @@
       Module pedra_friends
 ! Modulo copiato spudoratamente da GAMESS
       use constants
-      use interface_wavet
+      use interface_qmcode
 #ifdef MPI
 #ifndef SCALI
       use mpi
@@ -46,7 +46,7 @@
       public pedra_int, read_act, read_pro, dealloc_pedra, &
              nts_act, nts_pro,cts_act,cts_pro,nesf_pro,sfe_pro, &
              nesf_act,sfe_act,read_cavity_file,read_cavity_full_file,&
-             read_gmsh_file
+             read_gmsh_file,tess_pcm,sfera
 !
 
       contains

@@ -36,7 +36,8 @@ LDLAGS=
 # actual flags used in the compilation
 # comment the first and uncomment the second if compiler is ifort
 
-FFLAGS= $(FFLAGS_GF) ${OMP} #-heap-arrays 1024
+#FFLAGS= $(FFLAGS_GF) ${OMP} #-heap-arrays 1024
+FFLAGS= -Og -g ${OMP} #-heap-arrays 1024
 #FFLAGS= -O3 -ftz -align all ${OMP_IF} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds
 
 # preprocessor flag
@@ -61,9 +62,15 @@ BINPATH=../bin
 
 TDPLASLIB= libtdplas.a
 
+# QM code to be interfaced with TDPlas
+
+QMCODE= WaveT
+QMCODE_OK= $(shell echo $(QMCODE) | tr A-Z a-z)
+INTERFACE_MODULE= interface_$(QMCODE_OK)
+
 # objects to be linked with executables
 
-OBJ= tdplas.o td_contmed.o scf.o BEM_medium.o MathTools.o readio_medium.o pedra_friends.o interface_wavet.o constants.o QM_coupling.o
+OBJ= tdplas.o td_contmed.o BEM_medium.o MathTools.o readio_medium.o pedra_friends.o interface_qmcode.o constants.o
 
 # compilation rules
 
@@ -90,7 +97,7 @@ $(TDPLASLIB): $(OBJ)
 constants.o: constants.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
-interface_wavet.o: interface_wavet.f90
+interface_qmcode.o: $(INTERFACE_MODULE).f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
 pedra_friends.o: pedra_friends.f90
@@ -103,12 +110,6 @@ MathTools.o: MathTools.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 BEM_medium.o: BEM_medium.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-QM_coupling.o: QM_coupling.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-scf.o: scf.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 td_contmed.o: td_contmed.f90
@@ -125,23 +126,19 @@ main_freq.o: main_freq.f90
 
 # dependencies
 
-interface_wavet.o: constants.o
+interface_qmcode.o: constants.o
 
-pedra_friends.o: constants.o interface_wavet.o
+pedra_friends.o: constants.o interface_qmcode.o
 
-readio_medium.o: constants.o interface_wavet.o pedra_friends.o
+readio_medium.o: constants.o interface_qmcode.o pedra_friends.o
 
-MathTools.o: constants.o interface_wavet.o pedra_friends.o readio_medium.o
+MathTools.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o
 
-BEM_medium.o: constants.o interface_wavet.o pedra_friends.o readio_medium.o MathTools.o
+BEM_medium.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o MathTools.o
 
-QM_coupling.o: constants.o interface_wavet.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o
+td_contmed.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o
 
-scf.o: constants.o interface_wavet.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o
-
-td_contmed.o: constants.o interface_wavet.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o scf.o
-
-tdplas.o: constants.o interface_wavet.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o
+tdplas.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o td_contmed.o
 
 main_tdplas.o: tdplas.o
 

@@ -15,7 +15,8 @@ MPI=
 LDLAGS=
 
 # actual flags used in the compilation
-FFLAGS= -O3 ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+#FFLAGS= -O3 ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
 
 # preprocessor flag
 # comment the first and uncomment the second if compiler is ifort
@@ -36,9 +37,9 @@ TOOLSPATH=tools
 
 # objects
 
-WAVETOBJ = constants.o random.o readio.o spectra.o dissipation.o propagate.o main.o interface_tdplas.o
-OBJ= $(WAVETOBJ)
-OBJ_SPECTRA= constants.o pedra_friends.o global_tdplas.o readio.o readio_medium.o MathTools.o BEM_medium.o QM_coupling.o scf.o td_contmed.o spectra.o main_spectra.o
+WAVETOBJ = random.o constants.o readio.o spectra.o interface_tdplas.o scf.o QM_coupling.o dissipation.o propagate.o
+OBJ= $(WAVETOBJ) main.o
+OBJ_SPECTRA= $(WAVETOBJ) main_spectra.o
 OBJ_VIB= constants.o readio.o $(TOOLSPATH)/vib.o $(TOOLSPATH)/vib_tool.o
 OBJ_COH= constants.o $(TOOLSPATH)/coherence_tool.o
 OBJ_FFT= constants.o $(TOOLSPATH)/fft_tool.o
@@ -71,14 +72,11 @@ TDPLASINC= -I$(TDPLAS)
 
 TDPLASPP= -DTDPLAS
 
-OBJ= $(WAVETOBJ)
-OBJ_SPECTRA= $(OBJ_SPECTRA)
-
 endif
 
 # compilation and linking rules
 
-serial: $(BINPATH) $(BINPATH)/WaveT-serial.x $(BINPATH)/make_spectra.x $(BINPATH)/make_vib.x $(BINPATH)/make_coherence.x $(BINPATH)/make_2dfft.x $(BINPATH)/make_pop_coh.x $(BINPATH)/make_nucl_wavep.x
+serial: $(BINPATH) scf.o $(BINPATH)/WaveT-serial.x $(BINPATH)/make_spectra.x $(BINPATH)/make_vib.x $(BINPATH)/make_coherence.x $(BINPATH)/make_2dfft.x $(BINPATH)/make_pop_coh.x $(BINPATH)/make_nucl_wavep.x
 
 parallel: $(BINPATH) $(BINPATH)/WaveT-parallel.x
 
@@ -86,7 +84,7 @@ $(BINPATH):
 	mkdir $(BINPATH)
 
 $(BINPATH)/make_spectra.x: main_spectra.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(TDPLASLIB) $(LIB_CURIE) $(LIBS) $(LIBSF)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_SPECTRA) $(TDPLASLIB) $(LIB_CURIE) $(LIBS) $(LIBSF)
 
 $(BINPATH)/WaveT-serial.x: main.o
 	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
@@ -115,10 +113,10 @@ clean:
 clean_obj:
 	rm -f *.o *.mod *.il *.optrpt $(TOOLSPATH)/*.o $(TOOLSPATH)/*.mod $(TOOLSPATH)/*.il $(TOOLSPATH)/*.optrpt
 
-constants.o: constants.f90
+random.o: random.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
-random.o: random.f90
+constants.o: constants.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 interface_tdplas.o: interface_tdplas.f90
@@ -129,6 +127,12 @@ readio.o: readio.f90
 
 spectra.o: spectra.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
+
+QM_coupling.o: QM_coupling.f90
+	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
+
+scf.o: scf.f90
+	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 dissipation.o: dissipation.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
@@ -172,13 +176,17 @@ readio.o: random.o
 
 spectra.o: readio.o
 
+QM_coupling.o: constants.o interface_tdplas.o
+
+scf.o: constants.o readio.o interface_tdplas.o
+
 dissipation.o: random.o constants.o readio.o interface_tdplas.o
 
 propagate.o: spectra.o dissipation.o interface_tdplas.o
 
 main_spectra.o: readio.o spectra.o interface_tdplas.o
 
-main.o: constants.o readio.o spectra.o dissipation.o propagate.o interface_tdplas.o
+main.o: constants.o readio.o spectra.o QM_coupling.o dissipation.o propagate.o interface_tdplas.o
 
 vib.o: readio.o
 
