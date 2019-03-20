@@ -3,7 +3,7 @@
       module readio_medium
       use constants      
       use pedra_friends
-      use interface_wavet
+      use interface_qmcode
 #ifdef MPI
 #ifndef SCALI
       use mpi
@@ -910,6 +910,11 @@
          case ('fil','FIL','Fil')
           Fsurf='fil'
           write(6,*) "Surface read from file cavity.inp"
+          if (FinitBEM.eq.'wri') then
+           call read_cavity_full_file
+          elseif (FinitBEM.eq.'rea') then
+           call read_cavity_file
+          endif
          case ('gms','GMS','Gms')
           Fsurf='gms'
           write(6,*) "Surface read from file surface_msh.inp"
@@ -920,6 +925,7 @@
           case ('non')
            Finv='non'
           end select
+          call read_gmsh_file(Finv)
          case ('bui','Bui','BUI')
           Fsurf='bui'
           write(6,*) "Building surface from spheres."
@@ -942,6 +948,8 @@
                         sphere_position_y,&
                         sphere_position_z,&
                         sphere_radius,nsph,nsmax)
+          if(Fmdm(2:4).eq.'sol') call pedra_int('act')
+          if(Fmdm(2:4).eq.'nan') call pedra_int('met')
          case default
           write(6,*) "Please choose: build or read surface?"
 #ifdef MPI

@@ -4,8 +4,9 @@
        use readio  
        use spectra
        use dissipation 
-       use propagate    
-       use interface_tdplas, only: read_medium_input,mpibcast_read_medium,set_global_tdplas_in_wavet,do_QM_coupling_in_wavet
+       use propagate
+       use QM_coupling    
+       use interface_tdplas, only: read_medium_input,mpibcast_read_medium,set_global_tdplas_in_wavet
 #ifdef OMP
        use omp_lib
 #endif
@@ -102,7 +103,7 @@
 
 !      propagate or diagonalise matrix
        if(Fmdm(1:1).eq.'Q') then
-         call do_QM_coupling_in_wavet
+         call do_QM_coupling
        else 
          call prop
 ! SP 10/07/17: commented the following, do_spectra gives errors 
