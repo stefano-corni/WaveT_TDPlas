@@ -439,17 +439,14 @@
 !SC 27/09/2016: corrected bug introduced previously
          q_mdm=q0+(qtot0-sum(q0))/nts_act
 
-#ifdef OMP 
 !$OMP PARALLEL REDUCTION(+:h_mdm_0)
-!$OMP DO 
-#endif
+!$OMP DO
          do its=1,nts_act     
            h_mdm_0(:,:)=h_mdm_0(:,:)+q_mdm(its)*vts(its,:,:)
          enddo
-#ifdef OMP 
-!$OMP ENDDO 
+!$OMP END DO
 !$OMP END PARALLEL 
-#endif
+
        endif
 #ifndef MPI
        if(Fwrite.eq."high") then
@@ -1682,16 +1679,8 @@
         g_eq=0.d0
 !       de_a=0.d0
 
-#ifdef OMP
-!$OMP PARALLEL REDUCTION(+:g_neq1_part,g_eq)
-!$OMP DO
-#endif 
         g_neq1_part=sig*dot_product(v_avg,df_or_dq)
         g_eq=sig*dot_product(v_avg,f_or_q)
-#ifdef OMP
-!$OMP ENDDO
-!$OMP END PARALLEL
-#endif
 
         g_eq=0.5*g_eq
 ! SC 27/09/2016: corrected bug in expression of e_vac
