@@ -99,10 +99,6 @@ INTEGER, PARAMETER :: dp = SELECTED_REAL_KIND(12, 60)
 CONTAINS
 
 
-<<<<<<< HEAD
-=======
-FUNCTION random_normal() RESULT(fn_val)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !----------------------------------------------------------------------------------
 ! @brief Adapted from the following Fortran 77 code
 !      ALGORITHM 712, COLLECTED ALGORITHMS FROM ACM.
@@ -118,10 +114,7 @@ FUNCTION random_normal() RESULT(fn_val)
 ! @date Created: S. Corni
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
-<<<<<<< HEAD
 FUNCTION random_normal() RESULT(fn_val)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 REAL :: fn_val
 
@@ -157,10 +150,6 @@ END FUNCTION random_normal
 
 
 
-<<<<<<< HEAD
-=======
-FUNCTION random_gamma(s, first) RESULT(fn_val)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !----------------------------------------------------------------------------------
 ! @brief Adapted from Fortran 77 code from the book:
 !     Dagpunar, J. 'Principles of random variate generation'
@@ -175,10 +164,7 @@ FUNCTION random_gamma(s, first) RESULT(fn_val)
 ! @date Created: S. Corni
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
-<<<<<<< HEAD
 FUNCTION random_gamma(s, first) RESULT(fn_val)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 REAL, INTENT(IN)    :: s
 LOGICAL, INTENT(IN) :: first
@@ -202,10 +188,6 @@ END FUNCTION random_gamma
 
 
 
-<<<<<<< HEAD
-=======
-FUNCTION random_gamma1(s, first) RESULT(fn_val)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !----------------------------------------------------------------------------------
 ! @brief Uses the algorithm in
 ! Marsaglia, G. and Tsang, W.W. (2000) `A simple method for generating
@@ -215,10 +197,7 @@ FUNCTION random_gamma1(s, first) RESULT(fn_val)
 ! @date Created: S. Corni
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
-<<<<<<< HEAD
 FUNCTION random_gamma1(s, first) RESULT(fn_val)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 REAL, INTENT(IN)    :: s
 LOGICAL, INTENT(IN) :: first
@@ -261,10 +240,6 @@ END FUNCTION random_gamma1
 
 
 
-<<<<<<< HEAD
-=======
-FUNCTION random_gamma2(s, first) RESULT(fn_val)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !---------------------------------------------------------------------------------
 ! @brief Adapted from Fortran 77 code from the book:
 !     Dagpunar, J. 'Principles of random variate generation'
@@ -280,11 +255,8 @@ FUNCTION random_gamma2(s, first) RESULT(fn_val)
 ! @date Created: S. Corni
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
-<<<<<<< HEAD
 FUNCTION random_gamma2(s, first) RESULT(fn_val)
 
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 REAL, INTENT(IN)    :: s
 LOGICAL, INTENT(IN) :: first
 REAL                :: fn_val
@@ -349,16 +321,6 @@ END FUNCTION random_gamma2
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
 FUNCTION random_chisq(ndf, first) RESULT(fn_val)
-<<<<<<< HEAD
-=======
-!----------------------------------------------------------------------------------
-! @brief    Generates a random variate from the chi-squared distribution with
-!           ndf degrees of freedom
-!
-! @date Created: S. Corni
-! Modified:   E. Coccia 22/11/17
-!----------------------------------------------------------------------------------
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 INTEGER, INTENT(IN) :: ndf
 LOGICAL, INTENT(IN) :: first
@@ -399,11 +361,6 @@ RETURN
 END FUNCTION random_exponential
 
 
-<<<<<<< HEAD
-=======
-
-FUNCTION random_Weibull(a) RESULT(fn_val)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !---------------------------------------------------------------------------------
 ! @brief  Generates a random variate from the Weibull distribution with
 !         probability density:
@@ -414,10 +371,7 @@ FUNCTION random_Weibull(a) RESULT(fn_val)
 ! @date Created: S. Corni
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
-<<<<<<< HEAD
 FUNCTION random_Weibull(a) RESULT(fn_val)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 REAL, INTENT(IN) :: a
 REAL             :: fn_val
@@ -431,10 +385,6 @@ END FUNCTION random_Weibull
 
 
 
-<<<<<<< HEAD
-=======
-FUNCTION random_beta(aa, bb, first) RESULT(fn_val)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !----------------------------------------------------------------------------------
 ! @brief Adapted from Fortran 77 code from the book:
 !     Dagpunar, J. 'Principles of random variate generation'
@@ -451,10 +401,7 @@ FUNCTION random_beta(aa, bb, first) RESULT(fn_val)
 ! @date Created: S. Corni
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
-<<<<<<< HEAD
 FUNCTION random_beta(aa, bb, first) RESULT(fn_val)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 REAL, INTENT(IN)    :: aa, bb
 LOGICAL, INTENT(IN) :: first
@@ -519,10 +466,6 @@ END FUNCTION random_beta
 
 
 
-<<<<<<< HEAD
-=======
-FUNCTION random_t(m) RESULT(fn_val)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !----------------------------------------------------------------------------------
 ! @brief Adapted from Fortran 77 code from the book:
 !     Dagpunar, J. 'Principles of random variate generation'
@@ -536,10 +479,7 @@ FUNCTION random_t(m) RESULT(fn_val)
 ! @date Created: S. Corni
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
-<<<<<<< HEAD
 FUNCTION random_t(m) RESULT(fn_val)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 INTEGER, INTENT(IN) :: m
 REAL                :: fn_val
@@ -590,10 +530,6 @@ END FUNCTION random_t
 
 
 
-<<<<<<< HEAD
-=======
-SUBROUTINE random_mvnorm(n, h, d, f, first, x, ier)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !-----------------------------------------------------------------------------------
 ! @brief Adapted from Fortran 77 code from the book:
 !     Dagpunar, J. 'Principles of random variate generation'
@@ -628,10 +564,7 @@ SUBROUTINE random_mvnorm(n, h, d, f, first, x, ier)
 ! @date Created: S. Corni
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
-<<<<<<< HEAD
 SUBROUTINE random_mvnorm(n, h, d, f, first, x, ier)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 INTEGER, INTENT(IN)   :: n
 REAL, INTENT(IN)      :: h(:), d(:)   ! d(n*(n+1)/2)
@@ -700,11 +633,6 @@ RETURN
 END SUBROUTINE random_mvnorm
 
 
-<<<<<<< HEAD
-=======
-
-FUNCTION random_inv_gauss(h, b, first) RESULT(fn_val)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !---------------------------------------------------------------------------------
 ! @brief Adapted from Fortran 77 code from the book:
 !     Dagpunar, J. 'Principles of random variate generation'
@@ -720,11 +648,8 @@ FUNCTION random_inv_gauss(h, b, first) RESULT(fn_val)
 ! @date Created: S. Corni
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
-<<<<<<< HEAD
 FUNCTION random_inv_gauss(h, b, first) RESULT(fn_val)
 
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 REAL, INTENT(IN)    :: h, b
 LOGICAL, INTENT(IN) :: first
 REAL                :: fn_val
@@ -781,11 +706,6 @@ RETURN
 END FUNCTION random_inv_gauss
 
 
-<<<<<<< HEAD
-=======
-
-FUNCTION random_Poisson(mu, first) RESULT(ival)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !-----------------------------------------------------------------------------------
 ! @brief    Translated to Fortran 90 by Alan Miller from:
 !                           RANLIB
@@ -836,11 +756,8 @@ FUNCTION random_Poisson(mu, first) RESULT(ival)
 ! @date Created: S. Corni
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
-<<<<<<< HEAD
 FUNCTION random_Poisson(mu, first) RESULT(ival)
 
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 REAL, INTENT(IN)    :: mu
 LOGICAL, INTENT(IN) :: first
 INTEGER             :: ival
@@ -1036,10 +953,6 @@ END FUNCTION random_Poisson
 
 
 
-<<<<<<< HEAD
-=======
-FUNCTION random_binomial1(n, p, first) RESULT(ival)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !---------------------------------------------------------------------------------
 ! @brief FUNCTION GENERATES A RANDOM BINOMIAL VARIATE USING C.D.Kemp's method.
 ! This algorithm is suitable when many random variates are required
@@ -1057,10 +970,8 @@ FUNCTION random_binomial1(n, p, first) RESULT(ival)
 ! @date Created: S. Corni
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
-<<<<<<< HEAD
 FUNCTION random_binomial1(n, p, first) RESULT(ival)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
+
 
 INTEGER, INTENT(IN) :: n
 REAL, INTENT(IN)    :: p
@@ -1129,15 +1040,6 @@ END FUNCTION random_binomial1
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
 FUNCTION bin_prob(n, p, r) RESULT(fn_val)
-<<<<<<< HEAD
-=======
-!----------------------------------------------------------------------------------
-! @brief  Calculate a binomial probability
-!
-! @date Created: S. Corni
-! Modified:   E. Coccia 22/11/17
-!----------------------------------------------------------------------------------
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 INTEGER, INTENT(IN) :: n, r
 REAL, INTENT(IN)    :: p
@@ -1154,10 +1056,6 @@ END FUNCTION bin_prob
 
 
 
-<<<<<<< HEAD
-=======
-FUNCTION lngamma(x) RESULT(fn_val)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !----------------------------------------------------------------------------------
 ! @brief Logarithm to base e of the gamma function.
 !
@@ -1168,10 +1066,7 @@ FUNCTION lngamma(x) RESULT(fn_val)
 ! @date Created: S. Corni
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
-<<<<<<< HEAD
 FUNCTION lngamma(x) RESULT(fn_val)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 REAL (dp), INTENT(IN) :: x
 REAL (dp)             :: fn_val
@@ -1227,11 +1122,6 @@ RETURN
 END FUNCTION lngamma
 
 
-<<<<<<< HEAD
-=======
-
-FUNCTION random_binomial2(n, pp, first) RESULT(ival)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------------------
 ! @brief   Translated to Fortran 90 by Alan Miller from:
 !                              RANLIB
@@ -1291,10 +1181,7 @@ FUNCTION random_binomial2(n, pp, first) RESULT(ival)
 ! @date Created: S. Corni
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
-<<<<<<< HEAD
 FUNCTION random_binomial2(n, pp, first) RESULT(ival)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 !*****DETERMINE APPROPRIATE ALGORITHM AND WHETHER SETUP IS NECESSARY
 
@@ -1469,11 +1356,6 @@ END FUNCTION random_binomial2
 
 
 
-<<<<<<< HEAD
-=======
-
-FUNCTION random_neg_binomial(sk, p) RESULT(ival)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !----------------------------------------------------------------------------------
 ! @brief Adapted from Fortran 77 code from the book:
 !     Dagpunar, J. 'Principles of random variate generation'
@@ -1494,10 +1376,7 @@ FUNCTION random_neg_binomial(sk, p) RESULT(ival)
 ! @date Created: S. Corni
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
-<<<<<<< HEAD
 FUNCTION random_neg_binomial(sk, p) RESULT(ival)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 REAL, INTENT(IN)   :: sk, p
 INTEGER            :: ival
@@ -1554,11 +1433,6 @@ RETURN
 END FUNCTION random_neg_binomial
 
 
-<<<<<<< HEAD
-=======
-
-FUNCTION random_von_Mises(k, first) RESULT(fn_val)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !----------------------------------------------------------------------------------
 ! @brief    Algorithm VMD from:
 !     Dagpunar, J.S. (1990) `Sampling from the von Mises distribution via a
@@ -1576,10 +1450,7 @@ FUNCTION random_von_Mises(k, first) RESULT(fn_val)
 ! @date Created: S. Corni
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
-<<<<<<< HEAD
 FUNCTION random_von_Mises(k, first) RESULT(fn_val)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 REAL, INTENT(IN)     :: k
 LOGICAL, INTENT(IN)  :: first
@@ -1668,15 +1539,6 @@ END FUNCTION random_von_Mises
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
 SUBROUTINE integral(a, b, result, dk)
-<<<<<<< HEAD
-=======
-!----------------------------------------------------------------------------------
-! @brief   Gaussian integration of exp(k.cosx) from a to b.
-!
-! @date Created: S. Corni
-! Modified:   E. Coccia 22/11/17
-!----------------------------------------------------------------------------------
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 REAL (dp), INTENT(IN) :: dk
 REAL, INTENT(IN)      :: a, b
@@ -1712,15 +1574,6 @@ END SUBROUTINE integral
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
 FUNCTION random_Cauchy() RESULT(fn_val)
-<<<<<<< HEAD
-=======
-!----------------------------------------------------------------------------------
-! @brief   Generate a random deviate from the standard Cauchy distribution
-!
-! @date Created: S. Corni
-! Modified:   E. Coccia 22/11/17
-!----------------------------------------------------------------------------------
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 REAL     :: fn_val
 
@@ -1746,15 +1599,6 @@ END FUNCTION random_Cauchy
 ! Modified:   E. Coccia 22/11/17
 !----------------------------------------------------------------------------------
 SUBROUTINE random_order(order, n)
-<<<<<<< HEAD
-=======
-!----------------------------------------------------------------------------------
-! @brief    Generate a random ordering of the integers 1 ... n.
-!
-! @date Created: S. Corni
-! Modified:   E. Coccia 22/11/17
-!----------------------------------------------------------------------------------
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 INTEGER, INTENT(IN)  :: n
 INTEGER, INTENT(OUT) :: order(n)

@@ -50,11 +50,7 @@ module interface_tdplas
              read_medium_input,&                                                        ! used by main and main_spectra
              mpibcast_read_medium,set_global_tdplas_in_wavet,&                          ! used by main
              this_Fwrite,this_fr_0,this_BEM_Q0,this_mat_f0,this_ncycmax,this_thrshld,this_vtsn,this_mix_coef,diag_mat_in_wavet,&
-<<<<<<< HEAD
              do_field_from_charges_in_wavet, this_nts_act, &                                          ! used in scf
-=======
-             do_field_from_charges_in_wavet, &                                          ! used in scf
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
              this_BEM_W2,this_Ftest,this_eps_w0,this_eps_A,this_BEM_Modes,this_sfe_act,&
              do_BEM_quant_in_wavet,deallocate_bem_public_in_wavet,do_vts_from_dip_in_wavet ! used by QM_coupling 
 
@@ -62,20 +58,13 @@ module interface_tdplas
   
       ! begin - wrapper subroutines
 
-<<<<<<< HEAD
-=======
-      subroutine set_q0charges
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Bridge subroutine to set charges qr_t to q0 during propagation 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
-<<<<<<< HEAD
      subroutine set_q0charges
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
         implicit none
 #ifdef TDPLAS
@@ -88,20 +77,13 @@ module interface_tdplas
       end subroutine set_q0charges
 
       
-<<<<<<< HEAD
-=======
-      subroutine get_medium_dip(mdm_dip)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Set the dipole(t) in Sdip for spectra 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine get_medium_dip(mdm_dip)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
         implicit none
 
@@ -118,20 +100,13 @@ module interface_tdplas
       end subroutine get_medium_dip
      
  
-<<<<<<< HEAD
-=======
-      subroutine read_medium_input
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Read medium input 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine read_medium_input
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
         implicit none
 
@@ -182,20 +157,13 @@ module interface_tdplas
       end subroutine read_medium_input
       
       
-<<<<<<< HEAD
-=======
-      subroutine get_energies(e_vac,g_eq_t,g_neq_t,g_neq2_t)     
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Get energies 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine get_energies(e_vac,g_eq_t,g_neq_t,g_neq2_t)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
         implicit none
         real(dbl), intent(inout) :: e_vac,g_neq_t,g_neq2_t,g_eq_t
@@ -211,20 +179,13 @@ module interface_tdplas
       end subroutine get_energies
       
       
-<<<<<<< HEAD
-=======
-      subroutine init_medium(c,mu,f,h)     
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Initialize medium 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
-<<<<<<< HEAD
      subroutine init_medium(c,mu,f,h)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
         implicit none
 
@@ -279,20 +240,13 @@ module interface_tdplas
       end subroutine init_medium
       
       
-<<<<<<< HEAD
-=======
-      subroutine prop_medium(i,c,mu,f,h)     
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Propagate medium 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine prop_medium(i,c,mu,f,h)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
         implicit none
 
@@ -340,20 +294,13 @@ module interface_tdplas
       end subroutine prop_medium
       
      
-<<<<<<< HEAD
-=======
-      subroutine finalize_medium
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Finalize medium 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine finalize_medium
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
         implicit none
 
@@ -367,20 +314,13 @@ module interface_tdplas
 
       end subroutine finalize_medium
 
-<<<<<<< HEAD
-=======
-      subroutine mpibcast_read_medium 
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Broadcast input medium if parallel 
 !
 ! @date Created   : E. Coccia 9/5/18 
 ! Modified  :  
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine mpibcast_read_medium
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
         implicit none
 
@@ -394,15 +334,12 @@ module interface_tdplas
 
       end subroutine mpibcast_read_medium 
 
-<<<<<<< HEAD
 !------------------------------------------------------------------------
 ! @brief Interface between TDPlas and QM code 
 !
 ! @date Created   : 
 ! Modified  :  
 !------------------------------------------------------------------------
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
       subroutine set_global_tdplas_in_wavet(this_dt,this_mdm,this_mol_cc,this_n_ci,this_n_ci_read,this_c_i,this_e_ci,this_mut,&
 				                                    this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
                                             this_Fbin,this_Fopt,this_nthr,this_res,this_n_res)

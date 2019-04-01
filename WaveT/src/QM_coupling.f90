@@ -42,11 +42,8 @@
 !     Modified  :
 !     @param  
 !----------------------------------------------------------------------------
-<<<<<<< HEAD:WaveT/src/QM_coupling.f90
       subroutine do_QM_coupling
 
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/QM_coupling.f90
        ! allocate matrices and initialize                                  
 
        implicit none 
@@ -89,10 +86,7 @@
 !     Modified  :
 !     @param Hqm_dim,Hqm,Hqm_evt,Hqm_evl
 !----------------------------------------------------------------------------
-<<<<<<< HEAD:WaveT/src/QM_coupling.f90
       subroutine init_QM_coupling
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/QM_coupling.f90
 
        implicit none
 
@@ -124,11 +118,8 @@
 !     Modified  :
 !     @param Hqm,Hqm_evt,Hqm_evl
 !----------------------------------------------------------------------------
-<<<<<<< HEAD:WaveT/src/QM_coupling.f90
       subroutine fin_QM_coupling
 
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/QM_coupling.f90
        implicit none
        call deallocate_BEM_public_in_wavet
        deallocate(Hqm,Hqm_evt,Hqm_evl)
@@ -142,14 +133,10 @@
 !     Modified  :
 !     @param Hqm,Hqm_evt,Hqm_evl
 !----------------------------------------------------------------------------
-<<<<<<< HEAD:WaveT/src/QM_coupling.f90
       subroutine do_matrix
 
        implicit none
 
-=======
-       implicit none
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/QM_coupling.f90
        real(dbl):: omega_p  !< mode frequency 
        real(dbl):: we  !< energy factor in coupling 
        real(dbl):: gFi !< molecule-semiclassical_field coupling 
@@ -218,11 +205,8 @@
 !     Modified  :
 !     @param Hqm_evl  
 !----------------------------------------------------------------------------
-<<<<<<< HEAD:WaveT/src/QM_coupling.f90
       subroutine out_QM_coupling
 
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/QM_coupling.f90
        implicit none
        integer(i4b) :: i,j   
        character(len=32) :: my_fmt
@@ -253,11 +237,8 @@
 !     Modified  :
 !     @param Hqm_evl  
 !----------------------------------------------------------------------------
-<<<<<<< HEAD:WaveT/src/QM_coupling.f90
       subroutine test_QM_coupling
 
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/QM_coupling.f90
        implicit none
        real(dbl):: omega_p,we,g,g_ref,r,mud                
        integer(i4b) :: i,j,k   

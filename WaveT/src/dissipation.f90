@@ -801,10 +801,6 @@ module dissipation
 
   end subroutine add_h_rnd2
 
-<<<<<<< HEAD
-=======
-  function disp(h_dis,c,nci)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Element-by-element multiplication 
 !
@@ -812,10 +808,7 @@ module dissipation
 ! Modified  :
 ! @param h_dis,c
 !------------------------------------------------------------------------
-<<<<<<< HEAD
   function disp(h_dis,c,nci)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
    implicit none
    integer(i4b), intent(in)      :: nci
@@ -829,20 +822,13 @@ module dissipation
 
   end function disp
 
-<<<<<<< HEAD
-=======
-  subroutine random_seq(restart_i)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Genarate a dummy sequence of rnd numbers 
 ! 
 ! @date Created   : E. Coccia 24 Nov 2017
 ! Modified  :
 !------------------------------------------------------------------------ 
-<<<<<<< HEAD
   subroutine random_seq(restart_i)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
     implicit none
 

@@ -1,19 +1,10 @@
-<<<<<<< HEAD
 FC = ifort
-=======
-FC = gfortran
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 # open mp flags
 # comment first line and uncommment the second for ifort
 
-<<<<<<< HEAD
 #OMP= -fopenmp -DOMP
 OMP= -qopenmp -DOMP
-=======
-OMP= -fopenmp -DOMP
-#OMP= -openmp -DOMP
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 # mpi flags
 
@@ -25,33 +16,20 @@ LDLAGS=
 
 # actual flags used in the compilation
 #FFLAGS= -O3 ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
-<<<<<<< HEAD
 #FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
 FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024
 
 # preprocessor flag
 # comment the first and uncomment the second if compiler is ifort
 
-=======
-FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
-
-# preprocessor flag
-# comment the first and uncomment the second if compiler is ifort
-
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 CPP= -cpp
 
 # libraries to be linked
 
-<<<<<<< HEAD
 #LIBS = -L/usr/lib -llapack -lblas -lfftw3
 #INC = -I/usr/include/
 LIBS = -mkl
 INC = -I/home/coccia/Libs/fftw-3.3.8 
-=======
-LIBS = -L/usr/lib -llapack -lblas -lfftw3
-INC = -I/usr/include/
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 LIBSPAR= -L/opt/scali/lib64 -lfmpi -lmpi
 INCPAR= -I/opt/scali/include64 -I/local/home/corni/emanuele/fftw-3.3.4/include/
 
@@ -64,11 +42,7 @@ TOOLSPATH=tools
 
 WAVETOBJ = random.o constants.o readio.o spectra.o interface_tdplas.o scf.o QM_coupling.o dissipation.o propagate.o
 OBJ= $(WAVETOBJ) main.o
-<<<<<<< HEAD
 OBJ_SPECTRA= $(WAVETOBJ) main_spectra.o 
-=======
-OBJ_SPECTRA= $(WAVETOBJ) main_spectra.o
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 OBJ_VIB= constants.o readio.o $(TOOLSPATH)/vib.o $(TOOLSPATH)/vib_tool.o
 OBJ_COH= constants.o $(TOOLSPATH)/coherence_tool.o
 OBJ_FFT= constants.o $(TOOLSPATH)/fft_tool.o
@@ -78,20 +52,12 @@ OBJ_NUCL= constants.o $(TOOLSPATH)/nucl_wavep_tool.o
 # tdplas binding flag
 # write no if you want to compile wavet without any link to tdplas
 
-<<<<<<< HEAD
 TDPLASLINK= YES 
-=======
-TDPLASLINK= YES
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 TDPLASLIB=
 TDPLASINC=
 TDPLASPP=
 
-<<<<<<< HEAD
 #ifeq ($(TDPLASLINK),YES)
-=======
-ifeq ($(TDPLASLINK),YES)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 # tdplas directory
 
@@ -109,7 +75,6 @@ TDPLASINC= -I$(TDPLAS)
 
 TDPLASPP= -DTDPLAS
 
-<<<<<<< HEAD
 
 #endif
 
@@ -119,21 +84,12 @@ TDPLASPP = -DTDPLAS
 
 serial: $(BINPATH) scf.o $(BINPATH)/WaveT-serial.x $(BINPATH)/make_spectra.x $(BINPATH)/make_vib.x $(BINPATH)/make_coherence.x $(BINPATH)/make_2dfft.x $(BINPATH)/make_pop_coh.x $(BINPATH)/make_nucl_wavep.x
 
-=======
-endif
-
-# compilation and linking rules
-
-serial: $(BINPATH) scf.o $(BINPATH)/WaveT-serial.x $(BINPATH)/make_spectra.x $(BINPATH)/make_vib.x $(BINPATH)/make_coherence.x $(BINPATH)/make_2dfft.x $(BINPATH)/make_pop_coh.x $(BINPATH)/make_nucl_wavep.x
-
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 parallel: $(BINPATH) $(BINPATH)/WaveT-parallel.x
 
 $(BINPATH):
 	mkdir $(BINPATH)
 
 $(BINPATH)/make_spectra.x: main_spectra.o
-<<<<<<< HEAD
 	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_SPECTRA) $(TDPLASLIB) $(LIBS)
 
 $(BINPATH)/WaveT-serial.x: main.o
@@ -141,22 +97,12 @@ $(BINPATH)/WaveT-serial.x: main.o
 
 $(BINPATH)/WaveT-parallel.x: main.o
 	$(FC) $(CPP) $(FFLAGS) -o $@ $(INCPAR) $(TDPLASLIB) $(LIBS) $(LIBSPAR) 
-=======
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_SPECTRA) $(TDPLASLIB) $(LIB_CURIE) $(LIBS) $(LIBSF)
-
-$(BINPATH)/WaveT-serial.x: main.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
-
-$(BINPATH)/WaveT-parallel.x: main.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(INCPAR) $(TDPLASLIB) $(LIBS) $(LIBSPAR) $(LIBSF) $(LIB_CURIE)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 $(BINPATH)/make_vib.x: $(OBJ_VIB)
 	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_VIB)
 
 $(BINPATH)/make_coherence.x: $(OBJ_COH)
 	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_COH)
-<<<<<<< HEAD
 
 $(BINPATH)/make_2dfft.x: $(OBJ_FFT)
 	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_FFT) $(LIBS) 
@@ -222,73 +168,6 @@ $(TOOLSPATH)/nucl_wavep_tool.o: $(TOOLSPATH)/nucl_wavep_tool.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 main.o: main.f90
-=======
-
-$(BINPATH)/make_2dfft.x: $(OBJ_FFT)
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_FFT) $(LIBS) $(LIBSF) $(LIB_CURIE)
-
-$(BINPATH)/make_pop_coh.x: $(OBJ_POP_COH)
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_POP_COH)
-
-$(BINPATH)/make_nucl_wavep.x: $(OBJ_NUCL)
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_NUCL)
-
-clean:
-	rm -f *.o *.mod *.il *.optrpt $(BINPATH)/*.x $(TOOLSPATH)/*.o $(TOOLSPATH)/*.mod $(TOOLSPATH)/*.il $(TOOLSPATH)/*.optrpt
-
-clean_obj:
-	rm -f *.o *.mod *.il *.optrpt $(TOOLSPATH)/*.o $(TOOLSPATH)/*.mod $(TOOLSPATH)/*.il $(TOOLSPATH)/*.optrpt
-
-random.o: random.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-constants.o: constants.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-interface_tdplas.o: interface_tdplas.f90
-	$(FC) $(CPP) $(TDPLASPP) $(FFLAGS) $(INC) $(TDPLASINC) -c $< -o $@
-
-readio.o: readio.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-spectra.o: spectra.f90
-	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
-
-QM_coupling.o: QM_coupling.f90
-	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
-
-scf.o: scf.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-dissipation.o: dissipation.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-propagate.o: propagate.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-$(TOOLSPATH)/coherence_tool.o: $(TOOLSPATH)/coherence_tool.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-$(TOOLSPATH)/fft_tool.o: $(TOOLSPATH)/fft_tool.f90
-	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
-
-$(TOOLSPATH)/vib.o: $(TOOLSPATH)/vib.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-$(TOOLSPATH)/vib_tool.o: $(TOOLSPATH)/vib_tool.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-$(TOOLSPATH)/pop_coh_tool.o: $(TOOLSPATH)/pop_coh_tool.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-$(TOOLSPATH)/nucl_wavep_tool.o: $(TOOLSPATH)/nucl_wavep_tool.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
-
-main.o: main.f90
-	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
-
-main_spectra.o: main_spectra.f90
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
 # dependencies
@@ -301,7 +180,6 @@ interface_tdplas.o: constants.o
 
 readio.o: random.o
 
-<<<<<<< HEAD
 main_spectra.o: readio.o spectra.o interface_tdplas.o
 
 spectra.o: readio.o
@@ -313,19 +191,6 @@ scf.o: constants.o readio.o interface_tdplas.o
 dissipation.o: random.o constants.o readio.o interface_tdplas.o
 
 propagate.o: spectra.o dissipation.o interface_tdplas.o
-=======
-spectra.o: readio.o
-
-QM_coupling.o: constants.o interface_tdplas.o
-
-scf.o: constants.o readio.o interface_tdplas.o
-
-dissipation.o: random.o constants.o readio.o interface_tdplas.o
-
-propagate.o: spectra.o dissipation.o interface_tdplas.o
-
-main_spectra.o: readio.o spectra.o interface_tdplas.o
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 main.o: constants.o readio.o spectra.o QM_coupling.o dissipation.o propagate.o interface_tdplas.o
 

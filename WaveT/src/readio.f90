@@ -160,11 +160,7 @@
        !Molecular parameters 
        namelist /general/n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,& 
                          dt,n_step,n_out,propa,n_restart,lsim,absorber,&
-<<<<<<< HEAD
                          binary,ncit,Ip
-=======
-                         binary,ncit,Ip,postprocessing
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
        !External field paramaters
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
                         npulse,tdelay,pshift
@@ -235,28 +231,14 @@
 
        if (Fabs(1:3).eq.'abs') call read_ion_rate
 
-<<<<<<< HEAD
        !Namelist for postprocessing
        call init_nml_pop_coh()
        read(*,nml=pop_coh) 
        call write_nml_pop_coh()
-=======
-       if( postprocessing ) then
-        !Namelist for postprocessing
-        call init_nml_pop_coh()
-        read(*,nml=pop_coh) 
-        call write_nml_pop_coh()
-       endif
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        return
 
       end subroutine read_input
-<<<<<<< HEAD
-!
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
-!
 !------------------------------------------------------------------------
 ! @brief Read input files 
 !
@@ -264,15 +246,6 @@
 ! Modified  : E. Coccia 20/11/2017
 !------------------------------------------------------------------------
       subroutine read_gau_out
-<<<<<<< HEAD
-=======
-!------------------------------------------------------------------------
-! @brief Read input files 
-!
-! @date Created   : 
-! Modified  : E. Coccia 20/11/2017
-!------------------------------------------------------------------------
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        implicit none
 
@@ -383,24 +356,16 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine read_gau_out
 
-=======
-      end subroutine
 
-      subroutine read_restart()
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Read restart file
 !
 ! @date Created   : E. Coccia 18 Apr 2018
 ! Modified        :
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine read_restart()
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
           implicit none
 
@@ -903,10 +868,6 @@
 
       end subroutine init_nml_sse
 
-<<<<<<< HEAD
-=======
-      subroutine init_nml_pop_coh()
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Read variables in the namelist pop_coh and put conditions 
 !
@@ -914,10 +875,7 @@
 ! Modified  :
 ! @param tar,all_pop,all_coh,pop,coh 
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine init_nml_pop_coh()
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
       !allocate(pop(n_ci))
       !allocate(coh(n_ci*(n_ci)/2))
@@ -938,10 +896,6 @@
 
       end subroutine init_nml_pop_coh
 
-<<<<<<< HEAD
-=======
-      subroutine write_nml_general()
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Write variables in the namelist general and put conditions 
 !
@@ -1061,17 +1015,6 @@
 ! @param dt,n_step,n_out,Ffld,t_mid,sigma,omega,radiative,iseed,fmax 
 !------------------------------------------------------------------------
       subroutine write_nml_field()
-
-       integer :: i
-
-       if (npulse.lt.1) then
-           write(*,*) 'ERROR: number of pulses in input '
-           write(*,*) 'is less than zero'
-#ifdef MPI
-           call mpi_finalize(ierr_mpi)
-#endif
-           stop
-       endif
 
        integer :: i
 
@@ -1212,20 +1155,13 @@
 
       end subroutine write_nml_sse
 
-<<<<<<< HEAD
-=======
-      subroutine write_nml_pop_coh()
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Write pop_coh namelist for postprocessing 
 !
 ! @date Created   : E. Coccia 22 Aug 2018
 ! Modified  :
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine write_nml_pop_coh()
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        implicit none
 
@@ -1278,21 +1214,14 @@
 
       end subroutine write_nml_pop_coh
 
-<<<<<<< HEAD
-=======
-      subroutine checkfile(filename,channel)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Check file existence 
 !
 ! @date Created   : E. Coccia 20 Nov 2017
 ! Modified  :
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine checkfile(filename,channel)
 
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
         implicit none
 
         character*12,   intent(in)  :: filename
@@ -1314,20 +1243,13 @@
 
       end subroutine checkfile 
 
-<<<<<<< HEAD
-=======
-      subroutine mpibcast_readio()
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief MPI broadcast of input variables 
 !
 ! @date Created   : E. Coccia 20 Apr 2018
 ! Modified  :
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine mpibcast_readio()
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 #ifdef MPI
        !n_f and iseed generated ad hoc for each process
@@ -1388,20 +1310,13 @@
 
       end subroutine mpibcast_readio 
 
-<<<<<<< HEAD
-=======
-      subroutine mpibcast_e_dip()
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief MPI broadcast of energies, dipoles and initial coefs 
 !
 ! @date Created   : E. Coccia 23 Apr 2018
 ! Modified  :
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine mpibcast_e_dip()
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 #ifdef MPI
        if (myrank.ne.0) then
@@ -1420,20 +1335,13 @@
 
       end subroutine mpibcast_e_dip
 
-<<<<<<< HEAD
-=======
-      subroutine mpibcast_sse()
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief MPI broadcast of SSE relaxation and dephasing rates 
 !
 ! @date Created   : E. Coccia 23 Apr 2018
 ! Modified  :
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine mpibcast_sse()
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 #ifdef MPI
        call mpi_bcast(nexc,       1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
@@ -1479,20 +1387,13 @@
       end subroutine mpibcast_sse
 
 
-<<<<<<< HEAD
-=======
-      subroutine mpibcast_restart()
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief MPI broadcast of restart variables 
 !
 ! @date Created   : E. Coccia 23 Apr 2018
 ! Modified  :
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine mpibcast_restart()
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 #ifdef MPI
 
@@ -1525,20 +1426,13 @@
 
       end subroutine mpibcast_restart 
    
-<<<<<<< HEAD
-=======
-      subroutine mpibcast_ion_rate
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Broadcast ion_rate 
 !
 ! @date Created   : E. Coccia 31 May 2018
 ! Modified  :
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine mpibcast_ion_rate
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 #ifdef MPI
 
@@ -1553,20 +1447,13 @@
       end subroutine mpibcast_ion_rate
 
  
-<<<<<<< HEAD
-=======
-      subroutine read_ion_rate()
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Read ionization rates 
 !
 ! @date Created   : E. Coccia 31 May 2018
 ! Modified  :
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine read_ion_rate()
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        implicit none
 

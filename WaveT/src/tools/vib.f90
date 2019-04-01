@@ -166,10 +166,6 @@ module vib
 
       end subroutine read_input_vib 
 
-<<<<<<< HEAD:WaveT/src/tools/vib.f90
-=======
-      subroutine compute_fc(v,ve,w,we,d,m,me,n,fc,mn)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/tools/vib.f90
 !------------------------------------------------------------------------
 ! @brief Compute Franck-Condon factors between the vibrational 
 ! eigenstates (harmonic oscillator) of any electronic ground-excited
@@ -881,10 +877,6 @@ module vib
 
      end subroutine vib_spectra
 
-<<<<<<< HEAD:WaveT/src/tools/vib.f90
-=======
-     function safe_division(n,d,alt) result(q)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/tools/vib.f90
 !------------------------------------------------------------------------
 ! @brief Performs "safe division", that is to prevent overflow,
 !  underflow, NaN, or infinity errors 
@@ -892,10 +884,7 @@ module vib
 ! @date Created   : E. Coccia 12 Oct 2017
 ! Modified  :          
 !------------------------------------------------------------------------ 
-<<<<<<< HEAD:WaveT/src/tools/vib.f90
      function safe_division(n,d,alt) result(q)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/tools/vib.f90
 
        real(cmp), intent(in) :: n,d,alt
      

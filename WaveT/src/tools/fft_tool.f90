@@ -1,18 +1,10 @@
-<<<<<<< HEAD
-=======
-program twodfft
-
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief 2D FFT
 ! 
 ! @date Created   : E. Coccia 22 Jan 2018
 ! Modified  :
 !------------------------------------------------------------------------
-<<<<<<< HEAD
 program twodfft
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
  use constants 
  use, intrinsic :: iso_c_binding
@@ -293,21 +285,13 @@ program twodfft
 
 end program twodfft
 
-<<<<<<< HEAD
-=======
-subroutine lo_field(dt,field,n_tot,lo_fmax,lo_sigma,lo_w,lo_tmid,f)
-
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Local oscillator field for heterodyne detection 
 ! 
 ! @date Created   : E. Coccia 13 Feb 2018
 ! Modified  :
 !------------------------------------------------------------------------
-<<<<<<< HEAD
 subroutine lo_field(dt,field,n_tot,lo_fmax,lo_sigma,lo_w,lo_tmid,f)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
  use constants
 
@@ -382,15 +366,12 @@ subroutine lo_field(dt,field,n_tot,lo_fmax,lo_sigma,lo_w,lo_tmid,f)
 
 end subroutine lo_field
 
-<<<<<<< HEAD
 !------------------------------------------------------------------------
 ! @brief FFTW 
 ! 
 ! @date Created   : E. Coccia 13 Feb 2018
 ! Modified  :
 !------------------------------------------------------------------------
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 SUBROUTINE rlft3(data,speq,nn1,nn2,nn3,isign)
 
 use constants

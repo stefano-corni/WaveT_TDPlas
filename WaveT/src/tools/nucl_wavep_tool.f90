@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-=======
-program nuclear_wp
-
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Time evolution of the nuclear wave packet
 ! 
@@ -10,10 +5,7 @@ program nuclear_wp
 ! @date Created   : E. Coccia 26 Feb 2018
 ! Modified  :       E. Coccia 18 Dec 2018 
 !------------------------------------------------------------------------
-<<<<<<< HEAD
 program nuclear_wp
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
   use constants
 
@@ -220,11 +212,6 @@ program nuclear_wp
 end program nuclear_wp
 
 
-<<<<<<< HEAD
-=======
-
-subroutine hermite(nn,x,y)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 !   @brief Computes the value of the Hermite polynomial of degree nn             
 !   at a given point               
@@ -235,10 +222,7 @@ subroutine hermite(nn,x,y)
 !   @date Created  :  E. Coccia 8 Sep 2017 
 !   Modified   :
 !------------------------------------------------------------------------
-<<<<<<< HEAD
 subroutine hermite(nn,x,y)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
   
         use constants
 
@@ -269,20 +253,13 @@ subroutine hermite(nn,x,y)
 
 end subroutine hermite
 
-<<<<<<< HEAD
-=======
-real(dbl) function fact(n)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Function computing the factorial n!
 ! 
 ! @date Created   : E. Coccia 11 Sep 2017
 ! Modified  :
 !------------------------------------------------------------------------
-<<<<<<< HEAD
 real(dbl) function fact(n)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        use constants
 
@@ -304,10 +281,6 @@ real(dbl) function fact(n)
 
        return
 
-<<<<<<< HEAD
 end function fact
-=======
-end function
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 

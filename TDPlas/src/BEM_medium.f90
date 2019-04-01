@@ -83,21 +83,13 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!  DRIVER  ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      
-<<<<<<< HEAD
-=======
-      subroutine do_BEM_prop     
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief BEM driver routine for propagation
 !
 ! @date Created: S. Pipolo
 ! Modified: G. Gil
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine do_BEM_prop
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
-
 
        real(dbl), allocatable :: Sm1(:,:)  !< $S^{-1}$ Onsager matrix
 
@@ -209,26 +201,16 @@
 
        return
  
-<<<<<<< HEAD
       end subroutine do_BEM_prop
 
 
-=======
-      end subroutine
-
-
-      subroutine do_BEM_freq(omega_list,n_omega)     
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief BEM driver routine for frequency calculation (old do_freq_mat) 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine do_BEM_freq(omega_list,n_omega)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        real(dbl), intent(in):: omega_list(:)
        integer(i4b), intent(in):: n_omega
@@ -281,26 +263,16 @@
 
        return
  
-<<<<<<< HEAD
       end subroutine do_BEM_freq
 
 
-=======
-      end subroutine
-
-
-      subroutine do_BEM_quant     
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief BEM driver routine for quantum BEM calculation 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine do_BEM_quant
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        ! Cavity read/write and S D matrices 
        call init_BEM
@@ -316,15 +288,8 @@
 
        return
  
-<<<<<<< HEAD
       end subroutine do_BEM_quant
 
-=======
-      end subroutine
-
-
-      subroutine init_BEM     
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief BEM initialization routine: cavity read/write and S and D
 ! matrices 
@@ -332,10 +297,7 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine init_BEM
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
      
        integer(i4b)              :: its
 
@@ -385,25 +347,15 @@
 
        return
  
-<<<<<<< HEAD
       end subroutine init_BEM
 
-=======
-      end subroutine
-
-
-      subroutine finalize_BEM     
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief BEM finalized and deallocation routine 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine finalize_BEM
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        deallocate(scrd3)
        deallocate(BEM_S)
@@ -423,26 +375,16 @@
 
        return
  
-<<<<<<< HEAD
       end subroutine finalize_BEM
 
 
-=======
-      end subroutine
-
-
-      subroutine deallocate_BEM_public     
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief BEM finalized and deallocation routine 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine deallocate_BEM_public
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        if (Fprop(1:3).eq.'chr') then
          if(allocated(BEM_Qd)) deallocate(BEM_Qd)
@@ -465,16 +407,9 @@
 
        return
  
-<<<<<<< HEAD
       end subroutine deallocate_BEM_public
 
 
-=======
-      end subroutine
-
-
-      subroutine do_MPL_prop         
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Calculate propagation Onsager matrices from factors including
 ! depolarization 
@@ -482,10 +417,7 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine do_MPL_prop 
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        real(dbl):: tmp(3),m
        integer(i4b):: i,j
@@ -582,26 +514,16 @@
  
        return
   
-<<<<<<< HEAD
       end subroutine do_MPL_prop
 
 
-=======
-      end subroutine
-
-
-      subroutine init_MPL     
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Allocate arrays for multipolar routines 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine init_MPL
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        allocate(mat_fd(3,3))
        allocate(mat_f0(3,3))
@@ -628,49 +550,30 @@
 
        return
  
-<<<<<<< HEAD
       end subroutine init_MPL
 
-=======
-      end subroutine
-
-
-      subroutine finalize_MPL     
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Deallocate lambda 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine finalize_MPL
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        if(allocated(lambda)) deallocate(lambda)
 
        return
  
-<<<<<<< HEAD
       end subroutine finalize_MPL
 
-=======
-      end subroutine
 
-
-      subroutine deallocate_MPL_public     
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Deallocate MPL arrays 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine deallocate_MPL_public
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        if(allocated(ONS_ff)) deallocate(ONS_ff)
        if(allocated(MPL_Fw)) deallocate(MPL_Fw)
@@ -686,28 +589,20 @@
 
        return
  
-<<<<<<< HEAD
       end subroutine deallocate_MPL_public
-=======
-      end subroutine
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!  CORE ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-      subroutine do_BEM_SD
 !------------------------------------------------------------------------
 ! @brief Compute Calderon's S and D matrices 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine do_BEM_SD
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        real(dbl) :: temp
        integer(i4b) :: i,j
@@ -733,7 +628,6 @@
 
        return
  
-<<<<<<< HEAD
       end subroutine do_BEM_SD
 
 
@@ -795,69 +689,6 @@
 ! Modified:
 !------------------------------------------------------------------------
       subroutine green_s(i,j,value)
-=======
-      end subroutine
-
-
-      subroutine green_d (i,j,value)
-!------------------------------------------------------------------------
-! @brief Calderon D matrix with Purisima Dii elements 
-! SC: changed to a diagonal value of D_ii that should be more general
-! than those for the sphere
-!
-! @date Created: S. Pipolo
-! Modified: S. Corni 30/5/17
-!------------------------------------------------------------------------
-
-       integer(i4b), intent(in):: i,j
-       real(dbl), intent(out) :: value
-       real(dbl):: dist,sum_d
-       integer(i4b) :: k
-
-       if (i.ne.j) then
-          scrd3(1)=(cts_act(i)%x-cts_act(j)%x)
-          scrd3(2)=(cts_act(i)%y-cts_act(j)%y)
-          scrd3(3)=(cts_act(i)%z-cts_act(j)%z)
-          dist=sqrt(dot_product(scrd3,scrd3))
-          value=dot_product(cts_act(j)%n,scrd3)/dist**3 
-       else
-          sum_d=0.d0
-
-          do k=1,i-1
-             scrd3(1)=(cts_act(i)%x-cts_act(k)%x)
-             scrd3(2)=(cts_act(i)%y-cts_act(k)%y)
-             scrd3(3)=(cts_act(i)%z-cts_act(k)%z)
-             dist=sqrt(dot_product(scrd3,scrd3))
-             sum_d=sum_d+dot_product(cts_act(k)%n,scrd3)/dist**3*cts_act(k)%area 
-          enddo
-
-          do k=i+1,nts_act
-             scrd3(1)=(cts_act(i)%x-cts_act(k)%x)
-             scrd3(2)=(cts_act(i)%y-cts_act(k)%y)
-             scrd3(3)=(cts_act(i)%z-cts_act(k)%z)
-             dist=sqrt(dot_product(scrd3,scrd3))
-             sum_d=sum_d+dot_product(cts_act(k)%n,scrd3)/dist**3*cts_act(k)%area 
-          enddo
-
-          sum_d=-(2.0*pi+sum_d)/cts_act(i)%area
-          value=sum_d
-          !value=-1.0694*sqrt(4.d0*pi*cts_act(i)%area)/(2.d0* &
-          !       cts_act(i)%rsfe)/cts_act(i)%area
-       endif
-
-       return
-
-      end subroutine
-
-
-      subroutine green_s (i,j,value)
-!------------------------------------------------------------------------
-! @brief Calderon S matrix 
-!
-! @date Created: S. Pipolo
-! Modified:
-!------------------------------------------------------------------------
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        integer(i4b), intent(in):: i,j
        real(dbl), intent(out) :: value
@@ -872,30 +703,18 @@
        else
          value=1.0694*sqrt(4.d0*pi/cts_act(i)%area)
        endif
-<<<<<<< HEAD
 
        return
 
       end subroutine green_s
 
-=======
-
-       return
-
-      end subroutine
-
-      subroutine do_BEM_diagonal
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Compute BEM matrices within diagonal approach 
 !
 ! @date Created: S. Pipolo
 ! Modified: G. Gil
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine do_BEM_diagonal
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        integer(i4b) :: i,j
        real(8), allocatable :: scr1(:,:),scr2(:,:),scr3(:,:)
@@ -1146,26 +965,15 @@
 
        return
  
-<<<<<<< HEAD
       end subroutine do_BEM_diagonal
  
-
-=======
-      end subroutine
- 
-
-      subroutine init_BEM_diagonal
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Initialize diagonal BEM 
 !
 ! @date Created: S. Pipolo
 ! Modified: G. Gil
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine init_BEM_diagonal
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        allocate(fact1(nts_act),fact2(nts_act))
        allocate(Kd(nts_act),K0(nts_act))
@@ -1187,7 +995,6 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine init_BEM_diagonal
 
 
@@ -1333,158 +1140,9 @@
 !
 ! @date Created: S. Pipolo
 ! Modified: G. Gil
-=======
-      end subroutine
-
-
-      subroutine do_charge_freq(omega_a,pot,mu_omega,n_omega)
 !------------------------------------------------------------------------
-! @brief Compute charges in the frequency domain 
-!
-! @date Created: S. Pipolo
-! Modified: E. Coccia 4/12/18
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
-!------------------------------------------------------------------------
-
-       integer(i4b),    intent(in)  :: n_omega
-       real(dbl),       intent(in)  :: omega_a(:)
-       real(dbl),       intent(in)  :: pot(:)
-       complex(cmp),    intent(out) :: mu_omega(3)
-       real(dbl) :: a,b               
-       integer(4) :: its,i
-! SP 16/07/17: avoiding allocations loops
-       !complex(cmp), allocatable :: q_omega(:),mu_omega(:)
-       !complex(cmp), allocatable :: Kdiag_omega(:)
-
-       sgn=-1
-! SP 16/07/17: added eps_w0 to Kdiag_omega
-       if(eps_w0.eq.zero) eps_w0=1.d-8 
-! SP 16/07/17: changed the following to avoid divergence at low omega 
-!      do its=1,nts_act
-       Kdiag_omega(1)=zero                   
-
-       open(7,file="dipole_freq.dat",status="unknown")
-       write (7,*)"freq re(mux) re(muy) re(muz) im(mux) im(muy) im(muz)"
-
-       do i=1,n_omega
-
-#ifdef OMP
-!$OMP PARALLEL 
-!$OMP DO
-#endif
-          do its=2,nts_act
-             Kdiag_omega(its)=(twp-sgn*BEM_L(its))/ &
-!        ((one-omega_a*(omega_a+ui*eps_gm)*2.d0/eps_A)*twp-sgn*BEM_L(its))
-             ((one+(eps_w0**2-omega_a(i)*(omega_a(i)+ui*eps_gm))*two/eps_A)*twp-&
-              sgn*BEM_L(its))
-       !a=twp+BEM_L(its)+two*twp*(eps_w0**2-omega_a**2)/eps_A
-       !b=two*twp*eps_gm*omega_a/eps_A
-       !if(its.eq.1) write(6,*) a**2, b**2
-          enddo
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
-#endif
-
-          q_omega=matmul(BEM_Sm12,pot)
-          q_omega=matmul(transpose(BEM_T),q_omega)
-          q_omega=Kdiag_omega*q_omega
-          q_omega=matmul(BEM_T,q_omega)
-          q_omega=-matmul(BEM_Sm12,q_omega)
-          mu_omega=0.d0
-
-#ifdef OMP
-!$OMP PARALLEL REDUCTION(+:mu_omega)
-!$OMP DO 
-#endif
-          do its=1,nts_act
-             mu_omega(1)=mu_omega(1)+q_omega(its)*(cts_act(its)%x)
-             mu_omega(2)=mu_omega(2)+q_omega(its)*(cts_act(its)%y)
-             mu_omega(3)=mu_omega(3)+q_omega(its)*(cts_act(its)%z)
-          enddo
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
-#endif
-
-          write (7,'(7e15.6)') omega_a(i),real(mu_omega(:)),aimag(mu_omega(:))
-
-       enddo
-
-       close(7) 
-
-       return
-
-      end subroutine do_charge_freq
-
-
-      subroutine do_propBEM_dia_deb
-!------------------------------------------------------------------------
-! @brief Propagation of matrices for diagonal BEM (debye) 
-!
-! @date Created: S. Pipolo
-! Modified: G. Gil
-!------------------------------------------------------------------------
-
-       integer(i4b) :: i
-       real(8), allocatable :: scr1(:,:)
-
-       allocate(scr1(nts_act,nts_act))
-!      Form the \tilde{Q} and R for debye propagation
-
-#ifdef OMP
-!$OMP PARALLEL 
-!$OMP DO 
-#endif
-        do i=1,nts_act
-          scr1(:,i)=Sm12T(:,i)*fact1(i) 
-        enddo
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
-#endif
-
-        BEM_R=matmul(scr1,TSp12)
-
-#ifdef OMP
-!$OMP PARALLEL 
-!$OMP DO
-#endif
-        do i=1,nts_act
-          scr1(:,i)=Sm12T(:,i)*fact2(i) 
-        enddo
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
-#endif
-
-        BEM_Qt=-matmul(scr1,TSm12)
-        ! GG: analogous to \tilde{Q} matrix in the case of local-field
-        ! for solvent external medium
-        if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
-         do i=1,nts_act
-           scr1(:,i)=Sm12T(:,i)*fact2x(i)
-         enddo
-         BEM_Qtx=-matmul(scr1,TSm12)
-        endif
-
-        deallocate(scr1)
-
-        return
-
-      end subroutine
-
-
       subroutine do_propBEM_dia_drl
-<<<<<<< HEAD
-=======
-!------------------------------------------------------------------------
-! @brief Propagation of matrices for diagonal BEM (drude-lorentz) 
-!
-! @date Created: S. Pipolo
-! Modified: G. Gil
-!------------------------------------------------------------------------
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
+     
 
        integer(i4b) :: i
        real(8), allocatable :: scr1(:,:)
@@ -1530,14 +1188,8 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine do_propBEM_dia_drl
 
-=======
-      end subroutine
-
-      subroutine do_propBEM_dia_gen
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------------
 ! @brief Propagation of matrices for diagonal BEM (general dielectric function)
 !
@@ -1545,10 +1197,7 @@
 ! Modified:
 ! Notes: Taken from do_propBEM_dia_drl and building up also BEM_Qg
 !------------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine do_propBEM_dia_gen
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        integer(i4b) :: i
        real(8), allocatable :: scr1(:,:)
@@ -1609,26 +1258,16 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine do_propBEM_dia_gen
 
 
-=======
-      end subroutine
-
-
-      subroutine do_propMPL_deb   
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Initialize factors for debye dipole propagation 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine do_propMPL_deb
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        real(dbl):: k1,f1,g(3,3),m
        integer(i4b):: i,j,k,l
@@ -1678,26 +1317,15 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine do_propMPL_deb
 
-
-=======
-      end subroutine
-
-
-      subroutine do_propfact_ons_deb   
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Onsager propagation matrix for debye 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine do_propfact_ons_deb
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        ONS_f0=(eps_0-one)/(eps_0+pt5) 
        ONS_fd=(eps_d-one)/(eps_d+pt5) 
@@ -1709,26 +1337,16 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine do_propfact_ons_deb
 
 
-=======
-      end subroutine
-
-
-      subroutine do_propMPL_drl   
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Initialize factors for drude-lorentz dipole propagation 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine do_propMPL_drl
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        real(dbl):: f1,g(3,3),m
        integer(i4b):: i,j,k,l
@@ -1764,26 +1382,16 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine do_propMPL_drl
 
 
-=======
-      end subroutine
-
-
-      subroutine do_propfact_ons_drl  
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Onsager propagation matrix for drude-lorentz 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine do_propfact_ons_drl
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        integer(i4b)::i
 
@@ -1797,26 +1405,16 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine do_propfact_ons_drl
 
 
-=======
-      end subroutine
-
-
-      subroutine do_eps_drl      
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Compute drl cmplx eps(\omega) and (eps(\omega)-1)/(eps(\omega)+2) 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine do_eps_drl
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        !eps_gm=eps_gm+f_vel/sfe_act(1)%r
        eps=dcmplx(eps_A,zero)/dcmplx(eps_w0**2-omega(1)**2,-omega(1)*eps_gm)
@@ -1826,26 +1424,16 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine do_eps_drl
 
 
-=======
-      end subroutine
-
-
-      subroutine do_eps_deb      
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Compute deb cmplx eps(\omega) and (3*eps(\omega))/(2*eps(\omega)+1)
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine do_eps_deb
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        !eps_gm=eps_gm+f_vel/sfe_act(1)%r
        eps=dcmplx(eps_d,zero)+dcmplx(eps_0-eps_d,zero)/ &
@@ -1855,26 +1443,16 @@
 
        return
  
-<<<<<<< HEAD
       end subroutine do_eps_deb 
 
 
-=======
-      end subroutine  
-
-
-      subroutine do_eps_gen(omega)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------------
 ! @brief Compute gen cmplx eps(\omega) from points through linear interpolation
 !
 ! @date Created: G. Gil
 ! Modified:
 !------------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine do_eps_gen(omega)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        real(dbl) :: omega
        integer(i4b) :: min, max, half
@@ -1896,16 +1474,8 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine do_eps_gen
 
-
-=======
-      end subroutine
-
-
-      subroutine do_poles(poles,const)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------------
 ! @brief Compute the real part of the poles of the PCM response kernel
 !   * real part of the poles - frequencies
@@ -1916,10 +1486,7 @@
 ! @date Created: G. Gil
 ! Modified:
 !------------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine do_poles(poles,const)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        type(poles_t), intent(out) :: poles(:)
        real(dbl),     intent(in)  :: const(:)
@@ -1980,14 +1547,7 @@
        close(3)
 
 
-<<<<<<< HEAD
       end subroutine do_poles
-=======
-      end subroutine
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
-
-
-
 
 !
 !
@@ -1995,17 +1555,13 @@
 !!!!!!!!!!!!!!!!!!!!   INPUT/OUTPUT ROUTINES   !!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-      subroutine write_BEM_SD
 !------------------------------------------------------------------------
 ! @brief Write out Calderon's D and S matrices 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine write_BEM_SD
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        integer(i4b) :: i,j
 
@@ -2025,26 +1581,15 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine write_BEM_SD
 
-
-=======
-      end subroutine
-
-
-      subroutine read_BEM_SD
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Read Calderon's D and S matrices 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine read_BEM_SD
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        integer(i4b) :: i,j
 
@@ -2078,26 +1623,15 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine read_BEM_SD
 
-
-=======
-      end subroutine
-
-
-      subroutine out_BEM_mat 
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Output BEM matrices 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine out_BEM_mat
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        integer(i4b):: i,j
 
@@ -2114,26 +1648,15 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine out_BEM_mat
 
-
-=======
-      end subroutine
-
-
-      subroutine out_BEM_propmat 
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Output propagation matrices 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine out_BEM_propmat
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        integer(i4b):: i,j
 
@@ -2152,26 +1675,16 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine out_BEM_propmat
 
 
-=======
-      end subroutine
-
-
-      subroutine out_BEM_gamess  
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Output propagation matrices 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine out_BEM_gamess
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        integer(i4b):: i,j
 
@@ -2198,26 +1711,16 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine out_BEM_gamess
 
 
-=======
-      end subroutine
-
-
-      subroutine out_BEM_diagmat 
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Output diagonal matrices and frequencies 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine out_BEM_diagmat
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        integer(i4b):: i,j
 
@@ -2248,7 +1751,6 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine out_BEM_diagmat
 
 !------------------------------------------------------------------------
@@ -2289,56 +1791,11 @@
 
 !------------------------------------------------------------------------
 ! @brief Output cavity files 
-=======
-      end subroutine
-
-      subroutine out_BEM_lf
-!------------------------------------------------------------------------
-! @brief Output propagation matrices 
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-
-       integer(i4b):: i,j
-
-#ifndef MPI
-       myrank=0
-#endif
-
-       open(7,file="np_bem.mlf",status="unknown")
-       do j=1,nts_act
-        do i=1,nts_act
-         write(7,'(D20.12)') BEM_Q0x(i,j)/cts_act(i)%area
-        enddo
-       enddo
-       close(7)
-       if (myrank.eq.0)write(6,*) 'Static loc-field mat in gamess form'
-       open(7,file="np_bem.mld",status="unknown")
-       do j=1,nts_act
-        do i=1,nts_act
-         write(7,'(D20.12)') BEM_Qdx(i,j)/cts_act(i)%area
-        enddo
-       enddo
-       close(7)
-       if (myrank.eq.0)write(6,*)'Dynamic loc-field mat in gamess form'
-
-       return
-
-      end subroutine out_BEM_lf
-
-
-      subroutine output_surf
-<<<<<<< HEAD
-=======
-!------------------------------------------------------------------------
-! @brief Output cavity files 
-!
-! @date Created: S. Pipolo
-! Modified:
-!------------------------------------------------------------------------
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
+     subroutine output_surf
 
        integer(i4b) :: i
 ! This routine creates the same files also created by Gaussian
@@ -2374,26 +1831,16 @@
      
        return 
 
-<<<<<<< HEAD
       end subroutine output_surf
 
 
-=======
-      end subroutine
-
-
-      subroutine output_charge_pqr
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Output charges in pqr files 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine output_charge_pqr
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        integer :: its,i
        character(30) :: fname
@@ -2463,10 +1910,6 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine output_charge_pqr
-=======
-      end subroutine
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
       end module

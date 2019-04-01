@@ -1,37 +1,23 @@
 program decoherence 
 
  use constants 
-<<<<<<< HEAD
-=======
-#ifdef OMP
-      use omp_lib
-#endif
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
  implicit none
 
  integer(i4b)                 :: nrep,nstates,nsteps,npair,ngs
  real(dbl),    allocatable    :: rdum(:,:,:),pop(:,:),perr(:,:)
  real(dbl),    allocatable    :: cor(:,:),coi(:,:),co(:,:)
-<<<<<<< HEAD
  real(dbl),    allocatable    :: rerr(:,:),ierr(:,:)
  real(dbl),    allocatable    :: rc(:), ic(:)
  integer(i4b), allocatable    :: i(:)
  real(dbl),    allocatable    :: t(:),l1(:),l1_err(:)
  real(dbl),    allocatable    :: ferr(:,:)
-=======
- real(dbl),    allocatable    :: rerr(:,:),ierr(:,:),rpop(:,:,:)
- integer(i4b), allocatable    :: i(:)
- real(dbl),    allocatable    :: t(:),l1(:),l1_err(:)
- real(dbl),    allocatable    :: idum(:,:,:),ferr(:,:)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
  real(dbl),    allocatable    :: trp2(:),trp2_err(:)
  real(dbl),    allocatable    :: rho(:,:,:)
  real(dbl),    allocatable    :: leps(:), l1_norm_eps(:) 
  real(dbl),    allocatable    :: leps_err(:),l1_norm_eps_err(:)
  real(dbl),    allocatable    :: rho_err(:,:,:)
  real(dbl),    allocatable    :: opop(:)
-<<<<<<< HEAD
  complex(cmp), allocatable    :: cc(:,:,:)
  complex(cmp), allocatable    :: c(:,:,:)
 
@@ -50,18 +36,7 @@ program decoherence
 
  ngs=1
  read_bin='n'
-=======
 
-
- integer(i4b)       :: j,k,m,ijunk,l
- real(dbl)          :: rjunk,tmp,tmp1,tmp2,tmp3,tmp4,tmp5,tmperr  
- character(30)      :: filename, quant
-
-
- namelist /coherence/ nstates,nrep,nsteps,quant,ngs
-
- ngs=1
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
  read(*,nml=coherence)
 
  write(*,*) '**********************************************'
@@ -100,14 +75,11 @@ program decoherence
     write(*,*) 'ERROR: ngs must be large than zero'
     stop
  endif
-<<<<<<< HEAD
  if (read_bin.eq.'n') then
     write(*,*) 'Use formatted coefficient files'
  elseif (read_bin.eq.'y') then 
     write(*,*) 'use unformatted coefficient files' 
  endif
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
  write(*,*) '' 
 
  if (nsteps.lt.1) then
@@ -126,24 +98,14 @@ program decoherence
  npair=nstates*(nstates-1)/2 
 
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
  allocate(i(nsteps))
  allocate(t(nsteps))
  allocate(opop(nsteps))
  allocate(rho(nsteps,nstates,nstates))
-<<<<<<< HEAD
  allocate(c(nsteps,nstates,nrep))
  allocate(rc(nstates),ic(nstates))
  allocate(rdum(nsteps,npair,nrep))
  allocate(cc(nsteps,npair,nrep))
-=======
- allocate(rpop(nsteps,nstates,nrep))
- allocate(rdum(nsteps,npair,nrep))
- allocate(idum(nsteps,npair,nrep))
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
  allocate(pop(nsteps,nstates),perr(nsteps,nstates))
  allocate(rerr(nsteps,npair),ierr(nsteps,npair))
  allocate(ferr(nsteps,npair)) 
@@ -158,11 +120,7 @@ program decoherence
  allocate(l1_norm_eps(nsteps))
  allocate(l1_norm_eps_err(nsteps))
 
-<<<<<<< HEAD
  ! Coefficient files
-=======
- ! Population files
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
  do m=1,nrep
     if (m.lt.10) then
         WRITE(filename,'(a,i1.1,a)') "c_t_",m,".dat"
@@ -178,7 +136,6 @@ program decoherence
     open(20+m,file=filename)
  enddo
 
-<<<<<<< HEAD
  if (read_bin(1:1).ne.'y') then
     do m=1,nrep
        open (20+m,file=filename,status="unknown")
@@ -202,56 +159,29 @@ program decoherence
        enddo
     enddo                                                                                       
  endif   
-=======
- !Read populations
- do m=1,nrep
-    do j=1,nsteps
-       read(20+m,*) i(j), t(j), (rpop(j,k,m), k=1,nstates)
-    enddo
- enddo
-
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
  !Average population 
  pop=0.d0
  do m=1,nrep
     do k=1,nstates
        do j=1,nsteps
-<<<<<<< HEAD
           pop(j,k) = pop(j,k) + conjg(c(j,k,m))*real(c(j,k,m))
        enddo
     enddo
  enddo
-=======
-          pop(j,k) = pop(j,k) + rpop(j,k,m)
-       enddo
-    enddo
- enddo
-
-
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
  pop=pop/dble(nrep)
 
  do j=1,nsteps
     opop(j) = pop(j,1)
  enddo
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
  pop(:,1)=0.d0
  do j=1,nsteps
     pop(j,1) = 1.d0 - sum(pop(j,2:nstates))
  enddo
 
-<<<<<<< HEAD
  !Building density matrix
  !Diagonal elements
-=======
-
- !Building density matrix
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
  rho=0.d0
  do k=1,nstates
     do j=1,nsteps
@@ -261,28 +191,16 @@ program decoherence
 
  !Error on population 
  perr=0.d0
-<<<<<<< HEAD
  do m=1,nrep
     do k=2,nstates
        do j=1,nsteps
           perr(j,k) = perr(j,k) + (conjg(c(j,k,m))*real(c(j,k,m))  - pop(j,k))**2
-=======
-
- do m=1,nrep
-    do k=2,nstates
-       do j=1,nsteps
-          perr(j,k) = perr(j,k) + (rpop(j,k,m) - pop(j,k))**2
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
        enddo
     enddo
  enddo
  do m=1,nrep
     do j=1,nsteps
-<<<<<<< HEAD
        perr(j,1) = perr(j,1) + (conjg(c(j,1,m))*real(c(j,1,m)) - opop(j))**2
-=======
-       perr(j,1) = perr(j,1) + (rpop(j,1,m) - opop(j))**2
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
     enddo
  enddo
  if (nrep.gt.1) then
@@ -294,7 +212,6 @@ program decoherence
  perr=perr/dsqrt(dble(nrep))
 
 
-<<<<<<< HEAD
  !Define coherences 
  do m=1,nrep
     do j=1,nsteps
@@ -302,49 +219,14 @@ program decoherence
     enddo
  enddo
 
-=======
- !Coherences
- do m=1,nrep
-    close(20+m)
-    if (m.lt.10) then
-        WRITE(filename,'(a,i1.1,a)') "d_t_",m,".dat"
-    elseif (m.ge.10.and.m.lt.100) then
-        WRITE(filename,'(a,i2.2,a)') "d_t_",m,".dat"
-    elseif (m.ge.100.and.m.lt.1000) then
-        WRITE(filename,'(a,i3.3,a)') "d_t_",m,".dat"
-    elseif (m.ge.1000.and.m.lt.10000) then
-        WRITE(filename,'(a,i4.4,a)') "d_t_",m,".dat"
-    elseif (m.ge.10000.and.m.lt.100000) then
-        WRITE(filename,'(a,i5.5,a)') "d_t_",m,".dat"
-    endif
-    open(20+m,file=filename)
- enddo
-
- !Read coherences
- do m=1,nrep
-    do j=1,nsteps
-       read(20+m,*) ijunk,rjunk, (rdum(j,k,m), idum(j,k,m), k=1,npair)
-    enddo
- enddo
-
- do m=1,nrep
-     close(20+m)
- enddo
-
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
  !Average coherence 
  cor=0.d0
  coi=0.d0
  do m=1,nrep
     do k=1,npair
        do j=1,nsteps
-<<<<<<< HEAD
           cor(j,k) = cor(j,k) + real(cc(j,k,m))
           coi(j,k) = coi(j,k) + aimag(cc(j,k,m))
-=======
-          cor(j,k) = cor(j,k) + rdum(j,k,m)
-          coi(j,k) = coi(j,k) + idum(j,k,m)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
        enddo
     enddo
  enddo
@@ -357,13 +239,8 @@ program decoherence
  do m=1,nrep
     do k=1,npair
        do j=1,nsteps
-<<<<<<< HEAD
           rerr(j,k) = rerr(j,k) + (real(cc(j,k,m)) - cor(j,k))**2
           ierr(j,k) = ierr(j,k) + (aimag(cc(j,k,m)) - coi(j,k))**2
-=======
-          rerr(j,k) = rerr(j,k) + (rdum(j,k,m) - cor(j,k))**2
-          ierr(j,k) = ierr(j,k) + (idum(j,k,m) - coi(j,k))**2
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
        enddo
     enddo
  enddo
@@ -391,10 +268,7 @@ program decoherence
 
   !Coherence from WaveT: (1,i=2,n_ci) (j=2,n_ci,k=j+1,n_ci)
   !Buiding density matrix
-<<<<<<< HEAD
   !Off-diagonal elements
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
   k=0
   do m=1,nstates
      do l=m+1,nstates
@@ -452,10 +326,6 @@ program decoherence
        enddo
     enddo
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
     !Building Tr(rho^2)
     trp2=0.d0
     do k=1,nstates
@@ -463,11 +333,6 @@ program decoherence
           trp2(j) = trp2(j) + pop(j,k)**2
        enddo
     enddo    
-<<<<<<< HEAD
-
-=======
- 
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
     do l=1,nstates
        do k=1,nstates
           do j=1,nsteps
@@ -477,11 +342,6 @@ program decoherence
           enddo
        enddo
     enddo
-<<<<<<< HEAD
-
-=======
- 
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
     do j=1,nsteps
        if (trp2(j).gt.1.d0) trp2(j)=1.d0 
     enddo
@@ -599,11 +459,6 @@ program decoherence
   deallocate(t)
   deallocate(opop)
   deallocate(rdum)
-<<<<<<< HEAD
-=======
-  deallocate(idum)
-  deallocate(rpop)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
   deallocate(rho)
   deallocate(perr)
   deallocate(pop)
@@ -612,10 +467,7 @@ program decoherence
   deallocate(ferr)
   deallocate(cor)
   deallocate(coi)
-<<<<<<< HEAD
   deallocate(cc)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
   deallocate(co)
   deallocate(leps)
   deallocate(leps_err)
@@ -629,20 +481,14 @@ program decoherence
 
   close(11)
 
-<<<<<<< HEAD
   call system_clock(current)
   write(*,*) ''
   write(6,'("Done , total elapsed time", &
            F10.3,"s")') real(current-st)/real(rate)
-=======
-  write(*,*) 'Calculation ended'
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
   stop
 
 end program decoherence 
-<<<<<<< HEAD
-
 
 
 !------------------------------------------------------------------------
@@ -693,5 +539,3 @@ subroutine compute_coherence(c,cc,nci,npair)
 
 end subroutine compute_coherence
 
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822

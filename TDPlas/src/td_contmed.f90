@@ -169,20 +169,13 @@
 
       end subroutine init_mdm
 
-<<<<<<< HEAD
-=======
-      subroutine prop_mdm(i, mu_t, f_tp, pot_t, potf_t, h_int)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Medium propagation called by WaveT or other programs 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia 5/7/18
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine prop_mdm(i, mu_t, f_tp, pot_t, potf_t, h_int)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
       implicit none
 
@@ -281,26 +274,16 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine prop_mdm
 
 
-=======
-      end subroutine
-
-
-      subroutine finalize_mdm   
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Medium finalization called by WaveT or other programs 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine finalize_mdm
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        deallocate(h_mdm,h_mdm_0)
        call finalize_prop
@@ -322,26 +305,15 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine finalize_mdm
 
-
-=======
-      end subroutine
-
-
-      subroutine get_gneq(e_vac_t,g_eqr_t,g_neqr_t,g_neq2_t)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Solvent contribution to free energies 
 !
 ! @date Created: S. Corni 
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine get_gneq(e_vac_t,g_eqr_t,g_neqr_t,g_neq2_t)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        real(dbl),intent(inout):: e_vac_t,g_eqr_t,g_neqr_t,g_neq2_t
 
@@ -352,26 +324,16 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine get_gneq
 
 
-=======
-      end subroutine
-
-
-      subroutine get_mdm_dip(mdm_dip)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Medium dipole for spectra 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine get_mdm_dip(mdm_dip)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        real(dbl),intent(out):: mdm_dip(3)
 
@@ -379,26 +341,15 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine get_mdm_dip
 
-
-=======
-      end subroutine
-
-
-      subroutine set_charges(q)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Set charges 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine set_charges(q)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        real(dbl),intent(in):: q(nts_act)
 
@@ -406,11 +357,7 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine set_charges
-=======
-      end subroutine
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -420,10 +367,6 @@
 !------------------------------------------------------------------------
 !> Build the interaction matrix in the molecular unperturbed state basis 
 !------------------------------------------------------------------------
-<<<<<<< HEAD
-=======
-      subroutine do_interaction_h
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Build the interaction matrix in the molecular unperturbed state
 ! basis 
@@ -431,10 +374,7 @@
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia 5/7/18
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine do_interaction_h
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        integer(i4b):: i,j
 
@@ -474,26 +414,15 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine do_interaction_h
 
-
-=======
-      end subroutine
-
-
-      subroutine correct_hamiltonian
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Build interaction matrix at time 0 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine correct_hamiltonian
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        implicit none
 
@@ -530,31 +459,20 @@
 #endif
        return
 
-<<<<<<< HEAD
       end subroutine correct_hamiltonian
-=======
-      end subroutine
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!! Initialization/deallocation !!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-<<<<<<< HEAD
-=======
-      subroutine init_potential(pot_t,potf_t)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Initialize potentials for propaagation 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine init_potential(pot_t,potf_t)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        real(dbl), intent(IN) :: pot_t(:)
        real(dbl), intent(IN) :: potf_t(:)
@@ -592,26 +510,15 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine init_potential
 
-
-=======
-      end subroutine
-
-
-      subroutine init_charges
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Initialize charges for propagation 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine init_charges
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        implicit none
 
@@ -704,24 +611,15 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine init_charges
 
-=======
-      end subroutine
-
-      subroutine init_dip_and_field(mu_t)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Initialize dipoles and field for propagation  
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine init_dip_and_field(mu_t)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        implicit none
 
@@ -759,29 +657,18 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine init_dip_and_field
-=======
-      end subroutine
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !     
 !------------------------------------------------------------------------
 !> Initialize Dipole for propagation with spherical object                
 !------------------------------------------------------------------------
-<<<<<<< HEAD
-=======
-      subroutine init_dip_sphe
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Initialize dipole for propagation with spherical object
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine init_dip_sphe
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        implicit none
 
@@ -831,20 +718,13 @@
 !------------------------------------------------------------------------
 !> Initialize Dipole for propagation with spheroidal object                
 !------------------------------------------------------------------------
-<<<<<<< HEAD
-=======
-      subroutine init_dip_spho
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Initialize dipole for propagation with spheroidal object 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine init_dip_spho
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
       ! inizialize onsager 
        implicit none
@@ -888,26 +768,16 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine init_dip_spho
 
 
-=======
-      end subroutine
-
-
-      subroutine init_dip_spho_sol
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Initialize free energy (spheroidal) 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine init_dip_spho_sol
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        implicit none
 
@@ -936,26 +806,15 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine init_dip_spho_sol
 
-
-=======
-      end subroutine
-
-
-      subroutine init_dip_sphe_sol
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Initialize free energy (spherical) 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine init_dip_sphe_sol
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        implicit none
 
@@ -982,11 +841,7 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine init_dip_sphe_sol
-=======
-      end subroutine
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
       subroutine preparing_for_scf(mix,mu_t,pot_t)
 
@@ -1038,20 +893,13 @@
 
       end subroutine init_after_scf
 
-<<<<<<< HEAD
-=======
-      subroutine finalize_prop
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Deallocate propagation variables 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine finalize_prop
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        integer(i4b) :: its  
 
@@ -1094,11 +942,7 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine finalize_prop
-=======
-      end subroutine
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!! Propagation routines !!!!!!!!!!!!!!!!!!!!!! 
@@ -1108,20 +952,13 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-<<<<<<< HEAD
-=======
-      subroutine prop_chr
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Potential and charges propagation 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine prop_chr
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        implicit none
 
@@ -1188,26 +1025,16 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine prop_chr
 
 
-=======
-      end subroutine
-
-
-      subroutine prop_dip(f_tp)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Dipole and field propagation 
 !
 ! @date Created: S. Pipolo
 ! Modified: 
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine prop_dip(f_tp)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
       ! evolve onsager field/dipole  
        implicit none
@@ -1234,26 +1061,15 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine prop_dip
 
-
-=======
-      end subroutine
-
-
-      subroutine init_vv_propagator
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Initialization for velocity Verlet propagation (vv) 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine init_vv_propagator
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 #ifndef MPI
        myrank=0
@@ -1268,14 +1084,8 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine init_vv_propagator
 
-=======
-      end subroutine
-
-      subroutine init_vv_propagator_gen
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Initialization for velocity Verlet propagation (vv) 
 !
@@ -1283,10 +1093,7 @@
 ! Modified:
 ! Notes: Taken from init_vv_propagator and replacing eps_gm by BEM_Qg 
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine init_vv_propagator_gen
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        real(dbl), allocatable :: BEM_I(:,:)
        integer :: j
@@ -1310,16 +1117,8 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine init_vv_propagator_gen
 
-
-=======
-      end subroutine
-
-
-      subroutine prop_ons_drl
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Drude-Lorentz propagation of charges with Onsager-BEM equations
 ! ! SP 07/07/17 vv propagaton 
@@ -1327,10 +1126,7 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine prop_ons_drl
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
       ! charge propagation with drude/lorentz and cosmo/onsager equations
        integer(i4b) :: its  
@@ -1357,16 +1153,8 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine prop_ons_drl
 
-
-=======
-      end subroutine
-
-
-      subroutine prop_ons_deb
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Drude-Lorentz propagation of charges with Onsager-BEM equations
 ! ! SP 07/07/17 updated with vv propagaton 
@@ -1374,10 +1162,7 @@
 ! @date Created: S. Pipolo
 ! Modified: G. Gil
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine prop_ons_deb
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
       ! charge propagation with drude/lorentz and onsager equations
        integer(i4b) :: its  
@@ -1398,29 +1183,18 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine prop_ons_deb
-=======
-      end subroutine
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !     
 !------------------------------------------------------------------------
 !> Drude-Lorentz propagation Fprop=chr-ief standard algorithm 
 !------------------------------------------------------------------------
-<<<<<<< HEAD
-=======
-      subroutine prop_ief_drl
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Drude-Lorentz propagation Fprop=chr-ief standard algorithm 
 !
 ! @date Created: S. Pipolo
 ! Modified: G. Gil
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine prop_ief_drl
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
       ! Charge propagation with drude/lorentz and IEF equations 
        integer(i4b) :: its  
@@ -1459,16 +1233,8 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine prop_ief_drl
 
-
-=======
-      end subroutine
-
-
-      subroutine prop_vv_ief_drl
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Drude-Lorentz propagation Fprop=chr-ief velocity-verlet
 ! algorithm 
@@ -1476,10 +1242,7 @@
 ! @date Created: S. Pipolo
 ! Modified: G. Gil
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine prop_vv_ief_drl
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
       ! Charge propagation with drude/lorentz and IEF equations 
        integer(i4b) :: its  
@@ -1529,14 +1292,8 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine prop_vv_ief_drl
 
-=======
-      end subroutine
-
-      subroutine prop_vv_ief_gen
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief General dielectric function propagation Fprop=chr-ief
 ! velocity-verlet
@@ -1549,10 +1306,7 @@
 !        N.B. that matrix BEM_Qg is inside the BEM_f1, BEM_f3 and BEM_f5
 !        matrices
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine prop_vv_ief_gen
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
       ! Charge propagation with general dielectric function and IEF
       ! equations
@@ -1580,26 +1334,15 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine prop_vv_ief_gen
   
-
-=======
-      end subroutine
-  
-
-      subroutine prop_ief_deb
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Debye propagation Fprop=chr-ief 
 !
 ! @date Created: S. Pipolo
 ! Modified: G. Gil
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine prop_ief_deb
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
       ! Charge propagation with debye and IEF equations 
        integer(i4b) :: its  
@@ -1625,25 +1368,15 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine prop_ief_deb
 
-=======
-      end subroutine
-
-
-      subroutine prop_ied_deb
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief  Debye propagation Fprop=chr-ied  
 !
 ! @date Created: S. Pipolo
 ! Modified: G. Gil
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine prop_ied_deb
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
       ! Charge propagation with debye and IEF equations one taud 
        integer(i4b) :: its  
@@ -1669,26 +1402,15 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine prop_ied_deb
 
-
-=======
-      end subroutine
-
-
-      subroutine prop_dip_spho_deb(f_tp)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief  Debye propagation of the spheroid reaction and local fields  
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine prop_dip_spho_deb(f_tp)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        real(dbl), intent(IN):: f_tp(3)  
        real(dbl) :: f(3),fp(3),mp(3),mp2(3)  
@@ -1723,26 +1445,15 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine prop_dip_spho_deb
 
-
-=======
-      end subroutine
-
-
-      subroutine prop_dip_sphe_deb(f_tp)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief  Debye propagation of the sphere reaction and local fields  
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine prop_dip_sphe_deb(f_tp)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        real(dbl), intent(IN):: f_tp(3)  
        real(dbl) :: f(3),fp(3),mt(3),mp(3)  
@@ -1759,26 +1470,15 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine prop_dip_sphe_deb
 
-
-=======
-      end subroutine
-
-
-      subroutine prop_dip_spho_drl(f_tp)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Drude-Lorentz propagation of the spheroid reaction and local fields  
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine prop_dip_spho_drl(f_tp)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        real(dbl), intent(IN):: f_tp(3)  
        real(dbl):: f(3),fld(3),mr(3)
@@ -1853,26 +1553,15 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine prop_dip_spho_drl
 
-
-=======
-      end subroutine
-
-
-      subroutine prop_dip_sphe_drl(f_tp)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief  Drude-Lorentz propagation of the sphere reaction and local fields  
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine prop_dip_sphe_drl(f_tp)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        real(dbl), intent(IN):: f_tp(3)  
        real(dbl):: f(3),fld(3)
@@ -1929,25 +1618,15 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine prop_dip_sphe_drl
 
-=======
-      end subroutine
-
-
-      subroutine get_ons(f_med)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Fetch the current value of the onsager field from elsewhere   
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine get_ons(f_med)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        real(dbl):: f_med(3)
 
@@ -1955,34 +1634,21 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine get_ons
-=======
-      end subroutine
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!! Free-energy   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-<<<<<<< HEAD
-=======
-
-      subroutine do_gneq(v_avg,mu_or_v,df_or_dq,f_or_q,f_or_q0,fact_d, &
-                           n_coor_or_ts,sig)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Update non-equilibrium free energy   
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia 5/7/18
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine do_gneq(v_avg,mu_or_v,df_or_dq,f_or_q,f_or_q0,fact_d, &
                            n_coor_or_ts,sig)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
         implicit none
 
@@ -1999,29 +1665,8 @@
         g_eq=0.d0
 !       de_a=0.d0
 
-<<<<<<< HEAD
-!#ifdef OMP
-!!$OMP PARALLEL REDUCTION(+:g_neq1_part,g_eq)
-!!$OMP DO
-!#endif 
         g_neq1_part=sig*dot_product(v_avg,df_or_dq)
         g_eq=sig*dot_product(v_avg,f_or_q)
-!#ifdef OMP
-!!$OMP ENDDO
-!!$OMP END PARALLEL
-!#endif
-=======
-#ifdef OMP
-!$OMP PARALLEL REDUCTION(+:g_neq1_part,g_eq)
-!$OMP DO
-#endif 
-        g_neq1_part=sig*dot_product(v_avg,df_or_dq)
-        g_eq=sig*dot_product(v_avg,f_or_q)
-#ifdef OMP
-!$OMP ENDDO
-!$OMP END PARALLEL
-#endif
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
         g_eq=0.5*g_eq
 ! SC 27/09/2016: corrected bug in expression of e_vac
@@ -2044,31 +1689,20 @@
 
         return
 
-<<<<<<< HEAD
       end subroutine do_gneq
-=======
-      end subroutine
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!! Test/Debug    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-<<<<<<< HEAD
-=======
-      subroutine do_ref(mu)      
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Test for Solvent/Nanoparticle reaction/local fields    
 !
 ! @date Created: S. Pipolo
 ! Modified: G. Gil
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine do_ref(mu)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        real(dbl), optional, intent(IN) :: mu(3)
        complex(cmp) :: refc, E0
@@ -2134,31 +1768,20 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine do_ref
-=======
-      end subroutine
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!! Input/Output  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-<<<<<<< HEAD
-=======
-      subroutine out_mdm(i)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Output medium reaction/local field/dipoles    
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine out_mdm(i)
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        integer(i4b),intent(IN) :: i  
        real(dbl):: fm(3)
@@ -2186,21 +1809,13 @@
 
       end subroutine out_mdm
 
-<<<<<<< HEAD
-=======
-
-      subroutine out_mdm_bin(i)
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Output medium reaction/local field/dipoles in binary format   
 !
 ! @date Created: E. Coccia 18/6/18 
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine out_mdm_bin(i) 
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        integer(i4b),intent(IN) :: i
        real(dbl):: fm(3)
@@ -2226,20 +1841,13 @@
 
       end subroutine out_mdm_bin
 
-<<<<<<< HEAD
-=======
-      subroutine read_charges_gau
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Read charges from gaussian "charges0.inp" output    
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine read_charges_gau
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
         integer(4) :: i,nts
 
@@ -2274,11 +1882,7 @@
                     "charges calculated for the initial state"
         return
 
-<<<<<<< HEAD
       end subroutine read_charges_gau
-=======
-      end subroutine
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2289,10 +1893,6 @@
 !> create a new BEM_Q0=BEM_Qw^-1*BEM_Qf that should avoid
 !!               spurious charge dynamics for stationary states 
 !------------------------------------------------------------------------
-<<<<<<< HEAD
-=======
-      subroutine init_BEM_Q0
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Create a new BEM_Q0=BEM_Qw^-1*BEM_Qf that should avoid
 !               spurious charge dynamics for stationary states    
@@ -2300,10 +1900,7 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine init_BEM_Q0
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        implicit none
 
@@ -2325,24 +1922,15 @@
 
        return
 
-<<<<<<< HEAD
       end subroutine init_BEM_Q0
 
-=======
-      end subroutine
-
-subroutine wrt_restart_mdm()
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief write restart 
 !
 ! @date Created   : E. Coccia 28 Nov 2017
 ! Modified  : G. Gil 02 Jul 2018
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine wrt_restart_mdm()
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        implicit none
 
@@ -2404,21 +1992,13 @@ subroutine wrt_restart_mdm()
  
       end subroutine wrt_restart_mdm
 
-<<<<<<< HEAD
-=======
-
-      subroutine read_medium_restart() 
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Read restart 
 !
 ! @date Created   : E. Coccia 28 Nov 2017
 ! Modified  : G. Gil 02 Jul 2018
 !------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine read_medium_restart()
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
        
        implicit none
 
