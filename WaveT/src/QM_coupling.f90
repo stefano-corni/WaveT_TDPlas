@@ -1,3 +1,9 @@
+!
+!------------------------------------------------------------------------
+! @brief Module for molecule-environment QM coupling.      
+! @param 
+!------------------------------------------------------------------------
+!
       Module QM_coupling    
       use constants
       use interface_tdplas
@@ -28,20 +34,19 @@
       public do_QM_coupling, & ! subroutines
              Hqm_evt,Hqm_evl ! variables   
 !
-!------------------------------------------------------------------------
-! @brief Module for molecule-environment QM coupling.      
-! @param 
-!------------------------------------------------------------------------
-!
       contains
 !
-      subroutine do_QM_coupling                         
 !------------------------------------------------------------------------
 !     @brief Driver routine of QM_coupling  
 !     @date Created   : S.Pipolo 02 May 2017
 !     Modified  :
 !     @param  
 !----------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/QM_coupling.f90
+      subroutine do_QM_coupling
+
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/QM_coupling.f90
        ! allocate matrices and initialize                                  
 
        implicit none 
@@ -75,23 +80,26 @@
        ! deallocate                                    
        call fin_QM_coupling 
       return
-      end subroutine
+      end subroutine do_QM_coupling
 !
 !
-      subroutine init_QM_coupling                         
 !------------------------------------------------------------------------
 !     @brief Init routine of QM_coupling  
 !     @date Created   : S.Pipolo 02 May 2017
 !     Modified  :
 !     @param Hqm_dim,Hqm,Hqm_evt,Hqm_evl
 !----------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/QM_coupling.f90
+      subroutine init_QM_coupling
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/QM_coupling.f90
 
        implicit none
 
        call do_BEM_quant_in_wavet
        if(FQBEM(1:8)=='diag-all') then ! couple with all modes but only one occupied
          ! Mode 1 is the charge mode w=0
-         nmodes=nts_act
+         nmodes=this_nts_act
          Hqm_dim=n_ci*(nmodes+1)
        else
          write(6,*) "FQBEM=",FQBEM," not implemented yet"
@@ -100,45 +108,55 @@
 #endif
          stop
        endif
-       allocate(occ(nts_act))
+       allocate(occ(this_nts_act))
        if(FQBEM(1:8)=='diag-all') occ=1.d0
        allocate(Hqm(Hqm_dim,Hqm_dim))
        Hqm(:,:)=0.d0
        allocate(Hqm_evt(Hqm_dim,Hqm_dim))
        allocate(Hqm_evl(Hqm_dim))
       return
-      end subroutine
+      end subroutine init_QM_coupling
 !
 !
-      subroutine fin_QM_coupling                         
 !------------------------------------------------------------------------
 !     @brief Finalize routine of QM_coupling  
 !     @date Created   : S.Pipolo 02 May 2017
 !     Modified  :
 !     @param Hqm,Hqm_evt,Hqm_evl
 !----------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/QM_coupling.f90
+      subroutine fin_QM_coupling
+
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/QM_coupling.f90
        implicit none
        call deallocate_BEM_public_in_wavet
        deallocate(Hqm,Hqm_evt,Hqm_evl)
        deallocate(occ)
       return
-      end subroutine
+      end subroutine fin_QM_coupling
 !     
-      subroutine do_matrix                       
 !------------------------------------------------------------------------
 !     @brief Build Hamiltonian Super-matrix
 !     @date Created   : S.Pipolo 02 May 2017
 !     Modified  :
 !     @param Hqm,Hqm_evt,Hqm_evl
 !----------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/QM_coupling.f90
+      subroutine do_matrix
+
        implicit none
+
+=======
+       implicit none
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/QM_coupling.f90
        real(dbl):: omega_p  !< mode frequency 
        real(dbl):: we  !< energy factor in coupling 
        real(dbl):: gFi !< molecule-semiclassical_field coupling 
        real(dbl), allocatable:: dp(:) !< \f$ \vec{s}\cdot\vec{F} \f$
        integer(4)::i,j,k,p,s !< indices    
        !
-       if(FQBEM(1:4)=='prop') allocate(dp(nts_act))
+       if(FQBEM(1:4)=='prop') allocate(dp(this_nts_act))
        ! Build the diagonal superblocs:
        ! H11
 
@@ -190,10 +208,9 @@
 
        if(FQBEM.eq."pr_sc") deallocate(dp) 
       return
-      end subroutine
+      end subroutine do_matrix
 !
 !
-      subroutine out_QM_coupling                         
 !------------------------------------------------------------------------
 !     @brief Writes output of QM_coupling  
 !    
@@ -201,6 +218,11 @@
 !     Modified  :
 !     @param Hqm_evl  
 !----------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/QM_coupling.f90
+      subroutine out_QM_coupling
+
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/QM_coupling.f90
        implicit none
        integer(i4b) :: i,j   
        character(len=32) :: my_fmt
@@ -222,9 +244,8 @@
        close(7)
        close(8) 
       return
-      end subroutine
+      end subroutine out_QM_coupling
 !
-      subroutine test_QM_coupling                         
 !------------------------------------------------------------------------
 !     @brief Writes the coupling terms to compare with the dipole approximation
 !    
@@ -232,6 +253,11 @@
 !     Modified  :
 !     @param Hqm_evl  
 !----------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/QM_coupling.f90
+      subroutine test_QM_coupling
+
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/QM_coupling.f90
        implicit none
        real(dbl):: omega_p,we,g,g_ref,r,mud                
        integer(i4b) :: i,j,k   
@@ -291,7 +317,7 @@
        endif
        deallocate(sp,tot,ref)
       return
-      end subroutine
+      end subroutine test_QM_coupling
 !
 !
       end module

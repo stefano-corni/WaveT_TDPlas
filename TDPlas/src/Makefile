@@ -1,7 +1,11 @@
 # compilers
 
+<<<<<<< HEAD
+FC = ifort
+=======
 FC = gfortran
 #FC = ifort
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 # useful predefined compiler flags for different architectures and compilers
 # they are not necessarily used in the compiling unless you refer to them in FFLAGS
@@ -21,8 +25,13 @@ FFLAGS_GF= -O3
 # open mp flags
 # comment first line and uncommment the second for ifort
 
+<<<<<<< HEAD
+#OMP= -fopenmp -DOMP
+OMP= -qopenmp -DOMP
+=======
 OMP= -fopenmp -DOMP
 #OMP= -openmp -DOMP
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 # mpi flags (not used here)
 
@@ -37,8 +46,13 @@ LDLAGS=
 # comment the first and uncomment the second if compiler is ifort
 
 #FFLAGS= $(FFLAGS_GF) ${OMP} #-heap-arrays 1024
+<<<<<<< HEAD
+#FFLAGS= -Og -g ${OMP} #-heap-arrays 1024
+FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds
+=======
 FFLAGS= -Og -g ${OMP} #-heap-arrays 1024
 #FFLAGS= -O3 -ftz -align all ${OMP_IF} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 # preprocessor flag
 # comment the first and uncomment the second if compiler is ifort
@@ -48,11 +62,20 @@ CPP=-cpp
 
 # libraries to be linked
 
+<<<<<<< HEAD
+#LIBS = -L/usr/lib -llapack -lblas -lpthread
+LIBS = -mkl
+=======
 LIBS = -L/usr/lib -llapack -lblas -lpthread
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 #LIBS =  -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lpthread
 #LIBS = -L/usr/lib -llapack  -lblas -lfftw3
 #LIBS =  -Wl,--start-group -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -Wl,--end-group#
 #INC =  -I/local/home/corni/emanuele/fftw-3.3.4/include/
+<<<<<<< HEAD
+INC = -I/home/coccia/Libs/fftw-3.3.8
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 # executable directory
 
@@ -80,10 +103,17 @@ $(BINPATH):
 	mkdir $(BINPATH)
 
 $(BINPATH)/tdplas.x: main_tdplas.o
+<<<<<<< HEAD
+	$(FC) $(CPP) $(FFLAGS) -o $@ $< $(TDPLASLIB) $(LIBS) 
+
+$(BINPATH)/freq_bem.x: main_freq.o
+	$(FC) $(CPP) $(FFLAGS) -o $@ $< $(TDPLASLIB) $(LIBS) 
+=======
 	$(FC) $(CPP) $(FFLAGS) -o $@ $< $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/freq_bem.x: main_freq.o
 	$(FC) $(CPP) $(FFLAGS) -o $@ $< $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 clean:
 	rm -f *.o *.mod *.il *.optrpt *.a $(BINPATH)/*.x

@@ -20,13 +20,14 @@ module vib
        
       contains        
 
-      subroutine read_e_dip()
 !------------------------------------------------------------------------
 ! @brief Read ci_energy.inp and ci_mut.inp from Gamess/Gaussian 
 ! 
 ! @date Created   : E. Coccia 8 Sep 2017
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine read_e_dip()  
+
        integer(i4b) :: i,j
        character(4) :: junk
 
@@ -64,13 +65,13 @@ module vib
 
       end subroutine read_e_dip
     
-      subroutine read_input_vib()
 !------------------------------------------------------------------------
 ! @brief Read input for vibrational corrections 
 ! 
 ! @date Created   : E. Coccia 8 Sep 2017
 ! Modified  :
 !------------------------------------------------------------------------
+     subroutine read_input_vib() 
  
         integer(i4b)             :: idum,i,j 
  
@@ -165,7 +166,10 @@ module vib
 
       end subroutine read_input_vib 
 
+<<<<<<< HEAD:WaveT/src/tools/vib.f90
+=======
       subroutine compute_fc(v,ve,w,we,d,m,me,n,fc,mn)
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/tools/vib.f90
 !------------------------------------------------------------------------
 ! @brief Compute Franck-Condon factors between the vibrational 
 ! eigenstates (harmonic oscillator) of any electronic ground-excited
@@ -175,6 +179,7 @@ module vib
 ! @date Created   : E. Coccia 7 Sep 2017
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine compute_fc(v,ve,w,we,d,m,me,n,fc,mn)
 
         implicit none
 
@@ -270,7 +275,6 @@ module vib
 
       end subroutine compute_fc
 
-      subroutine hermite(nn,x,y)                                   
 !------------------------------------------------------------------------
 !   @brief Computes the value of the Hermite polynomial of degree nn             
 !   at a given point               
@@ -281,6 +285,8 @@ module vib
 !   @date Created  :  E. Coccia 8 Sep 2017 
 !   Modified   :
 !------------------------------------------------------------------------
+      subroutine hermite(nn,x,y)
+
         implicit none                       
          
         integer(i4b), intent(in)  :: nn
@@ -307,13 +313,13 @@ module vib
                                                             
       end subroutine hermite             
 
-      subroutine deallocate_vib()
 !------------------------------------------------------------------------
 ! @brief Deallocate arrays in module vib 
 ! 
 ! @date Created   : E. Coccia 8 Sep 2017
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine deallocate_vib()
 
        deallocate(w,q)
        deallocate(e,dip)
@@ -324,13 +330,13 @@ module vib
       
      end subroutine deallocate_vib 
 
-     real(dbl) function fact(n)
 !------------------------------------------------------------------------
 ! @brief Function computing the factorial n!
 ! 
 ! @date Created   : E. Coccia 11 Sep 2017
 ! Modified  :
 !------------------------------------------------------------------------
+     real(dbl) function fact(n)
 
        integer(i4b), intent(in) :: n
        integer(i4b)             :: k 
@@ -348,10 +354,9 @@ module vib
  
        return 
 
-     end function
+     end function fact
 
 
-     real(dbl) function dfact(n)
 !------------------------------------------------------------------------
 ! @brief Function computing the double factorial n!!
 ! if n even, n!! = prod_k=1^(n/2) (2k)
@@ -360,6 +365,7 @@ module vib
 ! @date Created   : E. Coccia 11 Sep 2017
 ! Modified  :
 !------------------------------------------------------------------------
+     real(dbl) function dfact(n)
 
        integer(i4b), intent(in) :: n 
        integer(i4b)             :: k 
@@ -383,9 +389,8 @@ module vib
 
        return
    
-     end function 
+     end function dfact 
 
-     real(dbl) function bin_coef(n,k)
 !------------------------------------------------------------------------
 ! @brief Function computing the binomial coefficient for n and k 
 ! (n) = n! / (k!*(n-k)!) 
@@ -394,6 +399,7 @@ module vib
 ! @date Created   : E. Coccia 11 Sep 2017
 ! Modified  :
 !------------------------------------------------------------------------
+     real(dbl) function bin_coef(n,k)
   
         integer(i4b), intent(in) ::n,k      
         
@@ -409,9 +415,8 @@ module vib
 
         return
 
-     end function
+     end function bin_coef
 
-     subroutine compute_e_dip()
 !------------------------------------------------------------------------
 ! @brief Correct electronic energies and dipoles with
 ! vibrational energies (harmonic approximation) and
@@ -420,6 +425,7 @@ module vib
 ! @date Created   : E. Coccia 11 Sep 2017
 ! Modified  :       G. Dall'Osto 16 Nov 2018
 !------------------------------------------------------------------------
+     subroutine compute_e_dip()
 
         integer(i4b)                :: i,j,k,v,v1,kk,kk1,ii,jj
         integer(i4b)                :: imap(ntot),kmap(nstates,ncomb)
@@ -510,7 +516,6 @@ module vib
  
      end subroutine compute_e_dip
 
-     subroutine compute_coupling()  
 !------------------------------------------------------------------------
 ! @brief Non adiabatic correction to 
 ! nradiative decay and dephasing rates
@@ -518,6 +523,7 @@ module vib
 ! @date Created   : E. Coccia 12 Sep 2017
 ! Modified  :
 !------------------------------------------------------------------------     
+     subroutine compute_coupling()
 
        implicit none
 
@@ -527,13 +533,13 @@ module vib
 
      end subroutine compute_coupling
      
-     subroutine gen_map(nmodes,nvib,ntot,iv)
 !------------------------------------------------------------------------
 ! @brief Defining mapping array 
 ! 
 ! @date Created   : E. Coccia 26 Sep 2017
 ! Modified  :
 !------------------------------------------------------------------------     
+     subroutine gen_map(nmodes,nvib,ntot,iv)
 
        implicit none
 
@@ -572,13 +578,14 @@ module vib
 
      end subroutine gen_map
 
-     recursive subroutine rec_map(e,state,f,x,b,nmodes,nvib,ntot)
 !------------------------------------------------------------------------
 ! @brief Defining mapping array with a recursive scheme 
 ! 
 ! @date Created   : E. Coccia 26 Sep 2017
 ! Modified  :
 !------------------------------------------------------------------------
+     recursive subroutine rec_map(e,state,f,x,b,nmodes,nvib,ntot)
+
        implicit none
 
        integer,   intent(in)    :: e,nmodes,nvib,ntot
@@ -611,13 +618,13 @@ module vib
 
      end subroutine rec_map 
 
-     subroutine add_vibe(e,i,nmodes,ii,ef)
 !------------------------------------------------------------------------
 ! @brief Adding vibrational energies 
 ! 
 ! @date Created   : E. Coccia 26 Sep 2017
 ! Modified  :
 !------------------------------------------------------------------------
+     subroutine add_vibe(e,i,nmodes,ii,ef)
 
        implicit none 
 
@@ -637,13 +644,13 @@ module vib
 
      end subroutine add_vibe
 
-     subroutine modify_dip(dip,i,j,l,m,nmodes,dipf)
 !------------------------------------------------------------------------
 ! @brief Correct dipoles with Franck-Condon factors 
 !                   
 ! @date Created   : E. Coccia 27 Sep 2017
 ! Modified  :          
 !------------------------------------------------------------------------
+     subroutine modify_dip(dip,i,j,l,m,nmodes,dipf)
 
        implicit none
 
@@ -679,13 +686,14 @@ module vib
  
      end subroutine modify_dip
 
-     subroutine sort(x,ns,imap)
 !------------------------------------------------------------------------
 ! @brief Array x sorted into ascending order.
 !                   
 ! @date Created   : E. Coccia 2 Oct 2017         
 ! Modified  :          
 !------------------------------------------------------------------------ 
+     subroutine sort(x,ns,imap)
+
        implicit none
        real(dbl),    intent(inout)                :: x(ns)
        integer(i4b), intent(in)                   :: ns
@@ -706,14 +714,14 @@ module vib
 
      end subroutine sort
 
-
-     integer(i4b) function  find_min(x,start,end,ns)
 !------------------------------------------------------------------------
 ! @brief Finds the minimum position between start and end. 
 !                   
 ! @date Created   : E. Coccia 2 Oct 2017
 ! Modified  :          
 !------------------------------------------------------------------------
+     integer(i4b) function  find_min(x,start,end,ns)
+
        implicit none 
        real(dbl),    intent(in)                :: x(ns)
        integer(i4b), intent(in)                :: start, end, ns
@@ -736,13 +744,14 @@ module vib
      end function find_min 
 
 
-     subroutine swap(a,b)
 !------------------------------------------------------------------------
 ! @brief swaps the values of a and b arguments. 
 !                   
 ! @date Created   : E. Coccia 2 Oct 2017
 ! Modified  :          
 !------------------------------------------------------------------------ 
+     subroutine swap(a,b)
+
        implicit none 
        real(dbl), intent(inout) :: a, b
        real(dbl)                :: tmp
@@ -755,13 +764,14 @@ module vib
 
      end subroutine swap
 
-     subroutine iswap(a,b)
 !------------------------------------------------------------------------
 ! @brief swaps the values of a and b arguments. 
 !                   
 ! @date Created   : E. Coccia 3 Oct 2017
 ! Modified  :          
 !------------------------------------------------------------------------ 
+     subroutine iswap(a,b)
+
        implicit none
        integer(i4b), intent(inout) :: a, b
        integer(i4b)                :: tmp
@@ -774,13 +784,13 @@ module vib
 
      end subroutine iswap
 
-     subroutine vib_spectra()
 !------------------------------------------------------------------------
 ! @brief Compute the vibronic spectrum 
 !                   
 ! @date Created   : E. Coccia 12 Oct 2017
 ! Modified  :          
 !------------------------------------------------------------------------ 
+     subroutine vib_spectra()
 
        implicit none
 
@@ -871,7 +881,10 @@ module vib
 
      end subroutine vib_spectra
 
+<<<<<<< HEAD:WaveT/src/tools/vib.f90
+=======
      function safe_division(n,d,alt) result(q)
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/tools/vib.f90
 !------------------------------------------------------------------------
 ! @brief Performs "safe division", that is to prevent overflow,
 !  underflow, NaN, or infinity errors 
@@ -879,6 +892,10 @@ module vib
 ! @date Created   : E. Coccia 12 Oct 2017
 ! Modified  :          
 !------------------------------------------------------------------------ 
+<<<<<<< HEAD:WaveT/src/tools/vib.f90
+     function safe_division(n,d,alt) result(q)
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/tools/vib.f90
 
        real(cmp), intent(in) :: n,d,alt
      

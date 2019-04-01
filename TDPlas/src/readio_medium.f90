@@ -127,6 +127,10 @@
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine read_medium
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        namelist /propagate/interaction_stride,interaction_init,        &
                          interaction_type,propagation_type,            &
@@ -174,13 +178,20 @@
       end subroutine read_medium
 
 
+<<<<<<< HEAD
+=======
       subroutine read_medium_freq
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Driver routine for reading medium input form main_freq 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine read_medium_freq
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        namelist /freq/ fmax,n_omega,omega_ini,omega_end,debug_type, &
                        out_level,test_type
@@ -212,14 +223,21 @@
 
       end subroutine read_medium_freq
 
+<<<<<<< HEAD
+=======
 
       subroutine read_medium_tdplas
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Driver routine for main_tdplas 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine read_medium_tdplas
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 
        !namelist /tdplas/ debug
@@ -261,6 +279,10 @@
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine init_nml_all
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 
        ! Output and debug
@@ -295,16 +317,26 @@
 
        return
 
+<<<<<<< HEAD
+      end subroutine init_nml_all
+
+
+=======
       end subroutine
 
 
       subroutine init_nml_propagate()
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Initialize variables for propagation main (will be tdplas) 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine init_nml_propagate()
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        medium_init='fro'
        medium_type='nan'
@@ -321,10 +353,15 @@
 
        return
 
+<<<<<<< HEAD
+      end subroutine init_nml_propagate 
+
+=======
       end subroutine 
 
 
       subroutine init_nml_nanoparticle()
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist nanoparticle 
 !
@@ -332,6 +369,10 @@
 ! Modified  : SP 10/07/17
 ! @param epsilon_omega,eps_0,eps_d,eps_A,eps_gm,eps_w0,f_vel
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine init_nml_nanoparticle()
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        epsilon_omega='drl'
        tau_deb=1000.
@@ -347,7 +388,10 @@
       end subroutine init_nml_nanoparticle
 
 
+<<<<<<< HEAD
+=======
       subroutine init_nml_solvent()
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist solvent 
 !
@@ -355,6 +399,10 @@
 ! Modified  : SP 10/07/17
 ! @param epsilon_omega,eps_0,eps_d,eps_A,eps_gm,eps_w0,f_vel
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine init_nml_solvent()
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        epsilon_omega='deb'
        tau_deb=1000.
@@ -370,13 +418,20 @@
       end subroutine init_nml_solvent
 
 
+<<<<<<< HEAD
+=======
       subroutine init_nml_freq()
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist freq 
 !
 ! @date Created   : E. Coccia 11 May 2017
 ! Modified  : SP 10/07/17
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine init_nml_freq() 
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        ! SP: No propagation: Fprop set to other than "dip" or "chr" 
        Fprop="non"
@@ -405,13 +460,20 @@
       end subroutine init_nml_freq
 
 
+<<<<<<< HEAD
+=======
       subroutine init_nml_tdplas()
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist tdplas 
 !
 ! @date Created   : E. Coccia 16 May 2017
 ! Modified  : SP 14/07/17
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine init_nml_tdplas()
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        ! SP: No propagation: Fprop set to other than "dip" or "chr" 
        Fprop="non"
@@ -448,6 +510,10 @@
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine write_nml_all
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        ! Output level
        select case (out_level)
@@ -511,16 +577,25 @@
        end select
        return
 
+<<<<<<< HEAD
+      end subroutine write_nml_all
+
+=======
       end subroutine
 
 
       subroutine write_nml_propagate()
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Write solvent and nanoparticle shared variables 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine write_nml_propagate()
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        ! propagation_type refers to which quantity is propagated by equations of motions
        !   dip: only the dipolar (i.e., Onsager) reaction/local field/dipole is propagated
@@ -578,6 +653,13 @@
            Fmdm_res='Nonr' 
        end select
 
+<<<<<<< HEAD
+       return
+
+      end subroutine write_nml_propagate
+
+
+=======
        return
 
       end subroutine
@@ -597,12 +679,17 @@
 
 
       subroutine write_nml_eps_function()
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Write solvent and nanoparticle shared variables 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine write_nml_eps_function()
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        real(dbl)::a,b,c
        integer(i4b)::i,j
@@ -635,16 +722,26 @@
 
        return
 
+<<<<<<< HEAD
+      end subroutine  write_nml_eps_function
+
+
+=======
       end subroutine
 
 
       subroutine write_nml_interaction()
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Write solvent and nanoparticle shared variables 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine write_nml_interaction()
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        n_q=interaction_stride
        write(*,*) 'Frequency of updating the interaction potential', n_q
@@ -697,16 +794,26 @@
 
        return
 
+<<<<<<< HEAD
+      end subroutine write_nml_interaction
+
+
+=======
       end subroutine
 
 
       subroutine write_nml_medium()
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Write solvent and nanoparticle shared variables 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine write_nml_medium()
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 ! PER STEFANO:
 ! SP 14/07/17: medium_type is the same of medium in maedium.f90 except for the vacuum case
@@ -833,19 +940,32 @@
 
        return
 
+<<<<<<< HEAD
+      end subroutine write_nml_medium 
+=======
       end subroutine 
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
 
 !------------------------------------------------------------------------
 ! SP 14/07/17 calculations should probably go in a different module. which one?
 !             Probably pedra_firends....
-      subroutine write_nml_surface()
 !------------------------------------------------------------------------
 ! @brief Write variables for surface/medium object 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine write_nml_surface()
+<<<<<<< HEAD
+=======
+!------------------------------------------------------------------------
+! @brief Write variables for surface/medium object 
+!      
+! @date Created: S. Pipolo
+! Modified: E. Coccia
+!------------------------------------------------------------------------
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        integer(i4b)::i,j
 
@@ -961,7 +1081,11 @@
 
        return
 
+<<<<<<< HEAD
+      end subroutine write_nml_surface 
+=======
       end subroutine 
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -975,6 +1099,10 @@
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine read_sph_fromfile
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        integer(i4b) :: i,j,its
        real(dbl)  :: scr       
@@ -999,16 +1127,26 @@
 
        return
 
+<<<<<<< HEAD
+      end subroutine read_sph_fromfile
+
+
+=======
       end subroutine
 
 
       subroutine read_gau_out_medium
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Read transition potentials on tesserae 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine read_gau_out_medium
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        integer(i4b) :: i,j,its,nts
        real(dbl)  :: scr       
@@ -1073,16 +1211,26 @@
 
        return
 
+<<<<<<< HEAD
+      end subroutine read_gau_out_medium
+
+
+=======
       end subroutine
 
 
       subroutine output_surf
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Output surface.xyz file 
 !      
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine output_surf
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        integer :: i
 
@@ -1092,16 +1240,27 @@
           write (7,'(3F22.10)') cts_act(i)%x,cts_act(i)%y,cts_act(i)%z
         enddo
        close(unit=7)
+<<<<<<< HEAD
+
+      end subroutine output_surf
+
+
+=======
       end subroutine
 
 
       subroutine deallocate_medium
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Deallocate medium arrays 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine deallocate_medium
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        if(allocated(q0)) deallocate(q0)
        if(allocated(vts)) deallocate(vts)
@@ -1111,9 +1270,179 @@
        if(allocated(sph_vrs)) deallocate(sph_vrs)
        if(allocated(sph_centre)) deallocate(sph_centre)
 
+<<<<<<< HEAD
+       return
+
+      end subroutine deallocate_medium
+
+!------------------------------------------------------------------------
+! @brief Broadcast input data
+!      
+! @date Created: E. Coccia 24/4/18 
+! Modified: 
+!------------------------------------------------------------------------
+      subroutine mpibcast_readio_mdm()
+
+#ifdef MPI
+
+       call mpi_bcast(interaction_init,     flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(interaction_type,     flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(propagation_type,     flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(local_field,          flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(debug_type,           flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(out_level,            flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(test_type,            flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(medium_relax,         flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(medium_type,          flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(medium_init,          flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
+       call mpi_bcast(medium_pol,           flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(bem_type,             flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(bem_read_write,       flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
+       call mpi_bcast(input_surface,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
+       call mpi_bcast(epsilon_omega,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)  
+       call mpi_bcast(Fwrite,               flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Ftest,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Floc,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
+       call mpi_bcast(Ffld,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Fdeb,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Fgamess,              flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Fprop,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Fmdm_relax,           flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Feps,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
+       call mpi_bcast(Finit_int,            flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Fint,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Fmdm_pol,             flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Fmdm,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
+       call mpi_bcast(Fbem,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
+       call mpi_bcast(Fqbem,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(FinitBEM,             flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Finit_mdm,            flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Fshape,               flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Fsurf,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Fopt_chr,             flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Finv,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+
+       if (Fprop(1:3).eq.'chr') call mpi_bcast(nts_act,    1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) 
+       if (Fprop(1:3).eq.'dip') call mpi_bcast(nsph,       1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+
+       if (myrank.ne.0) then
+          if (Fprop(1:3).eq.'chr') then
+             allocate(vts(nts_act,n_ci,n_ci))
+             allocate(vtsn(nts_act))
+          elseif (Fprop(1:3).eq.'dip') then
+             allocate(sph_maj(nsph))
+             allocate(sph_min(nsph))
+             allocate(sph_vrs(3,3,nsph))
+             allocate(sph_centre(3,nsph))
+          endif
+       endif
+
+       !Send input variables to the slaves
+       call mpi_bcast(n_q,                  1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(MPL_ord,              1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(ntst,                 1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+
+       call mpi_bcast(interaction_stride,   1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(scf_mix_coeff,        1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(scf_max_cycles,       1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(scf_threshold,        1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(spheres_number,       1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(spheroids_number,     1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(eps_0,                1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(eps_gm,               1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(eps_d,                1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(eps_A,                1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(eps_w0,               1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(f_vel,                1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(tau_deb,              1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(thrshld,              1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(ncycmax,              1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(mix_coef,             1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       if (Fprop(1:3).eq.'dip') then
+          call mpi_bcast(sph_min,           nsph,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+          call mpi_bcast(sph_maj,           nsph,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)  
+          call mpi_bcast(sph_centre,        3*nsph,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+          call mpi_bcast(sph_vrs,           3*3*nsph,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       endif
+       call mpi_bcast(sphere_position_x,    nsmax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(sphere_position_y,    nsmax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(sphere_position_z,    nsmax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(spheroid_axis_x,      nsmax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(spheroid_axis_y,      nsmax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(spheroid_axis_z,      nsmax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(spheroid_position_x,  nsmax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(spheroid_position_y,  nsmax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(spheroid_position_z,  nsmax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(spheroid_radius,      nsmax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(sphere_radius,        nsmax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       if (Fprop(1:3).eq.'chr') then
+          call mpi_bcast(vtsn,              nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+          call mpi_bcast(vts,               nts_act*n_ci*n_ci,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       endif
+
+#endif
+
+       return
+
+      end subroutine mpibcast_readio_mdm
+
+     
+!      subroutine read_medium_restart() 
+!------------------------------------------------------------------------
+! @brief Read restart 
+!
+! @date Created   : E. Coccia 28 Nov 2017
+! Modified  :
+!------------------------------------------------------------------------
+       
+!       implicit none
+
+!       integer(i4b)     :: i
+!       character(3)     :: cdum 
+!       logical          :: exist
+
+!       inquire(file='restart_mdm', exist=exist)
+!       if (exist) then
+!          open(779, file='restart_mdm', status="old")
+!       else
+!          write(*,*) 'ERROR:  file restart_mdm is missing'
+!          stop
+!       endif
+
+       !if (Fint.eq.'ons') then
+!          read(779,*) cdum 
+!          do i=1,3
+!             read(779,*) fr_i(1), fr_i(2), fr_i(3)
+!          enddo
+!          if (Floc.eq.'loc') then
+!             read(779,*) cdum 
+!             do i=1,3
+!                read(779,*) fx_i(1), fx_i(2), fx_i(3)
+!             enddo
+!          endif
+       !elseif (Fint.eq.'pcm') then
+!          read(779,*) cdum 
+!          do i=1,nts_act
+!             read(779,*) qr_i(i)
+!          enddo
+!          if (Floc.eq.'loc') then
+!             read(779,*) cdum 
+!             do i=1,nts_act
+!                read(779,*) qx_i(i)
+!             enddo
+!          endif
+       !endif
+
+!       close(779)
+
+!       return
+
+!      end subroutine read_medium_restart
+=======
        return
 
       end subroutine
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
       subroutine mpibcast_readio_mdm()
 !------------------------------------------------------------------------

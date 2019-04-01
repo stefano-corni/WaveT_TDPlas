@@ -1,4 +1,7 @@
+<<<<<<< HEAD
+=======
 program post_processing
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Postprocessing for computing populations and/or coherences 
 !  
@@ -6,11 +9,17 @@ program post_processing
 ! @date Created   : E. Coccia 24 Aug 2018
 ! Modified  : 
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+program post_processing
+
+ use constants
+=======
 
  use constants
 #ifdef OMP
    use omp_lib
 #endif
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
  implicit none
 
@@ -82,12 +91,18 @@ program post_processing
     else 
        write(*,*) 'Compute populations selected by input'
        npop=0
+<<<<<<< HEAD
+       do i=1,nstmax
+          if (pop(i).ne.-1) npop=npop+1
+       enddo
+=======
 !$OMP PARALLEL 
 !$OMP DO
        do i=1,nstmax
           if (pop(i).ne.-1) npop=npop+1
        enddo
 !$OMP END PARALLEL
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
        allocate(popef(npop))
        allocate(str(npop))
        do i=1,npop
@@ -105,6 +120,14 @@ program post_processing
     else 
        write(*,*) 'Compute coherences selected by input'
        ncoh=0
+<<<<<<< HEAD
+       do i=1,nstmax*(nstmax-1)/2
+          tmp=coh(i)
+          if (tmp.ne." ") then
+             ncoh=ncoh+1
+          endif
+       enddo
+=======
 !$OMP PARALLEL 
 !$OMP DO
        do i=1,nstmax
@@ -112,6 +135,7 @@ program post_processing
           if (tmp.ne." ") ncoh=ncoh+1
        enddo
 !$OMP END PARALLEL
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
        allocate(cohef(ncoh))
        allocate(icoh(2*ncoh))
        do i=1,ncoh
@@ -269,8 +293,11 @@ program post_processing
 
 end program post_processing
 
+<<<<<<< HEAD
+=======
 
 subroutine wrt_coherence(i,t,int1,char2,c,nci,bin)
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Print the tridiagional C*_iC_j (i.ne.j) matrix 
 ! corresponding to the decoherence 
@@ -278,6 +305,10 @@ subroutine wrt_coherence(i,t,int1,char2,c,nci,bin)
 ! @date Created   : E. Coccia 3 Feb 2017
 ! Modified  :
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+subroutine wrt_coherence(i,t,int1,char2,c,nci,bin)
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
         use constants
 
@@ -327,14 +358,21 @@ subroutine wrt_coherence(i,t,int1,char2,c,nci,bin)
 
 end subroutine wrt_coherence
 
+<<<<<<< HEAD
+=======
 
 subroutine extract_pairs(str,n,into)
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Extract state pairs for computing coherence 
 ! 
 ! @date Created   : E. Coccia 24 Aug 2018
 ! Modified  :
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+subroutine extract_pairs(str,n,into)
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
   use constants
 

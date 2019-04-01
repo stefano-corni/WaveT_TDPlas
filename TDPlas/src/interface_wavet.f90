@@ -34,16 +34,27 @@
       integer(i4b)              :: n_res                   ! frequency for restart
 
       contains
+<<<<<<< HEAD
+ 
+=======
   
       subroutine set_global_tdplas(this_dt,this_mdm,this_mol_cc,this_n_ci,this_n_ci_read,this_c_i,this_e_ci,this_mut,&
 				   this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
                    this_Fbin,this_Fopt,this_nthr,this_res,this_n_res)
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Set global variables for medium 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia 28/11/17
+<<<<<<< HEAD
+!------------------------------------------------------------------------ 
+      subroutine set_global_tdplas(this_dt,this_mdm,this_mol_cc,this_n_ci,this_n_ci_read,this_c_i,this_e_ci,this_mut,&
+				   this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
+                   this_Fbin,this_Fopt,this_nthr,this_res,this_n_res)
+=======
 !------------------------------------------------------------------------
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
         implicit none
 

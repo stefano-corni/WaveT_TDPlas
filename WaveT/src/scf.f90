@@ -40,6 +40,10 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/scf.f90
+      subroutine do_scf(q_or_f,c_prev)
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 
        implicit none
        real(dbl), intent(INOUT):: q_or_f(:)     !< charges or field  
@@ -121,35 +125,55 @@
 
        return
 
+<<<<<<< HEAD:WaveT/src/scf.f90
+      end subroutine do_scf
+
+
+=======
       end subroutine
 
 
       subroutine init_scf                      
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 !------------------------------------------------------------------------
 ! @brief Init/allocation SCF 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/scf.f90
+      subroutine init_scf
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 
        allocate(eigv_c(n_ci),eigt_c(n_ci,n_ci))
        allocate(eigv_cp(n_ci),eigt_cp(n_ci,n_ci))
        allocate(Htot(n_ci,n_ci))
-       if(Fprop(1:3).eq."chr") allocate(pot(nts_act))
+       if(Fprop(1:3).eq."chr") allocate(pot(this_nts_act))
        allocate(c_c(n_ci))
 
        return
 
+<<<<<<< HEAD:WaveT/src/scf.f90
+      end subroutine init_scf
+
+
+=======
       end subroutine
 
 
       subroutine finalize_scf                      
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 !------------------------------------------------------------------------
 ! @brief Finalize/deallocation SCF 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/scf.f90
+      subroutine finalize_scf
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 
        deallocate(eigv_c,eigt_c)
        deallocate(eigv_cp,eigt_cp)
@@ -159,7 +183,11 @@
 
        return
 
+<<<<<<< HEAD:WaveT/src/scf.f90
+      end subroutine finalize_scf
+=======
       end subroutine
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!  SCF  ROUTINES     !!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -172,6 +200,10 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/scf.f90
+      subroutine do_c_oldbasis
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 
        implicit none
 
@@ -206,16 +238,26 @@
 
        return
 
+<<<<<<< HEAD:WaveT/src/scf.f90
+      end subroutine do_c_oldbasis
+
+
+=======
       end subroutine
 
 
       subroutine do_field(f)                      
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 !------------------------------------------------------------------------
 ! @brief Compute field from dipole 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/scf.f90
+      subroutine do_field(f)
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 
        implicit none 
 
@@ -230,16 +272,32 @@
 
        return
 
+<<<<<<< HEAD:WaveT/src/scf.f90
+      end subroutine do_field
+
+
+=======
       end subroutine
 
 
       subroutine do_charges(q)                      
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 !------------------------------------------------------------------------
 ! @brief Compute charges from potential 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/scf.f90
+      subroutine do_charges(q)
+
+       implicit none 
+
+       real(dbl), intent(OUT):: q(this_nts_act)     
+       integer(i4b)::i    
+
+       do i=1,this_nts_act
+=======
 
        implicit none 
 
@@ -247,11 +305,20 @@
        integer(i4b)::i    
 
        do i=1,nts_act
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
          pot(i)=dot_product(c_c,matmul(vts(i,:,:),c_c))
        enddo 
 
        q=(1.-mix_coef)*q+mix_coef*matmul(BEM_Q0,pot)
 ! SC 12/8/2016: apparently for NP, charge compensation is needed
+<<<<<<< HEAD:WaveT/src/scf.f90
+       if (Fmdm(2:4).eq.'nan') q=q-sum(q)/this_nts_act
+
+       return
+
+      end subroutine do_charges
+
+=======
        if (Fmdm(2:4).eq.'nan') q=q-sum(q)/nts_act
 
        return
@@ -260,14 +327,21 @@
 
 
       subroutine do_matrix_q(q)                      
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 !------------------------------------------------------------------------
 ! @brief Compute Hamiltonian with new charges 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/scf.f90
+      subroutine do_matrix_q(q)
+
+       real(dbl), intent(IN):: q(this_nts_act)     
+=======
 
        real(dbl), intent(IN):: q(nts_act)     
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
        integer(4)::j,k     
 
        do j=1,n_ci
@@ -281,16 +355,26 @@
 
        return
 
+<<<<<<< HEAD:WaveT/src/scf.f90
+      end subroutine do_matrix_q
+
+
+=======
       end subroutine
 
 
       subroutine do_matrix_f(f)                      
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 !------------------------------------------------------------------------
 ! @brief Compute Hamiltonian with new field 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/scf.f90
+      subroutine do_matrix_f(f)
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 
        real(dbl), intent(IN):: f(3)     
        integer(4)::i,j,k     
@@ -306,16 +390,26 @@
 
        return
 
+<<<<<<< HEAD:WaveT/src/scf.f90
+      end subroutine do_matrix_f
+
+
+=======
       end subroutine
 
 
       subroutine check_conv(mxe,mxv,Mdim)                       
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 !------------------------------------------------------------------------
 ! @brief Check convergence 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/scf.f90
+      subroutine check_conv(mxe,mxv,Mdim)
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 
        real(dbl),intent(inout) :: mxe,mxv
        integer(i4b),intent(in) :: Mdim 
@@ -338,16 +432,26 @@
 
        return
 
+<<<<<<< HEAD:WaveT/src/scf.f90
+      end subroutine check_conv
+
+
+=======
       end subroutine
 
 
       subroutine do_energies(e_scf,e_ini)
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 !------------------------------------------------------------------------
 ! @brief Define total energy 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/scf.f90
+      subroutine do_energies(e_scf,e_ini)
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 
        implicit none
 
@@ -364,7 +468,11 @@
 
        return
 
+<<<<<<< HEAD:WaveT/src/scf.f90
+      end subroutine do_energies
+=======
       end subroutine
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -378,10 +486,18 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/scf.f90
+      subroutine out_charges(q)
+
+       implicit none
+
+       real(dbl), intent(IN):: q(this_nts_act)     
+=======
 
        implicit none
 
        real(dbl), intent(IN):: q(nts_act)     
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
        integer(i4b) its
 
 #ifndef MPI
@@ -390,8 +506,8 @@
 
        open(unit=7,file="charges0_scf.inp",status="unknown", &
             form="formatted")
-         write (7,*) nts_act
-         do its=1,nts_act
+         write (7,*) this_nts_act
+         do its=1,this_nts_act
           write (7,'(E22.8,F22.10)') q(its)
          enddo
        close(unit=7)
@@ -402,10 +518,15 @@
 
        return 
 
+<<<<<<< HEAD:WaveT/src/scf.f90
+      end subroutine out_charges     
+
+=======
       end subroutine      
 
 
       subroutine out_vts
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 !------------------------------------------------------------------------
 ! @brief Transform to the new basis and write out potential integrals on
 ! tesserae (vts) 
@@ -413,6 +534,10 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/scf.f90
+      subroutine out_vts
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 
        implicit none
 
@@ -423,7 +548,11 @@
 #endif
 
 
+<<<<<<< HEAD:WaveT/src/scf.f90
+       do its=1,this_nts_act
+=======
        do its=1,nts_act
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
         vts(its,:,:)=matmul(vts(its,:,:),eigt_c)
         vts(its,:,:)=matmul(transpose(eigt_c),vts(its,:,:))
        enddo
@@ -431,14 +560,14 @@
 
        open(unit=7,file="ci_pot_scf.inp",status="unknown", &
           form="formatted")
-       write (7,*) nts_act
+       write (7,*) this_nts_act
        write (7,*) "V0  check Vnuc"
-       do its=1,nts_act
+       do its=1,this_nts_act
         write (7,*) vts(its,1,1)-vtsn(its),0.d0,vtsn(its)
        enddo
        do j=2,n_ci
          write(7,*) 0,j-1
-         do its=1,nts_act
+         do its=1,this_nts_act
           write(7,*) vts(its,1,j)
          enddo
        enddo
@@ -446,12 +575,12 @@
        do i=2,n_ci
         do j=2,i-1   
          write(7,*) i-1,j-1
-         do its=1,nts_act
+         do its=1,this_nts_act
           write(7,*) vts(its,i,j)             
          enddo
         enddo
          write(7,*) i-1,i-1
-         do its=1,nts_act
+         do its=1,this_nts_act
           write(7,*) vts(its,i,i)-vtsn(its)             
          enddo
        enddo
@@ -460,16 +589,26 @@
 
        return 
 
+<<<<<<< HEAD:WaveT/src/scf.f90
+      end subroutine out_vts      
+
+
+=======
       end subroutine      
 
 
       subroutine out_dipoles
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 !------------------------------------------------------------------------
 ! @brief Transform to the new basis and write out dipole integrals (mut)  
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/scf.f90
+      subroutine out_dipoles
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 
        implicit none
 
@@ -499,16 +638,25 @@
 
        return 
 
+<<<<<<< HEAD:WaveT/src/scf.f90
+      end subroutine out_dipoles      
+
+=======
       end subroutine      
 
 
       subroutine out_energies
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 !------------------------------------------------------------------------
 ! @brief Write out new energies and reset the zero of energy
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+<<<<<<< HEAD:WaveT/src/scf.f90
+      subroutine out_energies
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 
        implicit none
 
@@ -532,7 +680,11 @@
 
        return 
 
+<<<<<<< HEAD:WaveT/src/scf.f90
+      end subroutine out_energies      
+=======
       end subroutine      
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822:WaveT/src/scf.f90
 
 
       end module

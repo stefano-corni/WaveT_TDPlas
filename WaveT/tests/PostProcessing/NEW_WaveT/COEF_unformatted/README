@@ -1,4 +1,8 @@
 Running WaveT produces, other than the coefficient file c_t_1.dat and the other output files, pop_coh.inp, which is the input file for the postprocessing (the exe is make_pop_coh.x in WaveT/bin).
 Populations are in the file pop_t_1.dat, coherences are in coh_t_1.dat.
+<<<<<<< HEAD
+Calculations done on beta1 server in Trieste.
+=======
 Calculations done on Gibbs.
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 

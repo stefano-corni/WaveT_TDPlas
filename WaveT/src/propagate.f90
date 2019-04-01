@@ -40,7 +40,6 @@
 !
       contains
 !
-      subroutine prop
 !------------------------------------------------------------------------
 ! @brief Propogate C(t) using a second
 ! order Euler algorithm 
@@ -49,6 +48,7 @@
 ! @date Created   : 
 ! Modified  : E. Coccia Dec-Apr 2017
 !------------------------------------------------------------------------
+      subroutine prop
 
        implicit none
        integer(i4b)                :: i,j,k
@@ -248,7 +248,10 @@
 
       end subroutine prop
 !
+<<<<<<< HEAD
+=======
       subroutine create_field
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Create electric field 
 ! 
@@ -256,6 +259,10 @@
 ! @date Created   : 
 ! Modified  : E. Coccia 16 Jan 2018
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine create_field 
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        implicit none
 
@@ -447,13 +454,22 @@
       end subroutine create_field
 
 !
-      subroutine do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
 !------------------------------------------------------------------------
 ! @brief Compute C^T mu C and save previous dipoles 
 !
 ! @date Created   : 
 ! Modified  : E. Coccia 20/11/2017
 !------------------------------------------------------------------------
+      subroutine do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+<<<<<<< HEAD
+=======
+!------------------------------------------------------------------------
+! @brief Compute C^T mu C and save previous dipoles 
+!
+! @date Created   : 
+! Modified  : E. Coccia 20/11/2017
+!------------------------------------------------------------------------
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        implicit none
 
@@ -519,13 +535,20 @@
  
       end subroutine do_mu
 
+<<<<<<< HEAD
+=======
       subroutine output(i,c,f_prev,h_int)     
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Write output files 
 !
 ! @date Created   : 
 ! Modified  : E. Coccia 20/11/2017
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine output(i,c,f_prev,h_int)
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        implicit none
 
@@ -603,6 +626,15 @@
       end subroutine output
 
 
+<<<<<<< HEAD
+!------------------------------------------------------------------------
+! @brief Create the field term of the hamiltonian 
+!
+! @date Created   : 
+! Modified  : E. Coccia 22/11/2017
+!------------------------------------------------------------------------
+      subroutine add_int_vac(f_prev,h_int)
+=======
       subroutine add_int_vac(f_prev,h_int)
 !------------------------------------------------------------------------
 ! @brief Create the field term of the hamiltonian 
@@ -610,6 +642,7 @@
 ! @date Created   : 
 ! Modified  : E. Coccia 22/11/2017
 !------------------------------------------------------------------------
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        implicit none
 
@@ -627,6 +660,16 @@
  
       end subroutine add_int_vac
 
+<<<<<<< HEAD
+!------------------------------------------------------------------------
+! @brief Calculate the Aharonov Lorentz radiative damping 
+!
+! @date Created   : S. Corni 
+! Modified  : E. Coccia 22/11/2017
+!------------------------------------------------------------------------
+      subroutine add_int_rad(mu_prev,mu_prev2,mu_prev3,mu_prev4, &
+                                                   mu_prev5,h_int)
+=======
       subroutine add_int_rad(mu_prev,mu_prev2,mu_prev3,mu_prev4, &
                                                    mu_prev5,h_int)
 !------------------------------------------------------------------------
@@ -635,6 +678,7 @@
 ! @date Created   : S. Corni 
 ! Modified  : E. Coccia 22/11/2017
 !------------------------------------------------------------------------
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        implicit none
 
@@ -683,6 +727,15 @@
 
       end subroutine add_int_rad
 
+<<<<<<< HEAD
+!------------------------------------------------------------------------
+! @brief Write headers to output files 
+!
+! @date Created   : S. Corni 
+! Modified  : E. Coccia 22/11/2017
+!------------------------------------------------------------------------
+      subroutine out_header
+=======
       subroutine out_header
 !------------------------------------------------------------------------
 ! @brief Write headers to output files 
@@ -690,6 +743,7 @@
 ! @date Created   : S. Corni 
 ! Modified  : E. Coccia 22/11/2017
 !------------------------------------------------------------------------
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
        implicit none
 
@@ -708,7 +762,10 @@
       end subroutine out_header
 
 
+<<<<<<< HEAD
+=======
       subroutine exp_euler_prop(ccexp,nci)
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Energy term is propagated analytically
 ! Interaction term via second-order Euler 
@@ -716,6 +773,10 @@
 ! @date Created   : E. Coccia 15 Nov 2017
 ! Modified  :
 !------------------------------------------------------------------------
+<<<<<<< HEAD
+      subroutine exp_euler_prop(ccexp,nci)
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 
         implicit none
 
@@ -725,6 +786,235 @@
         integer(i4b)               :: i,j,istart,iend,k
         real(dbl)                  :: t 
         complex(cmp)               :: dis(nci),ctmp(nci)
+<<<<<<< HEAD
+
+! Initialization only without restart
+       if (Fres.eq.'Nonr') then
+! INITIAL STEP: dpsi/dt=(psi(2)-psi(1))/dt
+! SC: 31/10/17 modified the propagation with ccexp 
+          c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev))
+          if (Fdis.eq."ernd") then
+             do j=1,n_ci
+                c(j) = c(j) - ccexp(j)*ui*dt*krnd*random_normal()*c_prev(j)
+             enddo
+          endif
+          if (Fdis(1:3).eq."mar".or.Fdis(1:3).eq."nma") then
+             dis=disp(h_dis,c_prev,nci)
+             c=c-ccexp*dt*dis
+             if (Fdis(5:9).eq."EuMar") then
+          ! Euler-Maruyama
+                c=c-ccexp*(ui*sqrt(dt)*matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev))               
+             elseif (Fdis(5:9).eq."LeiMa") then
+          ! Leimkuhler-Matthews
+                c=c-ccexp*(ui*0.5d0*sqrt(dt)*matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev))
+             endif
+          endif
+          c=c/sqrt(dot_product(c,c))
+          c_prev=c
+
+! SP 16/07/17: added call to medium propagation at step 2 to have full output
+          if (Fmdm(1:3).ne."vac") then
+             i=2
+             call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+          endif
+          call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+! SP 16/07/17: heder called at step 1                                        
+          !call out_header
+          if (mod(2,n_out).eq.0) call output(2,c,f_prev,h_int)
+       endif
+
+       if (Fres.eq.'Nonr') then
+          istart=3
+          iend=n_step
+       elseif (Fres.eq.'Yesr') then
+          istart=restart_i+1
+          if (Fsim.eq.'y') then 
+             iend=diff_step+restart_i
+          elseif (Fsim.eq.'n') then
+             iend=n_step+istart-1
+          endif
+       endif
+
+! PROPAGATION CYCLE: starts the propagation at timestep 3
+! without restart, at timestep restart_i+1 otherwise
+! Markovian dissipation (quantum jump) 
+       if (Fdis(5:9).eq."qjump") then
+          !do i=3,n_step
+          do i=istart,iend 
+            f_prev2=f(:,i-2)
+            f_prev=f(:,i-1)
+            h_int=zero 
+            if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+            call add_int_vac(f_prev,h_int)
+! SC field
+            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
+                                                mu_prev4,mu_prev5,h_int)
+! Quantum jump (spontaneous or nonradiative relaxation, pure dephasing)
+! Algorithm from J. Opt. Soc. Am. B. vol. 10 (1993) 524
+            dis=disp(h_dis,c_prev,nci)
+#ifndef OMP
+            if (i.eq.ijump+1) then
+               c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev)-dt*dis)
+            else 
+               c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int,c_prev)-2.d0*dt*dis)
+            endif 
+#endif
+#ifdef OMP
+            if (Fopt(1:3).eq.'omp') then
+               ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp) 
+!$OMP DO
+               do k=1,nci
+                  do j=1,nci
+                     ctmp(k)=ctmp(k)+ h_int(k,j)*c_prev(j)
+                  enddo
+               enddo
+!$OMP END PARALLEL
+               if (i.eq.ijump+1) then
+                  c=ccexp*(c_prev-ui*dt*ctmp-dt*dis)
+               else
+                  c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*ctmp-2.d0*dt*dis)
+               endif
+            else
+               if (i.eq.ijump+1) then
+                  c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev)-dt*dis)
+               else
+                  c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int,c_prev)-2.d0*dt*dis)
+               endif
+            endif
+#endif
+! loss_norm computes: 
+! norm = 1 - dtot
+! dtot = dsp + dnr + dde
+! Loss of the norm, dissipative events simulated
+! eps -> uniform random number in [0,1]
+            call loss_norm(c_prev,n_ci,pjump)
+            call random_number(eps)  
+            if (dtot.gt.eps)  then
+               call quan_jump(c,c_prev,n_ci,pjump)
+               ijump=i
+               n_jump=n_jump+1
+#ifndef MPI
+              if (Fwrt(1:3).eq.'yes') write(*,*) 'Quantum jump at step:', i, (i-1)*dt 
+#endif 
+               c_prev=c
+            else
+                c=c/sqrt(dot_product(c,c))
+                c_prev2=c_prev
+                c_prev=c
+            endif
+            call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+            if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
+            ! Restart
+            if (mod(i,n_restart).eq.0) then
+               t=(i-1)*dt
+               call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend)
+            endif
+          enddo
+! Markovian dissipation (Euler-Maruyama) 
+       elseif (Fdis(1:3).eq."mar") then
+          !do i=3,n_step
+          do i=istart,iend
+            f_prev2=f(:,i-2)
+            f_prev=f(:,i-1)
+            h_int=zero 
+            if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+            call add_int_vac(f_prev,h_int)
+! SC field
+            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
+                                                mu_prev4,mu_prev5,h_int)
+! Dissipation by a continuous stochastic propagation
+            call rnd_noise(w,w_prev,n_ci,first)
+            call add_h_rnd(h_rnd,n_ci,w,w_prev)
+            dis=disp(h_dis,c_prev,nci)
+            if (Fdis(5:9).eq."EuMar") then
+            ! Euler-Maruyama 
+                c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev)-dt* &
+                dis-ui*sqrt(dt)*matmul(h_rnd,c_prev)- &
+                dt*matmul(h_rnd2,c_prev))
+            elseif (Fdis(5:9).eq."LeiMa") then
+                c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev)-dt* &
+                dis-ui*0.5d0*sqrt(dt)* &
+                matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev))
+            endif
+            !c=c/sqrt(dot_product(c,c))
+            c_prev=c
+            call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+            if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
+            ! Restart
+            if (mod(i,n_restart).eq.0) then
+               t=(i-1)*dt
+               call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
+            endif
+          enddo
+       elseif (Fdis.eq."nodis".or.Fdis.eq."ernd") then
+! No dissipation in the propagation 
+          !do i=3,n_step
+          do i=istart,iend
+            f_prev2=f(:,i-2)
+            f_prev=f(:,i-1)
+            h_int=zero 
+            if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+            call add_int_vac(f_prev,h_int)
+! SC field
+            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
+                                                mu_prev4,mu_prev5,h_int)
+! SC 31/10/17: modified propagation by adding the exp term
+#ifndef OMP
+            c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int,c_prev))
+#endif
+#ifdef OMP
+            if (Fopt(1:3).eq.'omp') then
+               ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp) 
+!$OMP DO
+               do k=1,nci 
+                  do j=1,nci 
+                     ctmp(k)=ctmp(k)+ h_int(k,j)*c_prev(j)
+                  enddo
+               enddo
+!$OMP END PARALLEL
+               c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*ctmp)  
+            else
+               c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int,c_prev))
+            endif
+#endif
+            if (Fdis.eq."ernd") then
+               do j=1,n_ci
+                  c(j) = c(j) - 2.d0*ccexp(j)*ui*dt*krnd*random_normal()*c_prev(j)
+               enddo
+            endif
+            c=c/sqrt(dot_product(c,c))
+            c_prev2=c_prev
+            c_prev=c
+            call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+            if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
+            ! Restart
+            if (mod(i,n_restart).eq.0) then
+               t=(i-1)*dt
+               call wrt_restart(i,t,c,c_prev,c_prev2,n_ci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
+            endif
+          enddo
+       endif 
+
+       return
+
+      end subroutine exp_euler_prop
+
+!------------------------------------------------------------------------
+! @brief Energy and interaction terms are propagated
+! via second-order Euler 
+! 
+! @date Created   : E. Coccia 15 Nov 2017
+! Modified  :
+!------------------------------------------------------------------------      
+      subroutine full_euler_prop(nci)
+
+        implicit none
+
+        integer(i4b), intent(in)  :: nci
+
+=======
 
 ! Initialization only without restart
        if (Fres.eq.'Nonr') then
@@ -953,6 +1243,7 @@
 
         integer(i4b), intent(in)  :: nci
 
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
         integer(i4b)              :: i,j,istart,iend,k
         real(dbl)                 :: t
         complex(cmp)              :: dis(nci),ctmp(nci)
@@ -1170,13 +1461,20 @@
       
       end subroutine full_euler_prop
 
+<<<<<<< HEAD
+=======
       subroutine wrt_restart(i,t,c,c_prev,c_prev2,nci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend)
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 !------------------------------------------------------------------------
 ! @brief Write restart file 
 ! 
 ! @date Created   : E. Coccia 21 Nov 2017
 ! Modified  :
 !------------------------------------------------------------------------      
+<<<<<<< HEAD
+      subroutine wrt_restart(i,t,c,c_prev,c_prev2,nci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend)
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
   
        implicit none
 

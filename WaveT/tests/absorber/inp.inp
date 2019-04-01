@@ -12,6 +12,10 @@ n_restart=10
 full='n'
 propa='e'
 absorber='y'
+<<<<<<< HEAD
+Ip=0.5
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
 / 
 
 &field Ffld='gau',omega(1)=0.05695419,sigma(1)=2.,
@@ -35,3 +39,8 @@ dir_ft=
 0.0 
 /
 
+<<<<<<< HEAD
+$pop_coh
+/
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822

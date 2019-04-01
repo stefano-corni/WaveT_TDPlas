@@ -1,4 +1,22 @@
  
+<<<<<<< HEAD
+ ****************************************************
+ ****************************************************
+ **                                                **
+ **                    WaveT                       **
+ **     Evolution of molecular wavefunctions       **
+ **   under external electromagnetic perturbations **
+ **                                                **
+ **                     by                         **
+ **                Stefano Corni                   **
+ **                Silvio Pipolo                   **
+ **               Emanuele Coccia                  **
+ **                 Gabriel Gil                    **
+ **                Jacopo Fregoni                  **
+ **                                                **
+ ****************************************************
+ ****************************************************
+=======
  *****************************************************
  *****************************************************
  **                                                 **
@@ -15,6 +33,7 @@
  **                                                 **
  *****************************************************
  *****************************************************
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
  
  Number to append to dat file           1
  Number of CIS states to be read          10
@@ -35,7 +54,15 @@
  time at the center of the pulse (au):   750.000000000000     
  Width of the pulse (time au):   50.0000000000000     
  Frequency (au):  0.142000000000000     
+<<<<<<< HEAD
+ Maximum E field (au)  1.000000000000000E-005  0.000000000000000E+000
+  0.000000000000000E+000
+ Maximum E field (V/m)   5142206.70700000       0.000000000000000E+000
+  0.000000000000000E+000
+ Maximum intensity (W/cm^2)   3510000.00000000       0.000000000000000E+000
+=======
  Maximum E field  1.000000000000000E-005  0.000000000000000E+000
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
   0.000000000000000E+000
  
  No dissipation
@@ -61,9 +88,18 @@
  *************OMP*****************
 
  OMP parallelization on
+<<<<<<< HEAD
+The number of processors available =       72
+The number of threads available    =       72
+
+ *************OMP*****************
+Done reading input & setting up the field, took     0.061s
+Done , total elapsed time     1.909s
+=======
 The number of processors available =        8
 The number of threads available    =        1
 
  *************OMP*****************
 Done reading input & setting up the field, took     0.055s
 Done , total elapsed time    16.105s
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822

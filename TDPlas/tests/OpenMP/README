@@ -1,0 +1,5 @@
+Change the number of threads (OMP) for a serial propagation (WaveT-serial.x); no change is needed in the input file, only change the number of processors in the script to launch the run.
+
+This is a serial run, i. e. only one trajectory is computed; OMP parallelization has been implemented to make faster a number of bottlenecks in the code.
+
+To see a performance improvement with increasing OMP, a larger (larger than in the present case, where 11 states and 370 tesserare have been used) nunmber of states and/or tesserae is needed. To avoid too big files (Git works with files <100 MB), the present tests have been performed with a relative small number of tesserae and states.
