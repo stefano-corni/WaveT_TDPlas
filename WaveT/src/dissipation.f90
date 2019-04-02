@@ -4,9 +4,7 @@ module dissipation
   use random
   use interface_tdplas, only: set_q0charges,this_Fmdm_relax
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
 #endif
   use, intrinsic :: iso_c_binding
 #ifdef OMP

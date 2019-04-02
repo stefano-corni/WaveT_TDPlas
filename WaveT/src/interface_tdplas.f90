@@ -15,12 +15,7 @@ module interface_tdplas
                         
 #endif
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
-#ifdef SCALI
-      include 'mpif.h'
-#endif
 #endif
 
       implicit none

@@ -13,9 +13,7 @@
 #endif
 
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
 #endif
 
       implicit none

@@ -3,18 +3,11 @@
       use random
 
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
 #endif
 
       implicit none
 
-#ifdef MPI
-#ifdef SCALI
-      include 'mpif.h'
-#endif
-#endif
 
       save
 !

@@ -5,9 +5,7 @@
       use, intrinsic :: iso_c_binding
 
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
 #endif
 
       implicit none

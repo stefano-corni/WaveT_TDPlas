@@ -3,18 +3,10 @@
       use constants  
 
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
 #endif
 
       implicit none
-
-#ifdef MPI
-#ifdef SCALI
-      include 'mpif.h'
-#endif
-#endif
 
       ! block of global variables to be supplied by WaveT
       real(dbl) 		        :: dt			        	! time step
