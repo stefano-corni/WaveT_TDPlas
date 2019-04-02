@@ -15,6 +15,7 @@ program twodfft
  integer(i4b)               :: jj,n3,idum,m,dscan1,dmid,tdim3
  integer(i4b)               :: nhann1,nhann3
  integer(i4b), allocatable  :: dim1(:),dim3(:),dim3e(:),ntot(:)
+ integer                    :: st,current,rate
  real(dbl)                  :: rdum,dw1,dw3,dt1,dt3,modr,modi,w1,w3
  real(dbl)                  :: w1min,w1max,w3min,w3max,tmid,modd
  real(dbl)                  :: dir(3),mu(3),sigma3
@@ -29,6 +30,8 @@ program twodfft
 
  namelist /fft/ dscan1,dim2,dt1,dt3,dir,sigma3,w1min,w1max,w3min,w3max,&
                 tmid,detector,field,lo_fmax,lo_sigma,lo_w,lo_tmid,nfout
+
+ call system_clock(st,rate)
 
  read(*,nml=fft)
 
@@ -97,7 +100,7 @@ program twodfft
  write(*,*) 'Time step along the first interval (au)', dt1
  write(*,*) 'Time step along the third interval (au)', dt3
  write(*,*) 'Direction for FFT', dir(1),dir(2),dir(3)
- write(*,*) 'Sigma of the enevelope of the third pulse (au)', sigma3
+ write(*,*) 'Sigma of the envelope of the third pulse (au)', sigma3
  write(*,*) 'Frequency range for w1 (au)', w1min,w1max
  write(*,*) 'Frequency range for w3 (au)', w3min,w3max 
  write(*,*) 'Detector', detector 
@@ -200,7 +203,7 @@ program twodfft
 
  doutp=cmplx(0.d0,0.d0)
 
- dir(:)=dir(:)/sqrt(dot_product(dir,dir))
+ dir(:)=dir(:)/dsqrt(dot_product(dir,dir))
 
  do j=1,dscan1
     do i=1,maxd3
@@ -246,6 +249,7 @@ program twodfft
  !A(-w) = A*(w)
  !doutp=conjg(doutp)
 
+ write(8,'("      w1(eV)              w3(eV)              Re[signal]            Im[signal]           |signal| ")')
  do i=1,dscan1s
     w1=(i-1)*dw1
     do j=1,int(maxd3/two)
@@ -279,6 +283,11 @@ program twodfft
  if (detector(1:10).eq.'heterodyne') deallocate(f)
 
  write(*,*) 'End of the calculation'
+
+ call system_clock(current)
+ write(*,*) ''
+ write(6,'("Done , total elapsed time", &
+          F10.3,"s")') real(current-st)/real(rate)
  
  stop
 
