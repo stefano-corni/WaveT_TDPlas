@@ -1,0 +1,60 @@
+&general n_ci=2,n_ci_read=2
+mol_cc=
+0.0
+0.0
+0.0
+n_f=77,
+medium='vac'
+full='y'
+dt=0.2
+n_step=620000 
+n_out=20
+restart='n'
+n_restart=18200
+lsim='n'
+/ 
+
+&field Ffld='mdg',
+       omega(1)=0.1990934
+       omega(2)=0.1990934
+       omega(3)=0.1990934
+       sigma(1)=1240.2412372725 
+       sigma(2)=1240.2412372725
+       sigma(3)=1240.2412372725
+       t_mid=4000,radiative='non',iseed=1234
+       npulse=3
+       tdelay(1)=17332.37129090415000000000
+       tdelay(2)=0.
+       pshift(1)=0.
+       pshift(2)=0.
+fmax(1,1)=0.00000037796447301
+fmax(2,1)=0.0
+fmax(3,1)=0.0
+fmax(1,2)=0.00000037796447301
+fmax(2,2)=0.0
+fmax(3,2)=0.0
+fmax(1,3)=0.00000037796447301
+fmax(2,3)=0.0
+fmax(3,3)=0.0
+
+
+/
+
+&sse dissipative='non',idep=1,dis_prop='qjump',nrnd=0,tdis=0,nr_typ=1,krnd=0.0 /
+
+
+&spectra start=0, 
+
+tau=
+2.0
+0.0
+
+dir_ft=
+1.0
+0.0
+0.0 
+/
+
+$pop_coh
+/
+
