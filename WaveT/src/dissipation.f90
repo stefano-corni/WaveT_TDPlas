@@ -194,10 +194,8 @@ module dissipation
       enddo
       !k=nexc
       if (Fopt(1:3).eq.'omp') then
-#ifdef OMP
 !$OMP PARALLEL reduction (+:dsp)
 !$OMP DO
-#endif
          do i=nexc,1,-1
             tmp=abs(c(i+1))
             do j=i-1,1,-1
@@ -210,9 +208,7 @@ module dissipation
                pjump(ik(j,i)) = sp_gam(ik(j,i))*weight
            enddo
          enddo
-#ifdef OMP
 !$OMP END PARALLEL
-#endif
       else
          do i=nexc,1,-1
             tmp=abs(c(i+1))
@@ -243,10 +239,8 @@ module dissipation
       enddo
       !k=nexc
       if (Fopt(1:3).eq.'omp') then
-#ifdef OMP
 !$OMP PARALLEL reduction (+:dnr)
 !$OMP DO
-#endif
          do i=nexc,1,-1
             tmp=abs(c(i+1))
             do j=i-1,1,-1
@@ -267,9 +261,7 @@ module dissipation
                endif
             enddo
          enddo
-#ifdef OMP
 !$OMP END PARALLEL
-#endif
       else
          do i=nexc,1,-1
             tmp=abs(c(i+1))

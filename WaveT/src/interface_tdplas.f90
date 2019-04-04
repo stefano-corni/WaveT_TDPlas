@@ -17,6 +17,9 @@ module interface_tdplas
 #ifdef MPI
       use mpi
 #endif
+#ifdef OMP
+      use omp_lib 
+#endif
 
       implicit none
 
@@ -590,19 +593,15 @@ module interface_tdplas
 
        ! Field
        pot(:)=zero
-#ifdef OMP
 !$OMP PARALLEL REDUCTION(+:pot)
 !$OMP DO 
-#endif
         do its=1,nts_act
           pot(its)=pot(its)-fld(1)*this_cts_act(its)%x           
           pot(its)=pot(its)-fld(2)*this_cts_act(its)%y          
           pot(its)=pot(its)-fld(3)*this_cts_act(its)%z         
         enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
       end subroutine do_pot_from_field
 
@@ -622,10 +621,8 @@ module interface_tdplas
        integer(i4b) :: its  
 
        pot(:)=zero
-#ifdef OMP
 !$OMP PARALLEL REDUCTION(+:pot)
 !$OMP DO
-#endif
        do its=1,nts_act
           diff(1)=-(mol_cc(1)-this_cts_act(its)%x)
           diff(2)=-(mol_cc(2)-this_cts_act(its)%y)
@@ -633,10 +630,8 @@ module interface_tdplas
           dist=sqrt(dot_product(diff,diff))
           pot(its)=pot(its)+dot_product(diff,dip)/(dist**3)
        enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
       end subroutine do_pot_from_dip
 

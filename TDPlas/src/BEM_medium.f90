@@ -238,19 +238,15 @@
        !call do_pot_from_field(fmax(:,1),pot)
 
        pot(:)=zero
-#ifdef OMP
 !$OMP PARALLEL REDUCTION(+:pot)
 !$OMP DO 
-#endif
        do its=1,nts_act
           pot(its)=pot(its)-fmax(1,1)*cts_act(its)%x
           pot(its)=pot(its)-fmax(2,1)*cts_act(its)%y
           pot(its)=pot(its)-fmax(3,1)*cts_act(its)%z
        enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
        allocate(Kdiag_omega(nts_act))
        allocate(q_omega(nts_act))
@@ -605,10 +601,8 @@
        real(dbl) :: temp
        integer(i4b) :: i,j
 
-#ifdef OMP 
 !$OMP PARALLEL 
 !$OMP DO 
-#endif
        do i=1,nts_act
         do j=1,nts_act
           call green_s(i,j,temp)
@@ -619,10 +613,8 @@
           endif
         enddo
        enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
        return
  
@@ -749,17 +741,13 @@
 
        Sp12=matmul(scr1,eigt_t)                   
 
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO
-#endif
        do i=1,nts_act
          scr1(:,i)=eigt(:,i)/sqrt(eigv(i))
        enddo
-#ifdef OMP
 !$OMP ENDDO 
 !$OMP END PARALLEL
-#endif
        deallocate(eigv)
 
        BEM_Sm12=matmul(scr1,eigt_t)                   
@@ -769,36 +757,28 @@
        deallocate(eigt)
        deallocate(eigt_t)
 
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO
-#endif
        do i=1,nts_act
          scr1(:,i)=BEM_D(:,i)*cts_act(i)%area
        enddo
-#ifdef OMP
 !$OMP ENDDO 
 !$OMP END PARALLEL
-#endif
 
        scr3=matmul(BEM_Sm12,scr1)                   
        scr2=matmul(scr3,Sp12)                   
 
        !S^-1/2 D A S^1/2+S^1/2 A D* S^-1/2 and diagonalize
 
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO
-#endif
        do j=1,nts_act
         do i=1,nts_act
            BEM_T(i,j)=0.5*(scr2(i,j)+scr2(j,i))
         enddo
        enddo
-#ifdef OMP
 !$OMP ENDDO 
 !$OMP END PARALLEL
-#endif
        deallocate(scr2,scr3)
        call diag_mat(BEM_T,BEM_L,nts_act)
        if(Fwrite.eq."high") then
@@ -868,10 +848,8 @@
          fact2 = zero
          BEM_W2 = zero
          BEM_2G = zero
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO
-#endif
          do i=1,nts_act
           if( allocated(poles(i)%omega_p) ) then
            fact2(i)   = sum(abs(two*poles(i)%omega_p(:)*(poles(i)%eps_omega_p(:)-one)/poles(i)%re_deps_domega_p(:)))
@@ -879,10 +857,8 @@
            BEM_2G(i)  = sum(two*poles(i)%gamma_p(:))
           endif
          end do
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
 ! SC: the first eigenvector should be 0 for the NP
 !         if (Fmdm(2:4).eq.'nan') fact2(1)=0.d0
@@ -914,31 +890,23 @@
       ! Do BEM_Q0 and and BEM_Qd 
 
 
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO
-#endif
        do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*K0(i) 
        enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
        BEM_Q0=-matmul(scr1,TSm12) 
 
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO
-#endif
        do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*Kd(i) 
        enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
        BEM_Qd=-matmul(scr1,TSm12) 
        ! GG: analogous to Q_0 and Q_d matrices in the case of
@@ -1026,10 +994,8 @@
 
        do i=1,n_omega
 
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO
-#endif
           do its=2,nts_act
              Kdiag_omega(its)=(twp-sgn*BEM_L(its))/ &
 !        ((one-omega_a*(omega_a+ui*eps_gm)*2.d0/eps_A)*twp-sgn*BEM_L(its))
@@ -1039,10 +1005,8 @@
        !b=two*twp*eps_gm*omega_a/eps_A
        !if(its.eq.1) write(6,*) a**2, b**2
           enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
           q_omega=matmul(BEM_Sm12,pot)
           q_omega=matmul(transpose(BEM_T),q_omega)
@@ -1051,19 +1015,15 @@
           q_omega=-matmul(BEM_Sm12,q_omega)
           mu_omega=0.d0
 
-#ifdef OMP
 !$OMP PARALLEL REDUCTION(+:mu_omega)
 !$OMP DO 
-#endif
           do its=1,nts_act
              mu_omega(1)=mu_omega(1)+q_omega(its)*(cts_act(its)%x)
              mu_omega(2)=mu_omega(2)+q_omega(its)*(cts_act(its)%y)
              mu_omega(3)=mu_omega(3)+q_omega(its)*(cts_act(its)%z)
           enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
           write (7,'(7e15.6)') omega_a(i),real(mu_omega(:)),aimag(mu_omega(:))
 
@@ -1090,31 +1050,23 @@
        allocate(scr1(nts_act,nts_act))
 !      Form the \tilde{Q} and R for debye propagation
 
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO 
-#endif
         do i=1,nts_act
           scr1(:,i)=Sm12T(:,i)*fact1(i) 
         enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
         BEM_R=matmul(scr1,TSp12)
 
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO
-#endif
         do i=1,nts_act
           scr1(:,i)=Sm12T(:,i)*fact2(i) 
         enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
         BEM_Qt=-matmul(scr1,TSm12)
         ! GG: analogous to \tilde{Q} matrix in the case of local-field
@@ -1148,31 +1100,23 @@
        allocate(scr1(nts_act,nts_act))
 !      Form the Q_w and Q_f for drude-lorentz propagation
 
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO
-#endif
        do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*BEM_W2(i) 
        enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
        BEM_Qw=matmul(scr1,TSp12)
 
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO
-#endif
        do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*fact2(i) 
        enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
        BEM_Qf=-matmul(scr1,TSm12)
        !GG
@@ -1203,31 +1147,23 @@
        allocate(scr1(nts_act,nts_act))
 !      Form the Q_w and Q_f for general dielectric function propagation
 
-#ifdef OMP
 !$OMP PARALLEL
 !$OMP DO
-#endif
        do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*BEM_W2(i)
        enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
        BEM_Qw=matmul(scr1,TSp12)
 
-#ifdef OMP
 !$OMP PARALLEL
 !$OMP DO
-#endif
        do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*fact2(i)
        enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
        BEM_Qf=-matmul(scr1,TSm12)
        if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
@@ -1238,17 +1174,13 @@
        endif
 
       ! addition with respect to do_propBEM_dia_drl
-#ifdef OMP
 !$OMP PARALLEL
 !$OMP DO
-#endif
        do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*BEM_2G(i)
        enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
        BEM_Qg=matmul(scr1,TSp12)
 

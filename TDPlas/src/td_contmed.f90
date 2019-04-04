@@ -434,18 +434,15 @@
 !SC 27/09/2016: corrected bug introduced previously
          q_mdm=q0+(qtot0-sum(q0))/nts_act
 
-#ifdef OMP 
 !$OMP PARALLEL REDUCTION(+:h_mdm_0)
 !$OMP DO 
-#endif
          do its=1,nts_act     
            h_mdm_0(:,:)=h_mdm_0(:,:)+q_mdm(its)*vts(its,:,:)
          enddo
-#ifdef OMP 
 !$OMP ENDDO 
 !$OMP END PARALLEL 
-#endif
        endif
+
 #ifndef MPI
        if(Fwrite.eq."high") then
          do i=1,n_ci
