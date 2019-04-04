@@ -1,10 +1,11 @@
 FC = gfortran
+#FC = ifort
 
 # open mp flags
 # comment first line and uncommment the second for ifort
 
 OMP= -fopenmp -DOMP
-#OMP= -openmp -DOMP
+#OMP= -qopenmp -DOMP
 
 # mpi flags
 
@@ -15,13 +16,14 @@ MPI=
 LDLAGS=
 
 # actual flags used in the compilation
-#FFLAGS= -O3 ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
 FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+#FFLAGS= -O3 ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
 
 # preprocessor flag
 # comment the first and uncomment the second if compiler is ifort
 
 CPP= -cpp
+#CPP= -fpp
 
 # libraries to be linked
 

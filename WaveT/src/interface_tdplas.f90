@@ -50,7 +50,7 @@ module interface_tdplas
              read_medium_input,&                                                        ! used by main and main_spectra
              mpibcast_read_medium,set_global_tdplas_in_wavet,&                          ! used by main
              this_Fwrite,this_fr_0,this_BEM_Q0,this_mat_f0,this_ncycmax,this_thrshld,this_vtsn,this_mix_coef,diag_mat_in_wavet,&
-             do_field_from_charges_in_wavet, &                                          ! used in scf
+             do_field_from_charges_in_wavet, this_nts_act, &                                          ! used in scf
              this_BEM_W2,this_Ftest,this_eps_w0,this_eps_A,this_BEM_Modes,this_sfe_act,&
              do_BEM_quant_in_wavet,deallocate_bem_public_in_wavet,do_vts_from_dip_in_wavet ! used by QM_coupling 
 

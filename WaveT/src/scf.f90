@@ -135,7 +135,7 @@
        allocate(eigv_c(n_ci),eigt_c(n_ci,n_ci))
        allocate(eigv_cp(n_ci),eigt_cp(n_ci,n_ci))
        allocate(Htot(n_ci,n_ci))
-       if(Fprop(1:3).eq."chr") allocate(pot(nts_act))
+       if(Fprop(1:3).eq."chr") allocate(pot(this_nts_act))
        allocate(c_c(n_ci))
 
        return
@@ -243,16 +243,16 @@
 
        implicit none 
 
-       real(dbl), intent(OUT):: q(nts_act)     
+       real(dbl), intent(OUT):: q(this_nts_act)     
        integer(i4b)::i    
 
-       do i=1,nts_act
+       do i=1,this_nts_act
          pot(i)=dot_product(c_c,matmul(vts(i,:,:),c_c))
        enddo 
 
        q=(1.-mix_coef)*q+mix_coef*matmul(BEM_Q0,pot)
 ! SC 12/8/2016: apparently for NP, charge compensation is needed
-       if (Fmdm(2:4).eq.'nan') q=q-sum(q)/nts_act
+       if (Fmdm(2:4).eq.'nan') q=q-sum(q)/this_nts_act
 
        return
 
@@ -267,7 +267,7 @@
 ! Modified:
 !------------------------------------------------------------------------
 
-       real(dbl), intent(IN):: q(nts_act)     
+       real(dbl), intent(IN):: q(this_nts_act)     
        integer(4)::j,k     
 
        do j=1,n_ci
@@ -381,7 +381,7 @@
 
        implicit none
 
-       real(dbl), intent(IN):: q(nts_act)     
+       real(dbl), intent(IN):: q(this_nts_act)     
        integer(i4b) its
 
 #ifndef MPI
@@ -390,8 +390,8 @@
 
        open(unit=7,file="charges0_scf.inp",status="unknown", &
             form="formatted")
-         write (7,*) nts_act
-         do its=1,nts_act
+         write (7,*) this_nts_act
+         do its=1,this_nts_act
           write (7,'(E22.8,F22.10)') q(its)
          enddo
        close(unit=7)
@@ -423,7 +423,7 @@
 #endif
 
 
-       do its=1,nts_act
+       do its=1,this_nts_act
         vts(its,:,:)=matmul(vts(its,:,:),eigt_c)
         vts(its,:,:)=matmul(transpose(eigt_c),vts(its,:,:))
        enddo
@@ -431,14 +431,14 @@
 
        open(unit=7,file="ci_pot_scf.inp",status="unknown", &
           form="formatted")
-       write (7,*) nts_act
+       write (7,*) this_nts_act
        write (7,*) "V0  check Vnuc"
-       do its=1,nts_act
+       do its=1,this_nts_act
         write (7,*) vts(its,1,1)-vtsn(its),0.d0,vtsn(its)
        enddo
        do j=2,n_ci
          write(7,*) 0,j-1
-         do its=1,nts_act
+         do its=1,this_nts_act
           write(7,*) vts(its,1,j)
          enddo
        enddo
@@ -446,12 +446,12 @@
        do i=2,n_ci
         do j=2,i-1   
          write(7,*) i-1,j-1
-         do its=1,nts_act
+         do its=1,this_nts_act
           write(7,*) vts(its,i,j)             
          enddo
         enddo
          write(7,*) i-1,i-1
-         do its=1,nts_act
+         do its=1,this_nts_act
           write(7,*) vts(its,i,i)-vtsn(its)             
          enddo
        enddo
