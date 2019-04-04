@@ -22,7 +22,7 @@ FFLAGS_GF= -O3
 # comment first line and uncommment the second for ifort
 
 OMP= -fopenmp -DOMP
-#OMP= -openmp -DOMP
+#OMP= -qopenmp -DOMP
 
 # mpi flags (not used here)
 
@@ -38,7 +38,7 @@ LDLAGS=
 
 #FFLAGS= $(FFLAGS_GF) ${OMP} #-heap-arrays 1024
 FFLAGS= -Og -g ${OMP} #-heap-arrays 1024
-#FFLAGS= -O3 -ftz -align all ${OMP_IF} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds
+#FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds
 
 # preprocessor flag
 # comment the first and uncomment the second if compiler is ifort

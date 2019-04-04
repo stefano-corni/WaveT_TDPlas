@@ -91,7 +91,7 @@
        call do_BEM_quant_in_wavet
        if(FQBEM(1:8)=='diag-all') then ! couple with all modes but only one occupied
          ! Mode 1 is the charge mode w=0
-         nmodes=nts_act
+         nmodes=this_nts_act
          Hqm_dim=n_ci*(nmodes+1)
        else
          write(6,*) "FQBEM=",FQBEM," not implemented yet"
@@ -100,7 +100,7 @@
 #endif
          stop
        endif
-       allocate(occ(nts_act))
+       allocate(occ(this_nts_act))
        if(FQBEM(1:8)=='diag-all') occ=1.d0
        allocate(Hqm(Hqm_dim,Hqm_dim))
        Hqm(:,:)=0.d0
@@ -138,7 +138,7 @@
        real(dbl), allocatable:: dp(:) !< \f$ \vec{s}\cdot\vec{F} \f$
        integer(4)::i,j,k,p,s !< indices    
        !
-       if(FQBEM(1:4)=='prop') allocate(dp(nts_act))
+       if(FQBEM(1:4)=='prop') allocate(dp(this_nts_act))
        ! Build the diagonal superblocs:
        ! H11
 
