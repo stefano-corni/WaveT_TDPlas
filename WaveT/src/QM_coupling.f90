@@ -151,8 +151,8 @@
          enddo
 
          do i=1,nmodes 
-           dp(i)=cts_act(i)%x*fmax(1,1)+cts_act(i)%y*fmax(2,1)+       &
-                                      cts_act(i)%z*fmax(3,1) 
+           dp(i)=this_cts_act(i)%x*fmax(1,1)+this_cts_act(i)%y*fmax(2,1)+       &
+                                      this_cts_act(i)%z*fmax(3,1) 
          enddo 
        endif
 
@@ -175,7 +175,7 @@
              Hqm(s,p)=Hqm(k,j)
              Hqm(p,s)=Hqm(s,p)
              ! H1i checked indices j,s simmetrize k,p in H1i block
-             Hqm(k,p)=dot_product(this_BEM_Modes(i,:),vts(:,k,j))*we
+             Hqm(k,p)=dot_product(this_BEM_Modes(i,:),this_vts(:,k,j))*we
              Hqm(j,s)=Hqm(k,p)
              ! Hi1 checked indices p,k simmetrize s,j in Hi1 block
              Hqm(s,j)=Hqm(j,s)
@@ -250,7 +250,7 @@
        sp(2)=this_sfe_act(1)%y 
        sp(3)=this_sfe_act(1)%z 
        write(7,*) "# Sphere radius distance (bohr) and position"
-       write(7,"(5F10.4)") cts_act(1)%rsfe,r,sp(1),sp(2),sp(3)
+       write(7,"(5F10.4)") this_cts_act(1)%rsfe,r,sp(1),sp(2),sp(3)
        write(7,*) "# g=dot_product(this_BEM_Modes(p,:),vts(:,i,j))*we" 
        write(7,*) "# g_ref=mud*sqrt(2*omega_p*cts_act(1)%rsfe^3)/(r^3)"
        write(7,*) "#" 
@@ -262,11 +262,11 @@
          do j=1,n_ci
            do k=j,n_ci
              mud=dot_product(mut(:,k,j),sp(:))/r
-             g=dot_product(this_BEM_Modes(i,:),vts(:,k,j))*we
+             g=dot_product(this_BEM_Modes(i,:),this_vts(:,k,j))*we
              tot(k,j)=tot(k,j)+g*g
              !g_ref: Garcia-Vidal PRL 112, 253601 (2014)
              !g_ref=sqrt(2*mut(i-1,k,j)**2*omega_p*cts_act(1)%rsfe**3)/(r**3)
-             g_ref=mud*sqrt(2*sqrt(this_eps_A/3)*cts_act(1)%rsfe**3)/(r**3)
+             g_ref=mud*sqrt(2*sqrt(this_eps_A/3)*this_cts_act(1)%rsfe**3)/(r**3)
              ref(k,j)=g_ref
              write(7,"(3i5, 3F20.12)") i,j,k,g,g_ref
            enddo
