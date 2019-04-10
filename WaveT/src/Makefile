@@ -81,7 +81,7 @@ endif
 
 serial: $(BINPATH) scf.o $(BINPATH)/WaveT-serial.x $(BINPATH)/make_spectra.x $(BINPATH)/make_vib.x $(BINPATH)/make_coherence.x $(BINPATH)/make_2dfft.x $(BINPATH)/make_pop_coh.x $(BINPATH)/make_nucl_wavep.x
 
-parallel: $(BINPATH) $(BINPATH)/WaveT-parallel.x
+parallel: $(BINPATH) scf.o $(BINPATH)/WaveT-parallel.x
 
 $(BINPATH):
 	mkdir $(BINPATH)

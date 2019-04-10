@@ -1,6 +1,7 @@
 # compilers
 
-FC = ifort
+#FC = ifort
+FC = mpiifort
 
 # useful predefined compiler flags for different architectures and compilers
 # they are not necessarily used in the compiling unless you refer to them in FFLAGS
@@ -37,7 +38,7 @@ LDLAGS=
 
 #FFLAGS= $(FFLAGS_GF) ${OMP} #-heap-arrays 1024
 #FFLAGS= -Og -g ${OMP} #-heap-arrays 1024
-FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds
+FFLAGS= -O3 -ftz -align all ${MPI} ${OMP} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds
 
 # preprocessor flag
 # comment the first and uncomment the second if compiler is ifort
