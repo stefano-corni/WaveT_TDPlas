@@ -37,7 +37,7 @@ LDLAGS=
 # comment the first and uncomment the second if compiler is ifort
 
 #FFLAGS= $(FFLAGS_GF) ${OMP} #-heap-arrays 1024
-FFLAGS= -Og -g ${OMP} #-heap-arrays 1024
+FFLAGS= -Og -g -fcheck=all -Wall -ffpe-trap=invalid,zero -ffpe-trap=zero,overflow,underflow ${OMP} #-heap-arrays 1024
 #FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds
 
 # preprocessor flag
@@ -70,11 +70,11 @@ INTERFACE_MODULE= interface_$(QMCODE_OK)
 
 # objects to be linked with executables
 
-OBJ= tdplas.o td_contmed.o BEM_medium.o MathTools.o readio_medium.o pedra_friends.o interface_qmcode.o constants.o
+OBJ= tdplas.o td_contmed.o BEM_medium.o MathTools.o readio_medium.o pedra_friends.o interface_qmcode.o eps_module.o constants.o
 
 # compilation rules
 
-all: $(BINPATH) $(TDPLASLIB) $(BINPATH)/freq_bem.x $(BINPATH)/tdplas.x
+all: $(BINPATH) $(TDPLASLIB) $(BINPATH)/freq_bem.x $(BINPATH)/tdplas.x $(BINPATH)/eps_gold.x
 
 $(BINPATH):
 	mkdir $(BINPATH)
@@ -83,6 +83,9 @@ $(BINPATH)/tdplas.x: main_tdplas.o
 	$(FC) $(CPP) $(FFLAGS) -o $@ $< $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/freq_bem.x: main_freq.o
+	$(FC) $(CPP) $(FFLAGS) -o $@ $< $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
+
+$(BINPATH)/eps_gold.x: main_eps.o
 	$(FC) $(CPP) $(FFLAGS) -o $@ $< $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
 
 clean:
@@ -96,6 +99,9 @@ $(TDPLASLIB): $(OBJ)
 
 constants.o: constants.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
+
+eps_module.o: eps_module.f90
+	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 interface_qmcode.o: $(INTERFACE_MODULE).f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
@@ -124,7 +130,14 @@ main_tdplas.o: main_tdplas.f90
 main_freq.o: main_freq.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
+main_eps.o: main_eps.f90
+	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
+
 # dependencies
+
+constants.o:
+
+eps_module.o: constants.o
 
 interface_qmcode.o: constants.o
 
@@ -134,12 +147,14 @@ readio_medium.o: constants.o interface_qmcode.o pedra_friends.o
 
 MathTools.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o
 
-BEM_medium.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o MathTools.o
+BEM_medium.o: constants.o eps_module.o interface_qmcode.o pedra_friends.o readio_medium.o MathTools.o
 
 td_contmed.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o
 
-tdplas.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o td_contmed.o
+tdplas.o: constants.o eps_module.o interface_qmcode.o pedra_friends.o readio_medium.o MathTools.o BEM_medium.o td_contmed.o
 
 main_tdplas.o: tdplas.o
 
 main_freq.o: tdplas.o
+
+main_eps.o: tdplas.o

@@ -1,33 +1,52 @@
-      program tdplas
-      use readio_medium
-      use BEM_medium
-      use constants
+      program main_eps
+      use tdplas
       implicit none
+      integer :: st,current,rate
+      integer :: i 
+      real(dbl),allocatable :: omega_list(:)
 
-      integer(i4b) :: i
-      real(dbl) :: omega, omega_start, omega_fin, delta_omega
-
-!     read in the input parameter for the present evolution
-      call read_medium_tdplas
-
-!     data
-      omega_start = zero
-      omega_fin  = 100.0d0/27.211d0
-      delta_omega = 0.1d0/27.211d0
-      npts = int( ( omega_fin - omega_start ) / delta_omega )
+!     read in the input parameters
+      call system_clock(st,rate)
+      call read_medium_freq
 
 !     printing eps function in file
       open(1,file='eps.inp')
-      open(2,file='real_eps.inp')
-      write(1,*) npts
-      write(2,*) npts
-      do i=1, npts
-       omega = ( omega_fin - omega_start ) * i/npts + omega_start
-       call do_eps_drl(omega)
-       write(1,*) omega, eps
-       write(2,*) omega, real(eps)
+      open(2,file='real_imag_eps.inp')
+      write(1,*) n_omega
+      write(2,*) n_omega
+      allocate(omega_list(n_omega))
+      do i=1,n_omega
+       omega_list(i)=(omega_end-omega_ini)/(n_omega-1)*(i-1)+omega_ini
+       omega(1) = omega_list(i)
+       select case( Feps )
+       case('deb')
+        ! debye eps
+        call do_eps_deb
+       case('drl')
+        ! drude-lorentz eps
+        call do_eps_drl
+       case('gen')
+        ! for now gold case 
+        ! extra case should be place here selecting possible material
+        eps = eps_gold(omega(1))
+       end select
+       write(1,*) omega(1), eps
+       write(2,*) omega(1), real(eps), aimag(eps)
       enddo
       close(1)
       close(2)
+      call system_clock(current)
+      write(6,'("Done reading input, took", &
+            F10.3,"s")') real(current-st)/real(rate)
 
-      end
+
+      call system_clock(current)
+      write(6,'("Done , total elapsed time", &
+            F10.3,"s")') real(current-st)/real(rate)
+!         
+      deallocate(omega_list)
+
+
+      end program main_eps
+
+

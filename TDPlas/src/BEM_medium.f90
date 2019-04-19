@@ -4,6 +4,7 @@
       use pedra_friends
       use MathTools
       use interface_qmcode
+      use eps_module
 #ifdef OMP
       use omp_lib
 #endif
@@ -56,6 +57,12 @@
       complex(cmp), allocatable :: Kdiag_omega(:)         !< Diagonal K matrix in frequency domain
       real(dbl), allocatable :: scrd3(:) ! Scratch vector dim=3
 
+      real(dbl), allocatable :: BEM_2ppDA(:,:),BEM_2ppDAx(:,:)
+      real(dbl), allocatable :: BEM_Sm1(:,:)
+      real(dbl), allocatable :: BEM_ADt(:,:)
+
+      real(dbl), allocatable :: gg(:), w2(:), kf(:)
+
       type poles_t                                                                                     
         real(dbl), allocatable    :: omega_p(:)          !< real part of the poles of the diagonal Kerne
         real(dbl), allocatable    :: gamma_p(:)          !< imaginary part of the poles of the diagonal 
@@ -76,7 +83,7 @@
              do_BEM_prop,do_BEM_freq,do_BEM_quant,do_MPL_prop,         &
              do_eps_drl,do_eps_deb,do_charge_freq,                     &
              deallocate_BEM_public,deallocate_MPL_public,BEM_Qg,BEM_2G,&
-             do_eps_gen
+             do_eps_gen,BEM_ADt,kf,w2,gg
 
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -105,6 +112,9 @@
          allocate(BEM_Q0(nts_act,nts_act))
          !Standard or Diagonal BEM           
          if(Fbem(1:4).eq.'stan') then
+           call init_BEM_standard
+           call do_BEM_standard
+           !if(Feps.eq."gen") call do_poles_std_gen
            if (myrank.eq.0)write(6,*) "Standard BEM not implemented yet"
 #ifdef MPI
        call mpi_finalize(ierr_mpi)
@@ -133,6 +143,9 @@
        if(Fprop(1:6).eq."chr-ie") then
          !Standard or Diagonal BEM           
          if(Fbem(1:4).eq.'stan') then
+           call init_BEM_standard
+           call do_BEM_standard
+           !if(Feps.eq."gen") call do_poles_std_gen
            if(myrank.eq.0)write(6,*) "Standard BEM not implemented yet"
 #ifdef MPI
        call mpi_finalize(ierr_mpi)
@@ -155,20 +168,20 @@
            allocate(BEM_R(nts_act,nts_act))
            allocate(BEM_Qt(nts_act,nts_act))
            if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') allocate(BEM_Qtx(nts_act,nts_act))
-           if(Fbem(1:4).eq.'stan') call do_propBEM_dia_deb ! 'dia' to be replaced by 'std' 
+           if(Fbem(1:4).eq.'stan') call do_propBEM_std_deb
            if(Fbem(1:4).eq.'diag') call do_propBEM_dia_deb
          elseif(Feps.eq."drl") then
            allocate(BEM_Qw(nts_act,nts_act))
            allocate(BEM_Qf(nts_act,nts_act))
            if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') allocate(BEM_Qfx(nts_act,nts_act))
-           if(Fbem(1:4).eq.'stan') call do_propBEM_dia_drl ! 'dia' to be replaced by 'std' 
+           if(Fbem(1:4).eq.'stan') call do_propBEM_std_drl
            if(Fbem(1:4).eq.'diag') call do_propBEM_dia_drl
          elseif(Feps.eq."gen") then 
            allocate(BEM_Qg(nts_act,nts_act)) 
            allocate(BEM_Qw(nts_act,nts_act))
            allocate(BEM_Qf(nts_act,nts_act)) 
            if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') allocate(BEM_Qfx(nts_act,nts_act))  
-           if(Fbem(1:4).eq.'stan') call do_propBEM_dia_gen ! 'dia' to be replace by 'std'  
+           if(Fbem(1:4).eq.'stan') call do_propBEM_std_gen
            if(Fbem(1:4).eq.'diag') call do_propBEM_dia_gen
          endif
          !Write out propagation matrices         
@@ -375,6 +388,14 @@
        if(allocated(K0x)) deallocate(K0x)
        if(allocated(Kdx)) deallocate(Kdx)
        if(allocated(poles)) deallocate(poles)
+       if(allocated(BEM_2ppDA)) deallocate(BEM_2ppDA)
+       if(allocated(BEM_2ppDAx)) deallocate(BEM_2ppDAx)
+       if(allocated(BEM_ADt)) deallocate(BEM_ADt)
+       if(allocated(BEM_Sm1)) deallocate(BEM_Sm1)
+
+       if(allocated(kf)) deallocate(kf)
+       if(allocated(w2)) deallocate(w2)
+       if(allocated(gg)) deallocate(gg)
 
        return
  
@@ -868,7 +889,21 @@
          ! the values of the dielectric function
          ! and the real part of its derivative
          fact1(:) = (twp+sgn*BEM_L(:))/(twp-sgn*BEM_L(:))
-         call do_poles(poles,fact1)
+
+         ! to test
+         fact1(2) = -plus_inf
+         fact1(3) = -plus_inf
+         fact1(4) = -plus_inf
+
+         ! considering multiple roots - write all the solutions
+         open(2,file="poles.out")
+         open(3,file="lambda_values.out")
+         do i=1, nts_act
+          call do_poles(poles(i),fact1(i))
+         enddo
+         close(2)
+         close(3)
+
          Kd=zero
 
          fact2 = zero
@@ -970,6 +1005,109 @@
        return
  
       end subroutine
+
+      subroutine do_BEM_standard
+!------------------------------------------------------------------------
+! @brief Compute BEM matrices within diagonal approach 
+!
+! @date Created: G. Gil
+! Modified:
+!------------------------------------------------------------------------
+
+       integer(i4b) :: i
+       real(8), allocatable :: scr1(:,:),scr2(:,:),scr3(:,:)
+
+       type(poles_t) :: poles_eps
+
+#ifndef MPI
+       myrank=0
+#endif
+       allocate(scr1(nts_act,nts_act),scr2(nts_act,nts_act),scr3(nts_act,nts_act))
+
+       ! Form S^-1 matrix
+
+       BEM_Sm1=inv(BEM_S)
+
+       ! Form -DA
+
+       do i=1,nts_act
+         scr1(:,i)= -sgn * BEM_D(:,i)*cts_act(i)%area
+       enddo
+
+       ! Form transpose -DA
+        
+       BEM_ADt= transpose(scr1)
+
+       ! Form 2 pi - DA
+
+       BEM_2ppDA = scr1
+       do i=1,nts_act
+         BEM_2ppDA(i,i)= BEM_2ppDA(i,i) + twp
+       enddo
+
+       ! Form eps0 dependent matrix term
+
+       scr2 = scr1
+       do i=1,nts_act
+         scr2(i,i)= scr2(i,i) + twp * (eps_0+one) / (eps_0-one)
+       enddo
+
+       ! inverse
+   
+       scr2 = inv(scr2)
+
+       ! Form Q0
+       
+       BEM_Q0=-matmul(BEM_Sm1,matmul(scr2,BEM_2ppDA)) 
+
+       ! Form epsd dependent matrix term
+
+       scr3 = scr1
+       do i=1,nts_act
+         scr3(i,i)= scr3(i,i) + twp * (eps_d+one) / (eps_d-one)
+       enddo
+
+       ! inverse
+   
+       scr3 = inv(scr3)
+
+       ! Form Qd
+       
+       BEM_Qd=-matmul(BEM_Sm1,matmul(scr3,BEM_2ppDA)) 
+
+       ! GG: analogous to Q_0 and Q_d matrices in the case of
+       ! local-field for solvent external medium
+       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+        BEM_2ppDAx = scr1
+        do i=1,nts_act
+          BEM_2ppDAx(i,i)= -BEM_2ppDAx(i,i) + twp
+        enddo
+        BEM_Q0x=matmul(BEM_Sm1,matmul(scr2,BEM_2ppDAx)) 
+        BEM_Qdx=matmul(BEM_Sm1,matmul(scr3,BEM_2ppDAx)) 
+       endif
+       !Print matrices in output 
+       !if(Fwrite.eq."high".and.myrank.eq.0) call out_BEM_diagmat 
+
+       deallocate(scr1,scr2,scr3)
+
+       if ( Feps.eq."gen" ) then
+
+        call do_poles(poles_eps,one)
+
+        allocate(kf(size(poles_eps%omega_p)),w2(size(poles_eps%omega_p)),gg(size(poles_eps%omega_p)))
+
+        kf(:) = abs(two*poles_eps%omega_p(:)*(poles_eps%eps_omega_p(:)-one)/poles_eps%re_deps_domega_p(:))
+        w2(:) = poles_eps%omega_p(:)**2+poles_eps%gamma_p(:)**2
+        gg(:) = two*poles_eps%gamma_p(:)
+
+       endif
+
+       if (myrank.eq.0) write(6,*) "Done BEM general" 
+
+
+       return
+ 
+      end subroutine
  
 
       subroutine init_BEM_diagonal
@@ -1002,6 +1140,24 @@
 
       end subroutine
 
+      subroutine init_BEM_standard
+!------------------------------------------------------------------------
+! @brief Initialize diagonal BEM 
+!
+! @date Created: G. Gil
+! Modified: 
+!------------------------------------------------------------------------
+
+       allocate(BEM_Sm1(nts_act,nts_act),BEM_2ppDA(nts_act,nts_act),BEM_ADt(nts_act,nts_act))
+       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+        allocate(BEM_2ppDAX(nts_act,nts_act))
+       endif 
+       if( Feps.eq.'gen') allocate(poles(nts_act))
+
+       return
+
+      end subroutine
+
 
       subroutine do_charge_freq(omega_a,pot,mu_omega,n_omega)
 !------------------------------------------------------------------------
@@ -1021,7 +1177,7 @@
        !complex(cmp), allocatable :: q_omega(:),mu_omega(:)
        !complex(cmp), allocatable :: Kdiag_omega(:)
 
-       sgn=-1
+       sgn=-one
 ! SP 16/07/17: added eps_w0 to Kdiag_omega
        if(eps_w0.eq.zero) eps_w0=1.d-8 
 ! SP 16/07/17: changed the following to avoid divergence at low omega 
@@ -1038,13 +1194,22 @@
 !$OMP DO
 #endif
           do its=2,nts_act
-             Kdiag_omega(its)=(twp-sgn*BEM_L(its))/ &
-!        ((one-omega_a*(omega_a+ui*eps_gm)*2.d0/eps_A)*twp-sgn*BEM_L(its))
-             ((one+(eps_w0**2-omega_a(i)*(omega_a(i)+ui*eps_gm))*two/eps_A)*twp-&
-              sgn*BEM_L(its))
-       !a=twp+BEM_L(its)+two*twp*(eps_w0**2-omega_a**2)/eps_A
-       !b=two*twp*eps_gm*omega_a/eps_A
-       !if(its.eq.1) write(6,*) a**2, b**2
+           select case( Feps )
+           case('deb')
+            ! debye eps
+            omega(1) = omega_a(i)
+            call do_eps_deb
+           case('drl')
+            ! drude-lorentz eps
+            omega(1) = omega_a(i)
+            call do_eps_drl
+           case('gen')
+            ! for now gold case 
+            ! extra case should be place here selecting possible material
+            eps = eps_gold(omega_a(i))
+           end select
+           Kdiag_omega(its)=(twp-sgn*BEM_L(its))/( ((eps+onec)/(eps-onec))*twp -sgn*BEM_L(its))
+           write(*,*)
           enddo
 #ifdef OMP
 !$OMP enddo
@@ -1139,6 +1304,31 @@
 
       end subroutine
 
+      subroutine do_propBEM_std_deb
+!------------------------------------------------------------------------
+! @brief Propagation of matrices for diagonal BEM (debye) 
+!
+! @date Created: G. Gil
+! Modified: 
+!------------------------------------------------------------------------
+
+       real(dbl) :: factor
+
+!      Form the \tilde{Q} and R for debye propagation
+
+       factor = (eps_0-one)/(eps_d-one)/tau_deb
+
+       BEM_R=  factor * matmul(BEM_Qd,inv(BEM_Q0))
+       BEM_Qt= factor * matmul(BEM_Q0,matmul(inv(BEM_Qd),BEM_Q0))
+    
+       ! GG: analogous to \tilde{Q} matrix in the case of local-field
+       ! for solvent external medium
+       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') BEM_Qtx= factor * matmul(BEM_Q0x,matmul(inv(BEM_Qdx),BEM_Q0x))
+
+       return
+
+      end subroutine
+
 
       subroutine do_propBEM_dia_drl
 !------------------------------------------------------------------------
@@ -1189,6 +1379,34 @@
         BEM_Qfx=-matmul(scr1,TSm12)
        endif
        deallocate(scr1)
+
+       return
+
+      end subroutine
+
+      subroutine do_propBEM_std_drl
+!------------------------------------------------------------------------
+! @brief Propagation of matrices for diagonal BEM (drude-lorentz) 
+!
+! @date Created: G. Gil
+! Modified:
+!------------------------------------------------------------------------
+
+      real(dbl) :: factor
+      integer(i4b) :: i
+
+!      Form the Q_w and Q_f for drude-lorentz propagation
+
+      factor = -eps_A/(twp*two)
+
+       BEM_Qw= factor * BEM_2ppDA
+       do i=1,nts_act
+        BEM_Qw(i,i)=BEM_Qw(i,i) + eps_w0*eps_w0
+       enddo
+
+       BEM_Qf= factor * matmul(BEM_Sm1,BEM_2ppDA)
+
+       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') BEM_Qfx= -factor * matmul(BEM_Sm1,BEM_2ppDAx)
 
        return
 
@@ -1264,6 +1482,24 @@
 
       end subroutine
 
+      subroutine do_propBEM_std_gen
+!------------------------------------------------------------------------------
+! @brief Propagation of matrices for diagonal BEM (general dielectric function)
+!
+! @date Created: G. Gil
+! Modified:
+! Notes: 
+!------------------------------------------------------------------------------
+
+!      Form the Q_f for general dielectric function propagation
+
+       BEM_Qf= -matmul(BEM_Sm1,BEM_2ppDA)
+
+       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') BEM_Qfx= matmul(BEM_Sm1,BEM_2ppDAx)
+
+       return
+
+      end subroutine
 
       subroutine do_propMPL_deb   
 !------------------------------------------------------------------------
@@ -1432,7 +1668,7 @@
       end subroutine
 
 
-      subroutine do_eps_deb      
+      subroutine do_eps_deb
 !------------------------------------------------------------------------
 ! @brief Compute deb cmplx eps(\omega) and (3*eps(\omega))/(2*eps(\omega)+1)
 !
@@ -1494,8 +1730,8 @@
 ! Modified:
 !------------------------------------------------------------------------------
 
-       type(poles_t), intent(out) :: poles(:)
-       real(dbl),     intent(in)  :: const(:)
+       type(poles_t), intent(out) :: poles
+       real(dbl),     intent(in)  :: const
 
        integer(i4b) :: i, j
        real(dbl) :: val_omega
@@ -1505,58 +1741,64 @@
        integer(i4b) :: count
        integer(i4b) :: const_size
 
+       real(dbl) :: new_const
+
        ! FIXME: the case of degenerate const values can be made efficient
 
-       const_size = size(const)
+        write(2,*) "tess. index ", " ref. value ", " pole idx per tess. ", " omega ", " gamma ", " eps ", " deps/domega "
 
-       ! considering multiple roots - write all the solutions
-       open(2,file="poles.out")
-       open(3,file="lambda_values.out")
-       write(2,*) "tess. index ", " ref. value ", " pole idx per tess. ", " omega ", " gamma ", " eps ", " deps/domega "
-       do j=1, const_size
         count = 0
-        write(3,*) const(j)
+        write(3,*) const
         do i=1,npts-1
-         if(    ( (real(eps_omegas(i+1))+const(j).gt.zero) .and. (real(eps_omegas(i))+const(j)  .lt.zero) ) &
-            .or.( (real(eps_omegas(i+1))+const(j).lt.zero) .and. (real(eps_omegas(i))+const(j)  .gt.zero) ) ) then
-          val_omega = -(omegas(i+1)-omegas(i))/real(eps_omegas(i+1)-eps_omegas(i))*(real(eps_omegas(i))+const(j)) + &
+         if(    ( (real(eps_omegas(i+1))+const.gt.zero) .and. (real(eps_omegas(i))+const  .lt.zero) ) &
+            .or.( (real(eps_omegas(i+1))+const.lt.zero) .and. (real(eps_omegas(i))+const  .gt.zero) ) ) then
+          val_omega = -(omegas(i+1)-omegas(i))/real(eps_omegas(i+1)-eps_omegas(i))*(real(eps_omegas(i))+const) + &
                         omegas(i)
           val_eps = (eps_omegas(i+1)-eps_omegas(i))/(omegas(i+1)-omegas(i)) * (val_omega-omegas(i)) + eps_omegas(i)
           val_epsp = re_deps_domegas(i)
           val_gamma = abs(aimag(eps_omegas(i))/re_deps_domegas(i))
-          write(2,*) j, const(j), i, val_omega, val_gamma, val_eps, val_epsp
+          write(2,*) j, const, i, val_omega, val_gamma, val_eps, val_epsp
           count = count + 1
          endif
         end do
         if( count .ge. 1 ) then
          write(55,*) "How many poles per PCM matrix kernel component", j,"?", count
-         allocate(poles(j)%omega_p(1:count),poles(j)%gamma_p(1:count))
-         allocate(poles(j)%eps_omega_p(1:count),poles(j)%re_deps_domega_p(1:count))
+         allocate(poles%omega_p(1:count),poles%gamma_p(1:count))
+         allocate(poles%eps_omega_p(1:count),poles%re_deps_domega_p(1:count))
          count = 0
          do i=1,npts-1
-          if(    ( (real(eps_omegas(i+1))+const(j).gt.zero) .and. (real(eps_omegas(i))+const(j)  .lt.zero) ) &
-             .or.( (real(eps_omegas(i+1))+const(j).lt.zero) .and. (real(eps_omegas(i))+const(j)  .gt.zero) ) ) then
+          if(    ( (real(eps_omegas(i+1))+const.gt.zero) .and. (real(eps_omegas(i))+const  .lt.zero) ) &
+             .or.( (real(eps_omegas(i+1))+const.lt.zero) .and. (real(eps_omegas(i))+const  .gt.zero) ) ) then
            count = count + 1
-           poles(j)%omega_p(count) = -(omegas(i+1)-omegas(i))/real(eps_omegas(i+1)-eps_omegas(i))*(real(eps_omegas(i))+const(j)) + &
+           poles%omega_p(count) = -(omegas(i+1)-omegas(i))/real(eps_omegas(i+1)-eps_omegas(i))*(real(eps_omegas(i))+const) + &
                                        omegas(i)
-           poles(j)%eps_omega_p(count) = (eps_omegas(i+1)-eps_omegas(i))/(omegas(i+1)-omegas(i))*(val_omega-omegas(i)) + &
+           poles%eps_omega_p(count) = (eps_omegas(i+1)-eps_omegas(i))/(omegas(i+1)-omegas(i))*(val_omega-omegas(i)) + &
                                           eps_omegas(i)
-           poles(j)%re_deps_domega_p(count) = re_deps_domegas(i)
-           poles(j)%gamma_p(count) = abs(aimag(eps_omegas(i))/re_deps_domegas(i))
+           poles%re_deps_domega_p(count) = re_deps_domegas(i)
+           new_const = twp*(const+sgn)/(const-sgn)
+           poles%gamma_p(count) = (two*twp/(twp+new_const)) * abs((eps_omegas(i)-one)/re_deps_domegas(i))/aimag(eps_omegas(i))
+           !poles%gamma_p(count) = abs(aimag(eps_omegas(i))/re_deps_domegas(i))
           endif
          end do
         else
      write(55,*) "Warning! No poles for the PCM matrix kernel component", j 
         endif
-       end do
-       close(2)
-       close(3)
-
 
       end subroutine
 
+      !subroutine do_poles_std_gen
 
+      ! type(poles_t) :: poles_eps
 
+      ! call do_poles(poles_eps,one)
+
+      ! allocate(kf(size(poles_eps%omega_p)),w2(size(poles_eps%omega_p)),gg(size(poles_eps%omega_p)))
+
+      ! kf(:) = abs(two*poles_eps%omega_p(:)*(poles_eps%eps_omega_p(:)-one)/poles_eps%re_deps_domega_p(:))
+      ! w2(:) = poles_eps%omega_p(:)**2+poles_eps%gamma_p(:)**2
+      ! gg(:) = two*poles_eps%gamma_p(:)
+
+      !end subroutine do_poles_std_gen
 
 !
 !

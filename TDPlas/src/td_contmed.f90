@@ -56,6 +56,14 @@
       real(dbl), allocatable :: qx_t(:),qx_tp(:)        !< charges induced by the Maxwell field ("external" charges - qx)
       real(dbl), allocatable :: dqx_t(:),dqx_tp(:)      !< external charge difference qx_t-qx_tp
       real(dbl), allocatable :: fqx_t(:),fqx_tp(:)      !< force on the external medium dipole (vv propagator)
+      ! charges per pole
+      real(dbl), allocatable :: qr_t_p(:,:),qr_tp_p(:,:)        !< reaction BEM charges (qr) 
+      real(dbl), allocatable :: dqr_t_p(:,:),dqr_tp_p(:,:)      !< reaction charge difference qr_t-qr_tp
+      real(dbl), allocatable :: fqr_t_p(:,:),fqr_tp_p(:,:)      !< force on the reaction chares (vv propagator)
+      real(dbl), allocatable :: qx_t_p(:,:),qx_tp_p(:,:)        !< charges induced by the Maxwell field ("external" charges - qx)
+      real(dbl), allocatable :: dqx_t_p(:,:),dqx_tp_p(:,:)      !< external charge difference qx_t-qx_tp
+      real(dbl), allocatable :: fqx_t_p(:,:),fqx_tp_p(:,:)      !< force on the external medium dipole (vv propagator)
+
       ! Fields and potentials
       real(dbl) :: fr_t(3),fr_tp(3)                     !< reaction field on the molecule centre of charge
       real(dbl) :: dfr_t(3)                             !< reaction field difference (fr_t-fr_tp) 
@@ -66,6 +74,7 @@
 ! Working variables
       real(dbl) :: f1,f2,f3,f4,f5 !< constant factors (calculated once and for all) for velocity-verlet propagator (Drude-Lorentz) 
       real(dbl), allocatable :: BEM_f1(:,:),BEM_f3(:,:),BEM_f5(:,:) !< matrices (calculated once and for all) for velocity-verlet propagator (gral dielec func)
+      real(dbl), allocatable :: std_f1(:),std_f3(:),std_f5(:)
       real(dbl) :: dip(3)                               !< used in a test 
       real(dbl) :: ref                                  !< reference value in different debug tests    
       real(dbl) :: qtot                                 !< total BEM charge    
@@ -155,8 +164,12 @@
       endif
       if(Feps.eq."drl") then
         call init_vv_propagator
-      elseif (Feps.eq."gen") then 
-         call init_vv_propagator_gen 
+      elseif (Feps.eq."gen") then
+         if( Fbem.eq."stan" ) then
+          call init_vv_propagator_gen_std
+         else 
+          call init_vv_propagator_gen
+         endif
       endif 
       if (Fmdm(1:3).ne.'vac') call correct_hamiltonian
 ! SC set the initial values of the solvent component of the 
@@ -526,6 +539,8 @@
        integer(i4b):: its
        real(dbl), allocatable :: qd(:)
 
+       integer(i4b) :: npoles
+
 #ifndef MPI
        myrank=0
 #endif
@@ -601,6 +616,21 @@
            allocate(fqx_t(nts_act))
            dqx_tp(:)=zero
            fqx_tp=zero
+         endif
+         if( Fbem.eq."stan" ) then
+          npoles = size(kf)
+          allocate(dqr_tp_p(nts_act,npoles))
+          allocate(fqr_tp_p(nts_act,npoles))
+          allocate(fqr_t_p(nts_act,npoles))
+          dqr_tp_p(:,:)=zero
+          fqr_tp_p=zero
+          if(Floc.eq."loc") then
+            allocate(dqx_tp_p(nts_act,npoles))
+            allocate(fqx_tp_p(nts_act,npoles))
+            allocate(fqx_t_p(nts_act,npoles))
+            dqx_tp_p(:,:)=zero
+            fqx_tp_p=zero
+          endif
          endif
        endif
        deallocate(qd)
@@ -1001,7 +1031,11 @@
          endif
        elseif(Feps.eq."gen") then
          if(Fprop.eq."chr-ief") then
-           call prop_vv_ief_gen
+           if(Fbem.eq."stan") then
+            call prop_vv_ief_gen_std
+           else
+            call prop_vv_ief_gen
+           endif
          elseif(Fprop.eq."chr-ons") then
            ! FIXME: add C-PCM propagation type
            !call prop_ons_gen ! uses vv - not yet
@@ -1122,6 +1156,35 @@
 
       end subroutine
 
+      subroutine init_vv_propagator_gen_std
+!------------------------------------------------------------------------
+! @brief Initialization for velocity Verlet propagation (vv) 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+       integer(i4b) :: npoles
+
+#ifndef MPI
+       myrank=0
+#endif       
+
+       npoles = size(kf)
+ 
+       allocate(std_f1(npoles),std_f3(npoles),std_f5(npoles))
+
+       std_f1(:)=dt*(1.d0-dt*0.5d0*gg(:))
+       f2=dt*dt*0.5d0
+       std_f3(:)=1.d0-dt*gg(:)*(1.d0-dt*0.5*gg(:))
+       f4=0.5d0*dt
+       std_f5(:)=gg(:)*f2
+       if (myrank.eq.0) write(6,*) "Initiated VV propagator"
+
+       return
+
+      end subroutine
+
 
       subroutine prop_ons_drl
 !------------------------------------------------------------------------
@@ -1133,7 +1196,6 @@
 !------------------------------------------------------------------------
 
       ! charge propagation with drude/lorentz and cosmo/onsager equations
-       integer(i4b) :: its  
 
 !EC:  mat_mult optimizes nts**2-based statements 
 !     mat_mult uses matmul or explicit loops (with OMP), 
@@ -1170,7 +1232,6 @@
 !------------------------------------------------------------------------
 
       ! charge propagation with drude/lorentz and onsager equations
-       integer(i4b) :: its  
 
 !EC:  mat_mult optimizes nts**2-based statements 
 !     mat_mult uses matmul or explicit loops (with OMP), 
@@ -1202,7 +1263,6 @@
 !------------------------------------------------------------------------
 
       ! Charge propagation with drude/lorentz and IEF equations 
-       integer(i4b) :: its  
 
       ! Reaction Field
        qr_t=qr_tp+dt*dqr_tp
@@ -1251,7 +1311,6 @@
 !------------------------------------------------------------------------
 
       ! Charge propagation with drude/lorentz and IEF equations 
-       integer(i4b) :: its  
 
 !      qr_t=qr_tp+dt*(1.d0-dt*0.5d0*eps_gm)*dqr_tp+dt*dt*0.5d0*fqr_tp
 !      fqr_t=-matmul(BEM_Qw,qr_t)+matmul(BEM_Qf,pot_tp)
@@ -1316,8 +1375,6 @@
 
       ! Charge propagation with general dielectric function and IEF
       ! equations
-       integer(i4b) :: its
-
 
        qr_t=qr_tp+matmul(BEM_f1,dqr_tp)+f2*fqr_tp
 
@@ -1341,6 +1398,60 @@
        return
 
       end subroutine
+
+      subroutine prop_vv_ief_gen_std
+!------------------------------------------------------------------------
+! @brief General dielectric function propagation Fprop=chr-ief
+! velocity-verlet
+! algorithm 
+!
+! @date Created: G. Gil
+! Modified:
+!------------------------------------------------------------------------
+
+      ! Charge propagation with general dielectric function and IEF
+      ! equations
+       integer(i4b) :: pidx, npoles
+
+       npoles = size(kf)
+
+       do pidx = 1, npoles
+
+       qr_t_p(:,pidx)=qr_tp_p(:,pidx)+std_f1(pidx)*dqr_tp_p(:,pidx)+f2*fqr_tp_p(:,pidx)
+
+       fqr_t_p(:,pidx)=-w2(pidx)*qr_t_p(:,pidx)+ kf(pidx)*matmul(BEM_Qf,pot_tp)-kf(pidx)*matmul(BEM_ADt,qr_tp)
+       dqr_t_p(:,pidx)=std_f3(pidx)*dqr_tp_p(:,pidx)+f4*(fqr_t_p(:,pidx)+fqr_tp_p(:,pidx))-std_f5(pidx)*fqr_tp_p(:,pidx)
+       fqr_tp_p(:,pidx)=fqr_t_p(:,pidx)
+       dqr_tp_p(:,pidx)=dqr_t_p(:,pidx)
+
+       qr_tp_p(:,pidx)=qr_t_p(:,pidx)
+
+      ! Local Field
+       if(Floc.eq."loc") then
+        qx_t_p(:,pidx)=qx_tp_p(:,pidx)+std_f1(pidx)*dqx_tp_p(:,pidx)+f2*fqx_tp_p(:,pidx)
+        if(Fmdm(2:4).eq.'sol') then
+         fqx_t_p(:,pidx)=-w2(pidx)*qx_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qfx,potf_tp)-kf(pidx)*matmul(BEM_ADt,qx_tp)
+        else if(Fmdm(2:4).eq.'nan') then
+         fqx_t_p(:,pidx)=-w2(pidx)*qx_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,potf_tp)-kf(pidx)*matmul(BEM_ADt,qx_tp)
+        endif
+        dqx_t_p(:,pidx)=std_f3(pidx)*dqx_tp_p(:,pidx)+f4*(fqx_t_p(:,pidx)+fqx_tp_p(:,pidx))-std_f5(pidx)*fqx_tp_p(:,pidx)
+        fqx_tp_p(:,pidx)=fqx_t_p(:,pidx)
+        dqx_tp_p(:,pidx)=dqx_t_p(:,pidx)
+
+        qx_tp_p(:,pidx)=qx_t_p(:,pidx)
+       endif
+
+       enddo
+
+       do pidx = 1, npoles
+        qr_t(:) = qr_t(:) + qr_t_p(:,pidx)
+        if(Floc.eq."loc") qx_t(:) = qx_t(:) + qx_t_p(:,pidx)
+       enddo
+
+
+       return
+
+      end subroutine
   
 
       subroutine prop_ief_deb
@@ -1352,7 +1463,6 @@
 !------------------------------------------------------------------------
 
       ! Charge propagation with debye and IEF equations 
-       integer(i4b) :: its  
 
 !EC:  mat_mult optimizes nts**2-based statements 
 !     mat_mult uses matmul or explicit loops (with OMP), 
@@ -1387,7 +1497,6 @@
 !------------------------------------------------------------------------
 
       ! Charge propagation with debye and IEF equations one taud 
-       integer(i4b) :: its  
 
 !EC:  mat_mult optimizes nts**2-based statements 
 !     mat_mult uses matmul or explicit loops (with OMP), 

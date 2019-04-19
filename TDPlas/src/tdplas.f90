@@ -6,5 +6,6 @@
       use BEM_medium
       use td_contmed
       use interface_qmcode
+      use eps_module
       implicit none
       end module tdplas
