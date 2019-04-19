@@ -758,11 +758,12 @@
            write(6,*) 'Diagonal BEM formulation'
            Fbem="diag"
           case ('stan','Stan','STAN')
+           Fbem="stan"
            write(6,*) 'Standard BEM formulation not implemented yet'
 #ifdef MPI
            call mpi_finalize(ierr_mpi)
 #endif
-           stop
+           !stop
           case default
            write(*,*) "Error, specify a BEM type "
 #ifdef MPI

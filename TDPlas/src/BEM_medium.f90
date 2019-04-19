@@ -119,7 +119,7 @@
 #ifdef MPI
        call mpi_finalize(ierr_mpi)
 #endif
-           stop
+           !stop
          elseif(Fbem(1:4).eq.'diag') then
            call init_BEM_diagonal
            call do_BEM_diagonal
@@ -150,7 +150,7 @@
 #ifdef MPI
        call mpi_finalize(ierr_mpi)
 #endif
-           stop
+           !stop
          elseif(Fbem(1:4).eq.'diag') then
            call init_BEM_diagonal
            call do_BEM_diagonal

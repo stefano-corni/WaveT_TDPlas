@@ -166,7 +166,7 @@
         call init_vv_propagator
       elseif (Feps.eq."gen") then
          if( Fbem.eq."stan" ) then
-          call init_vv_propagator_gen_std
+         call init_vv_propagator_gen_std
          else 
           call init_vv_propagator_gen
          endif
