@@ -619,15 +619,23 @@
          endif
          if( Fbem.eq."stan" ) then
           npoles = size(kf)
+          allocate(qr_t_p(nts_act,npoles))
+          allocate(qr_tp_p(nts_act,npoles))
+          allocate(dqr_t_p(nts_act,npoles))
           allocate(dqr_tp_p(nts_act,npoles))
           allocate(fqr_tp_p(nts_act,npoles))
           allocate(fqr_t_p(nts_act,npoles))
+          qr_tp_p(:,:)=zero ! doubt - initialization
           dqr_tp_p(:,:)=zero
           fqr_tp_p=zero
           if(Floc.eq."loc") then
+            allocate(qx_t_p(nts_act,npoles))
+            allocate(qx_tp_p(nts_act,npoles))
+            allocate(dqx_t_p(nts_act,npoles))
             allocate(dqx_tp_p(nts_act,npoles))
             allocate(fqx_tp_p(nts_act,npoles))
             allocate(fqx_t_p(nts_act,npoles))
+            qx_tp_p(:,:)=zero
             dqx_tp_p(:,:)=zero
             fqx_tp_p=zero
           endif
@@ -1176,7 +1184,7 @@
 
        std_f1(:)=dt*(1.d0-dt*0.5d0*gg(:))
        f2=dt*dt*0.5d0
-       std_f3(:)=1.d0-dt*gg(:)*(1.d0-dt*0.5*gg(:))
+       std_f3(:)=1.d0-gg(:)*std_f1(:)
        f4=0.5d0*dt
        std_f5(:)=gg(:)*f2
        if (myrank.eq.0) write(6,*) "Initiated VV propagator"
@@ -1419,7 +1427,7 @@
 
        qr_t_p(:,pidx)=qr_tp_p(:,pidx)+std_f1(pidx)*dqr_tp_p(:,pidx)+f2*fqr_tp_p(:,pidx)
 
-       fqr_t_p(:,pidx)=-w2(pidx)*qr_t_p(:,pidx)+ kf(pidx)*matmul(BEM_Qf,pot_tp)-kf(pidx)*matmul(BEM_ADt,qr_tp)
+       fqr_t_p(:,pidx)=-w2(pidx)*qr_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,pot_tp)+kf(pidx)*matmul(BEM_ADt,qr_tp)
        dqr_t_p(:,pidx)=std_f3(pidx)*dqr_tp_p(:,pidx)+f4*(fqr_t_p(:,pidx)+fqr_tp_p(:,pidx))-std_f5(pidx)*fqr_tp_p(:,pidx)
        fqr_tp_p(:,pidx)=fqr_t_p(:,pidx)
        dqr_tp_p(:,pidx)=dqr_t_p(:,pidx)
@@ -1429,20 +1437,24 @@
       ! Local Field
        if(Floc.eq."loc") then
         qx_t_p(:,pidx)=qx_tp_p(:,pidx)+std_f1(pidx)*dqx_tp_p(:,pidx)+f2*fqx_tp_p(:,pidx)
+
         if(Fmdm(2:4).eq.'sol') then
-         fqx_t_p(:,pidx)=-w2(pidx)*qx_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qfx,potf_tp)-kf(pidx)*matmul(BEM_ADt,qx_tp)
+         fqx_t_p(:,pidx)=-w2(pidx)*qx_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qfx,potf_tp)+kf(pidx)*matmul(BEM_ADt,qx_tp)
         else if(Fmdm(2:4).eq.'nan') then
-         fqx_t_p(:,pidx)=-w2(pidx)*qx_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,potf_tp)-kf(pidx)*matmul(BEM_ADt,qx_tp)
+         fqx_t_p(:,pidx)=-w2(pidx)*qx_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,potf_tp)+kf(pidx)*matmul(BEM_ADt,qx_tp)
         endif
         dqx_t_p(:,pidx)=std_f3(pidx)*dqx_tp_p(:,pidx)+f4*(fqx_t_p(:,pidx)+fqx_tp_p(:,pidx))-std_f5(pidx)*fqx_tp_p(:,pidx)
         fqx_tp_p(:,pidx)=fqx_t_p(:,pidx)
         dqx_tp_p(:,pidx)=dqx_t_p(:,pidx)
 
         qx_tp_p(:,pidx)=qx_t_p(:,pidx)
+
        endif
 
        enddo
 
+       qr_t(:) = zero
+       if(Floc.eq."loc") qx_t(:) = zero
        do pidx = 1, npoles
         qr_t(:) = qr_t(:) + qr_t_p(:,pidx)
         if(Floc.eq."loc") qx_t(:) = qx_t(:) + qx_t_p(:,pidx)

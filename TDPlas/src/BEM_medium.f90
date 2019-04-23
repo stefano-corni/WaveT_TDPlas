@@ -114,7 +114,6 @@
          if(Fbem(1:4).eq.'stan') then
            call init_BEM_standard
            call do_BEM_standard
-           !if(Feps.eq."gen") call do_poles_std_gen
            if (myrank.eq.0)write(6,*) "Standard BEM not implemented yet"
 #ifdef MPI
        call mpi_finalize(ierr_mpi)
@@ -145,7 +144,6 @@
          if(Fbem(1:4).eq.'stan') then
            call init_BEM_standard
            call do_BEM_standard
-           !if(Feps.eq."gen") call do_poles_std_gen
            if(myrank.eq.0)write(6,*) "Standard BEM not implemented yet"
 #ifdef MPI
        call mpi_finalize(ierr_mpi)
@@ -390,12 +388,7 @@
        if(allocated(poles)) deallocate(poles)
        if(allocated(BEM_2ppDA)) deallocate(BEM_2ppDA)
        if(allocated(BEM_2ppDAx)) deallocate(BEM_2ppDAx)
-       if(allocated(BEM_ADt)) deallocate(BEM_ADt)
        if(allocated(BEM_Sm1)) deallocate(BEM_Sm1)
-
-       if(allocated(kf)) deallocate(kf)
-       if(allocated(w2)) deallocate(w2)
-       if(allocated(gg)) deallocate(gg)
 
        return
  
@@ -427,6 +420,13 @@
          if(allocated(BEM_Qf)) deallocate(BEM_Qfx)
          if(allocated(BEM_Qg)) deallocate(BEM_Qg)
          if(allocated(BEM_2G)) deallocate(BEM_2G)   
+
+       if(allocated(BEM_ADt)) deallocate(BEM_ADt)
+
+       if(allocated(kf)) deallocate(kf)
+       if(allocated(w2)) deallocate(w2)
+       if(allocated(gg)) deallocate(gg)
+
        endif
 
        return
@@ -890,16 +890,12 @@
          ! and the real part of its derivative
          fact1(:) = (twp+sgn*BEM_L(:))/(twp-sgn*BEM_L(:))
 
-         ! to test
-         fact1(2) = -plus_inf
-         fact1(3) = -plus_inf
-         fact1(4) = -plus_inf
-
          ! considering multiple roots - write all the solutions
          open(2,file="poles.out")
          open(3,file="lambda_values.out")
-         do i=1, nts_act
-          call do_poles(poles(i),fact1(i))
+         write(2,*) "tess. index ", " ref. value ", " pole idx per tess. ", " omega ", " gamma ", " eps ", " deps/domega "
+         do i=1, nts_act 
+          call do_poles(poles(i),fact1(i),i)
          enddo
          close(2)
          close(3)
@@ -1034,9 +1030,9 @@
          scr1(:,i)= -sgn * BEM_D(:,i)*cts_act(i)%area
        enddo
 
-       ! Form transpose -DA
+       ! Form transpose DA
         
-       BEM_ADt= transpose(scr1)
+       BEM_ADt= -transpose(scr1)
 
        ! Form 2 pi - DA
 
@@ -1092,11 +1088,16 @@
 
        if ( Feps.eq."gen" ) then
 
-        call do_poles(poles_eps,one)
+        open(2,file="poles.out")
+        open(3,file="lambda_values.out")
+        write(2,*) "tess. index ", " ref. value ", " pole idx per tess. ", " omega ", " gamma ", " eps ", " deps/domega "
+        call do_poles(poles_eps,one,0)
+        close(2)
+        close(3)
 
         allocate(kf(size(poles_eps%omega_p)),w2(size(poles_eps%omega_p)),gg(size(poles_eps%omega_p)))
 
-        kf(:) = abs(two*poles_eps%omega_p(:)*(poles_eps%eps_omega_p(:)-one)/poles_eps%re_deps_domega_p(:))
+        kf(:) = one/twp*abs(two*poles_eps%omega_p(:)*(poles_eps%eps_omega_p(:)-one)/poles_eps%re_deps_domega_p(:))
         w2(:) = poles_eps%omega_p(:)**2+poles_eps%gamma_p(:)**2
         gg(:) = two*poles_eps%gamma_p(:)
 
@@ -1150,7 +1151,7 @@
 
        allocate(BEM_Sm1(nts_act,nts_act),BEM_2ppDA(nts_act,nts_act),BEM_ADt(nts_act,nts_act))
        if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
-        allocate(BEM_2ppDAX(nts_act,nts_act))
+        allocate(BEM_2ppDAx(nts_act,nts_act))
        endif 
        if( Feps.eq.'gen') allocate(poles(nts_act))
 
@@ -1718,7 +1719,7 @@
       end subroutine
 
 
-      subroutine do_poles(poles,const)
+      subroutine do_poles(poles,const,j)
 !------------------------------------------------------------------------------
 ! @brief Compute the real part of the poles of the PCM response kernel
 !   * real part of the poles - frequencies
@@ -1732,8 +1733,9 @@
 
        type(poles_t), intent(out) :: poles
        real(dbl),     intent(in)  :: const
+       integer(i4b),  intent(in)  :: j
 
-       integer(i4b) :: i, j
+       integer(i4b) :: i
        real(dbl) :: val_omega
        real(dbl) :: val_gamma
        complex(cmp) :: val_eps
@@ -1745,8 +1747,6 @@
 
        ! FIXME: the case of degenerate const values can be made efficient
 
-        write(2,*) "tess. index ", " ref. value ", " pole idx per tess. ", " omega ", " gamma ", " eps ", " deps/domega "
-
         count = 0
         write(3,*) const
         do i=1,npts-1
@@ -1756,7 +1756,8 @@
                         omegas(i)
           val_eps = (eps_omegas(i+1)-eps_omegas(i))/(omegas(i+1)-omegas(i)) * (val_omega-omegas(i)) + eps_omegas(i)
           val_epsp = re_deps_domegas(i)
-          val_gamma = abs(aimag(eps_omegas(i))/re_deps_domegas(i))
+          val_gamma = (two*twp/(twp+new_const)) * abs((eps_omegas(i)-one)/re_deps_domegas(i))/aimag(eps_omegas(i))
+          !val_gamma = abs(aimag(eps_omegas(i))/re_deps_domegas(i))
           write(2,*) j, const, i, val_omega, val_gamma, val_eps, val_epsp
           count = count + 1
          endif
@@ -1785,21 +1786,6 @@
         endif
 
       end subroutine
-
-      !subroutine do_poles_std_gen
-
-      ! type(poles_t) :: poles_eps
-
-      ! call do_poles(poles_eps,one)
-
-      ! allocate(kf(size(poles_eps%omega_p)),w2(size(poles_eps%omega_p)),gg(size(poles_eps%omega_p)))
-
-      ! kf(:) = abs(two*poles_eps%omega_p(:)*(poles_eps%eps_omega_p(:)-one)/poles_eps%re_deps_domega_p(:))
-      ! w2(:) = poles_eps%omega_p(:)**2+poles_eps%gamma_p(:)**2
-      ! gg(:) = two*poles_eps%gamma_p(:)
-
-      !end subroutine do_poles_std_gen
-
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
