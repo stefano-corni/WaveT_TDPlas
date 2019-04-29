@@ -1010,8 +1010,9 @@
 ! Modified:
 !------------------------------------------------------------------------
 
-       integer(i4b) :: i
-       real(8), allocatable :: scr1(:,:),scr2(:,:),scr3(:,:)
+       integer(i4b) :: i,j
+       real(dbl), allocatable :: scr1(:,:),scr2(:,:),scr3(:,:)
+       real(dbl) :: scrd3(3), dist
 
        type(poles_t) :: poles_eps
 
@@ -1025,14 +1026,24 @@
        BEM_Sm1=inv(BEM_S)
 
        ! Form -DA
-
+       BEM_ADt = zero
        do i=1,nts_act
          scr1(:,i)= -sgn * BEM_D(:,i)*cts_act(i)%area
+         write(*,*) "area", i, cts_act(i)%area*toangs*toangs
+         do j = 1, nts_act
+          !scrd3(1)=(cts_act(i)%x-cts_act(j)%x)
+          !scrd3(2)=(cts_act(i)%y-cts_act(j)%y)
+          !scrd3(3)=(cts_act(i)%z-cts_act(j)%z)
+          !dist=sqrt(dot_product(scrd3,scrd3))
+          !if( dist .ge. 10.0d0/TOANGS ) write(*,*) BEM_D(i,j)*cts_act(i)%area
+          !if( dist .lt. 10.0d0/TOANGS ) BEM_ADt(i,j)= sgn * BEM_D(i,j)*cts_act(i)%area
+          if( BEM_D(i,j)*cts_act(i)%area .le. 10e-3 ) BEM_ADt(i,j)= sgn * BEM_D(i,j)*cts_act(i)%area
+         enddo
        enddo
 
        ! Form transpose DA
-        
-       BEM_ADt= -transpose(scr1)
+
+       !BEM_ADt= -transpose(scr1)
 
        ! Form 2 pi - DA
 
@@ -1097,9 +1108,17 @@
 
         allocate(kf(size(poles_eps%omega_p)),w2(size(poles_eps%omega_p)),gg(size(poles_eps%omega_p)))
 
-        kf(:) = one/twp*abs(two*poles_eps%omega_p(:)*(poles_eps%eps_omega_p(:)-one)/poles_eps%re_deps_domega_p(:))
+        kf(:) = abs(two*poles_eps%omega_p(:)*(poles_eps%eps_omega_p(:)-one)/poles_eps%re_deps_domega_p(:))/twp
         w2(:) = poles_eps%omega_p(:)**2+poles_eps%gamma_p(:)**2
         gg(:) = two*poles_eps%gamma_p(:)
+
+        !write(*,*) "check a/4pi", kf, 0.110224*0.5d0/twp
+        !write(*,*) "check freq", w2, 0.110224*0.5d0
+        !write(*,*) "check gamma", gg, 0.001515
+
+        !kf(:) = 0.110224*0.5d0/twp
+        !w2(:) = 0.110224*0.5d0
+        !gg(:) = 0.001515
 
        endif
 
@@ -1153,7 +1172,6 @@
        if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
         allocate(BEM_2ppDAx(nts_act,nts_act))
        endif 
-       if( Feps.eq.'gen') allocate(poles(nts_act))
 
        return
 
@@ -1719,7 +1737,7 @@
       end subroutine
 
 
-      subroutine do_poles(poles,const,j)
+      subroutine do_poles(sol,const,j)
 !------------------------------------------------------------------------------
 ! @brief Compute the real part of the poles of the PCM response kernel
 !   * real part of the poles - frequencies
@@ -1731,7 +1749,9 @@
 ! Modified:
 !------------------------------------------------------------------------------
 
-       type(poles_t), intent(out) :: poles
+       implicit none
+
+       type(poles_t), intent(out) :: sol
        real(dbl),     intent(in)  :: const
        integer(i4b),  intent(in)  :: j
 
@@ -1747,6 +1767,8 @@
 
        ! FIXME: the case of degenerate const values can be made efficient
 
+        new_const = twp*(const+sgn)/(const-sgn)
+
         count = 0
         write(3,*) const
         do i=1,npts-1
@@ -1756,29 +1778,28 @@
                         omegas(i)
           val_eps = (eps_omegas(i+1)-eps_omegas(i))/(omegas(i+1)-omegas(i)) * (val_omega-omegas(i)) + eps_omegas(i)
           val_epsp = re_deps_domegas(i)
-          val_gamma = (two*twp/(twp+new_const)) * abs((eps_omegas(i)-one)/re_deps_domegas(i))/aimag(eps_omegas(i))
-          !val_gamma = abs(aimag(eps_omegas(i))/re_deps_domegas(i))
+          !val_gamma = (two*twp/(twp+new_const)) * abs((eps_omegas(i)-one)/re_deps_domegas(i))/aimag(eps_omegas(i))
+          val_gamma = abs(aimag(eps_omegas(i))/re_deps_domegas(i))
           write(2,*) j, const, i, val_omega, val_gamma, val_eps, val_epsp
           count = count + 1
          endif
         end do
         if( count .ge. 1 ) then
          write(55,*) "How many poles per PCM matrix kernel component", j,"?", count
-         allocate(poles%omega_p(1:count),poles%gamma_p(1:count))
-         allocate(poles%eps_omega_p(1:count),poles%re_deps_domega_p(1:count))
+         allocate(sol%omega_p(1:count),sol%gamma_p(1:count))
+         allocate(sol%eps_omega_p(1:count),sol%re_deps_domega_p(1:count))
          count = 0
          do i=1,npts-1
           if(    ( (real(eps_omegas(i+1))+const.gt.zero) .and. (real(eps_omegas(i))+const  .lt.zero) ) &
              .or.( (real(eps_omegas(i+1))+const.lt.zero) .and. (real(eps_omegas(i))+const  .gt.zero) ) ) then
            count = count + 1
-           poles%omega_p(count) = -(omegas(i+1)-omegas(i))/real(eps_omegas(i+1)-eps_omegas(i))*(real(eps_omegas(i))+const) + &
+           sol%omega_p(count) = -(omegas(i+1)-omegas(i))/real(eps_omegas(i+1)-eps_omegas(i))*(real(eps_omegas(i))+const) + &
                                        omegas(i)
-           poles%eps_omega_p(count) = (eps_omegas(i+1)-eps_omegas(i))/(omegas(i+1)-omegas(i))*(val_omega-omegas(i)) + &
+           sol%eps_omega_p(count) = (eps_omegas(i+1)-eps_omegas(i))/(omegas(i+1)-omegas(i))*(val_omega-omegas(i)) + &
                                           eps_omegas(i)
-           poles%re_deps_domega_p(count) = re_deps_domegas(i)
-           new_const = twp*(const+sgn)/(const-sgn)
-           poles%gamma_p(count) = (two*twp/(twp+new_const)) * abs((eps_omegas(i)-one)/re_deps_domegas(i))/aimag(eps_omegas(i))
-           !poles%gamma_p(count) = abs(aimag(eps_omegas(i))/re_deps_domegas(i))
+           sol%re_deps_domega_p(count) = re_deps_domegas(i)
+           !sol%gamma_p(count) = (two*twp/(twp+new_const)) * abs((eps_omegas(i)-one)/re_deps_domegas(i))/aimag(eps_omegas(i))
+           sol%gamma_p(count) = abs(aimag(eps_omegas(i))/re_deps_domegas(i))
           endif
          end do
         else

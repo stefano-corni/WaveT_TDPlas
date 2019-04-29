@@ -166,7 +166,7 @@
         call init_vv_propagator
       elseif (Feps.eq."gen") then
          if( Fbem.eq."stan" ) then
-         call init_vv_propagator_gen_std
+          call init_vv_propagator_gen_std
          else 
           call init_vv_propagator_gen
          endif
@@ -1423,16 +1423,21 @@
 
        npoles = size(kf)
 
+       qr_t(:) = zero
+       if(Floc.eq."loc") qx_t(:) = zero
+
        do pidx = 1, npoles
 
        qr_t_p(:,pidx)=qr_tp_p(:,pidx)+std_f1(pidx)*dqr_tp_p(:,pidx)+f2*fqr_tp_p(:,pidx)
 
        fqr_t_p(:,pidx)=-w2(pidx)*qr_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,pot_tp)+kf(pidx)*matmul(BEM_ADt,qr_tp)
        dqr_t_p(:,pidx)=std_f3(pidx)*dqr_tp_p(:,pidx)+f4*(fqr_t_p(:,pidx)+fqr_tp_p(:,pidx))-std_f5(pidx)*fqr_tp_p(:,pidx)
+
        fqr_tp_p(:,pidx)=fqr_t_p(:,pidx)
        dqr_tp_p(:,pidx)=dqr_t_p(:,pidx)
-
        qr_tp_p(:,pidx)=qr_t_p(:,pidx)
+
+       qr_t(:) = qr_t(:) + qr_t_p(:,pidx)
 
       ! Local Field
        if(Floc.eq."loc") then
@@ -1444,22 +1449,16 @@
          fqx_t_p(:,pidx)=-w2(pidx)*qx_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,potf_tp)+kf(pidx)*matmul(BEM_ADt,qx_tp)
         endif
         dqx_t_p(:,pidx)=std_f3(pidx)*dqx_tp_p(:,pidx)+f4*(fqx_t_p(:,pidx)+fqx_tp_p(:,pidx))-std_f5(pidx)*fqx_tp_p(:,pidx)
+        
         fqx_tp_p(:,pidx)=fqx_t_p(:,pidx)
         dqx_tp_p(:,pidx)=dqx_t_p(:,pidx)
-
         qx_tp_p(:,pidx)=qx_t_p(:,pidx)
+
+        qx_t(:) = qx_t(:) + qx_t_p(:,pidx)
 
        endif
 
        enddo
-
-       qr_t(:) = zero
-       if(Floc.eq."loc") qx_t(:) = zero
-       do pidx = 1, npoles
-        qr_t(:) = qr_t(:) + qr_t_p(:,pidx)
-        if(Floc.eq."loc") qx_t(:) = qx_t(:) + qx_t_p(:,pidx)
-       enddo
-
 
        return
 
