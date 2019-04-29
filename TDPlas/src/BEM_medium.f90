@@ -114,11 +114,10 @@
          if(Fbem(1:4).eq.'stan') then
            call init_BEM_standard
            call do_BEM_standard
-           if (myrank.eq.0)write(6,*) "Standard BEM not implemented yet"
+           if (myrank.eq.0)write(6,*) "Standard BEM is experimental"
 #ifdef MPI
        call mpi_finalize(ierr_mpi)
 #endif
-           !stop
          elseif(Fbem(1:4).eq.'diag') then
            call init_BEM_diagonal
            call do_BEM_diagonal
@@ -144,11 +143,10 @@
          if(Fbem(1:4).eq.'stan') then
            call init_BEM_standard
            call do_BEM_standard
-           if(myrank.eq.0)write(6,*) "Standard BEM not implemented yet"
+           if (myrank.eq.0)write(6,*) "Standard BEM is experimental"
 #ifdef MPI
        call mpi_finalize(ierr_mpi)
 #endif
-           !stop
          elseif(Fbem(1:4).eq.'diag') then
            call init_BEM_diagonal
            call do_BEM_diagonal
@@ -1030,20 +1028,11 @@
        do i=1,nts_act
          scr1(:,i)= -sgn * BEM_D(:,i)*cts_act(i)%area
          write(*,*) "area", i, cts_act(i)%area*toangs*toangs
-         do j = 1, nts_act
-          !scrd3(1)=(cts_act(i)%x-cts_act(j)%x)
-          !scrd3(2)=(cts_act(i)%y-cts_act(j)%y)
-          !scrd3(3)=(cts_act(i)%z-cts_act(j)%z)
-          !dist=sqrt(dot_product(scrd3,scrd3))
-          !if( dist .ge. 10.0d0/TOANGS ) write(*,*) BEM_D(i,j)*cts_act(i)%area
-          !if( dist .lt. 10.0d0/TOANGS ) BEM_ADt(i,j)= sgn * BEM_D(i,j)*cts_act(i)%area
-          if( BEM_D(i,j)*cts_act(i)%area .le. 10e-3 ) BEM_ADt(i,j)= sgn * BEM_D(i,j)*cts_act(i)%area
-         enddo
        enddo
 
        ! Form transpose DA
 
-       !BEM_ADt= -transpose(scr1)
+       BEM_ADt= -transpose(scr1)
 
        ! Form 2 pi - DA
 
@@ -1060,12 +1049,12 @@
        enddo
 
        ! inverse
-   
+
        scr2 = inv(scr2)
 
        ! Form Q0
-       
-       BEM_Q0=-matmul(BEM_Sm1,matmul(scr2,BEM_2ppDA)) 
+
+       BEM_Q0=-matmul(BEM_Sm1,matmul(scr2,BEM_2ppDA))
 
        ! Form epsd dependent matrix term
 
@@ -1075,12 +1064,12 @@
        enddo
 
        ! inverse
-   
+
        scr3 = inv(scr3)
 
        ! Form Qd
-       
-       BEM_Qd=-matmul(BEM_Sm1,matmul(scr3,BEM_2ppDA)) 
+
+       BEM_Qd=-matmul(BEM_Sm1,matmul(scr3,BEM_2ppDA))
 
        ! GG: analogous to Q_0 and Q_d matrices in the case of
        ! local-field for solvent external medium
@@ -1089,11 +1078,9 @@
         do i=1,nts_act
           BEM_2ppDAx(i,i)= -BEM_2ppDAx(i,i) + twp
         enddo
-        BEM_Q0x=matmul(BEM_Sm1,matmul(scr2,BEM_2ppDAx)) 
-        BEM_Qdx=matmul(BEM_Sm1,matmul(scr3,BEM_2ppDAx)) 
+        BEM_Q0x=matmul(BEM_Sm1,matmul(scr2,BEM_2ppDAx))
+        BEM_Qdx=matmul(BEM_Sm1,matmul(scr3,BEM_2ppDAx))
        endif
-       !Print matrices in output 
-       !if(Fwrite.eq."high".and.myrank.eq.0) call out_BEM_diagmat 
 
        deallocate(scr1,scr2,scr3)
 
@@ -1112,21 +1099,13 @@
         w2(:) = poles_eps%omega_p(:)**2+poles_eps%gamma_p(:)**2
         gg(:) = two*poles_eps%gamma_p(:)
 
-        !write(*,*) "check a/4pi", kf, 0.110224*0.5d0/twp
-        !write(*,*) "check freq", w2, 0.110224*0.5d0
-        !write(*,*) "check gamma", gg, 0.001515
-
-        !kf(:) = 0.110224*0.5d0/twp
-        !w2(:) = 0.110224*0.5d0
-        !gg(:) = 0.001515
-
        endif
 
-       if (myrank.eq.0) write(6,*) "Done BEM general" 
+       if (myrank.eq.0) write(6,*) "Done BEM general"
 
 
        return
- 
+
       end subroutine
  
 
@@ -1162,16 +1141,16 @@
 
       subroutine init_BEM_standard
 !------------------------------------------------------------------------
-! @brief Initialize diagonal BEM 
+! @brief Initialize standard BEM
 !
 ! @date Created: G. Gil
-! Modified: 
+! Modified:
 !------------------------------------------------------------------------
 
        allocate(BEM_Sm1(nts_act,nts_act),BEM_2ppDA(nts_act,nts_act),BEM_ADt(nts_act,nts_act))
        if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
         allocate(BEM_2ppDAx(nts_act,nts_act))
-       endif 
+       endif
 
        return
 
@@ -1223,7 +1202,7 @@
             omega(1) = omega_a(i)
             call do_eps_drl
            case('gen')
-            ! for now gold case 
+            ! for now gold case
             ! extra case should be place here selecting possible material
             eps = eps_gold(omega_a(i))
            end select
@@ -1325,10 +1304,10 @@
 
       subroutine do_propBEM_std_deb
 !------------------------------------------------------------------------
-! @brief Propagation of matrices for diagonal BEM (debye) 
+! @brief Propagation of matrices for diagonal BEM (debye)
 !
 ! @date Created: G. Gil
-! Modified: 
+! Modified:
 !------------------------------------------------------------------------
 
        real(dbl) :: factor
@@ -1339,7 +1318,7 @@
 
        BEM_R=  factor * matmul(BEM_Qd,inv(BEM_Q0))
        BEM_Qt= factor * matmul(BEM_Q0,matmul(inv(BEM_Qd),BEM_Q0))
-    
+
        ! GG: analogous to \tilde{Q} matrix in the case of local-field
        ! for solvent external medium
        if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') BEM_Qtx= factor * matmul(BEM_Q0x,matmul(inv(BEM_Qdx),BEM_Q0x))
@@ -1405,7 +1384,7 @@
 
       subroutine do_propBEM_std_drl
 !------------------------------------------------------------------------
-! @brief Propagation of matrices for diagonal BEM (drude-lorentz) 
+! @brief Propagation of matrices for diagonal BEM (drude-lorentz)
 !
 ! @date Created: G. Gil
 ! Modified:
@@ -1507,7 +1486,6 @@
 !
 ! @date Created: G. Gil
 ! Modified:
-! Notes: 
 !------------------------------------------------------------------------------
 
 !      Form the Q_f for general dielectric function propagation

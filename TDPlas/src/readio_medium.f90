@@ -759,11 +759,10 @@
            Fbem="diag"
           case ('stan','Stan','STAN')
            Fbem="stan"
-           write(6,*) 'Standard BEM formulation not implemented yet'
+           write(6,*) 'Standard BEM formulation is experimental'
 #ifdef MPI
            call mpi_finalize(ierr_mpi)
 #endif
-           !stop
           case default
            write(*,*) "Error, specify a BEM type "
 #ifdef MPI
