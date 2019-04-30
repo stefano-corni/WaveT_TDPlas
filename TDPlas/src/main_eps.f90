@@ -31,7 +31,7 @@
         eps = eps_gold(omega(1))
        end select
        write(1,*) omega(1), eps
-       write(2,*) omega(1), real(eps), aimag(eps)
+       write(2,*) omega(1), real(eps,dbl), dimag(eps)
       enddo
       close(1)
       close(2)
