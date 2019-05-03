@@ -889,6 +889,7 @@
          fact1(:) = (twp+sgn*BEM_L(:))/(twp-sgn*BEM_L(:))
 
          ! considering multiple roots - write all the solutions
+         ! FIXME: the case of degenerate const values can be made efficient
          open(2,file="poles.out")
          open(3,file="lambda_values.out")
          write(2,*) "tess. index ", " ref. value ", " pole idx per tess. ", " omega ", " gamma ", " eps ", " deps/domega "
@@ -909,8 +910,7 @@
 #endif
          do i=1,nts_act
           if( allocated(poles(i)%omega_p) ) then
-           j = minloc(poles(i)%gamma_p(:),1)
-           !fact2(i)   = abs(two*poles(i)%omega_p(j)*(poles(i)%eps_omega_p(j)-one)/poles(i)%re_deps_domega_p(j))
+           j = minloc(poles(i)%gamma_p(:)*poles(i)%re_deps_domega_p(:),1)
            fact2(i)   = two*poles(i)%omega_p(j)*(fact1(i)+one)/abs(poles(i)%re_deps_domega_p(j))
            BEM_W2(i)  = poles(i)%omega_p(j)**2+poles(i)%gamma_p(j)**2
            BEM_2G(i)  = two*poles(i)%gamma_p(j)
@@ -1096,19 +1096,9 @@
 
         allocate(kf(size(poles_eps%omega_p)),w2(size(poles_eps%omega_p)),gg(size(poles_eps%omega_p)))
 
-        !kf(:) = abs(two*poles_eps%omega_p(:)*(poles_eps%eps_omega_p(:)-one)/poles_eps%re_deps_domega_p(:))/twp
         kf(:) = (two/pi)*poles_eps%omega_p(:)/abs(poles_eps%re_deps_domega_p(:))
         w2(:) = poles_eps%omega_p(:)**2+poles_eps%gamma_p(:)**2
         gg(:) = two*poles_eps%gamma_p(:)
-
-        !allocate(kf(1),w2(1),gg(1))
-
-        !j = minloc(poles_eps%gamma_p(:),1)
-
-        !kf(:) = abs(two*poles_eps%omega_p(:)*(poles_eps%eps_omega_p(:)-one)/poles_eps%re_deps_domega_p(:))/twp
-        !kf(1) = (two/pi)*poles_eps%omega_p(j)/abs(poles_eps%re_deps_domega_p(j))
-        !w2(1) = poles_eps%omega_p(j)**2+poles_eps%gamma_p(j)**2
-        !gg(1) = two*poles_eps%gamma_p(j)
 
        endif
 
@@ -1750,27 +1740,17 @@
        complex(cmp) :: val_eps
        real(dbl) :: val_epsp
        integer(i4b) :: count
-       integer(i4b) :: const_size
-
-       real(dbl) :: new_const
-
-       ! FIXME: the case of degenerate const values can be made efficient
-
-        new_const = twp*(const+sgn)/(const-sgn)
 
         count = 0
         write(3,*) const
         do i=1,npts-1
-         if(    ( (real(eps_omegas(i+1),dbl)+const.gt.zero) .and. (real(eps_omegas(i),dbl)+const  .lt.zero) ) &
-            .or.( (real(eps_omegas(i+1),dbl)+const.lt.zero) .and. (real(eps_omegas(i),dbl)+const  .gt.zero) ) ) then
-          !if( (  ( (real(eps_omegas(i+1),dbl)+const.gt.zero) .and. (real(eps_omegas(i),dbl)+const  .lt.zero) ) &
-          !    .or.( (real(eps_omegas(i+1),dbl)+const.lt.zero) .and. (real(eps_omegas(i),dbl)+const  .gt.zero) ) ) &
-          !   .and. re_deps_domegas(i) .ge. zero ) then
+         if( (  ( (real(eps_omegas(i+1),dbl)+const.gt.zero) .and. (real(eps_omegas(i),dbl)+const  .lt.zero) ) &
+             .or.( (real(eps_omegas(i+1),dbl)+const.lt.zero) .and. (real(eps_omegas(i),dbl)+const  .gt.zero) ) ) &
+            .and. re_deps_domegas(i) .ge. zero ) then
           val_omega = -(omegas(i+1)-omegas(i))/real(eps_omegas(i+1)-eps_omegas(i))*(real(eps_omegas(i))+const) + &
                         omegas(i)
           val_eps = (eps_omegas(i+1)-eps_omegas(i))/(omegas(i+1)-omegas(i)) * (val_omega-omegas(i)) + eps_omegas(i)
           val_epsp = re_deps_domegas(i)
-          !val_gamma = (two*twp/(twp+new_const)) * abs((eps_omegas(i)-one)/re_deps_domegas(i))/dimag(eps_omegas(i))
           val_gamma = abs(dimag(eps_omegas(i))/re_deps_domegas(i))
           write(2,*) j, const, i, val_omega, val_gamma, val_eps, val_epsp
           count = count + 1
@@ -1782,11 +1762,9 @@
          allocate(sol%eps_omega_p(1:count),sol%re_deps_domega_p(1:count))
          count = 0
          do i=1,npts-1
-          if(    ( (real(eps_omegas(i+1),dbl)+const.gt.zero) .and. (real(eps_omegas(i),dbl)+const  .lt.zero) ) &
-             .or.( (real(eps_omegas(i+1),dbl)+const.lt.zero) .and. (real(eps_omegas(i),dbl)+const  .gt.zero) ) ) then
-          !if( (  ( (real(eps_omegas(i+1),dbl)+const.gt.zero) .and. (real(eps_omegas(i),dbl)+const  .lt.zero) ) &
-          !    .or.( (real(eps_omegas(i+1),dbl)+const.lt.zero) .and. (real(eps_omegas(i),dbl)+const  .gt.zero) ) ) &
-          !   .and. re_deps_domegas(i) .ge. zero ) then
+          if( (  ( (real(eps_omegas(i+1),dbl)+const.gt.zero) .and. (real(eps_omegas(i),dbl)+const  .lt.zero) ) &
+              .or.( (real(eps_omegas(i+1),dbl)+const.lt.zero) .and. (real(eps_omegas(i),dbl)+const  .gt.zero) ) ) &
+             .and. re_deps_domegas(i) .ge. zero ) then
 
            count = count + 1
            sol%omega_p(count) = -(omegas(i+1)-omegas(i))/real(eps_omegas(i+1)-eps_omegas(i),dbl)*(real(eps_omegas(i),dbl)+const) + &
@@ -1794,7 +1772,6 @@
            sol%eps_omega_p(count) = (eps_omegas(i+1)-eps_omegas(i))/(omegas(i+1)-omegas(i))*(sol%omega_p(count)-omegas(i)) + &
                                           eps_omegas(i)
            sol%re_deps_domega_p(count) = re_deps_domegas(i)
-           !sol%gamma_p(count) = (two*twp/(twp+new_const)) * abs((eps_omegas(i)-one)/re_deps_domegas(i))/dimag(eps_omegas(i))
            sol%gamma_p(count) = abs(dimag(eps_omegas(i))/re_deps_domegas(i))
           endif
          end do
