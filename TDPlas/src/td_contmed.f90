@@ -1465,15 +1465,16 @@
        if(Floc.eq."loc") qx_t(:) = zero
 
        do pidx = 1, npoles
+        qr_t_p(:,pidx)=qr_tp_p(:,pidx)+std_f1(pidx)*dqr_tp_p(:,pidx)+f2*fqr_tp_p(:,pidx)
+        qr_t_p(:,pidx)=qr_t_p(:,pidx)+kf_prime(pidx)*dt*0.5d0*(matmul(BEM_Qf,pot_tp-pot_tp2)+matmul(BEM_ADt,qr_tp-qr_tp2))
+        qr_t(:) = qr_t(:) + qr_t_p(:,pidx)
+       enddo
 
-       qr_t_p(:,pidx)=qr_tp_p(:,pidx)+std_f1(pidx)*dqr_tp_p(:,pidx)+f2*fqr_tp_p(:,pidx)
-
-       qr_t_p(:,pidx)=qr_t_p(:,pidx)+kf_prime(pidx)*dt*0.5d0*(matmul(BEM_Qf,pot_tp-pot_tp2)+matmul(BEM_ADt,qr_tp-qr_tp2))
-
-       fqr_t_p(:,pidx)=-w2(pidx)*qr_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,pot_tp)+kf(pidx)*matmul(BEM_ADt,qr_tp)+&
-                          +kf_prime(pidx)*(one-gg(pidx)*dt*0.5d0)*(matmul(BEM_Qf,pot_tp-pot_tp2)+matmul(BEM_ADt,qr_tp-qr_tp2))
-!                          +kf_prime(pidx)*matmul(BEM_Qf,pot_tp-pot_tp2)/dt+kf_prime(pidx)*matmul(BEM_ADt,qr_tp-qr_tp2)/dt
-       dqr_t_p(:,pidx)=std_f3(pidx)*dqr_tp_p(:,pidx)+f4*(fqr_t_p(:,pidx)+fqr_tp_p(:,pidx))-std_f5(pidx)*fqr_tp_p(:,pidx)
+       do pidx = 1, npoles
+        fqr_t_p(:,pidx)=-w2(pidx)*qr_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,pot_tp)+kf(pidx)*matmul(BEM_ADt,qr_t)+&
+                          +kf_prime(pidx)*(one-gg(pidx)*dt*0.5d0)*(matmul(BEM_Qf,pot_tp-pot_tp2)+matmul(BEM_ADt,qr_t-qr_tp))
+!                          +kf_prime(pidx)*matmul(BEM_Qf,pot_tp-pot_tp2)/dt+kf_prime(pidx)*matmul(BEM_ADt,qr_t-qr_tp)/dt
+        dqr_t_p(:,pidx)=std_f3(pidx)*dqr_tp_p(:,pidx)+f4*(fqr_t_p(:,pidx)+fqr_tp_p(:,pidx))-std_f5(pidx)*fqr_tp_p(:,pidx)
 
 !       do i=1, nts_act
 !       if(abs(qr_t_p(i,pidx)).lt. threshold) qr_t_p(i,pidx) = zero
@@ -1485,11 +1486,10 @@
        dqr_tp_p(:,pidx)=dqr_t_p(:,pidx)
        qr_tp_p(:,pidx)=qr_t_p(:,pidx)
 
-       qr_t(:) = qr_t(:) + qr_t_p(:,pidx)
 
-       do i=1, nts_act
-       if(abs(qr_t(i)).lt. threshold) qr_t(i) = zero
-       enddo
+!       do i=1, nts_act
+!       if(abs(qr_t(i)).lt. threshold) qr_t(i) = zero
+!       enddo
 
       ! Local Field
        if(Floc.eq."loc") then
