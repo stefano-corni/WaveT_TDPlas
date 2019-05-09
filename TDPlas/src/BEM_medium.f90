@@ -63,11 +63,19 @@
 
       real(dbl), allocatable :: gg(:), w2(:), kf(:)
 
+      real(dbl), allocatable :: sin_delta(:), cos_delta(:), kf_prime(:)
+
+      real(dbl), allocatable :: fact3(:),fact3x(:)
+
+      real(dbl), allocatable :: BEM_Qdf(:,:), BEM_Qdfx(:,:)
+      real(dbl), allocatable :: BEM_Qdf_2g(:,:), BEM_Qdfx_2g(:,:)
+
       type poles_t                                                                                     
         real(dbl), allocatable    :: omega_p(:)          !< real part of the poles of the diagonal Kerne
         real(dbl), allocatable    :: gamma_p(:)          !< imaginary part of the poles of the diagonal 
         complex(cmp), allocatable :: eps_omega_p(:)      !< complex dielectric function valued on the re
         real(dbl), allocatable    :: re_deps_domega_p(:) !< real part of the derivative of the complex d
+        real(dbl), allocatable    :: im_deps_domega_p(:) !< real part of the derivative of the complex d
       end type                                                                                         
                                                                                                           
       type(poles_t), allocatable :: poles(:) 
@@ -83,7 +91,7 @@
              do_BEM_prop,do_BEM_freq,do_BEM_quant,do_MPL_prop,         &
              do_eps_drl,do_eps_deb,do_charge_freq,                     &
              deallocate_BEM_public,deallocate_MPL_public,BEM_Qg,BEM_2G,&
-             do_eps_gen,BEM_ADt,kf,w2,gg
+             do_eps_gen,BEM_ADt,kf,w2,gg,kf_prime,BEM_Qdf,BEM_Qdfx,BEM_Qdf_2g,BEM_Qdfx_2g
 
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -176,7 +184,13 @@
            allocate(BEM_Qg(nts_act,nts_act)) 
            allocate(BEM_Qw(nts_act,nts_act))
            allocate(BEM_Qf(nts_act,nts_act)) 
-           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') allocate(BEM_Qfx(nts_act,nts_act))  
+           allocate(BEM_Qdf(nts_act,nts_act))
+           allocate(BEM_Qdf_2g(nts_act,nts_act))
+           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+            allocate(BEM_Qfx(nts_act,nts_act))
+            allocate(BEM_Qdfx(nts_act,nts_act))
+           allocate(BEM_Qdfx_2g(nts_act,nts_act))
+           endif  
            if(Fbem(1:4).eq.'stan') call do_propBEM_std_gen
            if(Fbem(1:4).eq.'diag') call do_propBEM_dia_gen
          endif
@@ -419,11 +433,17 @@
          if(allocated(BEM_Qg)) deallocate(BEM_Qg)
          if(allocated(BEM_2G)) deallocate(BEM_2G)   
 
+       if(allocated(BEM_Qdf)) deallocate(BEM_Qdf)
+       if(allocated(BEM_Qdfx)) deallocate(BEM_Qdfx)
+       if(allocated(BEM_Qdf)) deallocate(BEM_Qdf_2g)
+       if(allocated(BEM_Qdfx)) deallocate(BEM_Qdfx_2g)
+
        if(allocated(BEM_ADt)) deallocate(BEM_ADt)
 
        if(allocated(kf)) deallocate(kf)
        if(allocated(w2)) deallocate(w2)
        if(allocated(gg)) deallocate(gg)
+
 
        endif
 
@@ -908,10 +928,16 @@
 !$OMP PARALLEL 
 !$OMP DO
 #endif
+         allocate(sin_delta(1),cos_delta(1))
          do i=1,nts_act
           if( allocated(poles(i)%omega_p) ) then
            j = minloc(poles(i)%gamma_p(:)*poles(i)%re_deps_domega_p(:),1)
-           fact2(i)   = two*poles(i)%omega_p(j)*(fact1(i)+one)/abs(poles(i)%re_deps_domega_p(j))
+           fact2(i)   = two*poles(i)%omega_p(j)*(fact1(i)+one)/&
+                        dsqrt(poles(i)%re_deps_domega_p(j)**2+poles(i)%im_deps_domega_p(j)**2)
+           sin_delta(1) = poles(i)%im_deps_domega_p(j)/dsqrt(poles(i)%re_deps_domega_p(j)**2+poles(i)%im_deps_domega_p(j)**2)
+           cos_delta(1) = poles(i)%re_deps_domega_p(j)/dsqrt(poles(i)%re_deps_domega_p(j)**2+poles(i)%im_deps_domega_p(j)**2)
+           fact3(i) = fact2(i)/poles(i)%omega_p(j)*sin_delta(1)
+           fact2(i) = fact2(i)*poles(i)%gamma_p(j)/poles(i)%omega_p(j)*sin_delta(1)+fact2(i)*cos_delta(1)
            BEM_W2(i)  = poles(i)%omega_p(j)**2+poles(i)%gamma_p(j)**2
            BEM_2G(i)  = two*poles(i)%gamma_p(j)
           endif
@@ -933,7 +959,10 @@
            K0(:)=zero
          endif
          ! GG: analogous to K_f and K_0 matrices in the case of local-field for solvent external medium
-         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') fact2x(:)=-fact2(:) * fact1(:)
+         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+          fact2x(:)=-fact2(:) * fact1(:)
+          fact3x(:)=-fact3(:) * fact1(:)
+         endif
        endif
        if(Fwrite.eq."high") then 
          if (myrank.eq.0) &
@@ -1095,10 +1124,48 @@
         close(3)
 
         allocate(kf(size(poles_eps%omega_p)),w2(size(poles_eps%omega_p)),gg(size(poles_eps%omega_p)))
+        allocate(sin_delta(size(poles_eps%omega_p)),cos_delta(size(poles_eps%omega_p)),kf_prime(size(poles_eps%omega_p)))
 
-        kf(:) = (two/pi)*poles_eps%omega_p(:)/abs(poles_eps%re_deps_domega_p(:))
+        kf(:) = (two/pi)*poles_eps%omega_p(:)/dsqrt(poles_eps%re_deps_domega_p(:)**2+poles_eps%im_deps_domega_p(:)**2)
+        sin_delta(:) = poles_eps%im_deps_domega_p(:)/dsqrt(poles_eps%re_deps_domega_p(:)**2+poles_eps%im_deps_domega_p(:)**2)
+        cos_delta(:) = poles_eps%re_deps_domega_p(:)/dsqrt(poles_eps%re_deps_domega_p(:)**2+poles_eps%im_deps_domega_p(:)**2)
+        kf_prime(:) = kf(:)/poles_eps%omega_p(:)*sin_delta(:)
+        kf(:) = kf(:)*poles_eps%gamma_p(:)/poles_eps%omega_p(:)*sin_delta(:)+kf(:)*cos_delta(:)
         w2(:) = poles_eps%omega_p(:)**2+poles_eps%gamma_p(:)**2
         gg(:) = two*poles_eps%gamma_p(:)
+
+        !kf_prime=zero
+
+        !allocate(kf(size(poles_eps%omega_p)-1),w2(size(poles_eps%omega_p)-1),gg(size(poles_eps%omega_p)-1))
+        !allocate(sin_delta(size(poles_eps%omega_p)-1),cos_delta(size(poles_eps%omega_p)-1),kf_prime(size(poles_eps%omega_p)-1))
+
+        !do j = 1, size(poles_eps%omega_p)
+        !i=j
+        !if(j==5) cycle
+        !if(j>5) i=j-1
+        !kf(i) = (two/pi)*poles_eps%omega_p(i)/dsqrt(poles_eps%re_deps_domega_p(i)**2+poles_eps%im_deps_domega_p(i)**2)
+        !sin_delta(i) = poles_eps%im_deps_domega_p(i)/dsqrt(poles_eps%re_deps_domega_p(i)**2+poles_eps%im_deps_domega_p(i)**2)
+        !cos_delta(i) = poles_eps%re_deps_domega_p(i)/dsqrt(poles_eps%re_deps_domega_p(i)**2+poles_eps%im_deps_domega_p(i)**2)
+        !kf_prime(i) = kf(i)/poles_eps%omega_p(i)*sin_delta(i)
+        !kf(i) = kf(i)*poles_eps%gamma_p(i)/poles_eps%omega_p(i)*sin_delta(i)+kf(i)*cos_delta(i)
+        !w2(i) = poles_eps%omega_p(i)**2+poles_eps%gamma_p(i)**2
+        !gg(i) = two*poles_eps%gamma_p(i)
+        !enddo 
+
+        !j = minloc(poles_eps%gamma_p(:)*poles_eps%re_deps_domega_p(:),1)
+
+        !j=5
+
+        !allocate(kf(1),w2(1),gg(1))
+        !allocate(sin_delta(1),cos_delta(1),kf_prime(1))
+
+        !kf(1) = (two/pi)*poles_eps%omega_p(j)/dsqrt(poles_eps%re_deps_domega_p(j)**2+poles_eps%im_deps_domega_p(j)**2)
+        !sin_delta(1) = poles_eps%im_deps_domega_p(j)/dsqrt(poles_eps%re_deps_domega_p(j)**2+poles_eps%im_deps_domega_p(j)**2)
+        !cos_delta(1) = poles_eps%re_deps_domega_p(j)/dsqrt(poles_eps%re_deps_domega_p(j)**2+poles_eps%im_deps_domega_p(j)**2)
+        !kf_prime(1) = kf(1)/poles_eps%omega_p(j)*sin_delta(1)
+        !kf(1) = kf(1)*poles_eps%gamma_p(j)/poles_eps%omega_p(j)*sin_delta(1)+kf(1)*cos_delta(1)
+        !w2(1) = poles_eps%omega_p(j)**2+poles_eps%gamma_p(j)**2
+        !gg(1) = two*poles_eps%gamma_p(j)
 
        endif
 
@@ -1133,6 +1200,8 @@
        allocate(Sm12T(nts_act,nts_act))
        allocate(TSm12(nts_act,nts_act))
        allocate(TSp12(nts_act,nts_act))
+
+       allocate(fact3(nts_act))
 
        if( Feps.eq.'gen') allocate(poles(nts_act))
 
@@ -1460,6 +1529,46 @@
         BEM_Qfx=-matmul(scr1,TSm12)
        endif
 
+#ifdef OMP
+!$OMP PARALLEL
+!$OMP DO
+#endif
+       do i=1,nts_act
+         scr1(:,i)=Sm12T(:,i)*fact3(i)
+       enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
+       BEM_Qdf=-matmul(scr1,TSm12)
+       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+        do i=1,nts_act
+          scr1(:,i)=Sm12T(:,i)*fact3x(i)
+        enddo
+        BEM_Qdfx=-matmul(scr1,TSm12)
+       endif
+
+#ifdef OMP
+!$OMP PARALLEL
+!$OMP DO
+#endif
+       do i=1,nts_act
+         scr1(:,i)=Sm12T(:,i)*BEM_2G(i)*fact3(i)
+       enddo
+#ifdef OMP
+!$OMP enddo
+!$OMP END PARALLEL
+#endif
+
+       BEM_Qdf_2g=-matmul(scr1,TSm12)
+       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+        do i=1,nts_act
+          scr1(:,i)=Sm12T(:,i)*fact3x(i)
+        enddo
+        BEM_Qdfx_2g=-matmul(scr1,TSm12)
+       endif
+
       ! addition with respect to do_propBEM_dia_drl
 #ifdef OMP
 !$OMP PARALLEL
@@ -1741,37 +1850,48 @@
        real(dbl) :: val_epsp
        integer(i4b) :: count
 
+       real(dbl) :: val_k, val_delta, val_c,val_d
+
         count = 0
         write(3,*) const
         do i=1,npts-1
-         if( (  ( (real(eps_omegas(i+1),dbl)+const.gt.zero) .and. (real(eps_omegas(i),dbl)+const  .lt.zero) ) &
-             .or.( (real(eps_omegas(i+1),dbl)+const.lt.zero) .and. (real(eps_omegas(i),dbl)+const  .gt.zero) ) ) &
+         if((((func_eps(i+1)+const.gt.zero) .and. &
+              (func_eps(i)  +const.lt.zero)) .or. &
+             ((func_eps(i+1)+const.lt.zero) .and. &
+              (func_eps(i)  +const.gt.zero)))     &
             .and. re_deps_domegas(i) .ge. zero ) then
-          val_omega = -(omegas(i+1)-omegas(i))/real(eps_omegas(i+1)-eps_omegas(i))*(real(eps_omegas(i))+const) + &
-                        omegas(i)
+          val_omega = -(omegas(i+1)-omegas(i))/(func_eps(i+1)-func_eps(i))*(func_eps(i)+const) + omegas(i)
           val_eps = (eps_omegas(i+1)-eps_omegas(i))/(omegas(i+1)-omegas(i)) * (val_omega-omegas(i)) + eps_omegas(i)
           val_epsp = re_deps_domegas(i)
           val_gamma = abs(dimag(eps_omegas(i))/re_deps_domegas(i))
-          write(2,*) j, const, i, val_omega, val_gamma, val_eps, val_epsp
+          val_k=(two/pi)*val_omega/dsqrt(re_deps_domegas(i)**2+im_deps_domegas(i)**2)
+          val_delta=atan(im_deps_domegas(i)/re_deps_domegas(i))
+          val_c=val_k*cos(val_delta)+val_k*val_gamma/val_omega*sin(val_delta)
+          val_d=val_k/val_omega*sin(val_delta)
+          write(2,*) j, const, i, val_omega, val_gamma, val_eps, val_epsp, im_deps_domegas(i)!,&
+          !            (-two*(val_gamma*val_d+val_c)+two*dsqrt((val_gamma*val_d+val_c)**2+val_omega**2*val_d**2))/val_d**2,&
+          !            (-two*(val_gamma*val_d+val_c)-two*dsqrt((val_gamma*val_d+val_c)**2+val_omega**2*val_d**2))/val_d**2
           count = count + 1
          endif
         end do
         if( count .ge. 1 ) then
          write(55,*) "How many poles per PCM matrix kernel component", j,"?", count
          allocate(sol%omega_p(1:count),sol%gamma_p(1:count))
-         allocate(sol%eps_omega_p(1:count),sol%re_deps_domega_p(1:count))
+         allocate(sol%eps_omega_p(1:count),sol%re_deps_domega_p(1:count),sol%im_deps_domega_p(1:count))
          count = 0
          do i=1,npts-1
-          if( (  ( (real(eps_omegas(i+1),dbl)+const.gt.zero) .and. (real(eps_omegas(i),dbl)+const  .lt.zero) ) &
-              .or.( (real(eps_omegas(i+1),dbl)+const.lt.zero) .and. (real(eps_omegas(i),dbl)+const  .gt.zero) ) ) &
+          if((((func_eps(i+1)+const.gt.zero) .and. &
+               (func_eps(i)  +const.lt.zero)) .or. &
+              ((func_eps(i+1)+const.lt.zero) .and. &
+               (func_eps(i)  +const.gt.zero)))     &
              .and. re_deps_domegas(i) .ge. zero ) then
 
            count = count + 1
-           sol%omega_p(count) = -(omegas(i+1)-omegas(i))/real(eps_omegas(i+1)-eps_omegas(i),dbl)*(real(eps_omegas(i),dbl)+const) + &
-                                       omegas(i)
+           sol%omega_p(count) = -(omegas(i+1)-omegas(i))/(func_eps(i+1)-func_eps(i))*(func_eps(i)+const) + omegas(i)
            sol%eps_omega_p(count) = (eps_omegas(i+1)-eps_omegas(i))/(omegas(i+1)-omegas(i))*(sol%omega_p(count)-omegas(i)) + &
                                           eps_omegas(i)
            sol%re_deps_domega_p(count) = re_deps_domegas(i)
+           sol%im_deps_domega_p(count) = im_deps_domegas(i)
            sol%gamma_p(count) = abs(dimag(eps_omegas(i))/re_deps_domegas(i))
           endif
          end do
