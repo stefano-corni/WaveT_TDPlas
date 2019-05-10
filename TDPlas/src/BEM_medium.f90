@@ -63,7 +63,7 @@
 
       real(dbl), allocatable :: gg(:), w2(:), kf(:)
 
-      real(dbl), allocatable :: sin_delta(:), cos_delta(:), kf_prime(:)
+      real(dbl), allocatable :: sin_delta(:), cos_delta(:), kf_prime(:), kf0(:)
 
       real(dbl), allocatable :: fact3(:),fact3x(:)
 
@@ -91,7 +91,7 @@
              do_BEM_prop,do_BEM_freq,do_BEM_quant,do_MPL_prop,         &
              do_eps_drl,do_eps_deb,do_charge_freq,                     &
              deallocate_BEM_public,deallocate_MPL_public,BEM_Qg,BEM_2G,&
-             do_eps_gen,BEM_ADt,kf,w2,gg,kf_prime,BEM_Qdf,BEM_Qdfx,BEM_Qdf_2g,BEM_Qdfx_2g
+             do_eps_gen,BEM_ADt,kf,w2,gg,kf_prime,BEM_Qdf,BEM_Qdfx,BEM_Qdf_2g,BEM_Qdfx_2g,kf0
 
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1125,7 +1125,7 @@
         close(2)
         close(3)
 
-        allocate(kf(size(poles_eps%omega_p)),w2(size(poles_eps%omega_p)),gg(size(poles_eps%omega_p)))
+        allocate(kf(size(poles_eps%omega_p)),w2(size(poles_eps%omega_p)),gg(size(poles_eps%omega_p)),kf0(size(poles_eps%omega_p)))
         allocate(sin_delta(size(poles_eps%omega_p)),cos_delta(size(poles_eps%omega_p)),kf_prime(size(poles_eps%omega_p)))
 
         kf(:) = (two/pi)*poles_eps%omega_p(:)/dsqrt(poles_eps%re_deps_domega_p(:)**2+poles_eps%im_deps_domega_p(:)**2)
@@ -1135,6 +1135,7 @@
         kf(:) = kf(:)*poles_eps%gamma_p(:)/poles_eps%omega_p(:)*sin_delta(:)+kf(:)*cos_delta(:)
         w2(:) = poles_eps%omega_p(:)**2+poles_eps%gamma_p(:)**2
         gg(:) = two*poles_eps%gamma_p(:)
+        kf0(:) = -kf(:) / w2(:) / poles_eps%omega_p(:) * (poles_eps%omega_p(:)*cos_delta(:)+poles_eps%gamma_p(:)*sin_delta(:))
 
         !kf_prime=zero
 

@@ -633,7 +633,7 @@
           allocate(fqr_tp_p(nts_act,npoles))
           allocate(fqr_t_p(nts_act,npoles))
           do ipoles=1,npoles
-           qr_tp_p(:,ipoles)=zero ! doubt - initialization
+           qr_tp_p(:,ipoles)= kf0(ipoles) * ( matmul(BEM_Qf,pot_0)+matmul(BEM_ADt,q0) ) ! check - initialization
           enddo
           dqr_tp_p(:,:)=zero
           fqr_tp_p=zero
