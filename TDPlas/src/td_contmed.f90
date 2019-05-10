@@ -542,7 +542,7 @@
        integer(i4b):: its
        real(dbl), allocatable :: qd(:)
 
-       integer(i4b) :: npoles
+       integer(i4b) :: npoles,ipoles
 
 #ifndef MPI
        myrank=0
@@ -632,7 +632,9 @@
           allocate(dqr_tp_p(nts_act,npoles))
           allocate(fqr_tp_p(nts_act,npoles))
           allocate(fqr_t_p(nts_act,npoles))
-          qr_tp_p(:,:)=zero ! doubt - initialization
+          do ipoles=1,npoles
+           qr_tp_p(:,ipoles)=zero ! doubt - initialization
+          enddo
           dqr_tp_p(:,:)=zero
           fqr_tp_p=zero
           if(Floc.eq."loc") then
@@ -1467,13 +1469,15 @@
        do pidx = 1, npoles
         qr_t_p(:,pidx)=qr_tp_p(:,pidx)+std_f1(pidx)*dqr_tp_p(:,pidx)+f2*fqr_tp_p(:,pidx)
         qr_t_p(:,pidx)=qr_t_p(:,pidx)+kf_prime(pidx)*dt*0.5d0*(matmul(BEM_Qf,pot_tp-pot_tp2)+matmul(BEM_ADt,qr_tp-qr_tp2))
+        qr_t_p(:,pidx)=qr_t_p(:,pidx)-sum(qr_t_p(:,pidx))/nts_act
         qr_t(:) = qr_t(:) + qr_t_p(:,pidx)
        enddo
 
        do pidx = 1, npoles
         fqr_t_p(:,pidx)=-w2(pidx)*qr_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,pot_tp)+kf(pidx)*matmul(BEM_ADt,qr_t)+&
-                          +kf_prime(pidx)*(one-gg(pidx)*dt*0.5d0)*(matmul(BEM_Qf,pot_tp-pot_tp2)+matmul(BEM_ADt,qr_t-qr_tp))
+                           +kf_prime(pidx)*(one-gg(pidx)*dt*0.5d0)*(matmul(BEM_Qf,pot_tp-pot_tp2)+matmul(BEM_ADt,qr_t-qr_tp))
 !                          +kf_prime(pidx)*matmul(BEM_Qf,pot_tp-pot_tp2)/dt+kf_prime(pidx)*matmul(BEM_ADt,qr_t-qr_tp)/dt
+        fqr_t_p(:,pidx)=fqr_t_p(:,pidx)-sum(fqr_t_p(:,pidx))/nts_act
         dqr_t_p(:,pidx)=std_f3(pidx)*dqr_tp_p(:,pidx)+f4*(fqr_t_p(:,pidx)+fqr_tp_p(:,pidx))-std_f5(pidx)*fqr_tp_p(:,pidx)
 
 !       do i=1, nts_act
@@ -1482,9 +1486,9 @@
        !if(abs(dqr_t_p(i,pidx)).lt. threshold) dqr_t_p(i,pidx) = zero
 !       enddo
 
-       fqr_tp_p(:,pidx)=fqr_t_p(:,pidx)
-       dqr_tp_p(:,pidx)=dqr_t_p(:,pidx)
-       qr_tp_p(:,pidx)=qr_t_p(:,pidx)
+        fqr_tp_p(:,pidx)=fqr_t_p(:,pidx)
+        dqr_tp_p(:,pidx)=dqr_t_p(:,pidx)
+        qr_tp_p(:,pidx)=qr_t_p(:,pidx)
 
 
 !       do i=1, nts_act
@@ -1497,11 +1501,13 @@
                       
         if(Fmdm(2:4).eq.'sol') then
          qx_t_p(:,pidx)=qx_t_p(:,pidx)+kf_prime(pidx)*dt*0.5d0*(matmul(BEM_Qfx,potf_tp-potf_tp2)+matmul(BEM_ADt,qx_tp-qx_tp2))
+         qx_t_p(:,pidx)=qx_t_p(:,pidx)-sum(qx_t_p(:,pidx))/nts_act
          fqx_t_p(:,pidx)=-w2(pidx)*qx_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qfx,potf_tp)+kf(pidx)*matmul(BEM_ADt,qx_tp)+&
                           +kf_prime(pidx)*(one-gg(pidx)*dt*0.5d0)*(matmul(BEM_Qfx,potf_tp-potf_tp2)+matmul(BEM_ADt,qx_tp-qx_tp2))
 !                          +kf_prime(pidx)*matmul(BEM_Qfx,potf_tp-potf_tp2)/dt+kf_prime(pidx)*matmul(BEM_ADt,qx_tp-qx_tp2)/dt
         else if(Fmdm(2:4).eq.'nan') then
          qx_t_p(:,pidx)=qx_t_p(:,pidx)+kf_prime(pidx)*dt*0.5d0*(matmul(BEM_Qf,potf_tp-potf_tp2)+matmul(BEM_ADt,qx_tp-qx_tp2))
+         qx_t_p(:,pidx)=qx_t_p(:,pidx)-sum(qx_t_p(:,pidx))/nts_act
          fqx_t_p(:,pidx)=-w2(pidx)*qx_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,potf_tp)+kf(pidx)*matmul(BEM_ADt,qx_tp)+&
                           +kf_prime(pidx)*(one-gg(pidx)*dt*0.5d0)*(matmul(BEM_Qf,potf_tp-potf_tp2)+matmul(BEM_ADt,qx_tp-qx_tp2))
 !                          +kf_prime(pidx)*matmul(BEM_Qf,potf_tp-potf_tp2)/dt+kf_prime(pidx)*matmul(BEM_ADt,qx_tp-qx_tp2)/dt

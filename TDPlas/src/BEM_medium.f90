@@ -1056,7 +1056,9 @@
 
        ! Form -DA
        BEM_ADt = zero
+       scr1=zero
        do i=1,nts_act
+!         scr1(i,i)= -sgn * BEM_D(i,i)*cts_act(i)%area
          scr1(:,i)= -sgn * BEM_D(:,i)*cts_act(i)%area
        enddo
 

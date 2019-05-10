@@ -39,7 +39,7 @@ interaction_type='pcm'
 interaction_stride=1
 interaction_init='non-scf'
 test_type='n-l'
-local_field='loc'
+local_field='non'
 /
 
 &MEDIUM
