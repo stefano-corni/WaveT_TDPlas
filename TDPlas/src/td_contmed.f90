@@ -1073,6 +1073,7 @@
        qr_tp=qr_t
        pot_tp2=pot_tp
        if(Floc.eq."loc") then
+         ! decoupling charges per pole test - if the next two lines are commented
          qx_tp2=qx_tp
          qx_tp=qx_t
          potf_tp2=potf_tp
@@ -1470,35 +1471,22 @@
         qr_t_p(:,pidx)=qr_tp_p(:,pidx)+std_f1(pidx)*dqr_tp_p(:,pidx)+f2*fqr_tp_p(:,pidx)
         qr_t_p(:,pidx)=qr_t_p(:,pidx)+kf_prime(pidx)*dt*0.5d0*(matmul(BEM_Qf,pot_tp-pot_tp2)+matmul(BEM_ADt,qr_tp-qr_tp2))
         qr_t_p(:,pidx)=qr_t_p(:,pidx)-sum(qr_t_p(:,pidx))/nts_act
-        qr_t(:) = qr_t(:) + qr_t_p(:,pidx)
-       enddo
-
-       do pidx = 1, npoles
         fqr_t_p(:,pidx)=-w2(pidx)*qr_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,pot_tp)+kf(pidx)*matmul(BEM_ADt,qr_t)+&
                            +kf_prime(pidx)*(one-gg(pidx)*dt*0.5d0)*(matmul(BEM_Qf,pot_tp-pot_tp2)+matmul(BEM_ADt,qr_t-qr_tp))
 !                          +kf_prime(pidx)*matmul(BEM_Qf,pot_tp-pot_tp2)/dt+kf_prime(pidx)*matmul(BEM_ADt,qr_t-qr_tp)/dt
         fqr_t_p(:,pidx)=fqr_t_p(:,pidx)-sum(fqr_t_p(:,pidx))/nts_act
         dqr_t_p(:,pidx)=std_f3(pidx)*dqr_tp_p(:,pidx)+f4*(fqr_t_p(:,pidx)+fqr_tp_p(:,pidx))-std_f5(pidx)*fqr_tp_p(:,pidx)
 
-!       do i=1, nts_act
-!       if(abs(qr_t_p(i,pidx)).lt. threshold) qr_t_p(i,pidx) = zero
-       !if(abs(fqr_t_p(i,pidx)).lt. threshold) fqr_t_p(i,pidx) = zero
-       !if(abs(dqr_t_p(i,pidx)).lt. threshold) dqr_t_p(i,pidx) = zero
-!       enddo
-
         fqr_tp_p(:,pidx)=fqr_t_p(:,pidx)
         dqr_tp_p(:,pidx)=dqr_t_p(:,pidx)
         qr_tp_p(:,pidx)=qr_t_p(:,pidx)
 
-
-!       do i=1, nts_act
-!       if(abs(qr_t(i)).lt. threshold) qr_t(i) = zero
-!       enddo
+        qr_t(:) = qr_t(:) + qr_t_p(:,pidx)
 
       ! Local Field
        if(Floc.eq."loc") then
-        qx_t_p(:,pidx)=qx_tp_p(:,pidx)+std_f1(pidx)*dqx_tp_p(:,pidx)+f2*fqx_tp_p(:,pidx)
-                      
+
+        qx_t_p(:,pidx)=qx_tp_p(:,pidx)+std_f1(pidx)*dqx_tp_p(:,pidx)+f2*fqx_tp_p(:,pidx)                      
         if(Fmdm(2:4).eq.'sol') then
          qx_t_p(:,pidx)=qx_t_p(:,pidx)+kf_prime(pidx)*dt*0.5d0*(matmul(BEM_Qfx,potf_tp-potf_tp2)+matmul(BEM_ADt,qx_tp-qx_tp2))
          qx_t_p(:,pidx)=qx_t_p(:,pidx)-sum(qx_t_p(:,pidx))/nts_act
@@ -1514,21 +1502,16 @@
         endif
         dqx_t_p(:,pidx)=std_f3(pidx)*dqx_tp_p(:,pidx)+f4*(fqx_t_p(:,pidx)+fqx_tp_p(:,pidx))-std_f5(pidx)*fqx_tp_p(:,pidx)
 
-!        do i=1, nts_act
-!        if(abs(qx_t_p(i,pidx)).lt. threshold) qx_t_p(i,pidx) = zero
-        !if(abs(fqx_t_p(i,pidx)).lt. threshold) fqx_t_p(i,pidx) = zero
-        !if(abs(dqx_t_p(i,pidx)).lt. threshold) dqx_t_p(i,pidx) = zero
-!        enddo
-
         fqx_tp_p(:,pidx)=fqx_t_p(:,pidx)
         dqx_tp_p(:,pidx)=dqx_t_p(:,pidx)
+
+        ! decoupling charges per pole to test - if the next two lines are uncommented
+        !qx_tp2(:) = qx_tp_p(:,pidx)
+        !qx_tp(:) = qx_t_p(:,pidx)
+
         qx_tp_p(:,pidx)=qx_t_p(:,pidx)
 
         qx_t(:) = qx_t(:) + qx_t_p(:,pidx)
-
-!        do i=1, nts_act
-!        if(abs(qx_t(i)).lt. threshold) qx_t(i) = zero
-!        enddo
 
        endif
 

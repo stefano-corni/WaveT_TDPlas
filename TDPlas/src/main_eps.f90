@@ -7,7 +7,7 @@
 
 !     read in the input parameters
       call system_clock(st,rate)
-      call read_medium_freq
+      call read_medium_eps
 
 !     printing eps function in file
       open(1,file='eps.inp')

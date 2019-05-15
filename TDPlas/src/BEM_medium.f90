@@ -764,6 +764,8 @@
        real(8), allocatable :: eigt(:,:),eigt_t(:,:)
        real(8), allocatable :: eigv(:)
        real(dbl) :: fac_eps0,fac_epsd
+ 
+       integer(i4b) :: npoles
 
 #ifndef MPI
        myrank=0
@@ -914,7 +916,7 @@
          open(3,file="lambda_values.out")
          write(2,*) "tess. index ", " ref. value ", " pole idx per tess. ", " omega ", " gamma ", " eps ", " deps/domega "
          do i=1, nts_act 
-          call do_poles(poles(i),fact1(i),i)
+          call do_poles(poles(i),npoles,fact1(i),i)
          enddo
          close(2)
          close(3)
@@ -1045,6 +1047,8 @@
 
        type(poles_t) :: poles_eps
 
+       integer(i4b) :: npoles
+
 #ifndef MPI
        myrank=0
 #endif
@@ -1121,12 +1125,12 @@
         open(2,file="poles.out")
         open(3,file="lambda_values.out")
         write(2,*) "tess. index ", " ref. value ", " pole idx per tess. ", " omega ", " gamma ", " eps ", " deps/domega "
-        call do_poles(poles_eps,one,0)
+        call do_poles(poles_eps,npoles,one,0)
         close(2)
         close(3)
 
-        allocate(kf(size(poles_eps%omega_p)),w2(size(poles_eps%omega_p)),gg(size(poles_eps%omega_p)),kf0(size(poles_eps%omega_p)))
-        allocate(sin_delta(size(poles_eps%omega_p)),cos_delta(size(poles_eps%omega_p)),kf_prime(size(poles_eps%omega_p)))
+        allocate(kf(npoles),w2(npoles),gg(npoles),kf0(npoles),kf_prime(npoles))
+        allocate(sin_delta(npoles),cos_delta(npoles))
 
         kf(:) = (two/pi)*poles_eps%omega_p(:)/dsqrt(poles_eps%re_deps_domega_p(:)**2+poles_eps%im_deps_domega_p(:)**2)
         sin_delta(:) = poles_eps%im_deps_domega_p(:)/dsqrt(poles_eps%re_deps_domega_p(:)**2+poles_eps%im_deps_domega_p(:)**2)
@@ -1137,15 +1141,13 @@
         gg(:) = two*poles_eps%gamma_p(:)
         kf0(:) = -kf(:) / w2(:) / poles_eps%omega_p(:) * (poles_eps%omega_p(:)*cos_delta(:)+poles_eps%gamma_p(:)*sin_delta(:))
 
-        !kf_prime=zero
+        !allocate(kf(npoles-1),w2(npoles-1),gg(npoles-1),kf0(npoles-1),kf_prime(npoles-1))
+        !allocate(sin_delta(npoles-1),cos_delta(npoles-1))
 
-        !allocate(kf(size(poles_eps%omega_p)-1),w2(size(poles_eps%omega_p)-1),gg(size(poles_eps%omega_p)-1))
-        !allocate(sin_delta(size(poles_eps%omega_p)-1),cos_delta(size(poles_eps%omega_p)-1),kf_prime(size(poles_eps%omega_p)-1))
-
-        !do j = 1, size(poles_eps%omega_p)
+        !do j = 1, npoles
         !i=j
-        !if(j==5) cycle
-        !if(j>5) i=j-1
+        !if(j==4) cycle
+        !if(j>4) i=j-1
         !kf(i) = (two/pi)*poles_eps%omega_p(i)/dsqrt(poles_eps%re_deps_domega_p(i)**2+poles_eps%im_deps_domega_p(i)**2)
         !sin_delta(i) = poles_eps%im_deps_domega_p(i)/dsqrt(poles_eps%re_deps_domega_p(i)**2+poles_eps%im_deps_domega_p(i)**2)
         !cos_delta(i) = poles_eps%re_deps_domega_p(i)/dsqrt(poles_eps%re_deps_domega_p(i)**2+poles_eps%im_deps_domega_p(i)**2)
@@ -1153,6 +1155,7 @@
         !kf(i) = kf(i)*poles_eps%gamma_p(i)/poles_eps%omega_p(i)*sin_delta(i)+kf(i)*cos_delta(i)
         !w2(i) = poles_eps%omega_p(i)**2+poles_eps%gamma_p(i)**2
         !gg(i) = two*poles_eps%gamma_p(i)
+        !kf0(i) = -kf(i) / w2(i) / poles_eps%omega_p(i) * (poles_eps%omega_p(i)*cos_delta(i)+poles_eps%gamma_p(i)*sin_delta(i))
         !enddo 
 
         !j = minloc(poles_eps%gamma_p(:)*poles_eps%re_deps_domega_p(:),1)
@@ -1828,7 +1831,7 @@
       end subroutine
 
 
-      subroutine do_poles(sol,const,j)
+      subroutine do_poles(sol,npoles,const,j)
 !------------------------------------------------------------------------------
 ! @brief Compute the real part of the poles of the PCM response kernel
 !   * real part of the poles - frequencies
@@ -1843,60 +1846,84 @@
        implicit none
 
        type(poles_t), intent(out) :: sol
+       integer(i4b),  intent(out) :: npoles
        real(dbl),     intent(in)  :: const
        integer(i4b),  intent(in)  :: j
 
-       integer(i4b) :: i
        real(dbl) :: val_omega
-       real(dbl) :: val_gamma
-       complex(cmp) :: val_eps
-       real(dbl) :: val_epsp
-       integer(i4b) :: count
 
-       real(dbl) :: val_k, val_delta, val_c,val_d
+       integer(i4b), parameter :: niter = 1000
+       integer(i4b) :: i, k, kp, end_idx(npts), iter, ipole
 
-        count = 0
+        ! General notes:
+        ! 1) We assume first-order Taylor expansion for eps around frequency of the pole.
+        !    This means that the function whose roots we are interested in is not Re{eps} but Re{eps} + Im{d eps/d omega} x gamma 
+        !    Also this means that gamma can be written as gamma =  Im{eps} / Re{d eps/d omega}.
+        !    Since gamma is positive by definition, Re{d eps/d omega} > 0.
+        ! 2) This is consistent with other assumptions: simple poles and only one gamma per omega.
+
+
+        ipole = 0
         write(3,*) const
+        end_idx = 0
         do i=1,npts-1
-         if((((func_eps(i+1)+const.gt.zero) .and. &
-              (func_eps(i)  +const.lt.zero)) .or. &
-             ((func_eps(i+1)+const.lt.zero) .and. &
-              (func_eps(i)  +const.gt.zero)))     &
-            .and. re_deps_domegas(i) .ge. zero ) then
-          val_omega = -(omegas(i+1)-omegas(i))/(func_eps(i+1)-func_eps(i))*(func_eps(i)+const) + omegas(i)
-          val_eps = (eps_omegas(i+1)-eps_omegas(i))/(omegas(i+1)-omegas(i)) * (val_omega-omegas(i)) + eps_omegas(i)
-          val_epsp = re_deps_domegas(i)
-          val_gamma = abs(dimag(eps_omegas(i))/re_deps_domegas(i))
-          val_k=(two/pi)*val_omega/dsqrt(re_deps_domegas(i)**2+im_deps_domegas(i)**2)
-          val_delta=atan(im_deps_domegas(i)/re_deps_domegas(i))
-          val_c=val_k*cos(val_delta)+val_k*val_gamma/val_omega*sin(val_delta)
-          val_d=val_k/val_omega*sin(val_delta)
-          write(2,*) j, const, i, val_omega, val_gamma, val_eps, val_epsp, im_deps_domegas(i)!,&
-          !            (-two*(val_gamma*val_d+val_c)+two*dsqrt((val_gamma*val_d+val_c)**2+val_omega**2*val_d**2))/val_d**2,&
-          !            (-two*(val_gamma*val_d+val_c)-two*dsqrt((val_gamma*val_d+val_c)**2+val_omega**2*val_d**2))/val_d**2
-          count = count + 1
-         endif
+         ! first approximation to the root / function crossing zero
+         if(.not.(((func_eps(i+1)+const.gt.zero) .and. (func_eps(i)+const.lt.zero)) .or. &
+                  ((func_eps(i+1)+const.lt.zero) .and. (func_eps(i)+const.gt.zero))     )) cycle
+          k = i
+          ! Newton method to find roots of discrete functions
+          do iter = 1, niter
+            write(*,*) "pt=", i, "iter=", iter, "final pt=", k, abs(dfunc_eps(k)), re_deps_domegas(k) 
+            val_omega = omegas(k) -(func_eps(k)+const)/dfunc_eps(k)
+            kp = k
+            k = minloc(abs(omegas(:)-val_omega),1)
+            if( k == kp ) exit
+          enddo
+          ! constraint to estimate gamma from first-order Taylor
+          if( nint(sign(one,re_deps_domegas(k))) .eq. -1 ) cycle
+          write(*,*) "pt=", i, "iter=", iter, "final pt=", k 
+          ipole = ipole + 1
+          end_idx(i) = k
         end do
-        if( count .ge. 1 ) then
-         write(55,*) "How many poles per PCM matrix kernel component", j,"?", count
-         allocate(sol%omega_p(1:count),sol%gamma_p(1:count))
-         allocate(sol%eps_omega_p(1:count),sol%re_deps_domega_p(1:count),sol%im_deps_domega_p(1:count))
-         count = 0
+        npoles=ipole
+        write(55,*) "How many poles per PCM matrix kernel component", j,"?", npoles
+        if( npoles .ge. 1 ) then
+         ! Since Newton method from different initial points can arrive to the same root, we remove roots considered multiply.
+         if( npoles .ge. 2) then
+           ipole = 0
+           do i=1, npts-1
+             if( end_idx(i) .eq. 0 ) cycle
+             ipole = ipole + 1
+             if( ipole .eq. 1 ) then
+               k = end_idx(i)
+               cycle
+             endif
+             if( end_idx(i) .eq. k ) then
+               ipole = ipole - 1
+               end_idx(i) = 0
+             else
+               k = end_idx(i)
+             endif         
+           enddo
+           npoles=ipole
+         endif
+         write(55,*) "How many poles per PCM matrix kernel component", j,"?", npoles
+         allocate(sol%omega_p(npoles),sol%gamma_p(npoles))
+         allocate(sol%eps_omega_p(npoles),sol%re_deps_domega_p(npoles),sol%im_deps_domega_p(npoles))
+         ipole = 0
          do i=1,npts-1
-          if((((func_eps(i+1)+const.gt.zero) .and. &
-               (func_eps(i)  +const.lt.zero)) .or. &
-              ((func_eps(i+1)+const.lt.zero) .and. &
-               (func_eps(i)  +const.gt.zero)))     &
-             .and. re_deps_domegas(i) .ge. zero ) then
-
-           count = count + 1
-           sol%omega_p(count) = -(omegas(i+1)-omegas(i))/(func_eps(i+1)-func_eps(i))*(func_eps(i)+const) + omegas(i)
-           sol%eps_omega_p(count) = (eps_omegas(i+1)-eps_omegas(i))/(omegas(i+1)-omegas(i))*(sol%omega_p(count)-omegas(i)) + &
-                                          eps_omegas(i)
-           sol%re_deps_domega_p(count) = re_deps_domegas(i)
-           sol%im_deps_domega_p(count) = im_deps_domegas(i)
-           sol%gamma_p(count) = abs(dimag(eps_omegas(i))/re_deps_domegas(i))
-          endif
+           if( end_idx(i) .eq. 0 ) cycle
+           ipole = ipole + 1
+           k = end_idx(i)
+           ! computing omega, gamma, eps and derivative of eps
+           sol%omega_p(ipole) = omegas(k) -(func_eps(k)+const)/dfunc_eps(k)
+           sol%eps_omega_p(ipole) = cmplx(re_deps_domegas(k)*(val_omega-omegas(k)) + real(eps_omegas(k),dbl),&
+                                          im_deps_domegas(k)*(val_omega-omegas(k)) + dimag(eps_omegas(k))    )
+           sol%re_deps_domega_p(ipole) = re_deps_domegas(k)
+           sol%im_deps_domega_p(ipole) = im_deps_domegas(k)
+           sol%gamma_p(ipole) = dimag(eps_omegas(k))/re_deps_domegas(k)
+           write(2,*) j, const, k, sol%omega_p(ipole), sol%gamma_p(ipole), sol%eps_omega_p(ipole),& 
+                                   sol%re_deps_domega_p(ipole), sol%im_deps_domega_p(ipole), func_eps(k), i
          end do
         else
      write(55,*) "Warning! No poles for the PCM matrix kernel component", j 
