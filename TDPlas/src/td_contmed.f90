@@ -1073,7 +1073,6 @@
        qr_tp=qr_t
        pot_tp2=pot_tp
        if(Floc.eq."loc") then
-         ! decoupling charges per pole test - if the next two lines are commented
          qx_tp2=qx_tp
          qx_tp=qx_t
          potf_tp2=potf_tp
@@ -1504,10 +1503,6 @@
 
         fqx_tp_p(:,pidx)=fqx_t_p(:,pidx)
         dqx_tp_p(:,pidx)=dqx_t_p(:,pidx)
-
-        ! decoupling charges per pole to test - if the next two lines are uncommented
-        !qx_tp2(:) = qx_tp_p(:,pidx)
-        !qx_tp(:) = qx_t_p(:,pidx)
 
         qx_tp_p(:,pidx)=qx_t_p(:,pidx)
 
