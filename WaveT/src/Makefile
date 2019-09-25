@@ -178,7 +178,7 @@ readio.o: random.o
 
 spectra.o: readio.o
 
-QM_coupling.o: constants.o interface_tdplas.o
+QM_coupling.o: constants.o interface_tdplas.o 
 
 scf.o: constants.o readio.o interface_tdplas.o
 
