@@ -10,7 +10,7 @@ module interface_tdplas
                         Fwrite,fr_0,BEM_Q0,mat_f0,ncycmax,thrshld,vtsn,mix_coef,diag_mat,&
                         do_field_from_charges,&                                                ! used in scf
                         BEM_W2,Ftest,eps_w0,eps_A,BEM_Modes,sfe_act,&
-                        do_BEM_quant,deallocate_bem_public,do_vts_from_dip,&                   ! used by QM_coupling 
+                        do_BEM_quant,deallocate_bem_public,do_vts_from_dip,mdl,&               ! used by QM_coupling 
                         q0,vts,nts_act,Fprop,Fint,cts_act,tess_pcm,sfera,Finit_int,nesf_act,Fbem ! used only here in interface_tdplas
                         
 #endif
