@@ -31,7 +31,7 @@
       use constants    
       use interface_tdplas
 !      use global_tdplas
-!      use readio_medium
+      use readio       
 !      use pedra_friends
 !      use MathTools 
 !      use BEM_medium
@@ -50,6 +50,9 @@
                                                !> This description comes first.
       character(flg) :: FQBEM                  !< Flag driving the QM calculation mode
 
+      real(dbl), allocatable :: omega_p(:)     !<Plasmon energies                                        
+      real(dbl), allocatable :: we(:)          !<Plasmon coupling energy terms in g                      
+      real(dbl), allocatable :: g(:,:,:)       !<Plexcitons coupling terms 
       real(dbl), allocatable :: occ(:)         !<Plasmon modes occupations set to 1                      
       real(dbl), allocatable :: Hqm(:,:)       !<QM-coupling matrix \f$ \mathcal{H}_{\text{QM}} \f$ 
       real(dbl), allocatable :: Hqm_int(:,:)   !<Plexcitons-classic_field interaction hamiltonian \f$ \mathcal{H}_{\text{int}} \f$
@@ -80,40 +83,44 @@
        !> Allocate and initialize matrices
        call init_QM_coupling 
        if (myrank.eq.0) write(6,*) "QM_coupling correcty initialized"
-       if(Ftest.eq."qmt") then
-         !> if debugging performs the dipolar test on the spherical couplings and exit
-         call do_vts_from_dip 
-         if (myrank.eq.0) call test_QM_coupling
-       else 
-         !> Build Plexcitons matrix: do_Hqm_matrix 
-         call do_Hqm_matrix
-         if (myrank.eq.0) write(6,*) "Plexcitons matrix built"
-         if (FQBEM(1:4)=='prop') then
-           !> Diagonalize Plexciton matrix              
-           Hqm_evt=Hqm 
-           call diag_mat(Hqm_evt,Hqm_evl,Hqm_dim)
-           if (myrank.eq.0)write(6,*) "Plexcitons matrix diagonalized"
-           !> Print Energies and eigenstates.            
-           if (myrank.eq.0) call out_QM_coupling
-         endif
-         !> Prepare perturbation integrals if external field is present: do_plexd_matrix
-         if(mdl(fmax(:,1)).gt.0.) call do_plexd_matrix
-         if (FQBEM(1:4)=='diag') then
-           !> If diagonalize, diagonalize Perturbed Plexciton matrix    
-           if(mdl(fmax(:,1)).gt.0.) call do_Hqm_int(fmax(:,1))
-!           Hqm_evt(k,j)=Hqm+Hqm_int
-           Hqm_evt=Hqm+Hqm_int
-           call diag_mat(Hqm_evt,Hqm_evl,Hqm_dim)
-           if (myrank.eq.0)write(6,*) &
-                  "Perturbed Plexcitons matrix diagonalized"
-           !> Print Energies and eigenstates.            
-           if (myrank.eq.0) call out_QM_coupling
-         else
-           !> If propagate, transform Plexcitons integrals in plexciton basis
-           call transform_plexd
-           ! call do_Hqm_int(f(:))
-           if (myrank.eq.0) write(6,*) "No QM propagation implemented"
-         endif
+       !> if debugging performs the dipolar test on the spherical couplings and exit
+       !if(Ftest.eq."qmt") call do_vts_from_dip
+       call do_vts_from_dip
+       if (myrank.eq.0) write(6,*) "Integrals from dipoles computed"
+       !> Build Plexcitons coplings terms "g"    
+       call do_couplings      
+       if (myrank.eq.0) write(6,*) "couplings computed"
+       !> Testing against dipolar model of Garcia-Vidal PRL 112, 253601 (2014)
+       !if(Ftest.eq."qmt".and.myrank.eq.0) call test_QM_coupling
+       if(myrank.eq.0) call test_QM_coupling
+       !> Build Plexcitons matrix: do_Hqm_matrix 
+       call do_Hqm_matrix
+       if (myrank.eq.0) write(6,*) "Plexcitons matrix built"
+       if (FQBEM(1:4)=='prop') then
+         !> Diagonalize Plexciton matrix              
+         Hqm_evt=Hqm 
+         call diag_mat(Hqm_evt,Hqm_evl,Hqm_dim)
+         if (myrank.eq.0)write(6,*) "Plexcitons matrix diagonalized"
+         !> Print Energies and eigenstates.            
+         if (myrank.eq.0) call out_QM_coupling
+       endif
+       !> Prepare perturbation integrals if external field is present: do_plexd_matrix
+       if(mdl(fmax(:,1)).gt.0.) call do_plexd_matrix
+       if (FQBEM(1:4)=='diag') then
+         !> If diagonalize, diagonalize Perturbed Plexciton matrix    
+         if(mdl(fmax(:,1)).gt.0.) call do_Hqm_int(fmax(:,1))
+!         Hqm_evt(k,j)=Hqm+Hqm_int
+         Hqm_evt=Hqm+Hqm_int
+         call diag_mat(Hqm_evt,Hqm_evl,Hqm_dim)
+         if (myrank.eq.0)write(6,*) &
+                "Perturbed Plexcitons matrix diagonalized"
+         !> Print Energies and eigenstates.            
+         if (myrank.eq.0) call out_QM_coupling
+       else
+         !> If propagate, transform Plexcitons integrals in plexciton basis
+         call transform_plexd
+         ! call do_Hqm_int(f(:))
+         if (myrank.eq.0) write(6,*) "No QM propagation implemented"
        endif
        !> Deallocate matrices                                   
        call fin_QM_coupling 
@@ -129,12 +136,17 @@
 !----------------------------------------------------------------------------
       subroutine init_QM_coupling                         
        call do_BEM_quant
+       FQBEM="diag-all"
        if(FQBEM(6:8)=='all') then !< couple with all, but singly-occupied, modes.
          nmodes=nts_act
        else !< couple with the first "qmodes" singly-occupied modes. At present qmodes=1
-!         nmodes=qmodes
+!        nmodes=qmodes
          nmodes=1     
        endif
+       nmodes=5
+       allocate(g(nmodes,n_ci,n_ci))
+       allocate(we(nmodes))
+       allocate(omega_p(nmodes))
        Hqm_dim=n_ci*(nmodes+1)
        allocate(occ(nmodes))
        occ=1.d0 !< all singly-occupied modes
@@ -157,6 +169,7 @@
 !----------------------------------------------------------------------------
       subroutine fin_QM_coupling                         
        call deallocate_BEM_public
+       deallocate(we,omega_p,g)
        deallocate(Hqm,Hqm_evt,Hqm_evl)
        if(allocated(Hqm_int)) deallocate(Hqm_int)
        deallocate(occ)
@@ -172,8 +185,6 @@
 !>     @param 
 !----------------------------------------------------------------------------
       subroutine do_Hqm_matrix  
-       real(dbl):: omega_p   !< mode frequency 
-       real(dbl):: we        !< energy factor in coupling 
        integer(4)::i,j,k,p,s !< indices    
        !> G0-G0 \f$ \mathbf{H}_{\text{M}} \f$ block: state energies, diagonal 
        do j=1,n_ci
@@ -181,8 +192,6 @@
        enddo
        ! E1-E1,E1-G0
        do i=2,nmodes   
-         omega_p=sqrt(BEM_W2(i)) 
-         we=sqrt((omega_p**2-eps_w0**2)/(two*omega_p))
          do j=1,n_ci
            p=(i-1)*n_ci+j
            do k=j,n_ci
@@ -191,13 +200,13 @@
              Hqm(s,p)=Hqm(k,j)
              Hqm(p,s)=Hqm(s,p)
              !> G0-E1 \f$ \mathbf{H}_{\text{MP}} \f$ off-diagonal subblocks
-             Hqm(k,p)=dot_product(BEM_Modes(i,:),vts(:,k,j))*we
+             Hqm(k,p)=g(i,k,j)
              Hqm(j,s)=Hqm(k,p)
              Hqm(s,j)=Hqm(j,s)
              Hqm(p,k)=Hqm(s,j)
            enddo
            !> E1-E1 \f$ \mathcal{H}_{\text{P}} energies, diagonal 
-           Hqm(p,p)=Hqm(p,p)+omega_p*occ(i)    
+           Hqm(p,p)=Hqm(p,p)+omega_p(i)*occ(i)    
          enddo
        enddo
       return
@@ -212,20 +221,16 @@
 !>     @param 
 !----------------------------------------------------------------------------
       subroutine do_plexd_matrix  
-       real(dbl):: omega_p   !< mode frequency 
-       real(dbl):: we        !< energy factor in coupling 
        integer(4)::i,j,k,p,s !< indices    
        real(dbl), allocatable:: gF(:) !< semiclassical particle-field couplings
        allocate(gF(3)) 
        !> Building \f$ \mathcal{H}_{\text{MF}} \f$ block
        plexd=mut
        do i=2,nmodes   
-         omega_p=sqrt(BEM_W2(i)) 
-         we=sqrt((omega_p**2-eps_w0**2)/(two*omega_p))
          !> Building \f$ \mathcal{H}_{\text{PF}} \f$ couplings
-         gF(1)=-dot_product(BEM_Modes(i,:),cts_act(:)%x)*we
-         gF(2)=-dot_product(BEM_Modes(i,:),cts_act(:)%y)*we
-         gF(3)=-dot_product(BEM_Modes(i,:),cts_act(:)%z)*we
+         gF(1)=-dot_product(BEM_Modes(i,:),cts_act(:)%x)*we(i)
+         gF(2)=-dot_product(BEM_Modes(i,:),cts_act(:)%y)*we(i)
+         gF(3)=-dot_product(BEM_Modes(i,:),cts_act(:)%z)*we(i)
          do j=1,n_ci
            p=(i-1)*n_ci+j
            do k=j,n_ci
@@ -310,13 +315,42 @@
 !
 !
 !------------------------------------------------------------------------
+!>     @brief computes the molecule-environment quantum couplig elements "g"
+!>     @date Created: 25 Sep 2019
+!>     @author S.Pipolo
+!>     @param Hqm_evl  
+!----------------------------------------------------------------------------
+      subroutine do_couplings
+       integer(i4b) :: i,j,k   
+       real(dbl) :: tmp
+#ifndef MPI
+       myrank=0
+#endif
+       omega_p(1)=0.
+       we(1)=0.
+       write(*,*) "out"
+       do i=2,nmodes   
+       write(*,*) "in"
+         omega_p(i)=sqrt(BEM_W2(i)) 
+         we(i)=sqrt((omega_p(i)**2-eps_w0**2)/(two*omega_p(i)))
+         do j=1,n_ci
+           do k=j,n_ci
+             g(i,k,j)=dot_product(BEM_Modes(i,:),vts(:,k,j))*we(i)
+           enddo
+         enddo
+       enddo
+      return
+      end subroutine
+!
+!
+!------------------------------------------------------------------------
 !>     @brief Writes out the coupling factors to compare with the dipole approximation
 !>     @date Created: 02 May 2017
 !>     @author S.Pipolo
 !>     @param Hqm_evl  
 !----------------------------------------------------------------------------
       subroutine test_QM_coupling                         
-       real(dbl):: omega_p,we,g,r,mud                
+       real(dbl):: r,mud                
        integer(i4b) :: i,j,k   
        real(dbl), allocatable :: sp(:)               
        real(dbl), allocatable :: tot(:,:),ref(:,:)               
@@ -338,26 +372,20 @@
        write(7,*) "#  p    i    j            g                 g_ref" 
        tot=0.0d0
        do i=1,4        
-         omega_p=sqrt(BEM_W2(i)) 
-         we=sqrt((omega_p**2-eps_w0**2)/(two*omega_p))
          do j=1,n_ci
            do k=j,n_ci
              mud=dot_product(mut(:,k,j),sp(:))/r
-             ! This should probably be computed once and for all to be
-             ! tested
-             g=dot_product(BEM_Modes(i,:),vts(:,k,j))*we
-             tot(k,j)=tot(k,j)+g*g
+             tot(k,j)=tot(k,j)+g(i,k,j)*g(i,k,j)
              !ref: Garcia-Vidal PRL 112, 253601 (2014)
-             !ref=sqrt(2*mut(i-1,k,j)**2*omega_p*cts_act(1)%rsfe**3)/(r**3)
              ref(k,j)=mud*sqrt(2*sqrt(eps_A/3)*cts_act(1)%rsfe**3)/(r**3)
-             write(7,"(3i5, 3F20.12)") i,j,k,g,ref(k,j)
+             !write(7,"(3i5, 3F20.12)") i,j,k,g(i,k,j),ref(k,j)
            enddo
          enddo
          write(7,*) "" 
        enddo
        do j=1,n_ci
          do k=j,n_ci
-           write(7,"(3i5, 3F20.12)") 0,j,k,sqrt(tot(k,j)),ref(k,j)
+           write(7,"(3i5, 3F20.12)") 2,j,k,sqrt(tot(k,j)),ref(k,j)
          enddo
        enddo
        write(7,*) ""
@@ -372,6 +400,7 @@
           write(6,*) "  Results in the g.mat file. " 
        endif
        deallocate(sp,tot,ref)
+       stop
       return
       end subroutine
 !
