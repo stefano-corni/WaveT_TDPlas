@@ -324,7 +324,7 @@
          !call output_surf
          if (myrank.eq.0) then
             call output_surf
-            write(6,*) "Created output file with surface points"
+            write(6,*) "Written out cavity.inp with surface points"
          endif
          ! Build and write out Calderon SD matrices
          allocate(BEM_S(nts_act,nts_act))
