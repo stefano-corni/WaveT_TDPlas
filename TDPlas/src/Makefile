@@ -132,7 +132,7 @@ pedra_friends.o: constants.o interface_qmcode.o
 
 readio_medium.o: constants.o interface_qmcode.o pedra_friends.o
 
-MathTools.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o
+MathTools.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o 
 
 BEM_medium.o: constants.o interface_qmcode.o pedra_friends.o readio_medium.o MathTools.o
 

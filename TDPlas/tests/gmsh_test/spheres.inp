@@ -1,5 +1,5 @@
-3                      # Number of spheres, one intereger
-0. 0. 20. 10. 100      # spere position, (x,y,z - reals), sphere radius (real), number of discretisation points (integer)
-0. 0. -20. 10. 100     # spere position, (x,y,z - reals), sphere radius (real), number of discretisation points (integer)
-0. 20. 0. 10. 100      # spere position, (x,y,z - reals), sphere radius (real), number of discretisation points (integer)
+1                      # Number of spheres, one intereger
+0. 300. 0.  5. 10       # spere position, (x,y,z - reals), sphere radius (real), number of discretisation points (integer)
+0. 0. -200.  2. 5       # spere position, (x,y,z - reals), sphere radius (real), number of discretisation points (integer)
+0. 20.0 0. 10. 100      # spere position, (x,y,z - reals), sphere radius (real), number of discretisation points (integer)
 

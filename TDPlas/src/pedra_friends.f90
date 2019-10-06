@@ -1400,12 +1400,14 @@
 ! this routine read in gmsh mesh files
 !  AFTER they have been massaged by a proper
 !  gawk script. To be revised with better coding
-      integer(4) :: n_nodes,i_nodes,its,jts,j_max,its_a,iswap,tmp,nts_eff
-      integer(4),allocatable :: el_nodes(:,:)
+      integer(4) :: n_nodes,i_nodes,its,jts,j_max,its_a,tmp
+      integer(4) :: isfe,nts_eff
+      integer(4),allocatable :: el_nodes(:,:),isphere(:)
+      logical,allocatable :: is_centre(:)
       character(6) :: line, junk
       character(3) :: inv
       real(8),allocatable :: c_nodes(:,:) 
-      real(8) :: vert(3,3),normal(3),area,dist,dist_v(3), &
+      real(8) :: vert(3,3),normal(3),area,dist,diff(3), &
         dist_max,area_tot 
 
 #ifndef MPI
@@ -1421,6 +1423,8 @@
      call mpi_bcast(n_nodes,  1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 #endif 
       allocate(c_nodes(3,n_nodes))
+      allocate(is_centre(n_nodes))
+      is_centre(:)=.true.
       if (myrank.eq.0) then
          do i_nodes=1,n_nodes
             read(7,*) c_nodes(:,i_nodes)
@@ -1434,12 +1438,17 @@
      call mpi_bcast(nts_act, 1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
      call mpi_bcast(nts_eff, 1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 #endif 
+      allocate(isphere(nts_act))
       allocate(cts_act(nts_act))
       allocate(el_nodes(3,nts_eff))
       if (myrank.eq.0) then
          do its=1,nts_eff
-            read(7,*) el_nodes(:,its),iswap
-            if(iswap.lt.0) then
+            read(7,*) el_nodes(:,its),isphere(its)
+            ! if the node is part of a tessera cannot be a centre
+            is_centre(el_nodes(1,its))=.false.
+            is_centre(el_nodes(2,its))=.false.
+            is_centre(el_nodes(3,its))=.false.
+            if(isphere(its).lt.0) then
               tmp=el_nodes(3,its)
               el_nodes(3,its)=el_nodes(1,its)
               el_nodes(1,its)=tmp
@@ -1447,6 +1456,33 @@
          enddo
          close(7)
       endif
+      ! Find centres
+      do i_nodes=1,n_nodes
+        if(is_centre(i_nodes)) nesf_act=nesf_act+1
+      enddo
+      ! If center points found set sphere center positions and radii
+      if (nesf_act.gt.0) then
+        if(.not.allocated(sfe_act)) allocate(sfe_act(nesf_act))
+        isfe=0
+        ! Set sphere centers
+        do i_nodes=1,n_nodes
+          if(is_centre(i_nodes)) then               
+            isfe=isfe+1
+            sfe_act(isfe)%x=c_nodes(1,i_nodes)
+            sfe_act(isfe)%y=c_nodes(2,i_nodes)
+            sfe_act(isfe)%z=c_nodes(3,i_nodes)
+          endif
+        enddo
+        ! Set sphere radii  
+        do its=1,nts_eff
+          diff(1)=c_nodes(1,el_nodes(1,its))-sfe_act(isphere(its))%x 
+          diff(2)=c_nodes(2,el_nodes(1,its))-sfe_act(isphere(its))%y  
+          diff(3)=c_nodes(3,el_nodes(1,its))-sfe_act(isphere(its))%z 
+          sfe_act(isphere(its))%r=sqrt(dot_product(diff,diff))
+          cts_act(its)%rsfe=sqrt(dot_product(diff,diff))
+        enddo
+      endif
+      deallocate(isphere,is_centre)
 #ifdef MPI
      call mpi_bcast(el_nodes, 3*nts_eff,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 #endif
@@ -1488,7 +1524,9 @@
 ! very big as the tessera is planar, can be improved
 ! by using info from nearby normals to estimate a local
 ! curvature, TO BE DONE
-        cts_act(its_a)%rsfe=1.d20   
+        !cts_act(its_a)%rsfe=1.d20   
+! Silvio 06/10/19: Why is rsfe set so high here? I need to comment this
+! for QM_coupling tests.
         if (inv.eq.'inv') then
            cts_act(its_a+nts_eff)%area=area/2.d0
            area_tot=area_tot+area/2.d0
@@ -1518,10 +1556,10 @@
            j_max=jts
          endif
         enddo
-        dist_v(1)=cts_act(its)%x-cts_act(j_max)%x
-        dist_v(2)=cts_act(its)%y-cts_act(j_max)%y
-        dist_v(3)=cts_act(its)%z-cts_act(j_max)%z
-        cts_act(its)%n=cts_act(its)%n*sign(1.d0,dot_product(cts_act(its)%n,dist_v))
+        diff(1)=cts_act(its)%x-cts_act(j_max)%x
+        diff(2)=cts_act(its)%y-cts_act(j_max)%y
+        diff(3)=cts_act(its)%z-cts_act(j_max)%z
+        cts_act(its)%n=cts_act(its)%n*sign(1.d0,dot_product(cts_act(its)%n,diff))
       enddo
 
       if (myrank.eq.0) then
