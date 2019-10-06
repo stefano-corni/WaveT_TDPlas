@@ -60,7 +60,7 @@ END{
   # Compute scalar product using the "closest" center
   sp=0.
   for(k=1;k<=3;k++) {sp+=v[jmin][k]*nrm[k]}
-  inorm=1
+  inorm=jmin+1
   if(sp<0) {
     if (correct=="y") {tmp=xts[i];xts[i]=zts[i];zts[i]=tmp;for(k=1;k<=3;k++){nrm[k]=-nrm[k]}}
     else {inorm=-1}

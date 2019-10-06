@@ -84,15 +84,13 @@
        call init_QM_coupling 
        if (myrank.eq.0) write(6,*) "QM_coupling correcty initialized"
        !> if debugging performs the dipolar test on the spherical couplings and exit
-       !if(Ftest.eq."qmt") call do_vts_from_dip
-       call do_vts_from_dip
+       if(Ftest.eq."qmt") call do_vts_from_dip
        if (myrank.eq.0) write(6,*) "Integrals from dipoles computed"
        !> Build Plexcitons coplings terms "g"    
        call do_couplings      
        if (myrank.eq.0) write(6,*) "couplings computed"
        !> Testing against dipolar model of Garcia-Vidal PRL 112, 253601 (2014)
-       !if(Ftest.eq."qmt".and.myrank.eq.0) call test_QM_coupling
-       if(myrank.eq.0) call test_QM_coupling
+       if(Ftest.eq."qmt".and.myrank.eq.0) call test_QM_coupling
        !> Build Plexcitons matrix: do_Hqm_matrix 
        call do_Hqm_matrix
        if (myrank.eq.0) write(6,*) "Plexcitons matrix built"
@@ -328,9 +326,7 @@
 #endif
        omega_p(1)=0.
        we(1)=0.
-       write(*,*) "out"
        do i=2,nmodes   
-       write(*,*) "in"
          omega_p(i)=sqrt(BEM_W2(i)) 
          we(i)=sqrt((omega_p(i)**2-eps_w0**2)/(two*omega_p(i)))
          do j=1,n_ci
@@ -370,8 +366,8 @@
        write(7,*) "# g_ref=mud*sqrt(2*omega_p*cts_act(1)%rsfe^3)/(r^3)"
        write(7,*) "#" 
        write(7,*) "#  p    i    j            g                 g_ref" 
-       tot=0.0d0
-       do i=1,4        
+       tot=0.d0
+       do i=2,4        
          do j=1,n_ci
            do k=j,n_ci
              mud=dot_product(mut(:,k,j),sp(:))/r
@@ -381,18 +377,17 @@
              !write(7,"(3i5, 3F20.12)") i,j,k,g(i,k,j),ref(k,j)
            enddo
          enddo
-         write(7,*) "" 
        enddo
-       do j=1,n_ci
-         do k=j,n_ci
-           write(7,"(3i5, 3F20.12)") 2,j,k,sqrt(tot(k,j)),ref(k,j)
-         enddo
-       enddo
+       !do j=1,2   
+         !do k=j,2   
+           write(7,"(3i5, 3E20.12)") 2,0,2,sqrt(tot(3,1)),ref(3,1)
+         !enddo
+       !enddo
        write(7,*) ""
        write(7,*) "# Dipolar resonance frequancy (a.u.)"
        write(7,*) "#  p          omega_p            sqrt(A/3)" 
        do i=2,4        
-         write(7,"(i5, 2F20.12)")i, sqrt(BEM_W2(i)), sqrt(eps_A/3)
+         write(7,"(i5, 2E20.12)")i, sqrt(BEM_W2(i)), sqrt(eps_A/3)
        enddo
        close(7)
        if (myrank.eq.0) then 
