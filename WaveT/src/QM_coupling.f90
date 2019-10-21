@@ -84,7 +84,11 @@
        call init_QM_coupling 
        if (myrank.eq.0) write(6,*) "QM_coupling correcty initialized"
        !> if debugging performs the dipolar test on the spherical couplings and exit
-       if(Ftest.eq."qmt") call do_vts_from_dip
+       if(Ftest.eq."qmt") then
+         if (allocated(vts)) deallocate(vts)
+         allocate (vts(nts_act,n_ci,n_ci))
+         call do_vts_from_dip
+       endif
        if (myrank.eq.0) write(6,*) "Integrals from dipoles computed"
        !> Build Plexcitons coplings terms "g"    
        call do_couplings      
@@ -346,7 +350,7 @@
 !>     @param Hqm_evl  
 !----------------------------------------------------------------------------
       subroutine test_QM_coupling                         
-       real(dbl):: r,mud                
+       real(dbl):: r,d,mud,wl                
        integer(i4b) :: i,j,k   
        real(dbl), allocatable :: sp(:)               
        real(dbl), allocatable :: tot(:,:),ref(:,:)               
@@ -356,33 +360,38 @@
        allocate(sp(3),tot(n_ci,n_ci),ref(n_ci,n_ci))
        open(7,file="g.mat",status="unknown")
        write(7,*) "# Test for dipolar-mode couplings" 
-       r=sqrt(sfe_act(1)%x**2+sfe_act(1)%y**2+sfe_act(1)%z**2)
+       d=sqrt(sfe_act(1)%x**2+sfe_act(1)%y**2+sfe_act(1)%z**2)
+       r=cts_act(1)%rsfe
+       wl=sqrt(eps_A/3)
        sp(1)=sfe_act(1)%x 
        sp(2)=sfe_act(1)%y 
        sp(3)=sfe_act(1)%z 
        write(7,*) "# Sphere radius distance (bohr) and position"
-       write(7,"(5F10.4)") cts_act(1)%rsfe,r,sp(1),sp(2),sp(3)
+       write(7,"(5F10.4)") cts_act(1)%rsfe,d,sp(1),sp(2),sp(3)
        write(7,*) "# g=dot_product(BEM_Modes(p,:),vts(:,i,j))*we" 
-       write(7,*) "# g_ref=mud*sqrt(2*omega_p*cts_act(1)%rsfe^3)/(r^3)"
+       write(7,*) "# g_ref=mu*sqrt(2*omega_p*r^3)/(d^3)"
        write(7,*) "#" 
        write(7,*) "#  p    i    j            g                 g_ref" 
-       tot=0.d0
+       tot=zero
+       ref=zero
        do i=2,4        
          do j=1,n_ci
-           do k=j,n_ci
-             mud=dot_product(mut(:,k,j),sp(:))/r
+           do k=j+1,n_ci
+             mud=dot_product(mut(:,k,j),sp(:))/d
              tot(k,j)=tot(k,j)+g(i,k,j)*g(i,k,j)
              !ref: Garcia-Vidal PRL 112, 253601 (2014)
-             ref(k,j)=mud*sqrt(2*sqrt(eps_A/3)*cts_act(1)%rsfe**3)/(r**3)
-             !write(7,"(3i5, 3F20.12)") i,j,k,g(i,k,j),ref(k,j)
+             ref(k,j)=mud*sqrt(2*wl*r**3)/(d**3)
+             !ref(k,j)=2*mud*mud*wl*r**3/(d**6)
+             !ref(k,j)=2*mud*mud*wl*r**3/(d+r)**6
            enddo
          enddo
        enddo
-       !do j=1,2   
-         !do k=j,2   
-           write(7,"(3i5, 3E20.12)") 2,0,2,sqrt(tot(3,1)),ref(3,1)
-         !enddo
-       !enddo
+       do j=1,n_ci   
+         do k=j+1,n_ci
+           write(7,"(3i5,3E20.12)") 2,j-1,k-1,sqrt(tot(k,j)),ref(k,j)
+           !write(7,"(3i5,3E20.12)") 2,j-1,k-1,sqrt(tot(k,j)),sqrt(ref(k,j))
+         enddo
+       enddo
        write(7,*) ""
        write(7,*) "# Dipolar resonance frequancy (a.u.)"
        write(7,*) "#  p          omega_p            sqrt(A/3)" 
