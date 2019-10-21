@@ -59,6 +59,7 @@
       real(dbl), allocatable :: plexd(:,:,:)   !<Plexcitons dipole integrals \f$ \boldsymbol{\mu}_{rs}\oplus \mathbf{g}_{Fp} \f$
       real(dbl), allocatable :: Hqm_evt(:,:)   !<Eigenvalues of \mathcal{H}_{\text{QM}} or \mathcal{H}_{\text{SC}} if static field (public)
       real(dbl), allocatable :: Hqm_evl(:)     !<Eigenvectors of \mathcal{H}_{\text{QM}} or \mathcal{H}_{\text{SC}} if static field (public)
+      real(dbl), allocatable :: qg(:,:)        !<Charges associated to each mode    
       integer(i4b) :: Hqm_dim  !<Dimension of \mathcal{H}_{\text{QM}} matrix 
       integer(i4b) :: nmodes   !<Quantum plasmonic modes to couple to the molecule                  
 
@@ -138,17 +139,17 @@
 !----------------------------------------------------------------------------
       subroutine init_QM_coupling                         
        call do_BEM_quant
-       FQBEM="diag-all"
+       FQBEM="diag-dip"
        if(FQBEM(6:8)=='all') then !< couple with all, but singly-occupied, modes.
          nmodes=nts_act
        else !< couple with the first "qmodes" singly-occupied modes. At present qmodes=1
 !        nmodes=qmodes
-         nmodes=1     
+         nmodes=4     
        endif
-       nmodes=5
        allocate(g(nmodes,n_ci,n_ci))
        allocate(we(nmodes))
        allocate(omega_p(nmodes))
+       allocate(qg(nmodes,nts_act))
        Hqm_dim=n_ci*(nmodes+1)
        allocate(occ(nmodes))
        occ=1.d0 !< all singly-occupied modes
@@ -171,7 +172,7 @@
 !----------------------------------------------------------------------------
       subroutine fin_QM_coupling                         
        call deallocate_BEM_public
-       deallocate(we,omega_p,g)
+       deallocate(we,omega_p,g,qg)
        deallocate(Hqm,Hqm_evt,Hqm_evl)
        if(allocated(Hqm_int)) deallocate(Hqm_int)
        deallocate(occ)
@@ -297,21 +298,26 @@
        character(len=32) :: my_fmt
        open(7,file="Hqm.mat",status="unknown")
        open(8,file="Hqm.ene",status="unknown")
+       open(9,file="gCharges.mat",status="unknown")
        write(8,*) "Energies: "
        write(my_fmt,'(a,i0,a)') "(",Hqm_dim,"F10.6)"
        write(7,*) "Quantum-matrix: ", my_fmt
-       do i=1,Hqm_dim   
-         write(7,my_fmt) (Hqm(i,j), j=1,Hqm_dim)
-       enddo
        do i=1,Hqm_dim
+         write(7,my_fmt) (Hqm(i,j), j=1,Hqm_dim)
          if(i.le.n_ci) then
            write(8,"(i0,3F10.6)") i,Hqm_evl(i),e_ci(i),sqrt(BEM_W2(i))
          else
            write(8,"(i0,F10.6)") i, Hqm_evl(i)
          endif
        enddo
+       write(my_fmt,'(a,i0,a)') "(",nmodes,"E10.6)"
+       write(9,*) "# Nmodes = ",nmodes,"   Size = ", nts_act
+       do j=1,nts_act
+         write(9,my_fmt) (qg(i,j), i=1,nmodes)
+       enddo
        close(7)
        close(8) 
+       close(9) 
       return
       end subroutine
 !
@@ -333,9 +339,10 @@
        do i=2,nmodes   
          omega_p(i)=sqrt(BEM_W2(i)) 
          we(i)=sqrt((omega_p(i)**2-eps_w0**2)/(two*omega_p(i)))
+         qg(i,:)=BEM_Modes(i,:)*we(i)
          do j=1,n_ci
            do k=j,n_ci
-             g(i,k,j)=dot_product(BEM_Modes(i,:),vts(:,k,j))*we(i)
+             g(i,k,j)=dot_product(qg(i,:),vts(:,k,j))
            enddo
          enddo
        enddo
@@ -380,16 +387,16 @@
              mud=dot_product(mut(:,k,j),sp(:))/d
              tot(k,j)=tot(k,j)+g(i,k,j)*g(i,k,j)
              !ref: Garcia-Vidal PRL 112, 253601 (2014)
-             ref(k,j)=mud*sqrt(2*wl*r**3)/(d**3)
-             !ref(k,j)=2*mud*mud*wl*r**3/(d**6)
+             !ref(k,j)=mud*sqrt(2*wl*r**3)/(d**3)
+             ref(k,j)=2*mud*mud*wl*r**3/(d**6)
              !ref(k,j)=2*mud*mud*wl*r**3/(d+r)**6
            enddo
          enddo
        enddo
        do j=1,n_ci   
          do k=j+1,n_ci
-           write(7,"(3i5,3E20.12)") 2,j-1,k-1,sqrt(tot(k,j)),ref(k,j)
-           !write(7,"(3i5,3E20.12)") 2,j-1,k-1,sqrt(tot(k,j)),sqrt(ref(k,j))
+           !write(7,"(3i5,3E20.12)") 2,j-1,k-1,sqrt(tot(k,j)),ref(k,j)
+           write(7,"(3i5,3E20.12)") 2,j-1,k-1,sqrt(tot(k,j)),sqrt(ref(k,j))
          enddo
        enddo
        write(7,*) ""
