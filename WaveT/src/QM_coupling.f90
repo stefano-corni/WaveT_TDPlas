@@ -114,6 +114,7 @@
          if(mdl(fmax(:,1)).gt.0.) call do_Hqm_int(fmax(:,1))
 !         Hqm_evt(k,j)=Hqm+Hqm_int
          Hqm_evt=Hqm+Hqm_int
+         if (myrank.eq.0)write(6,*) "Diagonalizing plexciton matrix"
          call diag_mat(Hqm_evt,Hqm_evl,Hqm_dim)
          if (myrank.eq.0)write(6,*) &
                 "Perturbed Plexcitons matrix diagonalized"
@@ -298,7 +299,7 @@
        character(len=32) :: my_fmt
        open(7,file="Hqm.mat",status="unknown")
        open(8,file="Hqm.ene",status="unknown")
-       open(9,file="gCharges.mat",status="unknown")
+       !open(9,file="gCharges.mat",status="unknown")
        write(8,*) "Energies: "
        write(my_fmt,'(a,i0,a)') "(",Hqm_dim,"F10.6)"
        write(7,*) "Quantum-matrix: ", my_fmt
@@ -310,14 +311,14 @@
            write(8,"(i0,F10.6)") i, Hqm_evl(i)
          endif
        enddo
-       write(my_fmt,'(a,i0,a)') "(",nmodes,"E10.6)"
-       write(9,*) "# Nmodes = ",nmodes,"   Size = ", nts_act
-       do j=1,nts_act
-         write(9,my_fmt) (qg(i,j), i=1,nmodes)
-       enddo
+       !write(my_fmt,'(a,i0,a)') "(",nmodes,"E10.6)"
+       !write(9,*) "# Nmodes = ",nmodes,"   Size = ", nts_act
+       !do j=1,nts_act
+       !  write(9,my_fmt) (qg(i,j), i=1,nmodes)
+       !enddo
        close(7)
        close(8) 
-       close(9) 
+       !close(9) 
       return
       end subroutine
 !
@@ -357,6 +358,7 @@
 !>     @param Hqm_evl  
 !----------------------------------------------------------------------------
       subroutine test_QM_coupling                         
+       character(len=32) :: my_fmt
        real(dbl):: r,d,mud,wl                
        integer(i4b) :: i,j,k   
        real(dbl), allocatable :: sp(:)               
@@ -410,6 +412,13 @@
           write(6,*) "Test for dipolar-mode couplings...DONE" 
           write(6,*) "  Results in the g.mat file. " 
        endif
+       open(9,file="gCharges.mat",status="unknown")
+       write(my_fmt,'(a,i0,a)') "(",nmodes,"E20.6)"
+       write(9,*) "# Nmodes = ",nmodes,"   Size = ", nts_act, my_fmt
+       do j=1,nts_act
+         write(9,my_fmt) (qg(i,j), i=1,nmodes)
+       enddo
+       close(9) 
        deallocate(sp,tot,ref)
        stop
       return
