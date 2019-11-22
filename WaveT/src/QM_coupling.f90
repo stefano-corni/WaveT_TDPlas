@@ -92,6 +92,8 @@
        endif
        if (myrank.eq.0) write(6,*) "Integrals from dipoles computed"
        !> Build Plexcitons coplings terms "g"    
+       call do_gcharges
+       call out_gcharges
        call do_couplings      
        if (myrank.eq.0) write(6,*) "couplings computed"
        !> Testing against dipolar model of Garcia-Vidal PRL 112, 253601 (2014)
@@ -114,7 +116,6 @@
          if(mdl(fmax(:,1)).gt.0.) call do_Hqm_int(fmax(:,1))
 !         Hqm_evt(k,j)=Hqm+Hqm_int
          Hqm_evt=Hqm+Hqm_int
-         if (myrank.eq.0)write(6,*) "Diagonalizing plexciton matrix"
          call diag_mat(Hqm_evt,Hqm_evl,Hqm_dim)
          if (myrank.eq.0)write(6,*) &
                 "Perturbed Plexcitons matrix diagonalized"
@@ -145,8 +146,8 @@
          nmodes=nts_act
        else !< couple with the first "qmodes" singly-occupied modes. At present qmodes=1
 !        nmodes=qmodes
-         nmodes=4     
        endif
+       nmodes=nts_act
        allocate(g(nmodes,n_ci,n_ci))
        allocate(we(nmodes))
        allocate(omega_p(nmodes))
@@ -294,12 +295,33 @@
 !>    @author S.Pipolo 
 !>    @param Hqm_evl  
 !----------------------------------------------------------------------------
+      subroutine out_gcharges                            
+       integer(i4b) :: i,j   
+       character(len=52) :: my_fmt, my_fmt1
+       open(9,file="gCharges.mat",status="unknown")
+       write(my_fmt,'(a,i0,a)') "(",nmodes+3,"E15.6)"
+       write(my_fmt1,'(a,i0,a)') "(A22,",nmodes+3,"E15.6)"
+       write(9,my_fmt1) "# Plasmon_Frequencies ",(omega_p(i),i=2,nmodes)
+       write(9,*) "# Modes: x y z q_m1 q_m2 .... q_mN   with   N = ", nmodes 
+       do j=1,nts_act
+         write(9,my_fmt) cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,(qg(i,j),i=2,nmodes)
+       enddo
+       close(9) 
+      return
+      end subroutine
+!
+!
+!------------------------------------------------------------------------
+!>    @brief Writes output of QM_coupling  
+!>    @date Created: 09 Feb 2019
+!>    @author S.Pipolo 
+!>    @param Hqm_evl  
+!----------------------------------------------------------------------------
       subroutine out_QM_coupling                         
        integer(i4b) :: i,j   
        character(len=32) :: my_fmt
        open(7,file="Hqm.mat",status="unknown")
        open(8,file="Hqm.ene",status="unknown")
-       !open(9,file="gCharges.mat",status="unknown")
        write(8,*) "Energies: "
        write(my_fmt,'(a,i0,a)') "(",Hqm_dim,"F10.6)"
        write(7,*) "Quantum-matrix: ", my_fmt
@@ -311,14 +333,31 @@
            write(8,"(i0,F10.6)") i, Hqm_evl(i)
          endif
        enddo
-       !write(my_fmt,'(a,i0,a)') "(",nmodes,"E10.6)"
-       !write(9,*) "# Nmodes = ",nmodes,"   Size = ", nts_act
-       !do j=1,nts_act
-       !  write(9,my_fmt) (qg(i,j), i=1,nmodes)
-       !enddo
        close(7)
        close(8) 
-       !close(9) 
+      return
+      end subroutine
+!
+!
+!------------------------------------------------------------------------
+!>     @brief computes the molecule-environment quantum couplig elements "g"
+!>     @date Created: 25 Sep 2019
+!>     @author S.Pipolo
+!>     @param Hqm_evl  
+!----------------------------------------------------------------------------
+      subroutine do_gcharges  
+       integer(i4b) :: i   
+#ifndef MPI
+       myrank=0
+#endif
+       omega_p(1)=zero
+       we(1)=zero
+       qg(1,:)=zero
+       do i=2,nmodes  
+         omega_p(i)=sqrt(BEM_W2(i)) 
+         we(i)=sqrt((omega_p(i)**2-eps_w0**2)/(two*omega_p(i)))
+         qg(i,:)=BEM_Modes(i,:)*we(i)
+       enddo
       return
       end subroutine
 !
@@ -335,12 +374,7 @@
 #ifndef MPI
        myrank=0
 #endif
-       omega_p(1)=0.
-       we(1)=0.
-       do i=2,nmodes   
-         omega_p(i)=sqrt(BEM_W2(i)) 
-         we(i)=sqrt((omega_p(i)**2-eps_w0**2)/(two*omega_p(i)))
-         qg(i,:)=BEM_Modes(i,:)*we(i)
+       do i=1,nmodes   
          do j=1,n_ci
            do k=j,n_ci
              g(i,k,j)=dot_product(qg(i,:),vts(:,k,j))
@@ -358,7 +392,6 @@
 !>     @param Hqm_evl  
 !----------------------------------------------------------------------------
       subroutine test_QM_coupling                         
-       character(len=32) :: my_fmt
        real(dbl):: r,d,mud,wl                
        integer(i4b) :: i,j,k   
        real(dbl), allocatable :: sp(:)               
@@ -412,13 +445,6 @@
           write(6,*) "Test for dipolar-mode couplings...DONE" 
           write(6,*) "  Results in the g.mat file. " 
        endif
-       open(9,file="gCharges.mat",status="unknown")
-       write(my_fmt,'(a,i0,a)') "(",nmodes,"E20.6)"
-       write(9,*) "# Nmodes = ",nmodes,"   Size = ", nts_act, my_fmt
-       do j=1,nts_act
-         write(9,my_fmt) (qg(i,j), i=1,nmodes)
-       enddo
-       close(9) 
        deallocate(sp,tot,ref)
        stop
       return

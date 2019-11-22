@@ -4,7 +4,7 @@ BEGIN {AtoB = 1.889725989;
       }
 # Read spheres number, positions and radii in Angstroms
 NR==1{nsph=$1;
-      for(i=0;i<nsph;i++){getline;x[i]=$1*AtoB;y[i]=$2*AtoB;z[i]=$3*AtoB;r[i]=$4*AtoB;ntess[i]=$5}
+      for(i=0;i<nsph;i++){getline;x[i]=$1*AtoB;y[i]=$2*AtoB;z[i]=$3*AtoB;r[i]=$4*AtoB;nt1[i]=$5;nt2[i]=$6;nt3[i]=$7;nt4[i]=$8;nt5[i]=$9;nt6[i]=$10}
      }
 # Build the .geo file
 END{
@@ -12,13 +12,18 @@ END{
  print "" > "spheres.geo"
  i=0
  while (i<nsph) {
-   tess_size=4*3.14159*r[i]/ntess[i] 
-   print "Point("1+7*i") =  {"x[i]     " , "y[i]     " , "z[i]+r[i]" , "tess_size"};" > "spheres.geo"
-   print "Point("2+7*i") =  {"x[i]     " , "y[i]+r[i]" , "z[i]     " , "tess_size"};" > "spheres.geo"
-   print "Point("3+7*i") =  {"x[i]+r[i]" , "y[i]     " , "z[i]     " , "tess_size"};" > "spheres.geo"
-   print "Point("4+7*i") =  {"x[i]-r[i]" , "y[i]     " , "z[i]     " , "tess_size"};" > "spheres.geo" 
-   print "Point("5+7*i") =  {"x[i]     " , "y[i]-r[i]" , "z[i]     " , "tess_size"};" > "spheres.geo"
-   print "Point("6+7*i") =  {"x[i]     " , "y[i]     " , "z[i]-r[i]" , "tess_size"};" > "spheres.geo"
+   tess_size1=4*3.14159*r[i]/nt1[i] 
+   tess_size2=4*3.14159*r[i]/nt2[i] 
+   tess_size3=4*3.14159*r[i]/nt3[i] 
+   tess_size4=4*3.14159*r[i]/nt4[i] 
+   tess_size5=4*3.14159*r[i]/nt5[i] 
+   tess_size6=4*3.14159*r[i]/nt6[i] 
+   print "Point("1+7*i") =  {"x[i]     " , "y[i]     " , "z[i]+r[i]" , "tess_size1"};" > "spheres.geo"
+   print "Point("2+7*i") =  {"x[i]     " , "y[i]+r[i]" , "z[i]     " , "tess_size2"};" > "spheres.geo"
+   print "Point("3+7*i") =  {"x[i]+r[i]" , "y[i]     " , "z[i]     " , "tess_size3"};" > "spheres.geo"
+   print "Point("4+7*i") =  {"x[i]-r[i]" , "y[i]     " , "z[i]     " , "tess_size4"};" > "spheres.geo" 
+   print "Point("5+7*i") =  {"x[i]     " , "y[i]-r[i]" , "z[i]     " , "tess_size5"};" > "spheres.geo"
+   print "Point("6+7*i") =  {"x[i]     " , "y[i]     " , "z[i]-r[i]" , "tess_size6"};" > "spheres.geo"
    print "Point("7+7*i") =  {"x[i]     " , "y[i]     " , "z[i]     " , "1        "};" > "spheres.geo"
    print "" > "spheres.geo"
    i++

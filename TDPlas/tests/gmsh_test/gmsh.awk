@@ -13,8 +13,9 @@ BEGIN {inod=0;iel=0;inn=0;its=0;
    nsph=$2;correct=$3;for(j=0;j<nsph;j++){c[j][1]=$(j*4+4);c[j][2]=$(j*4+5);c[j][3]=$(j*4+6);r[j]=$(j*4+7)}
 }
  inod==1&&NF==4 { inn++;xn[inn]=$2; yn[inn]=$3; zn[inn]=$4}
- iel==1&&$2==2 {its++;xts[its]=$6; yts[its]=$7; zts[its]=$8}
+ iel==1&&$2==2 {its++; xts[its]=$6; yts[its]=$7; zts[its]=$8; line[its]=$0; F1[its]=$1; F2[its]=$2; F3[its]=$3; F4[its]=$4; F5[its]=$5}
 END{
+ system("cp spheres.msh spheres_outwards.msh")
  print inn > "surface_msh.inp"
  i=1
  while (i<=inn) {
@@ -62,7 +63,11 @@ END{
   for(k=1;k<=3;k++) {sp+=v[jmin][k]*nrm[k]}
   inorm=jmin+1
   if(sp<0) {
-    if (correct=="y") {tmp=xts[i];xts[i]=zts[i];zts[i]=tmp;for(k=1;k<=3;k++){nrm[k]=-nrm[k]}}
+    if (correct=="y") {
+      tmp=xts[i];xts[i]=zts[i];zts[i]=tmp;for(k=1;k<=3;k++){nrm[k]=-nrm[k]}
+      system("cp spheres_outwards.msh tmp.msh")
+      system("awk '$0==\""line[i]"\"{print "F1[i]","F2[i]","F3[i]","F4[i]","F5[i]","xts[i]","yts[i]","zts[i]" }$0!=\""line[i]"\"{print $0}' tmp.msh > spheres_outwards.msh") 
+    }
     else {inorm=-1}
   }
   print xts[i],yts[i],zts[i],inorm > "surface_msh.inp"
@@ -70,4 +75,5 @@ END{
   printf "%3s %14.5f %14.5f %14.5f\n","C", pos[1],pos[2],pos[3] > "nanoparticle_awk.xyz"
   printf "%3s %14.5f %14.5f %14.5f\n","H", pos[1]+nrm[1],pos[2]+nrm[2],pos[3]+nrm[3] > "nanoparticle_awk.xyz"
   i++}
+  system("rm tmp.msh")
 }
