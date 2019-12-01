@@ -430,7 +430,7 @@
              tot(k,j)=tot(k,j)+g(i,k,j)*g(i,k,j)
              !ref: Garcia-Vidal PRL 112, 253601 (2014)
              !ref(k,j)=mud*sqrt(2*wl*r**3)/(d**3)
-             ref(k,j)=2*mud*mud*wl*r**3/((d)**6)
+             ref(k,j)=2*mud*mud*wl*r**3/(d**6)
              !ref(k,j)=2*mud*mud*wl*r**3/(d+r)**6
            enddo
          enddo
