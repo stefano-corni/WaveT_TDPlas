@@ -59,6 +59,7 @@
       real(dbl), allocatable :: plexd(:,:,:)   !<Plexcitons dipole integrals \f$ \boldsymbol{\mu}_{rs}\oplus \mathbf{g}_{Fp} \f$
       real(dbl), allocatable :: Hqm_evt(:,:)   !<Eigenvalues of \mathcal{H}_{\text{QM}} or \mathcal{H}_{\text{SC}} if static field (public)
       real(dbl), allocatable :: Hqm_evl(:)     !<Eigenvectors of \mathcal{H}_{\text{QM}} or \mathcal{H}_{\text{SC}} if static field (public)
+      real(dbl), allocatable :: qg(:,:)        !<Charges associated to each mode    
       integer(i4b) :: Hqm_dim  !<Dimension of \mathcal{H}_{\text{QM}} matrix 
       integer(i4b) :: nmodes   !<Quantum plasmonic modes to couple to the molecule                  
 
@@ -91,6 +92,8 @@
        endif
        if (myrank.eq.0) write(6,*) "Integrals from dipoles computed"
        !> Build Plexcitons coplings terms "g"    
+       call do_gcharges
+       call out_gcharges
        call do_couplings      
        if (myrank.eq.0) write(6,*) "couplings computed"
        !> Testing against dipolar model of Garcia-Vidal PRL 112, 253601 (2014)
@@ -138,17 +141,21 @@
 !----------------------------------------------------------------------------
       subroutine init_QM_coupling                         
        call do_BEM_quant
-       FQBEM="diag-all"
-       if(FQBEM(6:8)=='all') then !< couple with all, but singly-occupied, modes.
+       FQBEM="diag-dip"
+!       if(FQBEM(6:8)=='all') then !< couple with all, but singly-occupied, modes.
+!         nmodes=nts_act
+!       else !< couple with the first "qmodes" singly-occupied modes. At present qmodes=1
+       if (nmod.lt.0) then
+         nmodes=nts_act     
+       else if (nmod.gt.0) then
+         nmodes=maxval(imod)
+       else 
          nmodes=nts_act
-       else !< couple with the first "qmodes" singly-occupied modes. At present qmodes=1
-!        nmodes=qmodes
-         nmodes=1     
        endif
-       nmodes=5
        allocate(g(nmodes,n_ci,n_ci))
        allocate(we(nmodes))
        allocate(omega_p(nmodes))
+       allocate(qg(nmodes,nts_act))
        Hqm_dim=n_ci*(nmodes+1)
        allocate(occ(nmodes))
        occ=1.d0 !< all singly-occupied modes
@@ -171,7 +178,7 @@
 !----------------------------------------------------------------------------
       subroutine fin_QM_coupling                         
        call deallocate_BEM_public
-       deallocate(we,omega_p,g)
+       deallocate(we,omega_p,g,qg)
        deallocate(Hqm,Hqm_evt,Hqm_evl)
        if(allocated(Hqm_int)) deallocate(Hqm_int)
        deallocate(occ)
@@ -292,6 +299,28 @@
 !>    @author S.Pipolo 
 !>    @param Hqm_evl  
 !----------------------------------------------------------------------------
+      subroutine out_gcharges                            
+       integer(i4b) :: i,j   
+       character(len=52) :: my_fmt, my_fmt1
+       open(9,file="gCharges.mat",status="unknown")
+       write(my_fmt,'(a,i0,a)') "(",nmodes+3,"E15.6)"
+       write(my_fmt1,'(a,i0,a)') "(A22,",nmodes+3,"E15.6)"
+       write(9,my_fmt1) "# Plasmon_Frequencies ",(omega_p(i),i=2,nmodes)
+       write(9,*) "# Modes: x y z q_m1 q_m2 .... q_mN   with   N = ", nmodes 
+       do j=1,nts_act
+         write(9,my_fmt) cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,(qg(i,j),i=2,nmodes)
+       enddo
+       close(9) 
+      return
+      end subroutine
+!
+!
+!------------------------------------------------------------------------
+!>    @brief Writes output of QM_coupling  
+!>    @date Created: 09 Feb 2019
+!>    @author S.Pipolo 
+!>    @param Hqm_evl  
+!----------------------------------------------------------------------------
       subroutine out_QM_coupling                         
        integer(i4b) :: i,j   
        character(len=32) :: my_fmt
@@ -300,10 +329,8 @@
        write(8,*) "Energies: "
        write(my_fmt,'(a,i0,a)') "(",Hqm_dim,"F10.6)"
        write(7,*) "Quantum-matrix: ", my_fmt
-       do i=1,Hqm_dim   
-         write(7,my_fmt) (Hqm(i,j), j=1,Hqm_dim)
-       enddo
        do i=1,Hqm_dim
+         write(7,my_fmt) (Hqm(i,j), j=1,Hqm_dim)
          if(i.le.n_ci) then
            write(8,"(i0,3F10.6)") i,Hqm_evl(i),e_ci(i),sqrt(BEM_W2(i))
          else
@@ -322,20 +349,39 @@
 !>     @author S.Pipolo
 !>     @param Hqm_evl  
 !----------------------------------------------------------------------------
+      subroutine do_gcharges  
+       integer(i4b) :: i   
+#ifndef MPI
+       myrank=0
+#endif
+       omega_p(1)=zero
+       we(1)=zero
+       qg(1,:)=zero
+       do i=2,nmodes  
+         omega_p(i)=sqrt(BEM_W2(i)) 
+         we(i)=sqrt((omega_p(i)**2-eps_w0**2)/(two*omega_p(i)))
+         qg(i,:)=BEM_Modes(i,:)*we(i)
+       enddo
+      return
+      end subroutine
+!
+!
+!------------------------------------------------------------------------
+!>     @brief computes the molecule-environment quantum couplig elements "g"
+!>     @date Created: 25 Sep 2019
+!>     @author S.Pipolo
+!>     @param Hqm_evl  
+!----------------------------------------------------------------------------
       subroutine do_couplings
        integer(i4b) :: i,j,k   
        real(dbl) :: tmp
 #ifndef MPI
        myrank=0
 #endif
-       omega_p(1)=0.
-       we(1)=0.
-       do i=2,nmodes   
-         omega_p(i)=sqrt(BEM_W2(i)) 
-         we(i)=sqrt((omega_p(i)**2-eps_w0**2)/(two*omega_p(i)))
+       do i=1,nmodes   
          do j=1,n_ci
            do k=j,n_ci
-             g(i,k,j)=dot_product(BEM_Modes(i,:),vts(:,k,j))*we(i)
+             g(i,k,j)=dot_product(qg(i,:),vts(:,k,j))
            enddo
          enddo
        enddo
@@ -347,11 +393,14 @@
 !>     @brief Writes out the coupling factors to compare with the dipole approximation
 !>     @date Created: 02 May 2017
 !>     @author S.Pipolo
+!>     @modified J.Fregoni 13 November 2019 (includes print of .pqr)
+!>      and MOPAC interface
 !>     @param Hqm_evl  
 !----------------------------------------------------------------------------
       subroutine test_QM_coupling                         
        real(dbl):: r,d,mud,wl                
-       integer(i4b) :: i,j,k   
+       character(54):: my_fmt
+       integer(i4b) :: i,j,k,pmax,p
        real(dbl), allocatable :: sp(:)               
        real(dbl), allocatable :: tot(:,:),ref(:,:)               
 #ifndef MPI
@@ -380,20 +429,19 @@
              mud=dot_product(mut(:,k,j),sp(:))/d
              tot(k,j)=tot(k,j)+g(i,k,j)*g(i,k,j)
              !ref: Garcia-Vidal PRL 112, 253601 (2014)
-             ref(k,j)=mud*sqrt(2*wl*r**3)/(d**3)
-             !ref(k,j)=2*mud*mud*wl*r**3/(d**6)
+             !ref(k,j)=mud*sqrt(2*wl*r**3)/(d**3)
+             ref(k,j)=2*mud*mud*wl*r**3/((d)**6)
              !ref(k,j)=2*mud*mud*wl*r**3/(d+r)**6
            enddo
          enddo
        enddo
        do j=1,n_ci   
          do k=j+1,n_ci
-           write(7,"(3i5,3E20.12)") 2,j-1,k-1,sqrt(tot(k,j)),ref(k,j)
-           !write(7,"(3i5,3E20.12)") 2,j-1,k-1,sqrt(tot(k,j)),sqrt(ref(k,j))
+           write(7,"(3i5,3E20.12)") 2,j-1,k-1,sqrt(tot(k,j)),sqrt(ref(k,j))
          enddo
        enddo
        write(7,*) ""
-       write(7,*) "# Dipolar resonance frequancy (a.u.)"
+       write(7,*) "# Dipolar resonance frequency (a.u.)"
        write(7,*) "#  p          omega_p            sqrt(A/3)" 
        do i=2,4        
          write(7,"(i5, 2E20.12)")i, sqrt(BEM_W2(i)), sqrt(eps_A/3)
@@ -402,6 +450,58 @@
        if (myrank.eq.0) then 
           write(6,*) "Test for dipolar-mode couplings...DONE" 
           write(6,*) "  Results in the g.mat file. " 
+       endif
+!JF 13/11/2019 Output charges for external QM coupling in .pqr,
+!trajectory like
+       open(23,file="gCharges.pqr",status="unknown")
+       write(my_fmt,'(a,i0,a)') "(",nmodes,"E20.6)"
+       if(nmod.eq.-1) then
+       pmax=nts_act
+       do p=2,pmax
+        write(23,*) nts_act
+        write(23,*) "mode number = ",p,"   Size = ", nts_act, my_fmt
+        do j=1,nts_act
+           write(23,'("ATOM ",I6," H    H  ",I6,3F11.3,3X,E13.6,2X,"1.5")')&
+           j,j,cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,qg(p,j)
+        enddo
+       enddo
+       endif
+       if(nmod.gt.0) then
+       pmax=nmod
+       do p=1,pmax
+       write(23,*) nts_act
+       write(23,*) "mode number = ",imod(p),"   Size = ", nts_act, my_fmt
+        do j=1,nts_act
+           write(23,'("ATOM ",I6," H    H  ",I6,3F11.3,3X,E13.6,2X,"1.5")')&
+           j,j,cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,qg(int(imod(p)),j)
+        enddo
+       enddo
+       endif
+       close(23)
+!JF Includes mopac print format for charges in gmop.mat file
+       !fmop=.true. 
+       write(*,*) "fmop is present as",fmop
+       if(fmop.eq.1) then
+        open(20,file="gmop.mat",status="unknown")
+        if(nmod.eq.-1) then
+        pmax=nts_act
+        write(20,*) "#sphere radius",r,"sphere center",sp(1),sp(2),sp(3)
+        write(20,*) "xcoord   ycoord   zcoord  area   ",(p,p=2,pmax)
+        do j=1,nts_act
+          write(20,'(4F11.3,3X,100000(ES16.6E3,3X))')&
+          cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,cts_act(j)%area,(qg(p,j),p=2,pmax)
+        enddo
+        endif
+        if(nmod.gt.0) then
+        pmax=nmod
+        write(20,*) "#sphere radius",r,"sphere center",sp(1),sp(2),sp(3)
+        write(20,*) "xcoord   ycoord   zcoord  area   ",(int(imod(p)),p=1,pmax)
+          do j=1,nts_act
+            write(20,'(4F11.3,3X,100000(ES16.6E3,3X))')&
+            cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,cts_act(j)%area,(qg(int(imod(p)),j),p=1,pmax)
+          enddo
+        endif
+        close(20) 
        endif
        deallocate(sp,tot,ref)
        stop

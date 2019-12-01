@@ -10,7 +10,7 @@ BEGIN {inod=0;iel=0;inn=0;its=0;
  /\$Elements/ {iel=1}
  /\$EndElements/ {iel=0}
  /type/ { 
-   nsph=$2;correct=$3;for(j=0;j<nsph;j++){c[j][1]=$(j*4+4);c[j][2]=$(j*4+5);c[j][3]=$(j*4+6);r[j]=$(j*4+7)}
+   nsph=$2;correct=$3;for(j=0;j<nsph;j++){c[j,1]=$(j*4+4);c[j,2]=$(j*4+5);c[j,3]=$(j*4+6);r[j]=$(j*4+7)}
 }
  inod==1&&NF==4 { inn++;xn[inn]=$2; yn[inn]=$3; zn[inn]=$4}
  iel==1&&$2==2 {its++; xts[its]=$6; yts[its]=$7; zts[its]=$8; line[its]=$0; F1[its]=$1; F2[its]=$2; F3[its]=$3; F4[its]=$4; F5[its]=$5}
@@ -47,20 +47,20 @@ END{
   pos[3]=(zn[xts[i]]+zn[yts[i]]+zn[zts[i]])/3
   # initialize
   tmp=0.
-  for(k=1;k<=3;k++) {v1=pos[k]-c[1][k];tmp+=v1*v1}
+  for(k=1;k<=3;k++) {v1=pos[k]-c[1,k];tmp+=v1*v1}
   jmin=0
   dmin=sqrt(tmp)
   # Compute distances between points and all centers
   for(j=0;j<nsph;j++) { 
     tmp=0.
-    for(k=1;k<=3;k++) {v[j][k]=pos[k]-c[j][k];tmp+=v[j][k]*v[j][k]}
+    for(k=1;k<=3;k++) {v[j,k]=pos[k]-c[j,k];tmp+=v[j,k]*v[j,k]}
     d[j]=sqrt(tmp)
     dd=abs(d[j]-r[j])
     if(dd<dmin){dmin=dd;jmin=j}
   }
   # Compute scalar product using the "closest" center
   sp=0.
-  for(k=1;k<=3;k++) {sp+=v[jmin][k]*nrm[k]}
+  for(k=1;k<=3;k++) {sp+=v[jmin,k]*nrm[k]}
   inorm=jmin+1
   if(sp<0) {
     if (correct=="y") {

@@ -37,7 +37,7 @@ LDLAGS=
 # comment the first and uncomment the second if compiler is ifort
 
 #FFLAGS= $(FFLAGS_GF) ${OMP} #-heap-arrays 1024
-FFLAGS= -Og -g ${OMP} #-heap-arrays 1024
+FFLAGS= -O -g ${OMP} #-heap-arrays 1024
 #FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds
 
 # preprocessor flag
@@ -48,7 +48,9 @@ CPP=-cpp
 
 # libraries to be linked
 
-LIBS = -L/usr/lib -llapack -lblas -lpthread
+#LIBS = -L/usr/lib -llapack -lblas -lpthread
+LIBS =  -Wl,--start-group -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -Wl,--end-group#
+
 #LIBS =  -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lpthread
 #LIBS = -L/usr/lib -llapack  -lblas -lfftw3
 #LIBS =  -Wl,--start-group -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -Wl,--end-group#

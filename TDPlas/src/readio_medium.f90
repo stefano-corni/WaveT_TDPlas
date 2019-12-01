@@ -24,10 +24,10 @@
       real(dbl), allocatable :: sph_min(:)       !< Secondary axis modulus (nsph) of spheroids (spheres: sph_maj=sph_min)
       real(dbl), allocatable :: sph_vrs(:,:,:)   !< versors of principal (:,1,:) and secondary axis of nsph spheroids (:,:,nsph)
       real(dbl) :: fr_0(3)                       !< Reaction field at time 0 defined with Finit_mdm, here because used in scf
-      ! Charges propagation
       real(dbl), allocatable :: vts(:,:,:)       !<transition potentials on tesserae from cis
       real(dbl), allocatable :: vtsn(:)          !<nuclear potential on tesserae
       real(dbl), allocatable :: q0(:)            !< Charges at time 0 defined with Finit_mdm, here because used in scf
+
       ! Restart
       !real(dbl)              :: fr_i(3),fx_i(3)  !< restart Onsager 
       !real(dbl), allocatable :: qr_i(:),qx_i(:)  !< restart pcm  
@@ -35,6 +35,12 @@
       real(dbl) :: eps_0,eps_d                   !< $\omega \rightarrow 0$ and $\omega \rightarrow \infty$ limits of $\epsilon(\omega)$
       real(dbl) :: tau_deb                       !< Debye's $\tau_D$
       real(dbl) :: eps_A,eps_gm,eps_w0,f_vel     !< Drude lorentz $\omega^2_p$, $\gamma$, $\omega_$, and fermi velocity $v_f$
+! QM coupling
+! JF 011229:QM_coupling
+      integer(i4b), parameter :: ntsmax=1000000 !<Maximum number of tesserae/modes for quantum coupling
+      integer(i4b) :: nmod !< number of modes to couple and print
+      integer(i4b),allocatable,dimension(:) :: imod  !< which modes to couple and print
+      integer(i4b) :: fmop !< flag to print mopac charges
 ! SCF variables
       integer(i4b) :: ncycmax !< maximum number of SCF cycles
       real(dbl) :: thrshld    !< SCF threshold on (i) eigenvalues 10^-thrshld (ii) eigenvectors 10^-(thrshld+2)
@@ -67,11 +73,13 @@
                         Fopt_chr,  & !< Optimized loops with OMP
                         Fmdm_res,  & !< Medium restart
                         Finv         !< Apply inversion symmetry when cavity is built using gmsh
-
                                      !! 
       
 ! namelists user-friendly variables 
       real(dbl) :: interaction_stride
+      real(dbl) :: n_prnt_charges
+      real(dbl) :: charge_mopac
+      real(dbl) :: prnt_charges(ntsmax)
       real(dbl) :: spheres_number
       real(dbl) :: sphere_position_x(nsmax)            
       real(dbl) :: sphere_position_y(nsmax)            
@@ -113,7 +121,7 @@
              FinitBEM,Fsurf,Finit_mdm,read_medium_freq,              &
              read_medium_tdplas,n_omega,omega_ini,omega_end,         &
              Fwrite,Fmdm_relax,Fgamess,mpibcast_readio_mdm,Fopt_chr, &
-             ntst,Fmdm_res,Finv
+             ntst,Fmdm_res,Finv,nmod,imod,fmop
 !
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -142,7 +150,9 @@
          sphere_radius,spheroid_radius                                
        namelist /eps_function/epsilon_omega,eps_0,eps_d,eps_A, &
                          eps_gm,eps_w0,f_vel,tau_deb       
-      
+       namelist /print_charges/n_prnt_charges,prnt_charges, &
+                               charge_mopac
+
        call init_nml_all() 
        call init_nml_propagate() 
        read(*,nml=propagate) 
@@ -159,8 +169,11 @@
        endif
        read(*,nml=eps_function) 
        call write_nml_eps_function()
+       if (Fmdm(1:4).eq.'Qnan') then
+         read(*,nml=print_charges) 
+         call write_nml_print_charges()
+       endif
        call write_nml_all()
-
        if (nts_act.gt.ntst.and.nthr.gt.1) then 
           Fopt_chr(1:3)='omp'
           write(*,*) 'OMP-optimized loops for charges'
@@ -194,6 +207,7 @@
          sphere_radius,spheroid_radius                                
        namelist /eps_function/epsilon_omega,eps_0,eps_d,eps_A, &
                          eps_gm,eps_w0,f_vel,tau_deb       
+      
        call init_nml_all() 
        call init_nml_freq()
        read(*,nml=freq) 
@@ -281,6 +295,8 @@
        spheroid_position_y=zero
        spheroid_position_z=zero
        spheroid_radius=zero
+       n_prnt_charges=zero
+       charge_mopac=zero
        ! SCF
        scf_threshold=10
        scf_mix_coeff=0.2
@@ -1110,7 +1126,7 @@
        if(allocated(sph_min)) deallocate(sph_min)
        if(allocated(sph_vrs)) deallocate(sph_vrs)
        if(allocated(sph_centre)) deallocate(sph_centre)
-
+       if(allocated(imod)) deallocate(imod)
        return
 
       end subroutine
@@ -1278,4 +1294,37 @@
 
 !      end subroutine read_medium_restart
 
- end module
+!------------------------------------------------------------------------
+! SP 14/07/17 calculations should probably go in a different module. which one?
+!             Probably pedra_firends....
+      subroutine write_nml_print_charges()
+!------------------------------------------------------------------------
+! @brief Write variables for QM_coupling 
+!      
+! @date Created: J. Fregoni
+!------------------------------------------------------------------------
+       integer(i4b)::i,j
+
+       if (n_prnt_charges.gt.0) then
+           nmod=int(n_prnt_charges)
+           allocate(imod(nmod))
+           do i=1,nmod
+              imod(i)=int(prnt_charges(i))
+              write(*,*) imod(i)
+           enddo
+       endif
+
+       if (n_prnt_charges.lt.0) then
+           nmod=nts_act
+           allocate(imod(nmod))
+       endif
+
+       if (charge_mopac.ge.1) then
+          fmop=1
+          write(*,*) "charges for MOPAC2002 interface PRINTED"
+       else
+          fmop=0
+          write(*,*) "charges for MOPAC2002 interface NOT PRINTED"
+       endif
+      end subroutine write_nml_print_charges
+      end module
