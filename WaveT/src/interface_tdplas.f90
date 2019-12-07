@@ -9,7 +9,7 @@ module interface_tdplas
                         mpibcast_readio_mdm,set_global_tdplas,&                                ! used by main
                         Fwrite,fr_0,BEM_Q0,mat_f0,ncycmax,thrshld,vtsn,mix_coef,diag_mat,&
                         do_field_from_charges,&                                                ! used in scf
-                        BEM_W2,Ftest,eps_w0,eps_A,BEM_Modes,sfe_act,&
+                        BEM_W2,Ftest,eps_w0,eps_A,BEM_T,BEM_Modes,sfe_act,&
                         do_BEM_quant,deallocate_bem_public,do_vts_from_dip,mdl,nmod,imod, &        ! used by QM_coupling 
                         q0,vts,nts_act,Fprop,Fint,cts_act,tess_pcm,sfera,Finit_int,nesf_act,Fbem ! used only here in interface_tdplas
                         
@@ -39,6 +39,7 @@ module interface_tdplas
       real(dbl), allocatable :: this_BEM_Q0(:,:)
       real(dbl), allocatable :: this_BEM_W2(:), this_imod(:)
       real(dbl), allocatable :: this_BEM_Modes(:,:)
+      real(dbl), allocatable :: this_BEM_T(:,:)
       real(dbl) :: this_fr_0(3)                       !< Reaction field at time 0 defined with Finit_mdm, here because used in scf
       real(dbl), allocatable :: this_mat_f0(:,:) !< Onsager's total matrices needed for scf, free_energy and propagation
       real(dbl) :: this_mix_coef   !< SCF mixing ratio of old (1-mix_coef) and new (mix_coef) charges/field       
@@ -51,7 +52,7 @@ module interface_tdplas
              mpibcast_read_medium,set_global_tdplas_in_wavet,&                          ! used by main
              this_Fwrite,this_fr_0,this_BEM_Q0,this_mat_f0,this_ncycmax,this_thrshld,this_vtsn,this_mix_coef,diag_mat_in_wavet,&
              do_field_from_charges_in_wavet, this_nts_act,this_nmod,this_imod,this_fmop, &          ! used in scf
-             this_BEM_W2,this_Ftest,this_eps_w0,this_eps_A,this_BEM_Modes,this_sfe_act,&
+             this_BEM_W2,this_Ftest,this_eps_w0,this_eps_A,this_BEM_Modes,this_BEM_T,this_sfe_act,&
              do_BEM_quant_in_wavet,deallocate_bem_public_in_wavet,do_vts_from_dip_in_wavet ! used by QM_coupling 
 
       contains
@@ -239,6 +240,8 @@ module interface_tdplas
          if(Fmdm(1:1).eq."Q") then
           allocate(this_BEM_Modes(this_nts_act,this_nts_act))
           this_BEM_Modes=BEM_Modes
+          allocate(this_BEM_T(this_nts_act,this_nts_act))
+          this_BEM_T=BEM_T
          end if
         end if
 #else

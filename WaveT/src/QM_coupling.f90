@@ -308,7 +308,14 @@
        write(9,my_fmt1) "# Plasmon_Frequencies ",(omega_p(i),i=2,nmodes)
        write(9,*) "# Modes: x y z q_m1 q_m2 .... q_mN   with   N = ", nmodes 
        do j=1,nts_act
-         write(9,my_fmt) cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,(qg(i,j),i=2,nmodes)
+         write(9,my_fmt) cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,(qg(i,j),i=1,nmodes)
+       enddo
+       close(9) 
+       open(9,file="gEigenve.mat",status="unknown")
+       write(9,my_fmt1) "# Plasmon_Frequencies ",(omega_p(i),i=2,nmodes)
+       write(9,*) "# Modes: x y z q_m1 q_m2 .... q_mN   with   N = ", nmodes 
+       do j=1,nts_act
+         write(9,my_fmt) cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,(BEM_T(j,i),i=1,nmodes)
        enddo
        close(9) 
       return
