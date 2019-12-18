@@ -20,12 +20,6 @@
 !>    \f{align}{\nonumber
 !>    \left[\mathbf{H}_{\text{MP}}\right]_{rs,p}=-\sqrt{\frac{\omega_p^2-\omega_0^2}{2\omega_p}} \left[ \mathbf{T}^{\dagger}\mathbf{S}^{\text{-1/2}}\right]_p~\mathbf{V}_{rs}
 !>    \f}  
-!> Array:
-!>           \f{array}{{ccc c ccc}
-!>             \ddots && \f$\mathbf{H}_{\text{MF}}\f$&\hspace{0.3cm}&\ddots && \f$\mathbf{H}_{\text{MP}}\f$ \\
-!>             &\mathbf{H}^0_{\text{M}}+\mathbf{H}^0_{\text{P}}&&\hspace{0.3cm}&& ~~~~\mathbf{H}_{\text{PF}}~~~~ &\\
-!>             \mathbf{H}_{\text{MF}}&&\ddots &\hspace{0.3cm}& \mathbf{H}_{\text{MP}}&&\ddots\\                   
-!>           \f} 
 !------------------------------------------------------------------------------
       Module QM_coupling    
       use constants    
@@ -49,7 +43,6 @@
       implicit none
                                                !> This description comes first.
       character(flg) :: FQBEM                  !< Flag driving the QM calculation mode
-
       real(dbl), allocatable :: omega_p(:)     !<Plasmon energies                                        
       real(dbl), allocatable :: we(:)          !<Plasmon coupling energy terms in g                      
       real(dbl), allocatable :: g(:,:,:)       !<Plexcitons coupling terms 
@@ -97,7 +90,7 @@
        call do_couplings      
        if (myrank.eq.0) write(6,*) "couplings computed"
        !> Testing against dipolar model of Garcia-Vidal PRL 112, 253601 (2014)
-       if(Ftest.eq."qmt".and.myrank.eq.0) call test_QM_coupling
+       !if(Ftest.eq."qmt".and.myrank.eq.0) call test_QM_coupling
        !> Build Plexcitons matrix: do_Hqm_matrix 
        call do_Hqm_matrix
        if (myrank.eq.0) write(6,*) "Plexcitons matrix built"
@@ -142,9 +135,6 @@
       subroutine init_QM_coupling                         
        call do_BEM_quant
        FQBEM="diag-dip"
-!       if(FQBEM(6:8)=='all') then !< couple with all, but singly-occupied, modes.
-!         nmodes=nts_act
-!       else !< couple with the first "qmodes" singly-occupied modes. At present qmodes=1
        if (nmod.lt.0) then
          nmodes=nts_act     
        else if (nmod.gt.0) then
@@ -300,7 +290,7 @@
 !>    @param Hqm_evl  
 !----------------------------------------------------------------------------
       subroutine out_gcharges                            
-       integer(i4b) :: i,j   
+       integer(i4b) :: i,j,p,pmax
        character(len=52) :: my_fmt, my_fmt1
        open(9,file="gCharges.mat",status="unknown")
        write(my_fmt,'(a,i0,a)') "(",nmodes+3,"E15.6)"
@@ -318,8 +308,68 @@
          write(9,my_fmt) cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,(BEM_T(j,i),i=1,nmodes)
        enddo
        close(9) 
+
+      !JF 13/11/2019 Output charges for external QM coupling in .pqr,
+      !trajectory like
+       open(23,file="gCharges.pqr",status="unknown")
+       write(my_fmt,'(a,i0,a)') "(",nmodes,"E20.6)"
+       write(*,*) "printing imod",(imod(i),i=1,nmod)
+       if(nmod.eq.-1) then
+       pmax=nts_act
+       do p=2,pmax
+        write(23,*) nts_act
+        write(23,*) "mode number = ",p,"   Size = ", nts_act, my_fmt
+        do j=1,nts_act
+         write(23,'("ATOM ",I6," H    H  ",I6,3F11.3,3X,E13.6,2X,"1.5")')&
+         j,j,cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,qg(p,j)
+        enddo
+       enddo
+       endif
+       write(*,*) "Charges printed ok"
+       if(nmod.gt.0) then
+       pmax=nmod
+       do p=1,pmax
+       write(23,*) nts_act
+       write(23,*) "mode number = ",imod(p),"   Size = ", nts_act, my_fmt
+        do j=1,nts_act
+         write(23,'("ATOM ",I6," H    H  ",I6,3F11.3,3X,E13.6,2X,"1.5")')&
+         j,j,cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,qg(int(imod(p)),j)
+        enddo
+       enddo
+       write(*,*) "Charges printed ok"
+       endif
+       close(23)
+!JF Includes mopac print format for charges in gmop.mat file
+       !fmop=.true. 
+       write(*,*) "fmop is present as",fmop
+       if(fmop.eq.1) then
+        open(20,file="gmop.mat",status="unknown")
+        if(nmod.eq.-1) then
+        pmax=nts_act
+          write(20,*)"#sphere center ?"
+          write(20,*) "xcoord   ycoord   zcoord  area   ",(p,p=2,pmax)
+          write(*,*) "Mopac Charges printed ok for all modes"
+        do j=1,nts_act
+          write(20,'(4F11.3,3X,100000(ES16.6E3,3X))')&
+          cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,cts_act(j)%area,(qg(p,j),p=2,pmax)
+        enddo
+        endif
+        if(nmod.gt.0) then
+        pmax=nmod
+        write(20,*) "#sphere center ?"
+        write(20,*) "xcoord   ycoord   zcoord  area   ",(int(imod(p)),p=1,pmax)
+          do j=1,nts_act
+            write(20,'(4F11.3,3X,100000(ES16.6E3,3X))')&
+            cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,cts_act(j)%area,(qg(int(imod(p)),j),p=1,pmax)
+          enddo
+          write(*,*)" no error in p"
+          write(*,*) "Mopac Charges printed ok for few modes"
+        endif
+        close(20) 
+       endif
       return
       end subroutine
+
 !
 !
 !------------------------------------------------------------------------
@@ -400,7 +450,8 @@
 !>     @brief Writes out the coupling factors to compare with the dipole approximation
 !>     @date Created: 02 May 2017
 !>     @author S.Pipolo
-!>     @modified J.Fregoni 13 November 2019 (includes print of .pqr)
+!>     @modified J.Fregoni 18 December 2019 (moved print of .pqr to
+!out_gcharges)
 !>      and MOPAC interface
 !>     @param Hqm_evl  
 !----------------------------------------------------------------------------
@@ -458,62 +509,8 @@
           write(6,*) "Test for dipolar-mode couplings...DONE" 
           write(6,*) "  Results in the g.mat file. " 
        endif
-!JF 13/11/2019 Output charges for external QM coupling in .pqr,
-!trajectory like
-       open(23,file="gCharges.pqr",status="unknown")
-       write(my_fmt,'(a,i0,a)') "(",nmodes,"E20.6)"
-       if(nmod.eq.-1) then
-       pmax=nts_act
-       do p=2,pmax
-        write(23,*) nts_act
-        write(23,*) "mode number = ",p,"   Size = ", nts_act, my_fmt
-        do j=1,nts_act
-           write(23,'("ATOM ",I6," H    H  ",I6,3F11.3,3X,E13.6,2X,"1.5")')&
-           j,j,cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,qg(p,j)
-        enddo
-       enddo
-       endif
-       if(nmod.gt.0) then
-       pmax=nmod
-       do p=1,pmax
-       write(23,*) nts_act
-       write(23,*) "mode number = ",imod(p),"   Size = ", nts_act, my_fmt
-        do j=1,nts_act
-           write(23,'("ATOM ",I6," H    H  ",I6,3F11.3,3X,E13.6,2X,"1.5")')&
-           j,j,cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,qg(int(imod(p)),j)
-        enddo
-       enddo
-       endif
-       close(23)
-!JF Includes mopac print format for charges in gmop.mat file
-       !fmop=.true. 
-       write(*,*) "fmop is present as",fmop
-       if(fmop.eq.1) then
-        open(20,file="gmop.mat",status="unknown")
-        if(nmod.eq.-1) then
-        pmax=nts_act
-        write(20,*) "#sphere radius",r,"sphere center",sp(1),sp(2),sp(3)
-        write(20,*) "xcoord   ycoord   zcoord  area   ",(p,p=2,pmax)
-        do j=1,nts_act
-          write(20,'(4F11.3,3X,100000(ES16.6E3,3X))')&
-          cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,cts_act(j)%area,(qg(p,j),p=2,pmax)
-        enddo
-        endif
-        if(nmod.gt.0) then
-        pmax=nmod
-        write(20,*) "#sphere radius",r,"sphere center",sp(1),sp(2),sp(3)
-        write(20,*) "xcoord   ycoord   zcoord  area   ",(int(imod(p)),p=1,pmax)
-          do j=1,nts_act
-            write(20,'(4F11.3,3X,100000(ES16.6E3,3X))')&
-            cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,cts_act(j)%area,(qg(int(imod(p)),j),p=1,pmax)
-          enddo
-        endif
-        close(20) 
-       endif
        deallocate(sp,tot,ref)
        stop
       return
       end subroutine
-!
-!
-      end module
+end module

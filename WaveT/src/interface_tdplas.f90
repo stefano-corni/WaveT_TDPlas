@@ -26,7 +26,6 @@ module interface_tdplas
       implicit none
 
       character(flg) :: this_Fmdm_relax, this_Fprop, this_Fint, this_Fwrite, this_Ftest, this_Finit_int, this_Fbem
-
       real(dbl), allocatable :: this_vts(:,:,:), this_vtsn(:) !<transition potentials on tesserae from cis
 
       integer(i4b) :: this_nts_act, this_nesf_act, this_nmod

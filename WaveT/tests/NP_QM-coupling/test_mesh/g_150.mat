@@ -1,0 +1,16 @@
+ # Test for dipolar-mode couplings
+ # Sphere radius distance (bohr) and position
+   47.2430    0.0000    0.0000    0.0000    0.0000
+ # g=dot_product(BEM_Modes(p,:),vts(:,i,j))*we
+ # g_ref=mu*sqrt(2*omega_p*r^3)/(d^3)
+ #
+ #  p    i    j            g                 g_ref
+    2    0    1  0.751128514250E-06                 NaN
+    2    0    2  0.296214011451E-03                 NaN
+    2    1    2  0.921128276291E-03                 NaN
+ 
+ # Dipolar resonance frequency (a.u.)
+ #  p          omega_p            sqrt(A/3)
+    2  0.192538201636E+00  0.192450080107E+00
+    3  0.192539664379E+00  0.192450080107E+00
+    4  0.192542418763E+00  0.192450080107E+00
