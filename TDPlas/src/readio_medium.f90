@@ -37,8 +37,8 @@
       real(dbl) :: eps_A,eps_gm,eps_w0,f_vel     !< Drude lorentz $\omega^2_p$, $\gamma$, $\omega_$, and fermi velocity $v_f$
 ! QM coupling
 ! JF 011229:QM_coupling
-      integer(i4b), parameter :: ntsmax=20000 !<Maximum number of tesserae/modes for quantum coupling
       integer(i4b) :: nmod !< number of modes to couple and print
+      integer(i4b),parameter :: nts_max=100
       integer(i4b),allocatable,dimension(:) :: imod  !< which modes to couple and print
       integer(i4b) :: fmop !< flag to print mopac charges
 ! SCF variables
@@ -79,7 +79,7 @@
       real(dbl) :: interaction_stride
       real(dbl) :: n_prnt_charges
       real(dbl) :: charge_mopac
-      real(dbl) :: prnt_charges(ntsmax)
+      real(dbl) :: prnt_charges(nts_max)
       real(dbl) :: spheres_number
       real(dbl) :: sphere_position_x(nsmax)            
       real(dbl) :: sphere_position_y(nsmax)            
@@ -1310,13 +1310,13 @@
            allocate(imod(nmod))
            do i=1,nmod
               imod(i)=int(prnt_charges(i))
-              write(*,*) imod(i)
            enddo
        endif
 
        if (n_prnt_charges.lt.0) then
            nmod=nts_act
            allocate(imod(nmod))
+           imod=zero
        endif
 
        if (charge_mopac.ge.1) then

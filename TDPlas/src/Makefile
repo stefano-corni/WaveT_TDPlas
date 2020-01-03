@@ -106,7 +106,7 @@ pedra_friends.o: pedra_friends.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
 readio_medium.o: readio_medium.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) -std=f2003 -c $< -o $@
 
 MathTools.o: MathTools.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@

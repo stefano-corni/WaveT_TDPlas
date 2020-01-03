@@ -62,8 +62,8 @@ f_vel=0.
 /
 
 &PRINT_CHARGES
-n_prnt_charges= 3.0
-prnt_charges= 2.0 3.0 4.0
+n_prnt_charges= 5.0
+prnt_charges= 2.0 3.0 4.0 9.0 10.0
 charge_mopac= 1.0
 /
 

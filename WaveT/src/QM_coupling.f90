@@ -135,13 +135,7 @@
       subroutine init_QM_coupling                         
        call do_BEM_quant
        FQBEM="diag-dip"
-       if (nmod.lt.0) then
-         nmodes=nts_act     
-       else if (nmod.gt.0) then
-         nmodes=maxval(imod)
-       else 
-         nmodes=nts_act
-       endif
+       nmodes=nts_act     
        allocate(g(nmodes,n_ci,n_ci))
        allocate(we(nmodes))
        allocate(omega_p(nmodes))
@@ -295,17 +289,17 @@
        open(9,file="gCharges.mat",status="unknown")
        write(my_fmt,'(a,i0,a)') "(",nmodes+3,"E15.6)"
        write(my_fmt1,'(a,i0,a)') "(A22,",nmodes+3,"E15.6)"
-       write(9,my_fmt1) "# Plasmon_Frequencies ",(omega_p(i),i=2,nmodes)
+       write(9,my_fmt1) "# Plasmon_Frequencies",(omega_p(i),i=2,imod(size(imod)))
        write(9,*) "# Modes: x y z q_m1 q_m2 .... q_mN   with   N = ", nmodes 
        do j=1,nts_act
-         write(9,my_fmt) cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,(qg(i,j),i=1,nmodes)
+         write(9,my_fmt) cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,(qg(i,j),i=1,imod(size(imod)))
        enddo
        close(9) 
        open(9,file="gEigenve.mat",status="unknown")
        write(9,my_fmt1) "# Plasmon_Frequencies ",(omega_p(i),i=2,nmodes)
        write(9,*) "# Modes: x y z q_m1 q_m2 .... q_mN   with   N = ", nmodes 
        do j=1,nts_act
-         write(9,my_fmt) cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,(BEM_T(j,i),i=1,nmodes)
+         write(9,my_fmt) cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,(BEM_T(j,i),i=1,imod(size(imod)))
        enddo
        close(9) 
 
@@ -313,7 +307,6 @@
       !trajectory like
        open(23,file="gCharges.pqr",status="unknown")
        write(my_fmt,'(a,i0,a)') "(",nmodes,"E20.6)"
-       write(*,*) "printing imod",(imod(i),i=1,nmod)
        if(nmod.eq.-1) then
        pmax=nts_act
        do p=2,pmax
@@ -325,7 +318,6 @@
         enddo
        enddo
        endif
-       write(*,*) "Charges printed ok"
        if(nmod.gt.0) then
        pmax=nmod
        do p=1,pmax
@@ -344,10 +336,10 @@
        write(*,*) "fmop is present as",fmop
        if(fmop.eq.1) then
         open(20,file="gmop.mat",status="unknown")
-        if(nmod.eq.-1) then
+        if(nmod.eq.nts_act) then
         pmax=nts_act
           write(20,*)"#sphere center ?"
-          write(20,*) "xcoord   ycoord   zcoord  area   ",(p,p=2,pmax)
+          write(20,*) "xcoord   ycoord   zcoord  area   ",(p,p=2,nts_act)
           write(*,*) "Mopac Charges printed ok for all modes"
         do j=1,nts_act
           write(20,'(4F11.3,3X,100000(ES16.6E3,3X))')&
@@ -362,7 +354,6 @@
             write(20,'(4F11.3,3X,100000(ES16.6E3,3X))')&
             cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,cts_act(j)%area,(qg(int(imod(p)),j),p=1,pmax)
           enddo
-          write(*,*)" no error in p"
           write(*,*) "Mopac Charges printed ok for few modes"
         endif
         close(20) 
