@@ -1,0 +1,23 @@
+This set of subfolders contains some example of nanoparticles generated through GMSH and the scripts to process them to be read by WaveT/TDPlas.
+
+1_sphere, 2_spheres, inhomogeneous_mesh and ellipsoid contain the input files to generate a spherical NP, two spherical NP, two spherical NPs with inhomogenous mesh (dense mesh along z coordinate) and an ellipsoid.
+
+Instructions to generate the cavity.inp and mat_SD files. 
+
+1) The first step is to obtain a file_norm.msh file with corrected normals. This is achieved in two ways:
+ a) -In the 1_sphere, 2_spheres, inhomogeneous_mesh folders, the spheres.inp file contains the information to build the .geo file.
+    -The spheres.inp file is processed by the make_geo.awk script and generates the .geo file
+    -By running gmsh spheres.geo, the spheres.msh file is obtained.
+    -The script gmsh.awk corrects the normals to the surfaces, poorly placed by directly reading the spheres.msh file.
+
+ b) -In the ellipsoid folder, the ellipsoid.geo file is built by graphic interface of gmsh2.2.
+    -The mesh of a nanoparticle of any shape can be built via gmsh2.2. If using later versions, specify the format to export the .msh file (see the create_ellipsoid.sh script in ./ellipsoid/).
+    -Please note that later versions of gmsh may use items to build the mesh that are not recognized by the local scripts.
+    -The script gmsh.awk corrects the normals to the surfaces, poorly placed by directly reading the ellipsoid.msh file.
+
+2) Once the file_norm.msh are generated, they are automatically used by TDPlas.
+3) To obtain the cavity.inp and mat_SD.inp files, run /path_to_tdplas_bin/tdplas.x < tdplas.inp by specifying 
+
+&SURFACE
+input_surface='gms',
+/
