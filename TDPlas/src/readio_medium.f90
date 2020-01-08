@@ -1313,7 +1313,6 @@
        endif
 
        if (n_prnt_charges.lt.0) then
-           nmod=nts_act
            allocate(imod(nmod))
            imod=zero
        endif
