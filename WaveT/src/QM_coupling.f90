@@ -26,7 +26,6 @@
 !>             &\mathbf{H}^0_{\text{M}}+\mathbf{H}^0_{\text{P}}&&\hspace{0.3cm}&& ~~~~\mathbf{H}_{\text{PF}}~~~~ &\\
 !>             \mathbf{H}_{\text{MF}}&&\ddots &\hspace{0.3cm}& \mathbf{H}_{\text{MP}}&&\ddots\\                   
 !>           \f} 
->>>>>>> stefano
 !------------------------------------------------------------------------------
       Module QM_coupling    
       use constants    
@@ -295,24 +294,23 @@
 !>    @author S.Pipolo 
 !>    @param Hqm_evl  
 !----------------------------------------------------------------------------
-<<<<<<< HEAD
       subroutine out_gcharges                            
        integer(i4b) :: i,j,p,pmax
        character(len=52) :: my_fmt, my_fmt1
        open(9,file="gCharges.mat",status="unknown")
        write(my_fmt,'(a,i0,a)') "(",nmodes+3,"E15.6)"
        write(my_fmt1,'(a,i0,a)') "(A22,",nmodes+3,"E15.6)"
-       write(9,my_fmt1) "# Plasmon_Frequencies",(omega_p(i),i=2,imod(size(imod)))
+       write(9,my_fmt1) "# Plasmon_Frequencies",(omega_p(i),i=2,nmodes)
        write(9,*) "# Modes: x y z q_m1 q_m2 .... q_mN   with   N = ", nmodes 
        do j=1,nts_act
-         write(9,my_fmt) cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,(qg(i,j),i=1,imod(size(imod)))
+         write(9,my_fmt) cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,(qg(i,j),i=1,nmodes)
        enddo
        close(9) 
        open(9,file="gEigenve.mat",status="unknown")
        write(9,my_fmt1) "# Plasmon_Frequencies ",(omega_p(i),i=2,nmodes)
        write(9,*) "# Modes: x y z q_m1 q_m2 .... q_mN   with   N = ", nmodes 
        do j=1,nts_act
-         write(9,my_fmt) cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,(BEM_T(j,i),i=1,imod(size(imod)))
+         write(9,my_fmt) cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,(BEM_T(j,i),i=1,nmodes)
        enddo
        close(9) 
 
@@ -390,13 +388,9 @@
        write(8,*) "Energies: "
        write(my_fmt,'(a,i0,a)') "(",Hqm_dim,"F10.6)"
        write(7,*) "Quantum-matrix: ", my_fmt
-       do i=1,Hqm_dim
+       do i=n_ci+1,Hqm_dim
          write(7,my_fmt) (Hqm(i,j), j=1,Hqm_dim)
-         if(i.le.n_ci) then
-           write(8,"(i0,3F10.6)") i,Hqm_evl(i),e_ci(i),sqrt(BEM_W2(i))
-         else
-           write(8,"(i0,F10.6)") i, Hqm_evl(i)
-         endif
+           write(8,"(i0,F10.6)") i-n_ci, Hqm_evl(i)
        enddo
        close(7)
        close(8) 
@@ -496,16 +490,16 @@
              !ref(k,j)=2*mud*mud*wl*r**3/(d+r)**6
            enddo
          enddo
-       enddo
-       do j=1,n_ci   
-         do k=j+1,n_ci
-           write(7,"(3i5,3E20.12)") 2,j-1,k-1,sqrt(tot(k,j))!,sqrt(ref(k,j))
+         do j=1,n_ci   
+           do k=j+1,n_ci
+             write(7,"(3i5,3E20.12)") i,j-1,k-1,sqrt(tot(k,j))!,sqrt(ref(k,j))
+           enddo
          enddo
        enddo
        write(7,*) ""
        write(7,*) "# Dipolar resonance frequency (a.u.)"
        write(7,*) "#  p          omega_p            sqrt(A/3)" 
-       do i=2,4        
+       do i=2,nmodes        
          write(7,"(i5, 2E20.12)")i, sqrt(BEM_W2(i)), sqrt(eps_A/3)
        enddo
        close(7)

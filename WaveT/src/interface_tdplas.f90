@@ -118,8 +118,8 @@ module interface_tdplas
         this_Fwrite=Fwrite
         this_Finit_int=Finit_int
         this_Fmdm_relax = Fmdm_relax
+        this_nts_act=nts_act
         if(this_Fprop(1:3).eq."chr") then 
-         this_nts_act=nts_act
          allocate(this_vts(this_nts_act,n_ci,n_ci))
          this_vts=vts
          allocate(this_vtsn(this_nts_act))
@@ -133,16 +133,17 @@ module interface_tdplas
         this_nesf_act=nesf_act
         allocate(this_sfe_act(this_nesf_act))
         !this_sfe_act=sfe_act
-        do ii=1, this_nesf_act
-         this_sfe_act(ii)%x=sfe_act(ii)%x
-         this_sfe_act(ii)%y=sfe_act(ii)%y
-         this_sfe_act(ii)%z=sfe_act(ii)%z
-         this_sfe_act(ii)%r=sfe_act(ii)%r
-        end do
+        !do ii=1, this_nesf_act
+        ! this_sfe_act(ii)%x=sfe_act(ii)%x
+        ! this_sfe_act(ii)%y=sfe_act(ii)%y
+        ! this_sfe_act(ii)%z=sfe_act(ii)%z
+        ! this_sfe_act(ii)%r=sfe_act(ii)%r
+        !end do
         this_nmod=nmod
         if (this_nmod.lt.0) then
            allocate(this_imod(this_nts_act))
            this_imod=imod
+           write(*,*) "allocation for wavet ok"
         elseif(this_nmod.gt.0) then
            allocate(this_imod(this_nmod))
            this_imod=imod
@@ -151,7 +152,7 @@ module interface_tdplas
         this_fmop=fmop
         allocate(this_cts_act(this_nts_act))
         !this_cts_act=cts_act
-        do ii=1, this_nts_act
+        do ii=1, nts_act
          this_cts_act(ii)%x=cts_act(ii)%x
          this_cts_act(ii)%y=cts_act(ii)%y
          this_cts_act(ii)%z=cts_act(ii)%z
