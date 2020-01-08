@@ -27,7 +27,6 @@
       real(dbl), allocatable :: vts(:,:,:)       !<transition potentials on tesserae from cis
       real(dbl), allocatable :: vtsn(:)          !<nuclear potential on tesserae
       real(dbl), allocatable :: q0(:)            !< Charges at time 0 defined with Finit_mdm, here because used in scf
-
       ! Restart
       !real(dbl)              :: fr_i(3),fx_i(3)  !< restart Onsager 
       !real(dbl), allocatable :: qr_i(:),qx_i(:)  !< restart pcm  
@@ -152,7 +151,7 @@
                          eps_gm,eps_w0,f_vel,tau_deb       
        namelist /print_charges/n_prnt_charges,prnt_charges, &
                                charge_mopac
-
+      
        call init_nml_all() 
        call init_nml_propagate() 
        read(*,nml=propagate) 
@@ -207,7 +206,6 @@
          sphere_radius,spheroid_radius                                
        namelist /eps_function/epsilon_omega,eps_0,eps_d,eps_A, &
                          eps_gm,eps_w0,f_vel,tau_deb       
-      
        call init_nml_all() 
        call init_nml_freq()
        read(*,nml=freq) 
@@ -1127,6 +1125,7 @@
        if(allocated(sph_vrs)) deallocate(sph_vrs)
        if(allocated(sph_centre)) deallocate(sph_centre)
        if(allocated(imod)) deallocate(imod)
+
        return
 
       end subroutine
@@ -1327,4 +1326,4 @@
           write(*,*) "charges for MOPAC2002 interface NOT PRINTED"
        endif
       end subroutine write_nml_print_charges
-      end module
+  end module

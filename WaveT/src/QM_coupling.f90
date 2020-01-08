@@ -20,6 +20,13 @@
 !>    \f{align}{\nonumber
 !>    \left[\mathbf{H}_{\text{MP}}\right]_{rs,p}=-\sqrt{\frac{\omega_p^2-\omega_0^2}{2\omega_p}} \left[ \mathbf{T}^{\dagger}\mathbf{S}^{\text{-1/2}}\right]_p~\mathbf{V}_{rs}
 !>    \f}  
+!> Array:
+!>           \f{array}{{ccc c ccc}
+!>             \ddots && \f$\mathbf{H}_{\text{MF}}\f$&\hspace{0.3cm}&\ddots && \f$\mathbf{H}_{\text{MP}}\f$ \\
+!>             &\mathbf{H}^0_{\text{M}}+\mathbf{H}^0_{\text{P}}&&\hspace{0.3cm}&& ~~~~\mathbf{H}_{\text{PF}}~~~~ &\\
+!>             \mathbf{H}_{\text{MF}}&&\ddots &\hspace{0.3cm}& \mathbf{H}_{\text{MP}}&&\ddots\\                   
+!>           \f} 
+>>>>>>> stefano
 !------------------------------------------------------------------------------
       Module QM_coupling    
       use constants    
@@ -90,7 +97,7 @@
        call do_couplings      
        if (myrank.eq.0) write(6,*) "couplings computed"
        !> Testing against dipolar model of Garcia-Vidal PRL 112, 253601 (2014)
-       !if(Ftest.eq."qmt".and.myrank.eq.0) call test_QM_coupling
+       if(Ftest.eq."qmt".and.myrank.eq.0) call test_QM_coupling
        !> Build Plexcitons matrix: do_Hqm_matrix 
        call do_Hqm_matrix
        if (myrank.eq.0) write(6,*) "Plexcitons matrix built"
@@ -134,8 +141,12 @@
 !----------------------------------------------------------------------------
       subroutine init_QM_coupling                         
        call do_BEM_quant
-       FQBEM="diag-dip"
-       nmodes=nts_act     
+       FQBEM="diag-all"
+       if (nmod.gt.0) then
+         nmodes=imod(size(imod))
+       else 
+         nmodes=nts_act     
+       endif
        allocate(g(nmodes,n_ci,n_ci))
        allocate(we(nmodes))
        allocate(omega_p(nmodes))
@@ -162,6 +173,7 @@
 !----------------------------------------------------------------------------
       subroutine fin_QM_coupling                         
        call deallocate_BEM_public
+       
        deallocate(we,omega_p,g,qg)
        deallocate(Hqm,Hqm_evt,Hqm_evl)
        if(allocated(Hqm_int)) deallocate(Hqm_int)
@@ -283,6 +295,7 @@
 !>    @author S.Pipolo 
 !>    @param Hqm_evl  
 !----------------------------------------------------------------------------
+<<<<<<< HEAD
       subroutine out_gcharges                            
        integer(i4b) :: i,j,p,pmax
        character(len=52) :: my_fmt, my_fmt1
@@ -461,32 +474,32 @@
        d=sqrt(sfe_act(1)%x**2+sfe_act(1)%y**2+sfe_act(1)%z**2)
        r=cts_act(1)%rsfe
        wl=sqrt(eps_A/3)
-       sp(1)=sfe_act(1)%x 
-       sp(2)=sfe_act(1)%y 
-       sp(3)=sfe_act(1)%z 
-       write(7,*) "# Sphere radius distance (bohr) and position"
-       write(7,"(5F10.4)") cts_act(1)%rsfe,d,sp(1),sp(2),sp(3)
+!       sp(1)=cts_act(1)%x 
+!       sp(2)=cts_act(1)%y 
+!       sp(3)=cts_act(1)%z 
+!       write(7,*) "# Sphere radius distance (bohr) and position"
+!       write(7,"(5F10.4)") cts_act(1)%rsfe,d,sp(1),sp(2),sp(3)
        write(7,*) "# g=dot_product(BEM_Modes(p,:),vts(:,i,j))*we" 
        write(7,*) "# g_ref=mu*sqrt(2*omega_p*r^3)/(d^3)"
        write(7,*) "#" 
-       write(7,*) "#  p    i    j            g                 g_ref" 
+       write(7,*) "#  p    i    j            g" 
        tot=zero
        ref=zero
-       do i=2,4        
+       do i=2,nmodes 
          do j=1,n_ci
            do k=j+1,n_ci
-             mud=dot_product(mut(:,k,j),sp(:))/d
+ !            mud=dot_product(mut(:,k,j),sp(:))/d
              tot(k,j)=tot(k,j)+g(i,k,j)*g(i,k,j)
              !ref: Garcia-Vidal PRL 112, 253601 (2014)
              !ref(k,j)=mud*sqrt(2*wl*r**3)/(d**3)
-             ref(k,j)=2*mud*mud*wl*r**3/(d**6)
+ !            ref(k,j)=2*mud*mud*wl*r**3/(d**6)
              !ref(k,j)=2*mud*mud*wl*r**3/(d+r)**6
            enddo
          enddo
        enddo
        do j=1,n_ci   
          do k=j+1,n_ci
-           write(7,"(3i5,3E20.12)") 2,j-1,k-1,sqrt(tot(k,j)),sqrt(ref(k,j))
+           write(7,"(3i5,3E20.12)") 2,j-1,k-1,sqrt(tot(k,j))!,sqrt(ref(k,j))
          enddo
        enddo
        write(7,*) ""
@@ -501,7 +514,6 @@
           write(6,*) "  Results in the g.mat file. " 
        endif
        deallocate(sp,tot,ref)
-       stop
       return
       end subroutine
 end module
