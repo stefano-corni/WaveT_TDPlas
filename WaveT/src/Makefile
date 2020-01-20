@@ -1,11 +1,10 @@
 FC = gfortran
-#FC = ifort
 
 # open mp flags
 # comment first line and uncommment the second for ifort
 
 OMP= -fopenmp -DOMP
-#OMP= -qopenmp -DOMP
+#OMP= -openmp -DOMP
 
 # mpi flags
 
@@ -16,21 +15,20 @@ MPI=
 LDLAGS=
 
 # actual flags used in the compilation
-FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
 #FFLAGS= -O3 ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
 
 # preprocessor flag
 # comment the first and uncomment the second if compiler is ifort
 
 CPP= -cpp
-#CPP= -fpp
 
 # libraries to be linked
 
-LIBS = -L/usr/lib -llapack -lblas -lfftw3
-INC = -I/usr/include/
+LIBS = -L/usr/lib -llapack -lblas -lfftw3 -L/usr/local/lib/
+INC = -I/usr/local/include/
 LIBSPAR= -L/opt/scali/lib64 -lfmpi -lmpi
-INCPAR= -I/opt/scali/include64 -I/local/home/corni/emanuele/fftw-3.3.4/include/
+INCPAR= -I/opt/scali/include64 -I/usr/local/lib
 
 # executable and tools directories
 
@@ -178,7 +176,7 @@ readio.o: random.o
 
 spectra.o: readio.o
 
-QM_coupling.o: constants.o interface_tdplas.o 
+QM_coupling.o: constants.o interface_tdplas.o
 
 scf.o: constants.o readio.o interface_tdplas.o
 

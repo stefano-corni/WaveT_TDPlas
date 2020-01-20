@@ -10,8 +10,8 @@ module interface_tdplas
                         Fwrite,fr_0,BEM_Q0,mat_f0,ncycmax,thrshld,vtsn,mix_coef,diag_mat,&
                         do_field_from_charges,&                                                ! used in scf
                         BEM_W2,Ftest,eps_w0,eps_A,BEM_Modes,sfe_act,&
-                        do_BEM_quant,deallocate_bem_public,do_vts_from_dip,mdl,&               ! used by QM_coupling 
-                        q0,vts,nts_act,Fprop,Fint,cts_act,tess_pcm,sfera,Finit_int,nesf_act,Fbem ! used only here in interface_tdplas
+                        do_BEM_quant,deallocate_bem_public,do_vts_from_dip,&                   ! used by QM_coupling 
+                        q0,vts,nts_act,Fprop,Fint,cts_act,Finit_int,nesf_act,Fbem ! used only here in interface_tdplas
                         
 #endif
 #ifdef MPI
@@ -25,20 +25,37 @@ module interface_tdplas
 
       implicit none
 
+      type tess_pcm_in_wavet
+       real(dbl) :: x
+       real(dbl) :: y
+       real(dbl) :: z
+       real(dbl) :: area
+       real(dbl) :: n(3)
+       real(dbl) :: rsfe
+      end type
+!
+      type sfera_in_wavet
+       real(dbl) :: x
+       real(dbl) :: y
+       real(dbl) :: z
+       real(dbl) :: r
+      end type
+
       character(flg) :: this_Fmdm_relax, this_Fprop, this_Fint, this_Fwrite, this_Ftest, this_Finit_int, this_Fbem
 
       real(dbl), allocatable :: this_vts(:,:,:), this_vtsn(:) !<transition potentials on tesserae from cis
 
       integer(i4b) :: this_nts_act, this_nesf_act
 
-      type(tess_pcm), target, allocatable :: this_cts_act(:)
-      type(sfera), allocatable :: this_sfe_act(:)
+      type(tess_pcm_in_wavet), target, allocatable :: this_cts_act(:)
+      type(sfera_in_wavet), allocatable :: this_sfe_act(:)
 
       integer(i4b) :: this_ncycmax !< maximum number of SCF cycles
       real(dbl) :: this_thrshld    !< SCF threshold on (i) eigenvalues 10^-thrshld (ii) eigenvectors 10^-(thrshld+2)
       real(dbl), allocatable :: this_BEM_Q0(:,:)
       real(dbl), allocatable :: this_BEM_W2(:)
       real(dbl), allocatable :: this_BEM_Modes(:,:)
+      real(dbl), allocatable :: this_q0(:)
       real(dbl) :: this_fr_0(3)                       !< Reaction field at time 0 defined with Finit_mdm, here because used in scf
       real(dbl), allocatable :: this_mat_f0(:,:) !< Onsager's total matrices needed for scf, free_energy and propagation
       real(dbl) :: this_mix_coef   !< SCF mixing ratio of old (1-mix_coef) and new (mix_coef) charges/field       
@@ -220,6 +237,8 @@ module interface_tdplas
          call init_mdm(pot_t = pot, potf_t = potf, h_int = h)
          deallocate(pot)
          deallocate(potf)
+         allocate(this_q0(this_nts_act))
+         this_q0=q0
          allocate(this_BEM_Q0(this_nts_act,this_nts_act))
          this_BEM_Q0=BEM_Q0
          if(this_Fbem(1:4).eq.'diag') then
@@ -392,9 +411,13 @@ module interface_tdplas
        implicit none
 
        real(dbl),intent(inout):: f(3)  
-       real(dbl),intent(in):: q(nts_act)  
+       real(dbl),intent(in):: q(this_nts_act)  
 
+#ifdef TDPLAS
        call do_field_from_charges(q,f)
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
 
       end subroutine do_field_from_charges_in_wavet
 
@@ -402,7 +425,11 @@ module interface_tdplas
 
        implicit none
 
+#ifdef TDPLAS
        call do_BEM_quant
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
 
       end subroutine do_BEM_quant_in_wavet
 
@@ -410,7 +437,11 @@ module interface_tdplas
 
        implicit none
 
+#ifdef TDPLAS
        call deallocate_BEM_public
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
 
       end subroutine deallocate_BEM_public_in_wavet
 
@@ -418,7 +449,11 @@ module interface_tdplas
 
        implicit none
 
+#ifdef TDPLAS
        call do_vts_from_dip
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
 
       end subroutine do_vts_from_dip_in_wavet
 
@@ -430,12 +465,15 @@ module interface_tdplas
        real(dbl), optional, intent(in) :: mu(:)
        real(dbl), optional, intent(in) :: pot(:)
 
-
+#ifdef TDPLAS
        if (this_Fprop.eq."dip") then
         call preparing_for_scf(mix, mu_t = mu)
        else
         call preparing_for_scf(mix, pot_t = pot)
        endif
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
 
       end subroutine preparing_for_scf_in_wavet
 
@@ -443,7 +481,11 @@ module interface_tdplas
 
        implicit none
 
+#ifdef TDPLAS
        call init_after_scf
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
 
       end subroutine init_after_scf_in_wavet
 
@@ -584,7 +626,7 @@ module interface_tdplas
        implicit none
 
        real(dbl), intent(in):: fld(3) 
-       real(dbl), intent(out):: pot(nts_act) 
+       real(dbl), intent(out):: pot(this_nts_act) 
        integer(i4b) :: its  
 
        ! Field
@@ -593,7 +635,7 @@ module interface_tdplas
 !$OMP PARALLEL REDUCTION(+:pot)
 !$OMP DO 
 #endif
-        do its=1,nts_act
+        do its=1,this_nts_act
           pot(its)=pot(its)-fld(1)*this_cts_act(its)%x           
           pot(its)=pot(its)-fld(2)*this_cts_act(its)%y          
           pot(its)=pot(its)-fld(3)*this_cts_act(its)%z         
@@ -615,7 +657,7 @@ module interface_tdplas
 
 
        real(dbl), intent(IN) :: dip(3)
-       real(dbl), intent(OUT) :: pot(nts_act)
+       real(dbl), intent(OUT) :: pot(this_nts_act)
        real(dbl):: diff(3)  
        real(dbl):: dist
        integer(i4b) :: its  
@@ -625,7 +667,7 @@ module interface_tdplas
 !$OMP PARALLEL REDUCTION(+:pot)
 !$OMP DO
 #endif
-       do its=1,nts_act
+       do its=1,this_nts_act
           diff(1)=-(mol_cc(1)-this_cts_act(its)%x)
           diff(2)=-(mol_cc(2)-this_cts_act(its)%y)
           diff(3)=-(mol_cc(3)-this_cts_act(its)%z)
