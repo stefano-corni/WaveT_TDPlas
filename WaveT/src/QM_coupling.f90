@@ -30,16 +30,16 @@
       Module QM_coupling    
       use constants    
       use interface_tdplas
-!      use global_tdplas
       use readio       
-!      use pedra_friends
-!      use MathTools 
-!      use BEM_medium
       use, intrinsic :: iso_c_binding
 #ifdef OMP
       use omp_lib
 #endif
-
+#ifdef MPI
+#ifndef SCALI
+      use mpi
+#endif
+#endif
 
       implicit none
                                                !> This description comes first.
@@ -401,9 +401,6 @@
 !----------------------------------------------------------------------------
       subroutine do_gcharges  
        integer(i4b) :: i   
-#ifndef MPI
-       myrank=0
-#endif
        omega_p(1)=zero
        we(1)=zero
        qg(1,:)=zero
@@ -477,11 +474,11 @@
        do i=2,nmodes 
          do j=1,n_ci
            do k=j+1,n_ci
- !            mud=dot_product(mut(:,k,j),sp(:))/d
+             mud=dot_product(mut(:,k,j),sp(:))/d
              tot(k,j)=tot(k,j)+g(i,k,j)*g(i,k,j)
              !ref: Garcia-Vidal PRL 112, 253601 (2014)
              !ref(k,j)=mud*sqrt(2*wl*r**3)/(d**3)
- !            ref(k,j)=2*mud*mud*wl*r**3/(d**6)
+             ref(k,j)=2*mud*mud*wl*r**3/(d**6)
              !ref(k,j)=2*mud*mud*wl*r**3/(d+r)**6
            enddo
          enddo
