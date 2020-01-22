@@ -5,12 +5,12 @@ module interface_tdplas
       use tdplas, only: set_charges,Fmdm_relax,&                                               ! used by dissipation
                         get_mdm_dip,get_gneq,init_mdm,prop_mdm,finalize_mdm,&
                         preparing_for_scf,init_after_scf,& ! used by propagate
-                        read_medium,&                                                          ! used by main and main_spectra
+                        read_medium,fmop,&                                                          ! used by main and main_spectra
                         mpibcast_readio_mdm,set_global_tdplas,&                                ! used by main
                         Fwrite,fr_0,BEM_Q0,mat_f0,ncycmax,thrshld,vtsn,mix_coef,diag_mat,&
                         do_field_from_charges,&                                                ! used in scf
-                        BEM_W2,Ftest,eps_w0,eps_A,BEM_Modes,sfe_act,&
-                        do_BEM_quant,deallocate_bem_public,do_vts_from_dip,mdl,&               ! used by QM_coupling 
+                        BEM_W2,Ftest,eps_w0,eps_A,BEM_T,BEM_Modes,sfe_act,&
+                        do_BEM_quant,deallocate_bem_public,do_vts_from_dip,mdl,nmod,imod, &        ! used by QM_coupling 
                         q0,vts,nts_act,Fprop,Fint,cts_act,tess_pcm,sfera,Finit_int,nesf_act,Fbem ! used only here in interface_tdplas
                         
 #endif
@@ -26,32 +26,32 @@ module interface_tdplas
       implicit none
 
       character(flg) :: this_Fmdm_relax, this_Fprop, this_Fint, this_Fwrite, this_Ftest, this_Finit_int, this_Fbem
-
       real(dbl), allocatable :: this_vts(:,:,:), this_vtsn(:) !<transition potentials on tesserae from cis
 
-      integer(i4b) :: this_nts_act, this_nesf_act
+      integer(i4b) :: this_nts_act, this_nesf_act, this_nmod
 
       type(tess_pcm), target, allocatable :: this_cts_act(:)
       type(sfera), allocatable :: this_sfe_act(:)
 
-      integer(i4b) :: this_ncycmax !< maximum number of SCF cycles
+      integer(i4b) :: this_ncycmax !< maximum number of SC,this_nmodF cycles
       real(dbl) :: this_thrshld    !< SCF threshold on (i) eigenvalues 10^-thrshld (ii) eigenvectors 10^-(thrshld+2)
       real(dbl), allocatable :: this_BEM_Q0(:,:)
-      real(dbl), allocatable :: this_BEM_W2(:)
+      real(dbl), allocatable :: this_BEM_W2(:), this_imod(:)
       real(dbl), allocatable :: this_BEM_Modes(:,:)
+      real(dbl), allocatable :: this_BEM_T(:,:)
       real(dbl) :: this_fr_0(3)                       !< Reaction field at time 0 defined with Finit_mdm, here because used in scf
       real(dbl), allocatable :: this_mat_f0(:,:) !< Onsager's total matrices needed for scf, free_energy and propagation
       real(dbl) :: this_mix_coef   !< SCF mixing ratio of old (1-mix_coef) and new (mix_coef) charges/field       
       real(dbl) :: this_eps_A,this_eps_w0
-
+      integer(i4b) :: this_fmop
       public set_q0charges,this_Fmdm_relax,&                                            ! used by dissipation
              get_medium_dip,get_energies,init_medium,prop_medium,finalize_medium,this_Finit_int,this_Fprop,&
              preparing_for_scf_in_wavet,init_after_scf_in_wavet,& ! used by propagate (also this_mix_coef)
              read_medium_input,&                                                        ! used by main and main_spectra
              mpibcast_read_medium,set_global_tdplas_in_wavet,&                          ! used by main
              this_Fwrite,this_fr_0,this_BEM_Q0,this_mat_f0,this_ncycmax,this_thrshld,this_vtsn,this_mix_coef,diag_mat_in_wavet,&
-             do_field_from_charges_in_wavet, this_nts_act, &                                          ! used in scf
-             this_BEM_W2,this_Ftest,this_eps_w0,this_eps_A,this_BEM_Modes,this_sfe_act,&
+             do_field_from_charges_in_wavet, this_nts_act,this_nmod,this_imod,this_fmop, &          ! used in scf
+             this_BEM_W2,this_Ftest,this_eps_w0,this_eps_A,this_BEM_Modes,this_BEM_T,this_sfe_act,&
              do_BEM_quant_in_wavet,deallocate_bem_public_in_wavet,do_vts_from_dip_in_wavet ! used by QM_coupling 
 
       contains
@@ -118,8 +118,8 @@ module interface_tdplas
         this_Fwrite=Fwrite
         this_Finit_int=Finit_int
         this_Fmdm_relax = Fmdm_relax
+        this_nts_act=nts_act
         if(this_Fprop(1:3).eq."chr") then 
-         this_nts_act=nts_act
          allocate(this_vts(this_nts_act,n_ci,n_ci))
          this_vts=vts
          allocate(this_vtsn(this_nts_act))
@@ -133,14 +133,24 @@ module interface_tdplas
         this_nesf_act=nesf_act
         allocate(this_sfe_act(this_nesf_act))
         !this_sfe_act=sfe_act
-        do ii=1, this_nesf_act
-         this_sfe_act(ii)%x=sfe_act(ii)%x
-         this_sfe_act(ii)%y=sfe_act(ii)%y
-         this_sfe_act(ii)%z=sfe_act(ii)%z
-         this_sfe_act(ii)%r=sfe_act(ii)%r
-        end do
+        !do ii=1, this_nesf_act
+        ! this_sfe_act(ii)%x=sfe_act(ii)%x
+        ! this_sfe_act(ii)%y=sfe_act(ii)%y
+        ! this_sfe_act(ii)%z=sfe_act(ii)%z
+        ! this_sfe_act(ii)%r=sfe_act(ii)%r
+        !end do
+        this_nmod=nmod
+        if (this_nmod.lt.0) then
+           allocate(this_imod(this_nts_act))
+           this_imod=imod
+           write(*,*) "allocation for wavet ok"
+        elseif(this_nmod.gt.0) then
+           allocate(this_imod(this_nmod))
+           this_imod=imod
+           write(*,*) "allocation for wavet ok"
+        endif
+        this_fmop=fmop
         allocate(this_cts_act(this_nts_act))
-        !this_cts_act=cts_act
         do ii=1, this_nts_act
          this_cts_act(ii)%x=cts_act(ii)%x
          this_cts_act(ii)%y=cts_act(ii)%y
@@ -229,6 +239,8 @@ module interface_tdplas
          if(Fmdm(1:1).eq."Q") then
           allocate(this_BEM_Modes(this_nts_act,this_nts_act))
           this_BEM_Modes=BEM_Modes
+          allocate(this_BEM_T(this_nts_act,this_nts_act))
+          this_BEM_T=BEM_T
          end if
         end if
 #else
