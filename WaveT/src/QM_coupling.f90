@@ -40,11 +40,6 @@
       use omp_lib
 #endif
 
-#ifdef MPI
-#ifndef SCALI
-      use mpi
-#endif
-#endif
 
       implicit none
                                                !> This description comes first.
@@ -85,7 +80,7 @@
        if (myrank.eq.0) write(6,*) "QM_coupling correcty initialized"
        !> if debugging performs the dipolar test on the spherical couplings and exit
        if(Ftest.eq."qmt") then
-         if (allocated(vts)) deallocate(vts)
+         if (allocated(vts)) deallocate(vts) !solves seg fault due to vts dimensioned as ci_pot.ini
          allocate (vts(nts_act,n_ci,n_ci))
          call do_vts_from_dip
        endif

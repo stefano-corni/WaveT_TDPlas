@@ -151,8 +151,7 @@ module interface_tdplas
         endif
         this_fmop=fmop
         allocate(this_cts_act(this_nts_act))
-        !this_cts_act=cts_act
-        do ii=1, nts_act
+        do ii=1, this_nts_act
          this_cts_act(ii)%x=cts_act(ii)%x
          this_cts_act(ii)%y=cts_act(ii)%y
          this_cts_act(ii)%z=cts_act(ii)%z
