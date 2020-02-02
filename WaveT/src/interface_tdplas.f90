@@ -2,16 +2,22 @@ module interface_tdplas
       use constants
       use readio
 #ifdef TDPLAS
-      use tdplas, only: set_charges,Fmdm_relax,&                                               ! used by dissipation
+      use tdplas, only: set_charges,Fmdm_relax,&
+! used by dissipation
                         get_mdm_dip,get_gneq,init_mdm,prop_mdm,finalize_mdm,&
                         preparing_for_scf,init_after_scf,& ! used by propagate
-                        read_medium,&                                                          ! used by main and main_spectra
-                        mpibcast_readio_mdm,set_global_tdplas,&                                ! used by main
+                        read_medium,&
+! used by main and main_spectra
+                        mpibcast_readio_mdm,set_global_tdplas,Fmop,nmod,imod,max_mod_todiag, &
+! used by main
                         Fwrite,fr_0,BEM_Q0,mat_f0,ncycmax,thrshld,vtsn,mix_coef,diag_mat,&
-                        do_field_from_charges,&                                                ! used in scf
+                        do_field_from_charges,out_gcharges,&
+! used in scf
                         BEM_W2,Ftest,eps_w0,eps_A,BEM_Modes,sfe_act,&
-                        do_BEM_quant,deallocate_bem_public,do_vts_from_dip,&                   ! used by QM_coupling 
-                        q0,vts,nts_act,Fprop,Fint,cts_act,Finit_int,nesf_act,Fbem ! used only here in interface_tdplas
+                        do_BEM_quant,deallocate_bem_public,do_vts_from_dip,&
+! used by QM_coupling 
+                        q0,vts,nts_act,Fprop,Fint,cts_act,Finit_int,nesf_act,Fbem
+! used only here in interface_tdplas
                         
 #endif
 #ifdef MPI
@@ -41,16 +47,17 @@ module interface_tdplas
        real(dbl) :: r
       end type
 
-      character(flg) :: this_Fmdm_relax, this_Fprop, this_Fint, this_Fwrite, this_Ftest, this_Finit_int, this_Fbem
+      character(flg) :: this_Fmdm_relax, this_Fprop, this_Fint, this_Fwrite, &
+                        this_Ftest, this_Finit_int, this_Fbem, this_Fmop
 
       real(dbl), allocatable :: this_vts(:,:,:), this_vtsn(:) !<transition potentials on tesserae from cis
 
-      integer(i4b) :: this_nts_act, this_nesf_act
+      integer(i4b) :: this_nts_act, this_nesf_act,this_nmod,this_max_mod_todiag
 
       type(tess_pcm_in_wavet), target, allocatable :: this_cts_act(:)
       type(sfera_in_wavet), allocatable :: this_sfe_act(:)
-
       integer(i4b) :: this_ncycmax !< maximum number of SCF cycles
+      integer(i4b), allocatable :: this_imod(:) !<modes to print 
       real(dbl) :: this_thrshld    !< SCF threshold on (i) eigenvalues 10^-thrshld (ii) eigenvectors 10^-(thrshld+2)
       real(dbl), allocatable :: this_BEM_Q0(:,:)
       real(dbl), allocatable :: this_BEM_W2(:)
@@ -60,21 +67,25 @@ module interface_tdplas
       real(dbl), allocatable :: this_mat_f0(:,:) !< Onsager's total matrices needed for scf, free_energy and propagation
       real(dbl) :: this_mix_coef   !< SCF mixing ratio of old (1-mix_coef) and new (mix_coef) charges/field       
       real(dbl) :: this_eps_A,this_eps_w0
-
-      public set_q0charges,this_Fmdm_relax,&                                            ! used by dissipation
+      public set_q0charges,this_Fmdm_relax,export_mdm_qmcoup, &
+! used by dissipation
              get_medium_dip,get_energies,init_medium,prop_medium,finalize_medium,this_Finit_int,this_Fprop,&
-             preparing_for_scf_in_wavet,init_after_scf_in_wavet,& ! used by propagate (also this_mix_coef)
-             read_medium_input,&                                                        ! used by main and main_spectra
-             mpibcast_read_medium,set_global_tdplas_in_wavet,&                          ! used by main
-             this_Fwrite,this_fr_0,this_BEM_Q0,this_mat_f0,this_ncycmax,this_thrshld,this_vtsn,this_mix_coef,diag_mat_in_wavet,&
-             do_field_from_charges_in_wavet, this_nts_act, &                                          ! used in scf
+             preparing_for_scf_in_wavet,init_after_scf_in_wavet,& ! used bypropagate (also this_mix_coef)
+             read_medium_input,&
+! used by main and main_spectra
+             mpibcast_read_medium,set_global_tdplas_in_wavet,&
+! used by main
+             this_Fwrite,this_fr_0,this_BEM_Q0,this_mat_f0,this_ncycmax,this_thrshld,this_vtsn,&
+             this_mix_coef,diag_mat_in_wavet,&
+             do_field_from_charges_in_wavet, this_nts_act, &
+! used in scf
              this_BEM_W2,this_Ftest,this_eps_w0,this_eps_A,this_BEM_Modes,this_sfe_act,&
-             do_BEM_quant_in_wavet,deallocate_bem_public_in_wavet,do_vts_from_dip_in_wavet ! used by QM_coupling 
-
+             do_BEM_quant_in_wavet,deallocate_bem_public_in_wavet,do_vts_from_dip_in_wavet,&
+             this_Fmop,this_imod,this_nmod,this_max_mod_todiag
+! used by QM_coupling 
       contains
   
       ! begin - wrapper subroutines
-
       subroutine set_q0charges
 !------------------------------------------------------------------------
 ! @brief Bridge subroutine to set charges qr_t to q0 during propagation 
@@ -82,7 +93,6 @@ module interface_tdplas
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
-
         implicit none
 #ifdef TDPLAS
         call set_charges(q0)
@@ -90,9 +100,7 @@ module interface_tdplas
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
         return
-
       end subroutine set_q0charges
-
       
       subroutine get_medium_dip(mdm_dip)
 !------------------------------------------------------------------------
@@ -101,19 +109,14 @@ module interface_tdplas
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
-
         implicit none
-
         real(dbl), intent(inout) :: mdm_dip(3)
-
 #ifdef TDPLAS
         call get_mdm_dip(mdm_dip)
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
-
         return
-
       end subroutine get_medium_dip
      
  
@@ -124,11 +127,8 @@ module interface_tdplas
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
-
         implicit none
-
         integer :: ii
-
 #ifdef TDPLAS
         call read_medium
         this_Fprop=Fprop
@@ -136,11 +136,19 @@ module interface_tdplas
         this_Finit_int=Finit_int
         this_Fmdm_relax = Fmdm_relax
         if(this_Fprop(1:3).eq."chr") then 
-         this_nts_act=nts_act
-         allocate(this_vts(this_nts_act,n_ci,n_ci))
-         this_vts=vts
-         allocate(this_vtsn(this_nts_act))
-         this_vtsn=vtsn
+            this_nts_act=nts_act
+         if(size(vts).eq.this_nts_act) then
+            allocate(this_vts(this_nts_act,n_ci,n_ci))
+            this_vts=vts
+            allocate(this_vtsn(this_nts_act))
+            this_vtsn=vtsn
+         else
+            allocate(this_vts(this_nts_act,n_ci,n_ci)) 
+            allocate(this_vtsn(this_nts_act))
+            this_vtsn=zero
+            this_vtsn=zero
+            write(*,*) "Warning! the vts matrix is not read from ci_pot.inp"
+         endif
         end if
         this_ncycmax=ncycmax
         this_thrshld=thrshld
@@ -168,9 +176,7 @@ module interface_tdplas
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
-
         return
-
       end subroutine read_medium_input
       
       
@@ -181,18 +187,14 @@ module interface_tdplas
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
-
         implicit none
         real(dbl), intent(inout) :: e_vac,g_neq_t,g_neq2_t,g_eq_t
-
 #ifdef TDPLAS
         call get_gneq(e_vac,g_eq_t,g_neq_t,g_neq2_t)
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
-
         return
-
       end subroutine get_energies
       
       
@@ -203,22 +205,18 @@ module interface_tdplas
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
-
         implicit none
-
         complex(cmp), intent(in) :: c(:)    !< (1:n_ci)           - molecular wavefunction coefficients
         real(dbl)   , intent(in) :: mu(:)   !< (1:3)              - molecular dipole
         real(dbl)   , intent(in) :: f(:)    !< (1:3)              - external field
         real(dbl)   , intent(inout) :: h(:,:)  !< (1:n_ci,1:n_ci) - interaction hamiltonian
-
         real(dbl), allocatable      :: pot(:)  !< (1:nts_act)     - molecular potential
-        real(dbl), allocatable      :: potf(:) !< (1:nts_act)     - external  potential
-
+        real(dbl), allocatable      :: potf(:) !< (1:nts_act)     - external potential
 #ifdef TDPLAS
         if(this_Fprop(1:3).eq."dip") then
          ! initializing medium with molecular dipole and external field
          call init_mdm(mu_t = mu, f_tp = f, h_int = h)
-         allocate(this_mat_f0(this_nts_act,this_nts_act))
+         allocate(this_mat_f0(3,3))
          this_mat_f0=mat_f0
          this_fr_0=fr_0
         else
@@ -242,8 +240,8 @@ module interface_tdplas
          allocate(this_BEM_Q0(this_nts_act,this_nts_act))
          this_BEM_Q0=BEM_Q0
          if(this_Fbem(1:4).eq.'diag') then
-          allocate(this_BEM_W2(this_nts_act))
-          this_BEM_W2=BEM_W2
+           allocate(this_BEM_W2(this_nts_act))
+           this_BEM_W2=BEM_W2
          end if
          if(Fmdm(1:1).eq."Q") then
           allocate(this_BEM_Modes(this_nts_act,this_nts_act))
@@ -448,9 +446,9 @@ module interface_tdplas
       subroutine do_vts_from_dip_in_wavet
 
        implicit none
-
 #ifdef TDPLAS
        call do_vts_from_dip
+       this_vts=vts
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
@@ -489,9 +487,19 @@ module interface_tdplas
 
       end subroutine init_after_scf_in_wavet
 
-      ! end - wrapper subroutines
+      subroutine out_gcharges_in_wavet 
 
-      ! begin - subroutines to calculate dipoles, field and potentials from coefficients, dipoles and fields
+       implicit none
+
+#ifdef TDPLAS
+       call out_gcharges
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif                                                                  ! end - wrapper subroutines
+      end subroutine out_gcharges_in_wavet                           
+
+
+! begin - subroutines to calculate dipoles, field and potentials from coefficients, dipoles and fields
 
 !------------------------------------------------------------------------
 ! @brief Compute dipole from CIS coefficients 
@@ -680,5 +688,21 @@ module interface_tdplas
 #endif
 
       end subroutine do_pot_from_dip
+
+subroutine export_mdm_qmcoup
+implicit none
+         this_nmod=nmod
+         this_max_mod_todiag=max_mod_todiag
+         if(this_max_mod_todiag.lt.this_nts_act)then
+            allocate(this_imod(this_nmod))
+            this_imod=imod
+         endif
+         allocate(this_BEM_W2(this_nts_act))
+         this_BEM_W2=BEM_W2
+         allocate(this_BEM_Modes(this_nts_act,this_nts_act))
+         this_BEM_Modes=BEM_Modes
+end subroutine
+
+
 
 end module interface_tdplas

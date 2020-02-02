@@ -15,8 +15,7 @@ MPI=
 LDLAGS=
 
 # actual flags used in the compilation
-#FFLAGS= -O3 ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
-FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+FFLAGS= -O -g ${OMP} -fbounds-check #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg  
 
 # preprocessor flag
 # comment the first and uncomment the second if compiler is ifort
@@ -24,11 +23,17 @@ FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
 CPP= -cpp
 
 # libraries to be linked
+#THESE FOR PADOVA
+#LIBS = -L/usr/lib -llapack -lblas -lfftw3 -L/usr/local/lib/
+#INC = -I/usr/local/include/
+#LIBSPAR= -L/opt/scali/lib64 -lfmpi -lmpi
+#INCPAR= -I/opt/scali/include64 -I/usr/local/lib
 
-LIBS = -L/usr/lib -llapack -lblas -lfftw3 -L/usr/local/lib/
-INC = -I/usr/local/include/
-LIBSPAR= -L/opt/scali/lib64 -lfmpi -lmpi
-INCPAR= -I/opt/scali/include64 -I/usr/local/lib
+#THESE FOR HYDRA
+INC = -I/usr/include/ -I/opt/intel/compilers_and_libraries_2016.0.109/linux/mkl/include/fftw/
+
+LIBS =  -Wl,--start-group -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -Wl,--end-group#
+
 
 # executable and tools directories
 
