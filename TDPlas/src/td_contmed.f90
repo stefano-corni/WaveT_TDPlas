@@ -230,7 +230,6 @@
        else
  
          pot_tp  = pot_t
-         potf_tp = potf_t
          npoles = size(kf)
        ! Charges propagation: 
          call prop_chr
@@ -524,11 +523,12 @@
        if(Ftest.eq."s-r") pot_tp=zero
        allocate(pot_tp2(nts_act))
        pot_tp2=pot_tp
+
        if(Floc.eq."loc") then
-         allocate(potf_tp(nts_act))
-         allocate(potf_tp2(nts_act))    
-         potf_tp=potf_t  
+       allocate(potf_tp(nts_act))
+       allocate(potf_tp2(nts_act))
          potf_tp2=potf_tp    
+         potf_tp=potf_t  
 ! SP 09/07/16 commented the following 
          !fx_t(:)=zero
        endif

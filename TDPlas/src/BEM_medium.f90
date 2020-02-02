@@ -90,7 +90,7 @@
              BEM_Qt,BEM_R,BEM_Qw,BEM_Qf,BEM_Qd,BEM_Q0,BEM_W2,BEM_Modes,&
              BEM_Qtx,BEM_Qfx,BEM_Qdx,BEM_Q0x,                          &
              do_BEM_prop,do_BEM_freq,do_BEM_quant,do_MPL_prop,         &
-             do_eps_drl,do_eps_deb,do_charge_freq,                     &
+             do_eps_drl,do_eps_deb,do_charge_freq,out_gcharges,        &
              deallocate_BEM_public,deallocate_MPL_public,BEM_Qg,BEM_2G,&
              do_eps_gen,BEM_ADt,kf,w2,gg,kf_prime,BEM_Qdf,BEM_Qdfx,BEM_Qdf_2g,BEM_Qdfx_2g,kf0
 
@@ -116,6 +116,9 @@
 
        !Cavity read/write and S D matrices 
        call init_BEM
+       if(Fbem(1:4).eq.'diag') then
+         call init_BEM_diagonal
+       endif
        if(Fgamess.eq.'yes') then
          allocate(BEM_Qd(nts_act,nts_act))
          allocate(BEM_Q0(nts_act,nts_act))
@@ -128,8 +131,7 @@
        call mpi_finalize(ierr_mpi)
 #endif
          elseif(Fbem(1:4).eq.'diag') then
-           call init_BEM_diagonal
-           call do_BEM_diagonal
+             call do_BEM_diagonal
          endif
          !Write out matrices for gamess                     
          call out_BEM_gamess
@@ -142,12 +144,12 @@
        if(Fprop(1:3).eq."chr") then
          if(.not.allocated(BEM_Qd)) allocate(BEM_Qd(nts_act,nts_act))
          if(.not.allocated(BEM_Q0)) allocate(BEM_Q0(nts_act,nts_act))
-         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then 
+         if(Floc.eq.'loc') then!.and.Fmdm(2:4).eq.'sol') then 
            allocate(BEM_Qdx(nts_act,nts_act))
            allocate(BEM_Q0x(nts_act,nts_act))
          endif
        endif
-       if(Fprop(1:6).eq."chr-ie") then
+       if(Fprop(1:3).eq."chr") then
          !Standard or Diagonal BEM           
          if(Fbem(1:4).eq.'stan') then
            call init_BEM_standard
@@ -157,12 +159,13 @@
        call mpi_finalize(ierr_mpi)
 #endif
          elseif(Fbem(1:4).eq.'diag') then
-           call init_BEM_diagonal
            call do_BEM_diagonal
            !Save Modes for quantum BEM         
            if(Fmdm(1:1).eq."Q") then
              allocate(BEM_Modes(nts_act,nts_act))
+             write(*,*) "I'm inside the cycle"
              BEM_Modes=TSm12
+           endif
            endif
          endif
          !Write out matrices for gamess                     
@@ -197,7 +200,7 @@
          endif
          !Write out propagation matrices         
          if(Fwrite.eq."high") call out_BEM_propmat  
-       elseif(Fprop(1:7).eq."chr-ons") then
+         if(Fprop(1:7).eq."chr-ons") then
          allocate(Sm1(nts_act,nts_act))
          ! Form $S^{-1}$ matrix
          Sm1=inv(BEM_S)
@@ -212,20 +215,37 @@
          BEM_Q0=-ONS_f0*Sm1
          BEM_Qd=-ONS_fd*Sm1
          if(Feps.eq."drl") then
-           allocate(BEM_Qf(nts_act,nts_act))
+         !  allocate(BEM_Qf(nts_act,nts_act))
            BEM_Qf=-ONS_ff(1)*Sm1
          endif
          if(Floc.eq.'loc') then
            BEM_Q0x=ONS_fx0*Sm1
            BEM_Qdx=ONS_fxd*Sm1
          endif
-         deallocate(Sm1)
        endif
+       if(Fmdm(1:4).eq."Qnan") then
+          if (Fbem(1:4).eq.'diag') then
+             allocate(BEM_Qd(nts_act,nts_act))
+             allocate(BEM_Q0(nts_act,nts_act))
+             call do_BEM_diagonal
+             allocate(BEM_Modes(nts_act,nts_act))
+             BEM_Modes=TSm12
+             call out_gcharges
+             write(*,*) "Printing quantum plasmons charges"
+          else 
+             write(*,*) "Quantum nanoparticle requires BEM diagonal"
+             write(*,*) "Please specify bem_type=""diag"""
+             if (allocated(BEM_Qd)) deallocate(BEM_Qd)
+             if (allocated(BEM_Q0)) deallocate(BEM_Q0)
+             stop
+          endif
+       endif
+
+       if (allocated(Sm1)) deallocate(Sm1)
        !Deallocate private arrays              
        call finalize_BEM
-
        return
- 
+
       end subroutine
 
 
@@ -302,10 +322,11 @@
        call init_BEM_diagonal
        call do_BEM_diagonal
        !Save Modes for quantum BEM         
+
        allocate(BEM_Modes(nts_act,nts_act))
        BEM_Modes=TSm12
        call finalize_BEM
-
+       call out_gcharges
        return
  
       end subroutine
@@ -785,7 +806,6 @@
           scr1(:,i)=eigt(:,i)*sqrt(eigv(i))
        enddo
        eigt_t=transpose(eigt)
-
        Sp12=matmul(scr1,eigt_t)                   
 
 !$OMP PARALLEL 
@@ -806,9 +826,11 @@
 
 !$OMP PARALLEL 
 !$OMP DO
+      if (Fprop(1:7).ne.'chr-ons') then
        do i=1,nts_act
          scr1(:,i)=BEM_D(:,i)*cts_act(i)%area
        enddo
+      endif
 !$OMP ENDDO 
 !$OMP END PARALLEL
 
@@ -882,7 +904,6 @@
            fact2x(:)=-(twp+BEM_L(:))*eps_A/(two*twp)
            K0x(:)=fact2x(:)/BEM_W2(:)
          endif
- 
        elseif (Feps.eq."gen") then
          !GG: for a general dielectric function
          ! finding the real part of the poles of the PCM response diagonal kernel
@@ -942,15 +963,14 @@
          if (myrank.eq.0) &
              write(6,*) "Done BEM eigenmodes"
        endif
-
+       
        Sm12T=matmul(BEM_Sm12,BEM_T)
-
        TSm12=transpose(Sm12T)
 
        TSp12=matmul(transpose(BEM_T),Sp12)
-
       ! SC 05/11/2016 write out the transition charges in pqr format
        if(Fwrite.eq."high".and.myrank.eq.0) call output_charge_pqr
+
       ! Do BEM_Q0 and and BEM_Qd 
 
 
@@ -958,21 +978,24 @@
 !$OMP DO
        do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*K0(i) 
+
        enddo
+
 !$OMP enddo
 !$OMP END PARALLEL
 
        BEM_Q0=-matmul(scr1,TSm12) 
-
 !$OMP PARALLEL 
 !$OMP DO
        do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*Kd(i) 
        enddo
+
 !$OMP enddo
 !$OMP END PARALLEL
 
        BEM_Qd=-matmul(scr1,TSm12) 
+
        ! GG: analogous to Q_0 and Q_d matrices in the case of
        ! local-field for solvent external medium
        if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
@@ -1928,7 +1951,7 @@
           do j=1,nts_act
              do i=1,nts_act
                 if (Fprop(1:7).eq.'chr-ons') then 
-                   read(7,*) BEM_S(i,j)
+                   read(7,*) BEM_S(i,j) 
                 else
                    read(7,*) BEM_S(i,j), BEM_D(i,j)
                endif
@@ -2168,7 +2191,6 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-
        integer :: its,i
        character(30) :: fname
        real(dbl) :: area, maxt
@@ -2239,4 +2261,64 @@
 
       end subroutine
 
+      subroutine out_gcharges                            
+!------------------------------------------------------------------------
+! @brief Output charges for quantum plasmons
+!
+! @date Created: J. Fregoni
+! Modified:
+!------------------------------------------------------------------------
+       integer(i4b) :: i,j,p
+       character(len=52) :: my_fmt, my_fmt1
+       real(dbl),allocatable,dimension(:) :: omega_p,we
+       real(dbl), allocatable :: qg(:,:)        !<Charges associated to each mode    
+       
+       allocate(we(nts_act))
+       allocate(qg(nts_act,nts_act))
+       allocate(omega_p(nts_act))
+       do i = 1, max_mod_todiag      
+           omega_p(i)=sqrt(BEM_W2(i))
+           we(i)=sqrt((omega_p(i)**2-eps_w0**2)/(two*omega_p(i)))
+           qg(i,:)=BEM_Modes(i,:)*we(i)
+       enddo
+       we(1)=zero
+       qg(1,:)=zero
+       open(9,file="qnp_charges.dat",status="unknown")
+       write(my_fmt,'(a,i0,a)') "(",max_mod_todiag+3,"E15.6)"
+       write(my_fmt1,'(a,i0,a)') "(A22,",max_mod_todiag+3,"E15.6)"
+       write(9,my_fmt1) "# Plasmon_Frequencies",(omega_p(i),i=2,max_mod_todiag)
+       write(9,*) "# Modes: x y z q_m1 q_m2 .... q_mN   with   N = ", max_mod_todiag 
+       do j=1,nts_act
+         write(9,my_fmt) cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,(qg(i,j),i=1,max_mod_todiag)
+       enddo
+         close(9) 
+
+       !JF 13/11/2019 Output charges for external QM coupling in .pqr,
+       !trajectory like
+       open(23,file="qnp_charges.pqr",status="unknown")
+       write(my_fmt,'(a,i0,a)') "(",max_mod_todiag,"E20.6)"
+       do p=2,max_mod_todiag
+         write(23,*) "mode number = ",p,"   Size = ", nts_act, my_fmt
+         do j=1,nts_act
+         write(23,'("ATOM ",I6," H    H  ",I6,3F11.3,3X,E13.6,2X,"1.5")')&
+             j,j,cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,qg(p,j)
+         enddo
+       enddo
+       write(*,*) "Charges printed ok"
+       close(23)
+       !JF Includes mopac print format for charges in gmop.mat file
+       if(Fmop.eq."yes") then
+        open(20,file="qnp_mop.dat",status="unknown")
+        write(20,*) "#sphere center ?"
+        write(20,*) "xcoord   ycoord   zcoord  area   ",(p,p=2,max_mod_todiag)
+          do j=1,nts_act
+            write(20,'(4F11.3,3X,100000(ES16.6E3,3X))')&
+            cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,cts_act(j)%area,(qg(p,j),p=2,max_mod_todiag)
+          enddo
+          write(*,*) "Mopac Charges printed"
+       endif
+       close(20) 
+       deallocate(qg,we,omega_p)
+      return
+      end subroutine
       end module

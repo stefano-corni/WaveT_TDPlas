@@ -494,7 +494,9 @@
 
        integer(4) :: i,j,its
        real(dbl)  :: diff(3),dist,vts_dip
-
+       
+       if(allocated(vts)) deallocate(vts)
+       allocate(vts(nts_act,n_ci,n_ci))
        do its=1,nts_act
           diff(1)=(mol_cc(1)-cts_act(its)%x)
           diff(2)=(mol_cc(2)-cts_act(its)%y)

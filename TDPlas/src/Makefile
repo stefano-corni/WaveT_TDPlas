@@ -25,19 +25,19 @@ LDLAGS=
 # actual flags used in the compilation
 # comment the first and uncomment the second if compiler is ifort
 #FFLAGS= $(FFLAGS_GF) ${OMP} #-heap-arrays 1024
-FFLAGS= -Og -g ${OMP} #-heap-arrays 1024
-#FFLAGS= -Og -g -fcheck=all -Wall -ffpe-trap=invalid,zero -ffpe-trap=zero,overflow,underflow ${OMP}
-#FFLAGS= -O3 -ftz -align all ${OMP_IF} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds
+FFLAGS= -O -g -fcheck-array-temporaries ${OMP} -fbounds-check #-heap-arrays 1024  
+#FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds
+
 # preprocessor flag
 # comment the first and uncomment the second if compiler is ifort
 CPP=-cpp
 #CPP= -fpp
 # libraries to be linked
-LIBS = -L/usr/lib -llapack -lblas -lpthread
-#LIBS =  -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lpthread
-#LIBS = -L/usr/lib -llapack  -lblas -lfftw3
-#LIBS =  -Wl,--start-group -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -Wl,--end-group#
-#INC =  -I/local/home/corni/emanuele/fftw-3.3.4/include/
+
+
+#LIBS FOR PADOVA= -L/usr/lib -llapack -lblas -lpthread
+LIBS =  -Wl,--start-group -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -Wl,--end-group #FOR HYDRA
+
 # executable directory
 BINPATH=../bin
 # tdplas library file
@@ -89,7 +89,7 @@ pedra_friends.o: pedra_friends.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
 readio_medium.o: readio_medium.f90
-	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) -std=f2003 -c $< -o $@
 
 MathTools.o: MathTools.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@

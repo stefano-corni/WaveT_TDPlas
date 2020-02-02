@@ -63,7 +63,7 @@
         integer(i4b)  , intent(in) :: this_nthr                      ! number of threads
         character(1)  , intent(in) :: this_res                      ! restart for medium 
         integer(i4b)  , intent(in) :: this_n_res                    ! frequency for restart
-        
+       
         dt=this_dt
         Fmdm=this_mdm
         mol_cc=this_mol_cc
