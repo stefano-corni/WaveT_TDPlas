@@ -494,6 +494,9 @@
 
        integer(4) :: i,j,its
        real(dbl)  :: diff(3),dist,vts_dip
+       
+       if(allocated(vts)) deallocate(vts)
+       allocate(vts(nts_act,n_ci,n_ci))
        do its=1,nts_act
           diff(1)=(mol_cc(1)-cts_act(its)%x)
           diff(2)=(mol_cc(2)-cts_act(its)%y)
@@ -504,9 +507,9 @@
                 vts_dip=-dot_product(mut(:,j,i),diff)/dist**3
                 vts(its,j,i)=vts_dip
                 vts(its,i,j)=vts_dip
-!                if(its.eq.nts_act) write (6,'(2i6,3f8.3,2e13.5)') i,j, &
-!                          cts_act(its)%x,cts_act(its)%y, &
-!                          cts_act(its)%z,vts_dip,vts(its,i,j)
+                !if(its.eq.nts_act) write (6,'(2i6,3f8.3,2e13.5)') i,j, &
+                !          cts_act(its)%x,cts_act(its)%y, &
+                !          cts_act(its)%z,vts_dip,vts(its,i,j)
              enddo
           enddo
        enddo

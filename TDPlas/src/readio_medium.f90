@@ -39,7 +39,7 @@
       integer(i4b) :: nmod !< number of modes to couple and print
       integer(i4b),parameter :: nts_max=100
       integer(i4b),allocatable,dimension(:) :: imod  !< which modes to couple and print
-      integer(i4b) :: fmop !< flag to print mopac charges
+      integer(i4b) :: max_mod_todiag
 ! SCF variables
       integer(i4b) :: ncycmax !< maximum number of SCF cycles
       real(dbl) :: thrshld    !< SCF threshold on (i) eigenvalues 10^-thrshld (ii) eigenvectors 10^-(thrshld+2)
@@ -71,13 +71,12 @@
                         Fdeb,      & !< Debug Flag: see below
                         Fopt_chr,  & !< Optimized loops with OMP
                         Fmdm_res,  & !< Medium restart
-                        Finv         !< Apply inversion symmetry when cavity is built using gmsh
-                                     !! 
+                        Finv,      & !< Apply inversion symmetry when cavity is built using gmsh
+                        Fmop         !< Prints charges for mopac2002 interface
       
 ! namelists user-friendly variables 
       real(dbl) :: interaction_stride
       real(dbl) :: n_prnt_charges
-      real(dbl) :: charge_mopac
       real(dbl) :: prnt_charges(nts_max)
       real(dbl) :: spheres_number
       real(dbl) :: sphere_position_x(nsmax)            
@@ -98,7 +97,7 @@
                         debug_type,bem_type,local_field,medium_type,   &
                         out_level,interaction_init,epsilon_omega,      &
                         test_type,medium_relax,gamess,print_lf_matrix, &
-                        inversion 
+                        inversion,charge_mopac 
 
      ! variables read from eps.inp in the case of the general
      ! dielectric function case (i.e., eps_omega = 'gen')
@@ -106,13 +105,14 @@
       real(dbl), allocatable    :: omegas(:)          !< sampling frequencies for the complex dielectric function
       complex(cmp), allocatable :: eps_omegas(:)      !< complex dielectric function values for the sampling frequencies
       real(dbl), allocatable    :: re_deps_domegas(:) !< real part of the derivative of the dielectric function at the sampling frequencies
-
+      real(dbl), allocatable    :: im_deps_domegas(:) !< imaginary part of the derivative of the dielectric function at the sampling frequencies
+      real(dbl), allocatable    :: func_eps(:), dfunc_eps(:) 
 
       private
       public read_medium,deallocate_medium,Fint,Feps,Fprop,          &
              nsph,sph_maj,sph_min,sph_centre,sph_vrs,                &
              eps_0,eps_d,tau_deb,eps_A,eps_gm,eps_w0,f_vel,          &
-             npts,omegas,eps_omegas,re_deps_domegas,                 &
+             npts,omegas,eps_omegas,re_deps_domegas,im_deps_domegas,func_eps, dfunc_eps,&
              vts,n_q,Fmdm_pol,                                       &
              MPL_ord,Fbem,Fshape,fr_0,q0,Floc,                       &
              Fdeb,vtsn,Finit_int,Fqbem,Ftest,                        &
@@ -120,7 +120,9 @@
              FinitBEM,Fsurf,Finit_mdm,read_medium_freq,              &
              read_medium_tdplas,n_omega,omega_ini,omega_end,         &
              Fwrite,Fmdm_relax,Fgamess,mpibcast_readio_mdm,Fopt_chr, &
-             ntst,Fmdm_res,Finv,nmod,imod,fmop
+             ntst,Fmdm_res,Finv, read_medium_eps,nmod,imod,Fmop,     &
+             max_mod_todiag
+
 !
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -139,7 +141,7 @@
                          interaction_type,propagation_type,            &
                          scf_mix_coeff,scf_max_cycles,scf_threshold,   &
                          local_field,debug_type,out_level,test_type,   &
-                         medium_relax,ntst
+                         medium_relax,medium_res,ntst
        namelist /medium/ medium_type,medium_init,medium_pol,bem_type,  &
                          bem_read_write                  
        namelist /surface/input_surface,spheres_number,spheroids_number,&
@@ -244,22 +246,50 @@
          sphere_radius,spheroid_radius,inversion                                
        namelist /eps_function/ epsilon_omega,eps_0,eps_d,eps_A,&
                                eps_gm,eps_w0,f_vel,tau_deb
+       namelist /print_charges/n_prnt_charges,prnt_charges, &
+                               charge_mopac
        namelist /out_matrix/ gamess
+
+
        call init_nml_all() 
        call init_nml_tdplas() 
-       !read(*,nml=tdplas)
        read(*,nml=medium) 
        call write_nml_medium() 
        read(*,nml=surface) 
        call write_nml_surface() 
        read(*,nml=eps_function) 
        call write_nml_eps_function()
+       if (Fmdm(1:4).eq.'Qnan') then
+         read(*,nml=print_charges) 
+         call write_nml_print_charges()
+       endif
        read(*,nml=out_matrix,end=10) 
 10     call write_nml_all()
-
        return
 
       end subroutine read_medium_tdplas
+
+      subroutine read_medium_eps
+!------------------------------------------------------------------------
+! @brief Driver routine for reading medium input form main_eps 
+!
+! @date Created: G. Gil
+! Modified:
+!------------------------------------------------------------------------
+
+       namelist /freq/ fmax,n_omega,omega_ini,omega_end,debug_type, &
+                       out_level,test_type
+       namelist /eps_function/epsilon_omega,eps_0,eps_d,eps_A, &
+                         eps_gm,eps_w0,f_vel,tau_deb       
+       read(*,nml=freq) 
+       write(*,nml=freq)
+       read(*,nml=eps_function) 
+       write(*,nml=eps_function)
+       Feps = epsilon_omega
+
+       return
+
+      end subroutine read_medium_eps
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -294,7 +324,7 @@
        spheroid_position_z=zero
        spheroid_radius=zero
        n_prnt_charges=zero
-       charge_mopac=zero
+       charge_mopac='non'
        ! SCF
        scf_threshold=10
        scf_mix_coeff=0.2
@@ -332,6 +362,7 @@
        input_surface='fil'
        propagation_type='ief'
        local_field='loc'
+       medium_res='n'
 
        return
 
@@ -477,6 +508,20 @@
          write(*,*) "- low"
          stop
        end select
+       select case (charge_mopac)
+          case("yes","Yes","YES")
+            Fmop='yes'
+            write(*,*) "charges for MOPAC2002 interface PRINTED"
+          case("non","NON","Non")
+            Fmop='non'
+            write(*,*) "charges for MOPAC2002 interface NOT PRINTED"
+          case default
+            Fmop='non'
+            write(*,*) "charges for MOPAC2002 interface NOT PRINTED"
+            write(*,*) "Please specify charge mopac:"
+            write(*,*) """yes"""
+            write(*,*) """no"""
+       end select
        ! Test  
        select case(test_type)
        case ('n-r','N-r','n-R','N-R')
@@ -618,7 +663,7 @@
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
 
-       real(dbl)::a,b,c
+       real(dbl)::a,b,c,eps_real,eps_imag
        integer(i4b)::i,j
 
        select case (epsilon_omega)
@@ -631,13 +676,33 @@
            Feps='gen'
            open(1,file='eps.inp')
            read(1,*) npts
-           allocate(omegas(npts),eps_omegas(npts),re_deps_domegas(npts))
+           n_omega=npts
+           allocate(omegas(npts),eps_omegas(npts),re_deps_domegas(npts),im_deps_domegas(npts),func_eps(npts),dfunc_eps(npts))
            do i=1, npts
-            read(1,*) omegas(i), eps_omegas(i)
-            if(i.eq.1) cycle
-            re_deps_domegas(i-1) = real(eps_omegas(i)-eps_omegas(i-1))/(omegas(i)-omegas(i-1))
+            !read(1,*) omegas(i), eps_omegas(i)
+            read(1,*) omegas(i), eps_real, eps_imag 
+            eps_omegas(i)=cmplx(eps_real,eps_imag)
            enddo
-           re_deps_domegas(npts) = zero
+           call fivepts_stencil(real(eps_omegas(:),dbl),omegas(:),re_deps_domegas(:))
+           call fivepts_stencil(aimag(eps_omegas(:)),omegas(:),im_deps_domegas(:))
+           ! assumption for the first derivative
+           re_deps_domegas(1) = re_deps_domegas(2)
+           im_deps_domegas(1) = im_deps_domegas(2)
+           func_eps(1)=real(eps_omegas(1),dbl)
+           open(3,file='func_eps.inp')
+           open(4,file='re_deps.inp')
+           write(3,*) omegas(1), func_eps(1)
+           write(4,*) omegas(1), re_deps_domegas(1)
+           do i=2, npts
+            func_eps(i) = real(eps_omegas(i),dbl)+aimag(eps_omegas(i))*(im_deps_domegas(i)/re_deps_domegas(i))
+            write(3,*) omegas(i), func_eps(i)
+            write(4,*) omegas(i), re_deps_domegas(i)
+           enddo
+           call fivepts_stencil(func_eps(:),omegas(:),dfunc_eps(:))
+           ! assumption for the first derivative
+           dfunc_eps(1)=dfunc_eps(2)
+           close(3)
+           close(4)
            close(1)
          case default
            write(*,*) "Error, specify eps(omega) type DEB or DRL"
@@ -772,11 +837,11 @@
            write(6,*) 'Diagonal BEM formulation'
            Fbem="diag"
           case ('stan','Stan','STAN')
-           write(6,*) 'Standard BEM formulation not implemented yet'
+           Fbem="stan"
+           write(6,*) 'Standard BEM formulation is experimental'
 #ifdef MPI
            call mpi_finalize(ierr_mpi)
 #endif
-           stop
           case default
            write(*,*) "Error, specify a BEM type "
 #ifdef MPI
@@ -795,7 +860,9 @@
          select case(bem_read_write)
          case ('rea','Rea','REA')
           FinitBEM='rea'
-          if(Fprop(1:3).eq."chr") call read_gau_out_medium
+          if(Fprop(1:3).eq."chr") then
+              call read_gau_out_medium
+          endif
           write(6,*) "This is full run reading matrix and boundary"
          case ('wri','Wri', 'WRI')
           FinitBEM='wri'
@@ -815,10 +882,10 @@
           case ('non','Non', 'NON')
              !Floc='non'
           case default
-	     write(*,*) "Error, specify if local-field matrix", &
-	             "should be written or not. "
+          write(*,*) "Error, specify if local-field matrix"
+          write(*,*) "should be written or not. "
 #ifdef MPI
-	     call mpi_finalize(ierr_mpi)
+          call mpi_finalize(ierr_mpi)
 #endif
              stop
          end select
@@ -1146,6 +1213,7 @@
        call mpi_bcast(debug_type,           flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(out_level,            flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(test_type,            flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(medium_res,           flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(medium_relax,         flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(medium_type,          flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(medium_init,          flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
@@ -1293,6 +1361,27 @@
 
 !      end subroutine read_medium_restart
 
+       subroutine fivepts_stencil(func,var,dfunc)
+         implicit none
+         real(dbl), intent(in) :: func(:)
+         real(dbl), intent(in) :: var(:)
+         real(dbl), intent(out) :: dfunc(:)
+         integer(i4b) :: i
+         real(dbl), parameter :: par1 = real(8.0d0,dbl)
+         real(dbl), parameter :: par2 = real(12.0d0,dbl)
+         ! missing first point derivative, which needs to be assumed outside this subroutine
+         ! forward finite differences where there are no enough points to compute 5pts stencil
+         dfunc(2) = (func(2)-func(1))/(var(2)-var(1))
+         ! computing 5pts stencil
+         do i=3, npts-2
+           !dfunc(i) = (func(i)-func(i-1))/(var(i)-var(i-1))
+           dfunc(i) = (-func(i+2)+par1*func(i+1)-par1*func(i-1)+func(i-2))/(var(i)-var(i-1))/par2
+         enddo
+         ! forward finite differences where there are no enough points to compute 5pts stencil
+         dfunc(npts-1) = (func(npts-1)-func(npts-2))/(var(npts-1)-var(npts-2))
+         dfunc(npts) = (func(npts)-func(npts-1))/(var(npts)-var(npts-1))
+       end subroutine fivepts_stencil
+
 !------------------------------------------------------------------------
 ! SP 14/07/17 calculations should probably go in a different module. which one?
 !             Probably pedra_firends....
@@ -1310,19 +1399,21 @@
            do i=1,nmod
               imod(i)=int(prnt_charges(i))
            enddo
+           max_mod_todiag=maxval(imod)
+           write(*,*) "diagonalized and printed up to the",max_mod_todiag, "quantum plasmonic mode"
+           if (max_mod_todiag.gt.nts_act) then
+              write(*,*) "Trying to print the ",max_mod_todiag," plasmon"
+              write(*,*)  "but it exceeds the number of computed plasmonic modes"
+              write(*,*) "Print another mode or increase the number of tesserae"
+           stop
+           endif
        endif
 
        if (n_prnt_charges.lt.0) then
-           allocate(imod(nmod))
-           imod=zero
+            nmod=nts_act
+            max_mod_todiag=nts_act
+            write(*,*) "all modes diagonalised and printed"
        endif
 
-       if (charge_mopac.ge.1) then
-          fmop=1
-          write(*,*) "charges for MOPAC2002 interface PRINTED"
-       else
-          fmop=0
-          write(*,*) "charges for MOPAC2002 interface NOT PRINTED"
-       endif
       end subroutine write_nml_print_charges
   end module

@@ -40,7 +40,6 @@
       use mpi
 #endif
 #endif
-
       implicit none
                                                !> This description comes first.
       character(flg) :: FQBEM                  !< Flag driving the QM calculation mode
@@ -62,310 +61,180 @@
       public do_QM_coupling, & ! subroutines
              Hqm_evt,Hqm_evl   ! variables   
 !
-      contains
-!
 !
 !------------------------------------------------------------------------
-!>    @brief Driver routine of QM_coupling. 
-!>    @date Created: 02 May 2017 
-!>    @author S.Pipolo
-!>    @note this routine should change to accomodate quantum external fields
-!----------------------------------------------------------------------------
+! @brief Module for molecule-environment QM coupling.      
+! @param 
+!------------------------------------------------------------------------
+!
+      contains
+!
       subroutine do_QM_coupling                         
+!------------------------------------------------------------------------
+!     @brief Driver routine of QM_coupling  
+!     @date Created   : S.Pipolo 02 May 2017
+!     Modified  :
+!     @param  
+!----------------------------------------------------------------------------
+       ! allocate matrices and initialize                                  
+
+       implicit none 
+
 #ifndef MPI
        myrank=0
 #endif
-       !> Allocate and initialize matrices
+
        call init_QM_coupling 
        if (myrank.eq.0) write(6,*) "QM_coupling correcty initialized"
-       !> if debugging performs the dipolar test on the spherical couplings and exit
+       call export_mdm_qmcoup
+
+       ! Build Hamiltonian Super-matrix
+       !if (allocated(this_vts)) deallocate(this_vts) !solves seg fault due to vts dimensioned as ci_pot.ini
+       !allocate (this_vts(this_nts_act,n_ci,n_ci))
+       call do_vts_from_dip_in_wavet
+       call do_matrix
+       if (myrank.eq.0) write(6,*) "Super matrix has been built"
+       if(FQBEM(1:4)=='prop') then 
+         ! Diagonalize Super-matrix        
+         Hqm_evt=Hqm
+         call diag_mat_in_wavet(Hqm_evt,Hqm_evl,Hqm_dim)
+         if (myrank.eq.0)write(6,*) "Super matrix has been diagonalized"
+         ! Print Output                    
+       endif
        if(Ftest.eq."qmt") then
-         if (allocated(vts)) deallocate(vts) !solves seg fault due to vts dimensioned as ci_pot.ini
-         allocate (vts(nts_act,n_ci,n_ci))
-         call do_vts_from_dip
+         call test_QM_coupling
        endif
-       if (myrank.eq.0) write(6,*) "Integrals from dipoles computed"
-       !> Build Plexcitons coplings terms "g"    
-       call do_gcharges
-       call out_gcharges
-       call do_couplings      
-       if (myrank.eq.0) write(6,*) "couplings computed"
-       !> Testing against dipolar model of Garcia-Vidal PRL 112, 253601 (2014)
-       if(Ftest.eq."qmt".and.myrank.eq.0) call test_QM_coupling
-       !> Build Plexcitons matrix: do_Hqm_matrix 
-       call do_Hqm_matrix
-       if (myrank.eq.0) write(6,*) "Plexcitons matrix built"
-       if (FQBEM(1:4)=='prop') then
-         !> Diagonalize Plexciton matrix              
-         Hqm_evt=Hqm 
-         call diag_mat(Hqm_evt,Hqm_evl,Hqm_dim)
-         if (myrank.eq.0)write(6,*) "Plexcitons matrix diagonalized"
-         !> Print Energies and eigenstates.            
          if (myrank.eq.0) call out_QM_coupling
-       endif
-       !> Prepare perturbation integrals if external field is present: do_plexd_matrix
-       if(mdl(fmax(:,1)).gt.0.) call do_plexd_matrix
-       if (FQBEM(1:4)=='diag') then
-         !> If diagonalize, diagonalize Perturbed Plexciton matrix    
-         if(mdl(fmax(:,1)).gt.0.) call do_Hqm_int(fmax(:,1))
-!         Hqm_evt(k,j)=Hqm+Hqm_int
-         Hqm_evt=Hqm+Hqm_int
-         call diag_mat(Hqm_evt,Hqm_evl,Hqm_dim)
-         if (myrank.eq.0)write(6,*) &
-                "Perturbed Plexcitons matrix diagonalized"
-         !> Print Energies and eigenstates.            
-         if (myrank.eq.0) call out_QM_coupling
-       else
-         !> If propagate, transform Plexcitons integrals in plexciton basis
-         call transform_plexd
-         ! call do_Hqm_int(f(:))
-         if (myrank.eq.0) write(6,*) "No QM propagation implemented"
-       endif
-       !> Deallocate matrices                                   
+#ifdef MPI
+       call mpi_finalize(ierr_mpi)
+#endif
+       ! deallocate                                    
        call fin_QM_coupling 
       return
       end subroutine
 !
 !
-!------------------------------------------------------------------------
-!>    @brief Allocates and initializes matrices.
-!>    @date Created   : S.Pipolo 02 May 2017
-!>    @param[in] Hqm_dim
-!>    @param[in,out] Hqm,Hqm_evt,Hqm_evl,occ
-!----------------------------------------------------------------------------
       subroutine init_QM_coupling                         
-       call do_BEM_quant
-       FQBEM="diag-all"
-       if (nmod.gt.0) then
-         nmodes=imod(size(imod))
-       else 
-         nmodes=nts_act     
-       endif
+!------------------------------------------------------------------------
+!     @brief Init routine of QM_coupling  
+!     @date Created   : S.Pipolo 02 May 2017
+!     Modified  :
+!     @param Hqm_dim,Hqm,Hqm_evt,Hqm_evl
+!----------------------------------------------------------------------------
+
+       implicit none
+       FQBEM='diag-all' !enforces use of correct QM_coupling flag
+       call do_BEM_quant_in_wavet
+!       if(FQBEM(1:8)=='diag-all') then ! couple with all modes but only one occupied
+         ! Mode 1 is the charge mode w=0
+
+       nmodes=this_nts_act
+       Hqm_dim=n_ci*(this_nts_act+1) !maybe the +1 is not needed?
+       
+!       else
+!         write(6,*) "FQBEM=",FQBEM," not implemented yet"
+!#ifdef MPI 
+!       call mpi_finalize(ierr_mpi)
+!#endif
+!         stop
+!       endif
        allocate(g(nmodes,n_ci,n_ci))
        allocate(we(nmodes))
        allocate(omega_p(nmodes))
-       allocate(qg(nmodes,nts_act))
-       Hqm_dim=n_ci*(nmodes+1)
+       allocate(qg(nmodes,this_nts_act))
        allocate(occ(nmodes))
-       occ=1.d0 !< all singly-occupied modes
+       occ=1.d0
        allocate(Hqm(Hqm_dim,Hqm_dim))
-       allocate(Hqm_int(Hqm_dim,Hqm_dim))
-       allocate(plexd(3,Hqm_dim,Hqm_dim))
        Hqm(:,:)=0.d0
-       Hqm_int(:,:)=0.d0
-       plexd(:,:,:)=0.d0
        allocate(Hqm_evt(Hqm_dim,Hqm_dim))
        allocate(Hqm_evl(Hqm_dim))
+       write(*,*) "QM initialization done"
       return
       end subroutine
 !
 !
-!------------------------------------------------------------------------
-!>     @brief Finalize routine of QM_coupling  
-!>     @date Created   : S.Pipolo 02 May 2017
-!>     @param Hqm,Hqm_evt,Hqm_evl
-!----------------------------------------------------------------------------
       subroutine fin_QM_coupling                         
-       call deallocate_BEM_public
-       
+!------------------------------------------------------------------------
+!     @brief Finalize routine of QM_coupling  
+!     @date Created   : S.Pipolo 02 May 2017
+!     Modified  :
+!     @param Hqm,Hqm_evt,Hqm_evl
+!----------------------------------------------------------------------------
+       implicit none
+       call deallocate_BEM_public_in_wavet
        deallocate(we,omega_p,g,qg)
        deallocate(Hqm,Hqm_evt,Hqm_evl)
-       if(allocated(Hqm_int)) deallocate(Hqm_int)
        deallocate(occ)
       return
       end subroutine
 !     
-!
+      subroutine do_matrix                       
 !------------------------------------------------------------------------
-!>     @brief Build Plexciton Hamiltonian: \f$ \mathcal{H}_{\text{M}}+\mathcal{H}_{\text{P}}+\mathcal{H}_{\text{MP}} \f$
-!>     @date Created : 02 May 2017
-!>     @author S.Pipolo 
-!>     @note One mode coupled at a time
-!>     @param 
+!     @brief Build Hamiltonian Super-matrix
+!     @date Created   : S.Pipolo 02 May 2017
+!     Modified  :
+!     @param Hqm,Hqm_evt,Hqm_evl
 !----------------------------------------------------------------------------
-      subroutine do_Hqm_matrix  
+       implicit none
+!       real(dbl):: omega_p  !< mode frequency 
+       real(dbl):: gFi !< molecule-semiclassical_field coupling 
+       real(dbl), allocatable:: dp(:) !< \f$ \vec{s}\cdot\vec{F} \f$
        integer(4)::i,j,k,p,s !< indices    
-       !> G0-G0 \f$ \mathbf{H}_{\text{M}} \f$ block: state energies, diagonal 
+       !
+       if(FQBEM(1:4)=='prop') allocate(dp(this_nts_act))
+       ! Build the diagonal superblocs:
+       ! H11
+      
+       if(FQBEM(1:4)=='prop') then ! propagation_semiclassical
+         ! Introduces the coupling with the field for propagation
+         do j=1,n_ci
+           do k=1,n_ci
+             Hqm(k,j)=-dot_product(mut(:,k,j),fmax(:,1))
+           enddo
+         enddo
+
+         do i=1,nmodes 
+           dp(i)=this_cts_act(i)%x*fmax(1,1)+this_cts_act(i)%y*fmax(2,1)+       &
+                                      this_cts_act(i)%z*fmax(3,1) 
+         enddo 
+       endif
+
+       ! CI energies, diagonal 
        do j=1,n_ci
          Hqm(j,j)=Hqm(j,j)+e_ci(j)
        enddo
-       ! E1-E1,E1-G0
+
+       gFi=0.d0
        do i=2,nmodes   
+         omega_p(i)=sqrt(this_BEM_W2(i)) 
+         we(i)=sqrt((omega_p(i)**2-this_eps_w0**2)/(two*omega_p(i)))
+         ! Introduces the coupling with the field for propagation
+         if(FQBEM(1:4)=='prop') gFi=-dot_product(this_BEM_Modes(i,:),dp(:))*we(i)
          do j=1,n_ci
            p=(i-1)*n_ci+j
            do k=j,n_ci
              s=(i-1)*n_ci+k
-             !> E1-E1 \f$ \mathbf{H}_{\text{M}} \f$ off-diagonal subblocks
+             ! Hii 
              Hqm(s,p)=Hqm(k,j)
              Hqm(p,s)=Hqm(s,p)
-             !> G0-E1 \f$ \mathbf{H}_{\text{MP}} \f$ off-diagonal subblocks
-             Hqm(k,p)=g(i,k,j)
+             ! H1i checked indices j,s simmetrize k,p in H1i block
+             Hqm(k,p)=dot_product(this_BEM_Modes(i,:),this_vts(:,k,j))*we(i)
              Hqm(j,s)=Hqm(k,p)
+             ! Hi1 checked indices p,k simmetrize s,j in Hi1 block
              Hqm(s,j)=Hqm(j,s)
              Hqm(p,k)=Hqm(s,j)
            enddo
-           !> E1-E1 \f$ \mathcal{H}_{\text{P}} energies, diagonal 
+           !Hqm(p,p)=Hqm(p,p)+omega_p*(occ(i)+pt5)    
            Hqm(p,p)=Hqm(p,p)+omega_p(i)*occ(i)    
+           Hqm(p,j)=Hqm(p,j)+gFi
+           Hqm(j,p)=Hqm(j,p)+gFi
          enddo
        enddo
-      return
-      end subroutine
-!     
-!
-!------------------------------------------------------------------------
-!>     @brief Build field-perturbation to Plexciton Hamiltonian: \f$ \mathcal{H}_{\text{MF}}+\mathcal{H}_{\text{PF}} \f$
-!>     @date Created: 02 May 2017
-!>     @author S.Pipolo 
-!>     @note One mode coupled at a time
-!>     @param 
-!----------------------------------------------------------------------------
-      subroutine do_plexd_matrix  
-       integer(4)::i,j,k,p,s !< indices    
-       real(dbl), allocatable:: gF(:) !< semiclassical particle-field couplings
-       allocate(gF(3)) 
-       !> Building \f$ \mathcal{H}_{\text{MF}} \f$ block
-       plexd=mut
-       do i=2,nmodes   
-         !> Building \f$ \mathcal{H}_{\text{PF}} \f$ couplings
-         gF(1)=-dot_product(BEM_Modes(i,:),cts_act(:)%x)*we(i)
-         gF(2)=-dot_product(BEM_Modes(i,:),cts_act(:)%y)*we(i)
-         gF(3)=-dot_product(BEM_Modes(i,:),cts_act(:)%z)*we(i)
-         do j=1,n_ci
-           p=(i-1)*n_ci+j
-           do k=j,n_ci
-             s=(i-1)*n_ci+k
-             !> Adding \f$ \mathcal{H}_{\text{MF}} \f$ subblocks
-             plexd(:,s,p)=plexd(:,k,j)
-             plexd(:,p,s)=plexd(:,s,p)
-           enddo
-           !> Adding \f$ \mathcal{H}_{\text{PF}} \f$ subblocks
-           plexd(:,p,j)=plexd(:,p,j)+gF(:)
-           plexd(:,j,p)=plexd(:,j,p)+gF(:)
-         enddo
-       enddo
-       deallocate(gF) 
-      return
-      end subroutine
-!
-!
-!------------------------------------------------------------------------
-!>    @brief transform plexd in Plexciton basis 
-!>    @date Created: 09 Feb 2019
-!>    @author S.Pipolo 
-!----------------------------------------------------------------------------
-      subroutine transform_plexd 
-       real(dbl), allocatable:: scr(:,:) 
-       integer(4)::i
-       allocate(scr(Hqm_dim,Hqm_dim))
-       do i=1,3 
-         scr(:,:)=matmul(transpose(Hqm_evt),plexd(i,:,:))
-         plexd(i,:,:)=matmul(scr,Hqm_evt)                   
-       enddo
-       deallocate(scr)
-      return
-      end subroutine
-!
-!
-!------------------------------------------------------------------------
-!>    @brief build semiclassical interaction matrix
-!>    @date Created: 09 Feb 2019
-!>    @author S.Pipolo 
-!----------------------------------------------------------------------------
-      subroutine do_Hqm_int(f)
-       real(dbl), dimension(3), intent(in)  :: f  
-       integer(4)::j,k
-       do j=1,n_ci
-         do k=1,n_ci
-           Hqm_int(k,j)=-dot_product(plexd(:,k,j),f(:))
-         enddo
-       enddo
-      return
-      end subroutine
-!
-!
-!------------------------------------------------------------------------
-!>    @brief Writes output of QM_coupling  
-!>    @date Created: 09 Feb 2019
-!>    @author S.Pipolo 
-!>    @param Hqm_evl  
-!----------------------------------------------------------------------------
-      subroutine out_gcharges                            
-       integer(i4b) :: i,j,p,pmax
-       character(len=52) :: my_fmt, my_fmt1
-       open(9,file="gCharges.mat",status="unknown")
-       write(my_fmt,'(a,i0,a)') "(",nmodes+3,"E15.6)"
-       write(my_fmt1,'(a,i0,a)') "(A22,",nmodes+3,"E15.6)"
-       write(9,my_fmt1) "# Plasmon_Frequencies",(omega_p(i),i=2,nmodes)
-       write(9,*) "# Modes: x y z q_m1 q_m2 .... q_mN   with   N = ", nmodes 
-       do j=1,nts_act
-         write(9,my_fmt) cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,(qg(i,j),i=1,nmodes)
-       enddo
-       close(9) 
-       open(9,file="gEigenve.mat",status="unknown")
-       write(9,my_fmt1) "# Plasmon_Frequencies ",(omega_p(i),i=2,nmodes)
-       write(9,*) "# Modes: x y z q_m1 q_m2 .... q_mN   with   N = ", nmodes 
-       do j=1,nts_act
-         write(9,my_fmt) cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,(BEM_T(j,i),i=1,nmodes)
-       enddo
-       close(9) 
 
-      !JF 13/11/2019 Output charges for external QM coupling in .pqr,
-      !trajectory like
-       open(23,file="gCharges.pqr",status="unknown")
-       write(my_fmt,'(a,i0,a)') "(",nmodes,"E20.6)"
-       if(nmod.eq.-1) then
-       pmax=nts_act
-       do p=2,pmax
-        write(23,*) nts_act
-        write(23,*) "mode number = ",p,"   Size = ", nts_act, my_fmt
-        do j=1,nts_act
-         write(23,'("ATOM ",I6," H    H  ",I6,3F11.3,3X,E13.6,2X,"1.5")')&
-         j,j,cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,qg(p,j)
-        enddo
-       enddo
-       endif
-       if(nmod.gt.0) then
-       pmax=nmod
-       do p=1,pmax
-       write(23,*) nts_act
-       write(23,*) "mode number = ",imod(p),"   Size = ", nts_act, my_fmt
-        do j=1,nts_act
-         write(23,'("ATOM ",I6," H    H  ",I6,3F11.3,3X,E13.6,2X,"1.5")')&
-         j,j,cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,qg(int(imod(p)),j)
-        enddo
-       enddo
-       write(*,*) "Charges printed ok"
-       endif
-       close(23)
-!JF Includes mopac print format for charges in gmop.mat file
-       !fmop=.true. 
-       write(*,*) "fmop is present as",fmop
-       if(fmop.eq.1) then
-        open(20,file="gmop.mat",status="unknown")
-        if(nmod.eq.nts_act) then
-        pmax=nts_act
-          write(20,*)"#sphere center ?"
-          write(20,*) "xcoord   ycoord   zcoord  area   ",(p,p=2,nts_act)
-          write(*,*) "Mopac Charges printed ok for all modes"
-        do j=1,nts_act
-          write(20,'(4F11.3,3X,100000(ES16.6E3,3X))')&
-          cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,cts_act(j)%area,(qg(p,j),p=2,pmax)
-        enddo
-        endif
-        if(nmod.gt.0) then
-        pmax=nmod
-        write(20,*) "#sphere center ?"
-        write(20,*) "xcoord   ycoord   zcoord  area   ",(int(imod(p)),p=1,pmax)
-          do j=1,nts_act
-            write(20,'(4F11.3,3X,100000(ES16.6E3,3X))')&
-            cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,cts_act(j)%area,(qg(int(imod(p)),j),p=1,pmax)
-          enddo
-          write(*,*) "Mopac Charges printed ok for few modes"
-        endif
-        close(20) 
-       endif
+       if(allocated(dp)) deallocate(dp) 
       return
       end subroutine
+      
 
 !
 !
@@ -378,20 +247,19 @@
       subroutine out_QM_coupling                         
        integer(i4b) :: i,j   
        character(len=32) :: my_fmt
-       open(7,file="Hqm.mat",status="unknown")
-       open(8,file="Hqm.ene",status="unknown")
+       open(7,file="Hqm_matrix.dat",status="unknown")
+       open(8,file="Hqm_energies.dat",status="unknown")
        write(8,*) "Energies: "
        write(my_fmt,'(a,i0,a)') "(",Hqm_dim,"F10.6)"
-       write(7,*) "Quantum-matrix: ", my_fmt
-       do i=n_ci+1,Hqm_dim
+       write(7,*) "Super-matrix: ", my_fmt
+       do i=1,Hqm_dim   
          write(7,my_fmt) (Hqm(i,j), j=1,Hqm_dim)
-           write(8,"(i0,F10.6)") i-n_ci, Hqm_evl(i)
        enddo
        close(7)
        close(8) 
+       call out_gcharges_in_wavet
       return
       end subroutine
-!
 !
 !------------------------------------------------------------------------
 !>     @brief computes the molecule-environment quantum couplig elements "g"
@@ -405,9 +273,9 @@
        we(1)=zero
        qg(1,:)=zero
        do i=2,nmodes  
-         omega_p(i)=sqrt(BEM_W2(i)) 
+         omega_p(i)=sqrt(this_BEM_W2(i)) 
          we(i)=sqrt((omega_p(i)**2-eps_w0**2)/(two*omega_p(i)))
-         qg(i,:)=BEM_Modes(i,:)*we(i)
+         qg(i,:)=this_BEM_Modes(i,:)*we(i)
        enddo
       return
       end subroutine
@@ -428,7 +296,7 @@
        do i=1,nmodes   
          do j=1,n_ci
            do k=j,n_ci
-             g(i,k,j)=dot_product(qg(i,:),vts(:,k,j))
+             g(i,k,j)=dot_product(qg(i,:),this_vts(:,k,j))
            enddo
          enddo
        enddo
@@ -446,58 +314,57 @@
 !>     @param Hqm_evl  
 !----------------------------------------------------------------------------
       subroutine test_QM_coupling                         
-       real(dbl):: r,d,mud,wl                
+       real(dbl):: r,d,mud,wl,gref,gloc
        character(54):: my_fmt
        integer(i4b) :: i,j,k,pmax,p
        real(dbl), allocatable :: sp(:)               
        real(dbl), allocatable :: tot(:,:),ref(:,:)               
+
 #ifndef MPI
        myrank=0
 #endif
+
        allocate(sp(3),tot(n_ci,n_ci),ref(n_ci,n_ci))
-       open(7,file="g.mat",status="unknown")
-       write(7,*) "# Test for dipolar-mode couplings" 
-       d=sqrt(sfe_act(1)%x**2+sfe_act(1)%y**2+sfe_act(1)%z**2)
-       r=cts_act(1)%rsfe
-       wl=sqrt(eps_A/3)
-!       sp(1)=cts_act(1)%x 
-!       sp(2)=cts_act(1)%y 
-!       sp(3)=cts_act(1)%z 
-!       write(7,*) "# Sphere radius distance (bohr) and position"
-!       write(7,"(5F10.4)") cts_act(1)%rsfe,d,sp(1),sp(2),sp(3)
-       write(7,*) "# g=dot_product(BEM_Modes(p,:),vts(:,i,j))*we" 
-       write(7,*) "# g_ref=mu*sqrt(2*omega_p*r^3)/(d^3)"
-       write(7,*) "#" 
-       write(7,*) "#  p    i    j            g" 
-       tot=zero
-       ref=zero
+       call do_couplings
+       call do_gcharges
+       open(37,file="g.dat",status="unknown")
+       write(37,*) "# Test for dipolar-mode couplings" 
+       r=sqrt(this_cts_act(1)%x**2+this_cts_act(1)%y**2+this_cts_act(1)%z**2)
+       sp(1)=this_cts_act(1)%x 
+       sp(2)=this_cts_act(1)%y 
+       sp(3)=this_cts_act(1)%z 
+       write(37,*) "# Sphere radius distance (bohr) and position"
+       write(37,"(5F10.4)") this_cts_act(1)%rsfe,r,sp(1),sp(2),sp(3)
+       write(37,*) "# g=dot_product(this_BEM_Modes(p,:),vts(:,i,j))*we" 
+       write(37,*) "# g_ref=mud*sqrt(2*omega_p*cts_act(1)%rsfe^3)/(r^3)"
+       write(37,*) "#" 
+       write(37,*) "#  p    i    j            g                 g_ref" 
+       tot=0.0d0
        do i=2,nmodes 
+         omega_p(i)=sqrt(this_BEM_W2(i)) 
+         we(i)=sqrt((omega_p(i)**2-this_eps_w0**2)/(two*omega_p(i)))
          do j=1,n_ci
-           do k=j+1,n_ci
-             mud=dot_product(mut(:,k,j),sp(:))/d
-             tot(k,j)=tot(k,j)+g(i,k,j)*g(i,k,j)
-             !ref: Garcia-Vidal PRL 112, 253601 (2014)
-             !ref(k,j)=mud*sqrt(2*wl*r**3)/(d**3)
-             ref(k,j)=2*mud*mud*wl*r**3/(d**6)
-             !ref(k,j)=2*mud*mud*wl*r**3/(d+r)**6
+           do k=j,n_ci
+             mud=dot_product(mut(:,k,j),sp(:))/r
+             gloc=dot_product(this_BEM_Modes(i,:),this_vts(:,k,j))*we(i)
+             tot(k,j)=tot(k,j)+gloc*gloc
+             gref=mud*sqrt(2*sqrt(this_eps_A/3)*this_cts_act(1)%rsfe**3)/(r**3)
+             ref(k,j)=gref
+             write(37,"(3i5, 3F20.12)") i,j,k,sqrt(tot(k,j)),ref(k,j)
            enddo
          enddo
-         do j=1,n_ci   
-           do k=j+1,n_ci
-             write(7,"(3i5,3E20.12)") i,j-1,k-1,sqrt(tot(k,j))!,sqrt(ref(k,j))
-           enddo
-         enddo
+         write(37,*) "" 
        enddo
-       write(7,*) ""
-       write(7,*) "# Dipolar resonance frequency (a.u.)"
-       write(7,*) "#  p          omega_p            sqrt(A/3)" 
+       write(37,*) ""
+       write(37,*) "# Dipolar resonance frequency (a.u.)"
+       write(37,*) "#  p          omega_p            sqrt(A/3)" 
        do i=2,nmodes        
-         write(7,"(i5, 2E20.12)")i, sqrt(BEM_W2(i)), sqrt(eps_A/3)
+         write(37,"(i5, 2E20.12)")i, sqrt(BEM_W2(i)), sqrt(eps_A/3)
        enddo
-       close(7)
+       close(37)
        if (myrank.eq.0) then 
           write(6,*) "Test for dipolar-mode couplings...DONE" 
-          write(6,*) "  Results in the g.mat file. " 
+          write(6,*) "  Results in the g.dat file. " 
        endif
        deallocate(sp,tot,ref)
       return
