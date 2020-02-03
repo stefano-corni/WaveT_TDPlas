@@ -39,6 +39,7 @@ interaction_type='pcm'
 interaction_stride=1
 interaction_init='non-scf'
 test_type='n-l'
+debug_type='off'
 local_field='loc'
 /
 

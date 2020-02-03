@@ -216,7 +216,7 @@ module interface_tdplas
         if(this_Fprop(1:3).eq."dip") then
          ! initializing medium with molecular dipole and external field
          call init_mdm(mu_t = mu, f_tp = f, h_int = h)
-         allocate(this_mat_f0(3,3))
+         allocate(this_mat_f0(this_nts_act,this_nts_act))
          this_mat_f0=mat_f0
          this_fr_0=fr_0
         else
@@ -495,7 +495,7 @@ module interface_tdplas
        call out_gcharges
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
-#endif                                                                  ! end - wrapper subroutines
+#endif                                                                  
       end subroutine out_gcharges_in_wavet                           
 
 

@@ -230,6 +230,7 @@
        else
  
          pot_tp  = pot_t
+         potf_tp = potf_t
          npoles = size(kf)
        ! Charges propagation: 
          call prop_chr
