@@ -527,8 +527,8 @@
        if(Floc.eq."loc") then
        allocate(potf_tp(nts_act))
        allocate(potf_tp2(nts_act))
-         potf_tp2=potf_tp
          potf_tp=potf_t
+         potf_tp2=potf_tp
  
 ! SP 09/07/16 commented the following 
          !fx_t(:)=zero
