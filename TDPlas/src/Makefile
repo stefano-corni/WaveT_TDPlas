@@ -14,44 +14,30 @@ FC = gfortran
 #FFLAGS_LAP= -O3 -ftz -align -xAVX -no-prec-div
 #FFLAGS_GF= -O3
 
-# open mp flags
-# comment first line and uncommment the second for ifort
-
 OMP= -fopenmp -DOMP
 #OMP= -qopenmp -DOMP
 
 # mpi flags (not used here)
-
 MPI= -DMPI
-
-# other flags - to clean up?
 
 LDLAGS=
 #LDLAGS= --static --disable-shared --enable-static
 
 # actual flags used in the compilation
-
 #FFLAGS= $(FFLAGS_GF) ${OMP} #-heap-arrays 1024
 #FFLAGS= -O -g ${OMP} #-heap-arrays 1024
 #FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds
-
-#LIBS =  -Wl,--start-group -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -Wl,--end-group#
-#INC =  -I/local/home/corni/emanuele/fftw-3.3.4/include/
-
-#FFLAGS= $(FFLAGS_GF) ${OMP} #-heap-arrays 1024
-FFLAGS= -Og -g -fcheck-array-temporaries ${OMP} -fbounds-check #-heap-arrays 1024  
-#FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds
+#FFLAGS= -Og -g -fcheck-array-temporaries ${OMP} -fbounds-check #debug flag list to check coherence of array dimension 
+FFLAGS= -Og -g ${OMP} #-heap-arrays 1024  
 
 # preprocessor flag
 # comment the first and uncomment the second if compiler is ifort
 CPP=-cpp
 #CPP= -fpp
-# libraries to be linked
 
-
-#LIBS FOR PADOVA
-LIBS = -L/usr/lib -llapack -lblas -lpthread
-#LIBS =  -Wl,--start-group -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -Wl,--end-group #FOR HYDRA
+# libraries to be linked - paths to be set by the user
+LIBS = -L/usr/lib -llapack -lblas -lpthread #FOR PADOVA
+#LIBS =  -Wl,--start-group -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -Wl,--end-group#FOR HYDRA
 
 # executable directory
 BINPATH=../bin

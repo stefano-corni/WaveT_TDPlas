@@ -10,8 +10,8 @@
       call read_medium_eps
 
 !     printing eps function in file
-      open(1,file='eps.inp')
-      open(2,file='real_imag_eps.inp')
+      open(1,file='eps.inp', status="new")
+      open(2,file='real_imag_eps.inp', status="new")
       write(1,*) n_omega
       write(2,*) n_omega
       allocate(omega_list(n_omega))

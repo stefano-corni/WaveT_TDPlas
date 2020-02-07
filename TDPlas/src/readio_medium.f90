@@ -112,8 +112,8 @@
       public read_medium,deallocate_medium,Fint,Feps,Fprop,          &
              nsph,sph_maj,sph_min,sph_centre,sph_vrs,                &
              eps_0,eps_d,tau_deb,eps_A,eps_gm,eps_w0,f_vel,          &
-             npts,omegas,eps_omegas,re_deps_domegas,im_deps_domegas,func_eps, dfunc_eps,&
-             vts,n_q,Fmdm_pol,                                       &
+             npts,omegas,eps_omegas,re_deps_domegas,im_deps_domegas, &
+             func_eps, dfunc_eps,vts,n_q,Fmdm_pol,                   &
              MPL_ord,Fbem,Fshape,fr_0,q0,Floc,                       &
              Fdeb,vtsn,Finit_int,Fqbem,Ftest,                        &
              ncycmax,thrshld,mix_coef,                               &
@@ -518,9 +518,8 @@
           case default
             Fmop='non'
             write(*,*) "charges for MOPAC2002 interface NOT PRINTED"
-            write(*,*) "Please specify charge mopac:"
-            write(*,*) """yes"""
-            write(*,*) """no"""
+            write(*,*) "If such charges should be print, specify" &
+            write(*,*) "charge_mopac="yes""
        end select
        ! Test  
        select case(test_type)

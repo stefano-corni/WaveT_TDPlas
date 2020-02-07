@@ -50,7 +50,7 @@ CPP= -cpp
 # libraries to be linked
 
 LIBS = -L/usr/lib -llapack -lblas -lfftw3 -L/usr/local/lib/
-INC = -I/usr/local/include/
+INC = -I/usr/local/include/ -I.
 LIBSPAR= -L/opt/scali/lib64 -lfmpi -lmpi
 INCPAR= -I/opt/scali/include64 -I/usr/local/lib
 
