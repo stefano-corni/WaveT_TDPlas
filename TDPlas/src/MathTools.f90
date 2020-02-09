@@ -542,7 +542,7 @@
 #endif       
 #ifdef OMP
 
-       if (Fopt_chr(1:3).eq.'omp') then
+       if (Fopt_chr.eq.'omp') then
           !tmp=0.d0
 !$OMP PARALLEL reduction (+:tmp)
 !$OMP DO
@@ -635,7 +635,7 @@
 !#endif       
 !#ifdef OMP
 
-!       if (Fopt_chr(1:3).eq.'omp') then
+!       if (Fopt_chr.eq.'omp') then
 !!$OMP PARALLEL reduction (+:tmp)
 !!$OMP DO
 !         do j=1,nts_act

@@ -135,7 +135,7 @@ module interface_tdplas
         this_Fwrite=Fwrite
         this_Finit_int=Finit_int
         this_Fmdm_relax = Fmdm_relax
-        if(this_Fprop(1:3).eq."chr") then 
+        if(this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then 
             this_nts_act=nts_act
             shap=shape(vts)
          if(shap(1).eq.this_nts_act) then
@@ -217,7 +217,7 @@ module interface_tdplas
         real(dbl), allocatable      :: pot(:)  !< (1:nts_act)     - molecular potential
         real(dbl), allocatable      :: potf(:) !< (1:nts_act)     - external potential
 #ifdef TDPLAS
-        if(this_Fprop(1:3).eq."dip") then
+        if(this_Fprop.eq."dip") then
          ! initializing medium with molecular dipole and external field
          call init_mdm(mu_t = mu, f_tp = f, h_int = h)
          allocate(this_mat_f0(this_nts_act,this_nts_act))
@@ -226,7 +226,7 @@ module interface_tdplas
         else
          allocate(pot(this_nts_act))
          allocate(potf(this_nts_act))
-         if(this_Fint(1:3).eq."ons") then
+         if(this_Fint.eq."ons") then
           ! computing molecular potential corresponding to a point-like dipole
           call do_pot_from_dip(mu,pot)
          else
@@ -243,11 +243,11 @@ module interface_tdplas
          this_q0=q0
          allocate(this_BEM_Q0(this_nts_act,this_nts_act))
          this_BEM_Q0=BEM_Q0
-         if(this_Fbem(1:4).eq.'diag') then
+         if(this_Fbem.eq.'diag') then
            allocate(this_BEM_W2(this_nts_act))
            this_BEM_W2=BEM_W2
          end if
-         if(Fmdm(1:1).eq."Q") then
+         if(Fmdm.eq."Qnan") then
           allocate(this_BEM_Modes(this_nts_act,this_nts_act))
           this_BEM_Modes=BEM_Modes
          end if
@@ -282,13 +282,13 @@ module interface_tdplas
         integer(i4b), intent(inout) :: i
 
 #ifdef TDPLAS
-        if(this_Fprop(1:3).eq."dip") then
+        if(this_Fprop.eq."dip") then
          ! propagating medium with molecular dipole and external field
          call prop_mdm(i, mu_t = mu, f_tp = f, h_int = h)
         else
          allocate(pot(this_nts_act))
          allocate(potf(this_nts_act))
-         if(this_Fint(1:3).eq."ons") then
+         if(this_Fint.eq."ons") then
           ! computing molecular potential corresponding to a point-like dipole
           call do_pot_from_dip(mu,pot)
          else
@@ -593,7 +593,7 @@ module interface_tdplas
 #endif
 
 #ifdef OMP
-       if (Fopt(1:3).eq.'omp') then
+       if (Fopt.eq.'omp') then
           allocate(ctmp(this_nts_act*n_ci))
 !$OMP PARALLEL REDUCTION (+:cc)
 !$OMP DO 

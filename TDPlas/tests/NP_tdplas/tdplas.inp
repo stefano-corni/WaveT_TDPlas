@@ -28,7 +28,7 @@ f_vel=0.
 /
 
 &PRINT_CHARGES
-n_prnt_charges= 8.
+n_prnt_charges= 8
 prnt_charges= 2. 3. 4. 5. 7. 14. 8. 9.
 charge_mopac='yes'
 /

@@ -89,7 +89,8 @@
       private
 !SC 07/02/16: added output_gneq
       public init_mdm,prop_mdm,finalize_mdm,qtot,ref,get_gneq, &
-             get_ons,get_mdm_dip,set_charges,preparing_for_scf,init_after_scf,sum_r,sum_x
+             get_ons,get_mdm_dip,set_charges,preparing_for_scf,&
+             init_after_scf
 
       contains
 !
@@ -135,7 +136,7 @@
       allocate(h_mdm(n_ci,n_ci),h_mdm_0(n_ci,n_ci))
       h_mdm=zero
       h_mdm_0=zero
-      if(Fprop(1:3).eq."dip") then
+      if(Fprop.eq."dip") then
         f_tp2=f_tp
 ! SC: First dipole propagation...
         call do_MPL_prop  !in BEM_medium
@@ -175,7 +176,7 @@
           call init_vv_propagator_gen
          endif
       endif 
-      if (Fmdm(1:3).ne.'vac') call correct_hamiltonian
+      if (Fmdm.ne.'vac') call correct_hamiltonian
 ! SC set the initial values of the solvent component of the 
 ! neq free energies
       g_neq1=zero
@@ -215,16 +216,16 @@
        t=(i-1)*dt
 
        if(Ftest.eq."s-r") mu_tp=mut(:,1,1) !Only for debug purposes
-       if (Fprop(1:3).eq."dip") then
+       if (Fprop.eq."dip") then
 
         mu_tp = mu_t
 
        ! Dipole propagation: 
          call prop_dip(f_tp)
          call do_gneq(mu_t,mut,dfr_t,fr_t,fr_0,mat_fd,3,-1)
-         if(Fmdm(2:4).eq."nan") then
+         if(Fmdm.eq."Cnan".or.Fmdm.eq."Qnan") then
            mu_mdm=mr_t
-           if((Ftest(2:3).eq."-l").or.(Fdeb.eq."off")) mu_mdm=zero
+           if((Ftest.eq."n-l".or.Ftest.eq."s-l").or.(Fdeb.eq."off")) mu_mdm=zero
            if(Floc.eq."loc") mu_mdm=mu_mdm+mx_t
          endif
        else
@@ -239,14 +240,8 @@
          mu_mdm=zero
          ! SP 26/06/17: MathUtils, do_dip_from_charges updates the value in mu_mdm
          call do_dip_from_charges(qr_t,mu_mdm(:,1),qtot)        
-         if((Ftest(2:3).eq."-l").or.(Fdeb.eq."off")) mu_mdm=zero
+         if((Ftest.eq."n-l".or.Ftest.eq."s-l").or.(Fdeb.eq."off")) mu_mdm=zero
          if (Floc.eq."loc") then
-         !Print the contribute of each pole on medium_t_nf.dat file
-         !do j = 1,npoles
-         !    mu_mdm_p=zero
-         !    call do_dip_from_charges(qx_t_p(:,j),mu_mdm_p(:,1),qtot)
-         !    write (90+j,'(i8,f12.2,3e22.10e3)') i,t,mu_mdm_p(:,1)
-         !enddo
          call do_dip_from_charges(qx_t,mu_mdm(:,1),qtot)
          endif         
          ! Calculate Reaction Field from charges
@@ -276,12 +271,10 @@
        endif
 #endif
        ! SP 230916: added to perform tests on the local/reaction field
-       if(Ftest(2:2).eq."-") then
-        if(Ftest.eq."n-r") then  
+       if(Ftest.eq."n-r") then  
          call do_ref(mu_t)
-        else
+       elseif(Ftest.eq."n-l".or.Ftest.eq."s-r".or.Ftest.eq."s-l") then
          call do_ref
-        end if
        end if
        ! Update the interaction Hamiltonian 
        h_int(:,:)=h_int(:,:)+h_mdm(:,:)
@@ -312,9 +305,9 @@
 
        deallocate(h_mdm,h_mdm_0)
        call finalize_prop
-       if (Fprop(1:3).eq."chr") then
+       if(Fprop.eq."chr-ief".or.Fprop.eq."chr-ied".or.Fprop.eq."chr-ons") then
          call deallocate_BEM_public    
-       elseif (Fprop(1:3).eq."dip".or.Fint.eq."ons") then
+       elseif (Fprop.eq."dip".or.Fint.eq."ons") then
          call deallocate_MPL_public    
        endif
        !if (Fmdm_res.eq.'Yesr') then
@@ -577,7 +570,7 @@
           call read_charges_gau
        end select
 ! SC 31/10/2016: in case of nanoparticle, normalize initial charges to zero
-       if(Fmdm(2:4).eq.'nan') then
+       if(Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') then
          !q0=q0-qtot0/nts_act
          qtot0=zero
        endif
@@ -664,7 +657,6 @@
        endif
        deallocate(qd)
 
-       !FIXME: restart initializing from file
        if (Fmdm_res .eq.'Yesr') then
           call read_medium_restart() 
        endif 
@@ -742,7 +734,7 @@
        if(Ftest.eq."s-r") mu_tp=zero
 !SC 7/5/2018
        mu_tp2=mu_tp
-       if (Fmdm(2:4).eq."nan") then 
+       if (Fmdm.eq."Cnan".or.Fmdm.eq."Qnan") then 
        ! SP 06/07/17: need to implement a proper scf cycle for more then a nanoparticle
        !              only non-self consistent initialization is done
          ! SP compute the field acting on spheres/oids given m_0=zero
@@ -761,7 +753,7 @@
            mx_t=zero
            mx_tp=mx_t
          endif
-       elseif (Fmdm(2:4).eq."sol") then 
+       elseif (Fmdm.eq."Csol") then 
          if(Finit_mdm.eq."fro") fr_0(:)=ONS_f0*mu_0(:)
          call init_dip_sphe_sol
        endif
@@ -798,7 +790,7 @@
        fr_0=zero
        if(Ftest.eq."s-r") mu_0=zero
        if(Ftest.eq."s-r") mu_tp=zero
-       if (Fmdm(2:4).eq."nan") then 
+       if (Fmdm.eq."Cnan".or.Fmdm.eq.'Qnan') then 
        ! SP 06/07/17: need to implement a proper scf cycle for more then a nanoparticle
        !              only non-self consistent initialization is done
          ! SP compute the field acting on spheres/oids given m_0=zero
@@ -816,7 +808,7 @@
            mx_t=zero                
            mx_tp=mx_t
          endif
-       elseif (Fmdm(2:4).eq."sol") then 
+       elseif (Fmdm.eq."Csol") then 
          if(Finit_mdm.eq."fro") fr_0=matmul(mat_f0,mu_0)
          call init_dip_spho_sol
          fr_tp=fr_t
@@ -1310,10 +1302,10 @@
       ! Local Field
        if(Floc.eq."loc") then
          qx_t=qx_tp+dt*dqx_tp
-         if(Fmdm(2:4).eq.'sol') then
+         if(Fmdm.eq.'Csol') then
           call DGEMV('N',nts_act,nts_act,dt,BEM_Qfx,nts_act,potf_tp,one_i,&
                         zero,dqx_t,one_i)
-         else if(Fmdm(2:4).eq.'nan') then
+         else if(Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') then
           call DGEMV('N',nts_act,nts_act,dt,BEM_Qf,nts_act,potf_tp,one_i,&
                         zero,dqx_t,one_i)
          endif
@@ -1348,15 +1340,6 @@
 !      dqr_t=(1.d0-dt*0.5d0*eps_gm)*dqr_tp+0.5d0*dt*(fqr_t+fqr_tp)
 !      dqr_t=dqr_t/(1.d0+dt*0.5d0*eps_gm)
 ! SC integrator from E. Vanden-Eijnden, G. Ciccotti CPL 429 (2006) 310–316
-!      qr_t=qr_tp+dt*(1.d0-dt*0.5d0*eps_gm)*dqr_tp+dt*dt*0.5d0*fqr_tp
-!      fqr_t=-matmul(BEM_Qw,qr_t)+matmul(BEM_Qf,pot_tp)
-!      dqr_t=(1.d0-dt*eps_gm*(1.d0-dt*0.5*eps_gm))*dqr_tp+ &
-!           0.5d0*dt*(fqr_t+fqr_tp)-eps_gm*dt*dt*0.5*fqr_tp
-!      f1=dt*(1.d0-dt*0.5d0*eps_gm)
-!      f2=dt*dt*0.5d0
-!      f3=1.d0-dt*eps_gm*(1.d0-dt*0.5*eps_gm)
-!      f4=0.5d0*dt
-!      f5=eps_gm*f2
 
 !EC:  mat_mult optimizes nts**2-based statements 
 !     mat_mult uses matmul or explicit loops (with OMP), 
@@ -1374,10 +1357,10 @@
       ! Local Field
        if(Floc.eq."loc") then
         qx_t=qx_tp+f1*dqx_tp+f2*fqx_tp
-        if(Fmdm(2:4).eq.'sol') then
+        if(Fmdm.eq.'Csol') then
          !fqx_t=-matmul(BEM_Qw,qx_t)+matmul(BEM_Qfx,potf_tp)
          fqx_t=-mat_mult(BEM_Qw,qx_t)+mat_mult(BEM_Qfx,potf_tp)
-        else if(Fmdm(2:4).eq.'nan') then
+        else if(Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') then
          !fqx_t=-matmul(BEM_Qw,qx_t)+matmul(BEM_Qf,potf_tp)
          fqx_t=-mat_mult(BEM_Qw,qx_t)+mat_mult(BEM_Qf,potf_tp)
         endif
@@ -1418,37 +1401,23 @@
        fqr_t=-matmul(BEM_Qw,qr_t)+matmul(BEM_Qf,pot_tp)
        fqr_t=fqr_t+matmul((BEM_Qdf-dt*0.5d0*BEM_Qdf_2g),pot_tp-pot_tp2)
        dqr_t=matmul(BEM_f3,dqr_tp)+f4*(fqr_t+fqr_tp)-matmul(BEM_f5,fqr_tp)
-       !do i=1, nts_act
-       !if(abs(fqr_t(i)).lt. threshold) fqr_t(i) = zero
-       !if(abs(fqr_t(i)).lt. threshold) fqr_t(i) = zero
-       !enddo
        fqr_tp=fqr_t
        dqr_tp=dqr_t
-       !do i=1, nts_act
-       !if(abs(qr_t(i)).lt. threshold) qr_t(i) = zero
-       !enddo
       ! Local Field
        if(Floc.eq."loc") then
         qx_t=qx_tp+matmul(BEM_f1,dqx_tp)+f2*fqx_tp
-        if(Fmdm(2:4).eq.'sol') then
+        if(Fmdm.eq.'Csol') then
          qx_t=qx_t+dt*0.5d0*matmul(BEM_Qdfx,potf_tp-potf_tp2)
          fqx_t=-matmul(BEM_Qw,qx_t)+matmul(BEM_Qfx,potf_tp)
          fqx_t=fqx_t+matmul((BEM_Qdfx-dt*0.5d0*BEM_Qdfx_2g),potf_tp-potf_tp2)
-        else if(Fmdm(2:4).eq.'nan') then
+        else if(Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') then
          qx_t=qx_t+dt*0.5d0*matmul(BEM_Qdf,potf_tp-potf_tp2)
          fqx_t=-matmul(BEM_Qw,qx_t)+matmul(BEM_Qf,potf_tp)
          fqx_t=fqx_t+matmul((BEM_Qdf-dt*0.5d0*BEM_Qdf_2g),potf_tp-potf_tp2)
         endif
         dqx_t=matmul(BEM_f3,dqx_tp)+f4*(fqx_t+fqx_tp)-matmul(BEM_f5,fqx_tp)
-        !do i=1, nts_act
-        !if(abs(fqx_t(i)).lt. threshold) fqx_t(i) = zero
-        !if(abs(fqx_t(i)).lt. threshold) fqx_t(i) = zero
-        !enddo
         fqx_tp=fqx_t
         dqx_tp=dqx_t
-        !do i=1, nts_act
-        !if(abs(qx_t(i)).lt. threshold) qx_t(i) = zero
-        !enddo
        endif
 
        return
@@ -1493,13 +1462,13 @@
       ! Local Field
        if(Floc.eq."loc") then
         qx_t_p(:,pidx)=qx_tp_p(:,pidx)+std_f1(pidx)*dqx_tp_p(:,pidx)+f2*fqx_tp_p(:,pidx)
-        if(Fmdm(2:4).eq.'sol') then
+        if(Fmdm.eq.'Csol') then
          qx_t_p(:,pidx)=qx_t_p(:,pidx)+kf_prime(pidx)*dt*0.5d0*(matmul(BEM_Qfx,potf_tp-potf_tp2)+matmul(BEM_ADt,qx_tp-qx_tp2))
          qx_t_p(:,pidx)=qx_t_p(:,pidx)-sum(qx_t_p(:,pidx))/nts_act
          fqx_t_p(:,pidx)=-w2(pidx)*qx_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qfx,potf_tp)+kf(pidx)*matmul(BEM_ADt,qx_tp)+&
                           +kf_prime(pidx)*(one-gg(pidx)*dt*0.5d0)*(matmul(BEM_Qfx,potf_tp-potf_tp2)+matmul(BEM_ADt,qx_tp-qx_tp2))
 !                          +kf_prime(pidx)*matmul(BEM_Qfx,potf_tp-potf_tp2)/dt+kf_prime(pidx)*matmul(BEM_ADt,qx_tp-qx_tp2)/dt
-        else if(Fmdm(2:4).eq.'nan') then
+        else if(Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') then
          qx_t_p(:,pidx)=qx_t_p(:,pidx)+kf_prime(pidx)*dt*0.5d0*(matmul(BEM_Qf,potf_tp-potf_tp2)+matmul(BEM_ADt,qx_tp-qx_tp2))
          qx_t_p(:,pidx)=qx_t_p(:,pidx)-sum(qx_t_p(:,pidx))/nts_act
          fqx_t_p(:,pidx)=-w2(pidx)*qx_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,potf_tp)+kf(pidx)*matmul(BEM_ADt,qx_tp)+&
@@ -1513,19 +1482,6 @@
         qx_t(:) = qx_t(:) + qx_t_p(:,pidx)
        endif
        enddo
-
-       
-       !sum_x(:) = zero
-       !sum_r(:) = zero
-       !do j=1,npoles
-       !    do i=1,nts_act
-       !        sum_x(j)=sum_x(j)+qx_t_p(i,j)
-       !        sum_r(j)=sum_r(j)+qr_t_p(i,j)
-       !    enddo
-       !enddo
-       !write(98,*) 'external', sum_x
-       !write(98,*) 'reaction', sum_r
-       !write(98,*)
 
        return
 
@@ -1551,11 +1507,11 @@
                                     +mat_mult(BEM_Qd,pot_tp-pot_tp2)
       ! Local Field eq.47 JPCA 2015
        if(Floc.eq."loc") then
-        if(Fmdm(2:4).eq.'sol') then
+        if(Fmdm.eq.'Csol') then
          ! GG: BEM matrices (except R) are different in the case of local-field for solvent external medium
          qx_t=qx_tp-dt*mat_mult(BEM_R,qx_tp)+dt*mat_mult(BEM_Qtx,potf_tp) &
                                      +mat_mult(BEM_Qdx,potf_tp-potf_tp2)
-        else if(Fmdm(2:4).eq.'nan') then
+        else if(Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') then
          qx_t=qx_tp-dt*mat_mult(BEM_R,qx_tp)+dt*mat_mult(BEM_Qt,potf_tp) &
                                      +mat_mult(BEM_Qd,potf_tp-potf_tp2)
         endif
@@ -1585,11 +1541,11 @@
                                   +mat_mult(BEM_Qd,pot_tp-pot_tp2)
       ! Local Field eq.47 JPCA 2015
        if(Floc.eq."loc") then
-        if(Fmdm(2:4).eq.'sol') then
+        if(Fmdm.eq.'Csol') then
          ! GG: BEM matrices (except taum1) are different in the case of local-field for solvent external medium
          qx_t=qx_tp-dt*taum1*qx_tp+dt*taum1*mat_mult(BEM_Q0x,potf_tp) &
                                    +mat_mult(BEM_Qdx,potf_tp-potf_tp2)
-        else if(Fmdm(2:4).eq.'nan') then
+        else if(Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') then
          qx_t=qx_tp-dt*taum1*qx_tp+dt*taum1*mat_mult(BEM_Q0,potf_tp) &
                                    +mat_mult(BEM_Qd,potf_tp-potf_tp2)
         endif
@@ -1960,7 +1916,7 @@
              rr=sqrt(cts_act(1)%x**2+cts_act(1)%y**2+cts_act(1)%z**2) 
            endif
            call do_eps_deb
-         if(Fmdm(2:4).eq.'sol'.and.Fprop.ne.'dip'.and.Fprop.ne.'chr-ons') eps_f=(eps-onec)/(two*eps+onec)
+         if(Fmdm.eq.'Csol'.and.Fprop.ne.'dip'.and.Fprop.ne.'chr-ons') eps_f=(eps-onec)/(two*eps+onec)
            !refc=eps_f*ui*exp(-ui*omega*t)
            E0=dcmplx(zero,0.5d0*sqrt(dot_product(fmax(:,1),fmax(:,1))))
            refc=eps_f*E0*exp(-ui*omega(1)*t)
@@ -1991,18 +1947,19 @@
        case ('n-r','n-l')
          write (file_med,'(i8,f12.2,3e22.10e3)') i,t,mu_mdm(:,1)
        case ('s-r')
-         if(Fprop(1:3).eq."chr") call do_field_from_charges(qr_t,fr_t)
+       if(Fprop.eq."chr-ief".or.Fprop.eq."chr-ied".or.Fprop.eq."chr-ons")then
+                call do_field_from_charges(qr_t,fr_t)
+        endif
          write (file_med,'(i8,f12.2,4e22.10)') i,t,fr_t(:),ref
        case ('s-l')
          write (file_med,'(i8,f12.2,4e22.10)') i,t,fx_t(:),ref
        case default
-         if(Fprop(1:3).eq."dip") then
+         if(Fprop.eq."dip") then
            write (file_med,'(i8,f12.2,3e22.10)') i,t,fr_t(:)
          else
            call do_field_from_charges(qr_t,fr_t)
            write (file_med,'(i8,f12.2,9e22.10)')i,t,mu_mdm(:,1),&
                                                     fr_t(:),qtot,qtot0
-           !write(937,'(i8,f12.2,3e22.10)') i,t,fx_t(:)
          endif
        end select
       
@@ -2026,12 +1983,14 @@
        case ('n-r','n-l')
          write (file_med) i,t,mu_mdm(:,1),ref
        case ('s-r')
-         if(Fprop(1:3).eq."chr") call do_field_from_charges(qr_t,fr_t)
-         write (file_med) i,t,fr_t(:),ref
+       if(Fprop.eq."chr-ief".or.Fprop.eq."chr-ied".or.Fprop.eq."chr-ons")then
+              call do_field_from_charges(qr_t,fr_t)
+       endif        
+       write (file_med) i,t,fr_t(:),ref
        case ('s-l')
          write (file_med) i,t,fx_t(:),ref
        case default
-         if(Fprop(1:3).eq."dip") then
+         if(Fprop.eq."dip") then
            write (file_med) i,t,fr_t(:)
          else
            call do_field_from_charges(qr_t,fr_t)
@@ -2318,4 +2277,3 @@ subroutine wrt_restart_mdm()
 
 
       end module
-

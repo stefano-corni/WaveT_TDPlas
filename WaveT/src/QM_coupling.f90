@@ -94,7 +94,7 @@
        call do_vts_from_dip_in_wavet
        call do_matrix
        if (myrank.eq.0) write(6,*) "Super matrix has been built"
-       if(FQBEM(1:4)=='prop') then 
+       if(FQBEM=='prop') then 
          ! Diagonalize Super-matrix        
          Hqm_evt=Hqm
          call diag_mat_in_wavet(Hqm_evt,Hqm_evl,Hqm_dim)
@@ -181,11 +181,11 @@
        real(dbl), allocatable:: dp(:) !< \f$ \vec{s}\cdot\vec{F} \f$
        integer(4)::i,j,k,p,s !< indices    
        !
-       if(FQBEM(1:4)=='prop') allocate(dp(this_nts_act))
+       if(FQBEM=='prop') allocate(dp(this_nts_act))
        ! Build the diagonal superblocs:
        ! H11
       
-       if(FQBEM(1:4)=='prop') then ! propagation_semiclassical
+       if(FQBEM=='prop') then ! propagation_semiclassical
          ! Introduces the coupling with the field for propagation
          do j=1,n_ci
            do k=1,n_ci
@@ -209,7 +209,7 @@
          omega_p(i)=sqrt(this_BEM_W2(i)) 
          we(i)=sqrt((omega_p(i)**2-this_eps_w0**2)/(two*omega_p(i)))
          ! Introduces the coupling with the field for propagation
-         if(FQBEM(1:4)=='prop') gFi=-dot_product(this_BEM_Modes(i,:),dp(:))*we(i)
+         if(FQBEM=='prop') gFi=-dot_product(this_BEM_Modes(i,:),dp(:))*we(i)
          do j=1,n_ci
            p=(i-1)*n_ci+j
            do k=j,n_ci

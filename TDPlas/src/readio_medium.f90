@@ -39,7 +39,7 @@
       integer(i4b) :: nmod !< number of modes to couple and print
       integer(i4b),parameter :: nts_max=100
       integer(i4b),allocatable,dimension(:) :: imod  !< which modes to couple and print
-      integer(i4b) :: max_mod_todiag
+      integer(i4b) :: max_mod_todiag                 !<maximum quantum plasmonic mode obtained by diagonalization
 ! SCF variables
       integer(i4b) :: ncycmax !< maximum number of SCF cycles
       real(dbl) :: thrshld    !< SCF threshold on (i) eigenvalues 10^-thrshld (ii) eigenvectors 10^-(thrshld+2)
@@ -106,7 +106,8 @@
       complex(cmp), allocatable :: eps_omegas(:)      !< complex dielectric function values for the sampling frequencies
       real(dbl), allocatable    :: re_deps_domegas(:) !< real part of the derivative of the dielectric function at the sampling frequencies
       real(dbl), allocatable    :: im_deps_domegas(:) !< imaginary part of the derivative of the dielectric function at the sampling frequencies
-      real(dbl), allocatable    :: func_eps(:), dfunc_eps(:) 
+      real(dbl), allocatable    :: func_eps(:)        !< first-order Taylor expansion for eps around frequency of the pole
+      real(dbl), allocatable    :: dfunc_eps(:)       !< first derivative of func_eps
 
       private
       public read_medium,deallocate_medium,Fint,Feps,Fprop,          &
@@ -163,23 +164,23 @@
        call write_nml_medium()
        read(*,nml=surface) 
        call write_nml_surface()
-       if (Fmdm(2:4).eq.'nan') then
+       if (Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') then
          call init_nml_nanoparticle() 
-       elseif (Fmdm(2:4).eq.'sol') then
+       elseif (Fmdm.eq.'Csol') then
          call init_nml_solvent()
        endif
        read(*,nml=eps_function) 
        call write_nml_eps_function()
-       if (Fmdm(1:4).eq.'Qnan') then
+       if (Fmdm.eq.'Qnan') then
          read(*,nml=print_charges) 
          call write_nml_print_charges()
        endif
        call write_nml_all()
        if (nts_act.gt.ntst.and.nthr.gt.1) then 
-          Fopt_chr(1:3)='omp'
+          Fopt_chr='omp'
           write(*,*) 'OMP-optimized loops for charges'
        else
-          Fopt_chr(1:3)='non'
+          Fopt_chr='non'
           write(*,*) 'Matmul is always used' 
        endif
 
@@ -259,7 +260,7 @@
        call write_nml_surface() 
        read(*,nml=eps_function) 
        call write_nml_eps_function()
-       if (Fmdm(1:4).eq.'Qnan') then
+       if (Fmdm.eq.'Qnan') then
          read(*,nml=print_charges) 
          call write_nml_print_charges()
        endif
@@ -324,7 +325,7 @@
        spheroid_position_z=zero
        spheroid_radius=zero
        n_prnt_charges=zero
-       charge_mopac='non'
+       charge_mopac='no'
        ! SCF
        scf_threshold=10
        scf_mix_coeff=0.2
@@ -512,14 +513,14 @@
           case("yes","Yes","YES")
             Fmop='yes'
             write(*,*) "charges for MOPAC2002 interface PRINTED"
-          case("non","NON","Non")
+          case("no","NO","No")
             Fmop='non'
             write(*,*) "charges for MOPAC2002 interface NOT PRINTED"
           case default
             Fmop='non'
             write(*,*) "charges for MOPAC2002 interface NOT PRINTED"
-            write(*,*) "If such charges should be print, specify" &
-            write(*,*) "charge_mopac="yes""
+            write(*,*) "If such charges should be print,"&
+                               &" specify charge_mopac='yes'" 
        end select
        ! Test  
        select case(test_type)
@@ -848,9 +849,9 @@
 #endif
            stop
          end select
-         if (Fmdm(1:1).eq.'C') then
+         if (Fmdm.eq.'Csol'.or.Fmdm.eq.'Cnan') then
            write (6,*) "This is a Classical BEM run"
-         elseif (Fmdm(1:1).eq.'Q') then
+         elseif (Fmdm.eq.'Qnan') then
 ! SP 220617: Adding quantum coupling                            
            write (6,*) "This is a Quantum BEM run"
            ! This is the only option by now
@@ -859,7 +860,8 @@
          select case(bem_read_write)
          case ('rea','Rea','REA')
           FinitBEM='rea'
-          if(Fprop(1:3).eq."chr") then
+          if(Fprop.eq.'chr-ief'.or.Fprop.eq.'chr-ied' &
+                           & .or.Fprop.eq.'chr-ons') then
               call read_gau_out_medium
           endif
           write(6,*) "This is full run reading matrix and boundary"
@@ -879,17 +881,13 @@
              Floc='loc'
              write(6,*) "This run just writes matrices and boundary"
           case ('non','Non', 'NON')
-             !Floc='non'
+             Floc='non'
           case default
-          write(*,*) "Error, specify if local-field matrix"
-          write(*,*) "should be written or not. "
-#ifdef MPI
-          call mpi_finalize(ierr_mpi)
-#endif
-             stop
+          write(*,*) "Local-field matrix won't be written"
+          write(*,*) "Specify print_lf_matrix 'yes' to print. "
          end select
        endif
-       if (Fprop(1:3).eq.'chr'.or.Fprop(1:3).eq.'dip') then
+       !if (Fprop(1:3).eq.'chr'.or.Fprop(1:3).eq.'dip') then
          ! Medium initialization for propagation: how to set q0 and fr_0
          select case(medium_init)
          case ('vac','VAC','Vac') ! q0=zero, fr_0=zero
@@ -909,7 +907,7 @@
 #endif
           stop
          end select
-       endif     
+       !endif     
 
        return
 
@@ -931,7 +929,7 @@
 
        if (spheres_number.gt.0) nsph=spheres_number
        if (spheroids_number.gt.0) nsph=spheroids_number
-       if (Fprop(1:3).eq.'dip') then
+       if (Fprop.eq.'dip') then
        ! fill sph_centre,sph_min,sph_maj,sph_vrs that define the medium object for calculations/propagation
          allocate(sph_maj(nsph))
          allocate(sph_min(nsph))
@@ -941,8 +939,10 @@
            write(6,*) 'This is a Spherical Onsager run in solution'
            ! sphere major axis = minor axis = radius           
            Fshape='sphe' ! Sphere
-           if(Fmdm(2:4).eq.'sol')write(*,*)'Spherical cavity'
-           if(Fmdm(2:4).eq.'nan')write(*,*)'Spherical nanoparticle'
+           if(Fmdm.eq.'Csol')write(*,*)'Spherical cavity'
+           if(Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') then
+                  write(*,*)'Spherical nanoparticle'
+          endif
            do i=1,nsph
              sph_centre(1,i)=sphere_position_x(i)
              sph_centre(2,i)=sphere_position_y(i)
@@ -975,8 +975,10 @@
                stop
              endif
              sph_vrs(:,1,i)=sph_vrs(:,1,i)/sph_maj(i)
-             if(Fmdm(2:4).eq.'sol')write(*,*)'Spheroidal cavity'
-             if(Fmdm(2:4).eq.'nan')write(*,*)'Spheroidal nanoparticle'
+             if(Fmdm.eq.'Csol')write(*,*)'Spheroidal cavity'
+             if(Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') then 
+                  write(*,*)'Spheroidal nanoparticle'
+             endif
              write(*,*) 'Principal axis (a.u)', sph_maj(i)
              write(*,'(a,3F10.5)') 'Principal direction (a.u.) ', &
                                         (sph_vrs(j,1,i),j=1,3)
@@ -1028,8 +1030,8 @@
                         sphere_position_y,&
                         sphere_position_z,&
                         sphere_radius,nsph,nsmax)
-          if(Fmdm(2:4).eq.'sol') call pedra_int('act')
-          if(Fmdm(2:4).eq.'nan') call pedra_int('met')
+          if(Fmdm.eq.'Csol') call pedra_int('act')
+          if(Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') call pedra_int('met')
          case default
           write(6,*) "Please choose: build or read surface?"
 #ifdef MPI
@@ -1243,14 +1245,16 @@
        call mpi_bcast(Fopt_chr,             flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Finv,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
 
-       if (Fprop(1:3).eq.'chr') call mpi_bcast(nts_act,    1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) 
-       if (Fprop(1:3).eq.'dip') call mpi_bcast(nsph,       1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+       if(Fprop.eq.'chr-ief'.or.Fprop.eq.'chr-ied'.or.Fprop.eq.'chr-ons') then
+              call mpi_bcast(nts_act,    1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) 
+      endif
+       if (Fprop.eq.'dip') call mpi_bcast(nsph,       1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
        if (myrank.ne.0) then
-          if (Fprop(1:3).eq.'chr') then
+       if(Fprop.eq.'chr-ief'.or.Fprop.eq.'chr-ied'.or.Fprop.eq.'chr-ons') then
              allocate(vts(nts_act,n_ci,n_ci))
              allocate(vtsn(nts_act))
-          elseif (Fprop(1:3).eq.'dip') then
+          elseif (Fprop.eq.'dip') then
              allocate(sph_maj(nsph))
              allocate(sph_min(nsph))
              allocate(sph_vrs(3,3,nsph))
@@ -1279,7 +1283,7 @@
        call mpi_bcast(thrshld,              1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(ncycmax,              1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(mix_coef,             1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-       if (Fprop(1:3).eq.'dip') then
+       if (Fprop.eq.'dip') then
           call mpi_bcast(sph_min,           nsph,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
           call mpi_bcast(sph_maj,           nsph,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)  
           call mpi_bcast(sph_centre,        3*nsph,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
@@ -1296,7 +1300,7 @@
        call mpi_bcast(spheroid_position_z,  nsmax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(spheroid_radius,      nsmax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(sphere_radius,        nsmax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-       if (Fprop(1:3).eq.'chr') then
+       if(Fprop.eq.'chr-ief'.or.Fprop.eq.'chr-ied'.or.Fprop.eq.'chr-ons') then
           call mpi_bcast(vtsn,              nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
           call mpi_bcast(vts,               nts_act*n_ci*n_ci,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        endif
@@ -1399,7 +1403,8 @@
               imod(i)=int(prnt_charges(i))
            enddo
            max_mod_todiag=maxval(imod)
-           write(*,*) "diagonalized and printed up to the",max_mod_todiag, "quantum plasmonic mode"
+           write(*,*) max_mod_todiag,"quantum plasmonic mode will be",&
+                         &"diagonalized and printed"
            if (max_mod_todiag.gt.nts_act) then
               write(*,*) "Trying to print the ",max_mod_todiag," plasmon"
               write(*,*)  "but it exceeds the number of computed plasmonic modes"

@@ -116,21 +116,21 @@
 
        !Cavity read/write and S D matrices 
        call init_BEM
-       if(Fbem(1:4).eq.'diag') then
+       if(Fbem.eq.'diag') then
          call init_BEM_diagonal
        endif
        if(Fgamess.eq.'yes') then
          allocate(BEM_Qd(nts_act,nts_act))
          allocate(BEM_Q0(nts_act,nts_act))
          !Standard or Diagonal BEM           
-         if(Fbem(1:4).eq.'stan') then
+         if(Fbem.eq.'stan') then
            call init_BEM_standard
            call do_BEM_standard
            if (myrank.eq.0)write(6,*) "Standard BEM is experimental"
 #ifdef MPI
        call mpi_finalize(ierr_mpi)
 #endif
-         elseif(Fbem(1:4).eq.'diag') then
+         elseif(Fbem.eq.'diag') then
              call init_BEM_diagonal
              call do_BEM_diagonal
          endif
@@ -145,24 +145,24 @@
        if(Fprop(1:3).eq."chr") then
          if(.not.allocated(BEM_Qd)) allocate(BEM_Qd(nts_act,nts_act))
          if(.not.allocated(BEM_Q0)) allocate(BEM_Q0(nts_act,nts_act))
-         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then 
+         if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then 
            allocate(BEM_Qdx(nts_act,nts_act))
            allocate(BEM_Q0x(nts_act,nts_act))
          endif
        endif
        if(Fprop(1:6).eq."chr-ie") then
          !Standard or Diagonal BEM           
-         if(Fbem(1:4).eq.'stan') then
+         if(Fbem.eq.'stan') then
            call init_BEM_standard
            call do_BEM_standard
            if (myrank.eq.0)write(6,*) "Standard BEM is experimental"
 #ifdef MPI
        call mpi_finalize(ierr_mpi)
 #endif
-         elseif(Fbem(1:4).eq.'diag') then
+         elseif(Fbem.eq.'diag') then
            call do_BEM_diagonal
            !Save Modes for quantum BEM         
-           if(Fmdm(1:1).eq."Q") then
+           if(Fmdm.eq."Qnan") then
              allocate(BEM_Modes(nts_act,nts_act))
              write(*,*) "I'm inside the cycle"
              BEM_Modes=TSm12
@@ -176,28 +176,28 @@
          if(Feps.eq."deb") then
            allocate(BEM_R(nts_act,nts_act))
            allocate(BEM_Qt(nts_act,nts_act))
-           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') allocate(BEM_Qtx(nts_act,nts_act))
-           if(Fbem(1:4).eq.'stan') call do_propBEM_std_deb
-           if(Fbem(1:4).eq.'diag') call do_propBEM_dia_deb
+           if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') allocate(BEM_Qtx(nts_act,nts_act))
+           if(Fbem.eq.'stan') call do_propBEM_std_deb
+           if(Fbem.eq.'diag') call do_propBEM_dia_deb
          elseif(Feps.eq."drl") then
            allocate(BEM_Qw(nts_act,nts_act))
            allocate(BEM_Qf(nts_act,nts_act))
-           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') allocate(BEM_Qfx(nts_act,nts_act))
-           if(Fbem(1:4).eq.'stan') call do_propBEM_std_drl
-           if(Fbem(1:4).eq.'diag') call do_propBEM_dia_drl
+           if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') allocate(BEM_Qfx(nts_act,nts_act))
+           if(Fbem.eq.'stan') call do_propBEM_std_drl
+           if(Fbem.eq.'diag') call do_propBEM_dia_drl
          elseif(Feps.eq."gen") then 
            allocate(BEM_Qg(nts_act,nts_act)) 
            allocate(BEM_Qw(nts_act,nts_act))
            allocate(BEM_Qf(nts_act,nts_act)) 
            allocate(BEM_Qdf(nts_act,nts_act))
            allocate(BEM_Qdf_2g(nts_act,nts_act))
-           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+           if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
             allocate(BEM_Qfx(nts_act,nts_act))
             allocate(BEM_Qdfx(nts_act,nts_act))
            allocate(BEM_Qdfx_2g(nts_act,nts_act))
            endif  
-           if(Fbem(1:4).eq.'stan') call do_propBEM_std_gen
-           if(Fbem(1:4).eq.'diag') call do_propBEM_dia_gen
+           if(Fbem.eq.'stan') call do_propBEM_std_gen
+           if(Fbem.eq.'diag') call do_propBEM_dia_gen
          endif
          !Write out propagation matrices         
          if(Fwrite.eq."high") call out_BEM_propmat  
@@ -224,8 +224,8 @@
            BEM_Qdx=ONS_fxd*Sm1
          endif
        endif
-       if(Fmdm(1:4).eq."Qnan") then
-          if (Fbem(1:4).eq.'diag') then
+       if(Fmdm.eq."Qnan") then
+          if (Fbem.eq.'diag') then
              allocate(BEM_Qd(nts_act,nts_act))
              allocate(BEM_Q0(nts_act,nts_act))
              call do_BEM_diagonal
@@ -268,7 +268,7 @@
        call init_BEM
        allocate(BEM_Qd(nts_act,nts_act))
        allocate(BEM_Q0(nts_act,nts_act))
-       if(Floc=='loc'.and.Fmdm(2:4).eq.'sol') then
+       if(Floc=='loc'.and.Fmdm.eq.'Csol') then
          allocate(BEM_Qdx(nts_act,nts_act))
          allocate(BEM_Q0x(nts_act,nts_act))
        end if
@@ -278,7 +278,7 @@
        ! Write out matrices                     
        call out_BEM_gamess
        ! Write out local-field matrices
-       if(Floc=='loc'.and.Fmdm(2:4).eq.'sol') then
+       if(Floc=='loc'.and.Fmdm.eq.'Csol') then
         call out_BEM_lf
        end if
        ! Calculate potential on tesserae
@@ -352,7 +352,7 @@
 #endif
        allocate(scrd3(3))
        sgn=one                 
-       if(Fmdm(2:4).eq."nan") sgn=-one  
+       if(Fmdm.eq."Cnan".or.Fmdm.eq."Qnan") sgn=-one  
        if (FinitBEM.eq.'wri') then
        ! Write out geometric info and stop
          ! Build the cavity/nanoparticle surface
@@ -490,7 +490,7 @@
 #endif
 
        ! SP 05/07/17 Only one cavity!!! 
-       if(Fmdm(2:4).eq."sol") nsph=1 
+       if(Fmdm.eq."Csol") nsph=1 
        call init_MPL
        if(MPL_ord.eq.1) then
        !SPHEROID
@@ -864,7 +864,7 @@
            fac_eps0=(eps_0+one)/(eps_0-one)
            K0(:)=(twp-sgn*BEM_L(:))/(twp*fac_eps0-sgn*BEM_L(:))
            ! GG: analogous to K_0 matrix in the case of local-field for solvent external medium
-           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') K0x(:)=-(twp+BEM_L(:))/(twp*fac_eps0-BEM_L(:)) 
+           if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') K0x(:)=-(twp+BEM_L(:))/(twp*fac_eps0-BEM_L(:)) 
          else
            K0(:)=zero
          endif
@@ -872,7 +872,7 @@
            fac_epsd=(eps_d+one)/(eps_d-one)
            Kd(:)=(twp-sgn*BEM_L(:))/(twp*fac_epsd-sgn*BEM_L(:))
            ! GG: analogous to K_d matrix in the case of local-field for solvent external medium
-           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') Kdx(:)=-(twp+BEM_L(:))/(twp*fac_epsd-BEM_L(:))
+           if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') Kdx(:)=-(twp+BEM_L(:))/(twp*fac_epsd-BEM_L(:))
          else
            Kd=zero
          endif
@@ -881,13 +881,13 @@
                  ((twp-sgn*BEM_L(:))*eps_d+twp+BEM_L(:))/tau_deb
          fact2(:)=K0(:)*fact1(:)
          ! GG: analogous to \tau K_0 matrix in the case of local-field for solvent external medium
-         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') fact2x(:)=K0x(:)*fact1(:)
+         if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') fact2x(:)=K0x(:)*fact1(:)
        elseif (Feps.eq."drl") then       
 !        Drude-Lorentz dielectric function
          Kd=zero 
          fact2(:)=(twp-sgn*BEM_L(:))*eps_A/(two*twp)  
 ! SC: the first eigenvector should be 0 for the NP
-         if (Fmdm(2:4).eq.'nan') fact2(1)=0.d0
+         if (Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') fact2(1)=0.d0
          ! SC: no spurious negative square frequencies
 
          do i=1,nts_act
@@ -903,7 +903,7 @@
          BEM_W2(:)=fact2(:)+eps_w0*eps_w0  
          K0(:)=fact2(:)/BEM_W2(:)
          ! GG: analogous to K_f and K_0 matrices in the case of local-field for solvent external medium
-         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+         if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
            fact2x(:)=-(twp+BEM_L(:))*eps_A/(two*twp)
            K0x(:)=fact2x(:)/BEM_W2(:)
          endif
@@ -952,12 +952,12 @@
            fac_eps0=(eps_0+one)/(eps_0-one)
            K0(:)=(twp-sgn*BEM_L(:))/(twp*fac_eps0-sgn*BEM_L(:))
            ! GG: analogous to K_0 matrix in the case of local-field for solvent external medium
-           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') K0x(:)=-(twp+BEM_L(:))/(twp*fac_eps0-BEM_L(:))
+           if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') K0x(:)=-(twp+BEM_L(:))/(twp*fac_eps0-BEM_L(:))
          else
            K0(:)=zero
          endif
          ! GG: analogous to K_f and K_0 matrices in the case of local-field for solvent external medium
-         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+         if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
           fact2x(:)=-fact2(:) * fact1(:)
           fact3x(:)=-fact3(:) * fact1(:)
          endif
@@ -1002,7 +1002,7 @@
 
        ! GG: analogous to Q_0 and Q_d matrices in the case of
        ! local-field for solvent external medium
-       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
         do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*K0x(i)
         enddo
@@ -1100,7 +1100,7 @@
 
        ! GG: analogous to Q_0 and Q_d matrices in the case of
        ! local-field for solvent external medium
-       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
         BEM_2ppDAx = scr1
         do i=1,nts_act
           BEM_2ppDAx(i,i)= -BEM_2ppDAx(i,i) + twp
@@ -1202,7 +1202,7 @@
 
        allocate(fact1(nts_act),fact2(nts_act))
        allocate(Kd(nts_act),K0(nts_act))
-        if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+        if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
         allocate(fact2x(nts_act),fact3x(nts_act))
         allocate(Kdx(nts_act),K0x(nts_act))
        endif 
@@ -1233,7 +1233,7 @@
 !------------------------------------------------------------------------
 
        allocate(BEM_Sm1(nts_act,nts_act),BEM_2ppDA(nts_act,nts_act),BEM_ADt(nts_act,nts_act))
-       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
         allocate(BEM_2ppDAx(nts_act,nts_act))
        endif
 
@@ -1362,7 +1362,7 @@
         BEM_Qt=-matmul(scr1,TSm12)
         ! GG: analogous to \tilde{Q} matrix in the case of local-field
         ! for solvent external medium
-        if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+        if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
          do i=1,nts_act
            scr1(:,i)=Sm12T(:,i)*fact2x(i)
          enddo
@@ -1394,7 +1394,7 @@
 
        ! GG: analogous to \tilde{Q} matrix in the case of local-field
        ! for solvent external medium
-       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') BEM_Qtx= factor * matmul(BEM_Q0x,matmul(inv(BEM_Qdx),BEM_Q0x))
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') BEM_Qtx= factor * matmul(BEM_Q0x,matmul(inv(BEM_Qdx),BEM_Q0x))
 
        return
 
@@ -1434,7 +1434,7 @@
 !$OMP END PARALLEL
 
        BEM_Qf=-matmul(scr1,TSm12)
-       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
         do i=1,nts_act
           scr1(:,i)=Sm12T(:,i)*fact2x(i)
         enddo
@@ -1450,7 +1450,7 @@
 !$OMP END PARALLEL
 
        BEM_Qdf_2g=-matmul(scr1,TSm12)
-       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
         do i=1,nts_act
           scr1(:,i)=Sm12T(:,i)*fact3x(i)
         enddo
@@ -1496,7 +1496,7 @@
 
        BEM_Qf= factor * matmul(BEM_Sm1,BEM_2ppDA)
 
-       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') BEM_Qfx= -factor * matmul(BEM_Sm1,BEM_2ppDAx)
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') BEM_Qfx= -factor * matmul(BEM_Sm1,BEM_2ppDAx)
 
        return
 
@@ -1536,7 +1536,7 @@
 !$OMP END PARALLEL
 
        BEM_Qf=-matmul(scr1,TSm12)
-       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
         do i=1,nts_act
           scr1(:,i)=Sm12T(:,i)*fact2x(i)
         enddo
@@ -1552,7 +1552,7 @@
 !$OMP END PARALLEL
 
        BEM_Qdf=-matmul(scr1,TSm12)
-       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
         do i=1,nts_act
           scr1(:,i)=Sm12T(:,i)*fact3x(i)
         enddo
@@ -1568,7 +1568,7 @@
 !$OMP END PARALLEL
 
        BEM_Qdf_2g=-matmul(scr1,TSm12)
-       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
         do i=1,nts_act
           scr1(:,i)=Sm12T(:,i)*fact3x(i)
         enddo
@@ -1604,7 +1604,7 @@
 
        BEM_Qf= -matmul(BEM_Sm1,BEM_2ppDA)
 
-       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') BEM_Qfx= matmul(BEM_Sm1,BEM_2ppDAx)
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') BEM_Qfx= matmul(BEM_Sm1,BEM_2ppDAx)
 
        return
 
