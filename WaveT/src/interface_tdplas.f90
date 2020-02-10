@@ -527,7 +527,7 @@ module interface_tdplas
        dip(3)=dot_product(c,matmul(mut(3,:,:),c))
 #endif
 #ifdef OMP
-      if (Fopt(1:3).eq.'omp') then
+      if (Fopt.eq.'omp') then
          ctmp=0.d0
 !$OMP PARALLEL REDUCTION(+:ctmp) 
 !$OMP DO

@@ -12,7 +12,7 @@ program make_spectra
                                       tdelay,pshift,Fbin,Fopt,nthreads, &
                                       restart,n_restart)
 
-      if (Fmdm(1:3).ne."vac") call read_medium_input
+      if (Fmdm.ne."vac") call read_medium_input
       call init_spectra
 
 !     calculate spectra               

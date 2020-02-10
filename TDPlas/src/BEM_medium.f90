@@ -142,7 +142,7 @@
 #endif
          stop
        endif
-       if(Fprop(1:3).eq."chr") then
+       if(Fprop.eq."chr-ief".or.Fprop.eq."chr-ied".or.Fprop.eq."chr-ons") then
          if(.not.allocated(BEM_Qd)) allocate(BEM_Qd(nts_act,nts_act))
          if(.not.allocated(BEM_Q0)) allocate(BEM_Q0(nts_act,nts_act))
          if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then 
@@ -150,7 +150,7 @@
            allocate(BEM_Q0x(nts_act,nts_act))
          endif
        endif
-       if(Fprop(1:6).eq."chr-ie") then
+       if(Fprop.eq."chr-ief".or.Fprop.eq."chr-ied") then
          !Standard or Diagonal BEM           
          if(Fbem.eq.'stan') then
            call init_BEM_standard
@@ -201,7 +201,7 @@
          endif
          !Write out propagation matrices         
          if(Fwrite.eq."high") call out_BEM_propmat  
-         if(Fprop(1:7).eq."chr-ons") then
+         if(Fprop.eq."chr-ons") then
          allocate(Sm1(nts_act,nts_act))
          ! Form $S^{-1}$ matrix
          Sm1=inv(BEM_S)
@@ -372,7 +372,7 @@
          endif
          ! Build and write out Calderon SD matrices
          allocate(BEM_S(nts_act,nts_act))
-         if (Fprop(1:7).ne.'chr-ons') allocate(BEM_D(nts_act,nts_act))
+         if (Fprop.ne.'chr-ons') allocate(BEM_D(nts_act,nts_act))
          call do_BEM_SD
          if (myrank.eq.0) call write_BEM_SD
          if (myrank.eq.0)write(6,*) "Matrixes S D have been written out"
@@ -384,7 +384,7 @@
        !Read in geometric info and proceed
          !call read_cavity_file
          allocate(BEM_S(nts_act,nts_act))
-         if (Fprop(1:7).ne.'chr-ons') allocate(BEM_D(nts_act,nts_act))
+         if (Fprop.ne.'chr-ons') allocate(BEM_D(nts_act,nts_act))
          call read_BEM_SD
          if (myrank.eq.0) write(6,*) &
          "BEM surface and Matrixes S D have been read in"
@@ -436,7 +436,7 @@
 ! Modified:
 !------------------------------------------------------------------------
 
-       if (Fprop(1:3).eq.'chr') then
+       if(Fprop.eq.'chr-ief'.or.Fprop.eq.'chr-ied'.or.Fprop.eq.'chr-ons') then
          if(allocated(BEM_Qd)) deallocate(BEM_Qd)
          if(allocated(BEM_Q0)) deallocate(BEM_Q0)
          if(allocated(BEM_Qt)) deallocate(BEM_Qt)
@@ -677,7 +677,7 @@
         do j=1,nts_act
           call green_s(i,j,temp)
           BEM_S(i,j)=temp
-          if (Fprop(1:7).ne.'chr-ons') then 
+          if (Fprop.ne.'chr-ons') then 
             call green_d(i,j,temp)
             BEM_D(i,j)=temp
           endif
@@ -1950,7 +1950,7 @@
        write(7,*) nts_act
        do j=1,nts_act
         do i=1,nts_act
-          if (Fprop(1:7).eq.'chr-ons') then 
+          if (Fprop.eq.'chr-ons') then 
             write(7,'(2E26.16)')BEM_S(i,j)
           else
             write(7,'(2E26.16)')BEM_S(i,j),BEM_D(i,j)
@@ -1984,7 +1984,7 @@
           read(7,*) nts_act
           do j=1,nts_act
              do i=1,nts_act
-                if (Fprop(1:7).eq.'chr-ons') then 
+                if (Fprop.eq.'chr-ons') then 
                    read(7,*) BEM_S(i,j)
                 else
                    read(7,*) BEM_S(i,j), BEM_D(i,j)
@@ -1996,7 +1996,7 @@
 #ifdef MPI
       call mpi_bcast(nts_act,  1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
       call mpi_bcast(BEM_S,    nts_act*nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
-      if (Fprop(1:7).ne.'chr-ons') then
+      if (Fprop.ne.'chr-ons') then
          call mpi_bcast(BEM_D, nts_act*nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
       endif
 #endif

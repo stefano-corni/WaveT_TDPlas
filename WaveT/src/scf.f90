@@ -66,11 +66,13 @@
        ! scf cycle
        do while (docycle.and.ncyc.le.this_ncycmax) 
          ! Build the Hamiltonian
-         if(this_Fint.eq."ons".and.this_Fprop(1:3).eq."chr") then 
-           call do_field_from_charges_in_wavet(q_or_f,fld)
-           call do_matrix_f(fld)
+         if(this_Fint.eq."ons") then
+           if(this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then 
+             call do_field_from_charges_in_wavet(q_or_f,fld)
+             call do_matrix_f(fld)
+           endif
          endif
-         if(this_Fint.eq."ons".and.this_Fprop(1:3).eq."dip") & 
+         if(this_Fint.eq."ons".and.this_Fprop.eq."dip") & 
                            call do_matrix_f(q_or_f)
          if(this_Fint.eq."pcm") call do_matrix_q(q_or_f)
          ! Diagonalize Hamiltonian                          
@@ -78,8 +80,10 @@
          call diag_mat_in_wavet(eigt_c,eigv_c,n_ci)       
          ! Update charges or field with new coefficients 
          call do_c_oldbasis
-         if(this_Fprop(1:3).eq."dip") call do_field(q_or_f)
-         if(this_Fprop(1:3).eq."chr") call do_charges(q_or_f)
+         if(this_Fprop.eq."dip") call do_field(q_or_f)
+         if(this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then
+            call do_charges(q_or_f)
+         endif
          call do_energies(e_scf,e_ini)
          ! Check convergence                                
          if (ncyc.gt.2) then 
@@ -101,7 +105,7 @@
        enddo
        if (myrank.eq.0) write(6,*) "SCF Done"
        ! Write-out integrals/properties in the new basis 
-       if (this_Fprop(1:3).eq.'chr') then
+       if (this_Fprop.eq.'chr-ief'.or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then
          if (myrank.eq.0) then
             call out_charges(q_or_f)
             call out_vts
@@ -135,7 +139,7 @@
        allocate(eigv_c(n_ci),eigt_c(n_ci,n_ci))
        allocate(eigv_cp(n_ci),eigt_cp(n_ci,n_ci))
        allocate(Htot(n_ci,n_ci))
-       if(this_Fprop(1:3).eq."chr") allocate(pot(this_nts_act))
+       if(this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") allocate(pot(this_nts_act))
        allocate(c_c(n_ci))
 
        return
@@ -252,7 +256,7 @@
 
        q=(1.-this_mix_coef)*q+this_mix_coef*matmul(this_BEM_Q0,pot)
 ! SC 12/8/2016: apparently for NP, charge compensation is needed
-       if (Fmdm(2:4).eq.'nan') q=q-sum(q)/this_nts_act
+       if (Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') q=q-sum(q)/this_nts_act
 
        return
 

@@ -64,7 +64,7 @@
        write(name_e,'(a4,i0,a4)') "e_t_",n_f,".dat"
        write(name_mu,'(a5,i0,a4)') "mu_t_",n_f,".dat"
        if (Fres.eq.'Yesr') then
-          if (Fbin(1:3).ne.'bin') then
+          if (Fbin.ne.'bin') then
              open (file_c,file=name_c,status="unknown",access="append")
              open (file_e,file=name_e,status="unknown",access="append")
              open (file_mu,file=name_mu,status="unknown",access="append")
@@ -74,7 +74,7 @@
              open (file_mu,file=name_mu,status="unknown",access="append",form="unformatted")  
           endif
        elseif (Fres.eq.'Nonr') then
-          if (Fbin(1:3).ne.'bin') then
+          if (Fbin.ne.'bin') then
              open (file_c,file=name_c,status="unknown")
              open (file_e,file=name_e,status="unknown")
              open (file_mu,file=name_mu,status="unknown")
@@ -92,7 +92,7 @@
        if (Fexp.eq."exp") then 
           allocate (ccexp(n_ci))
           ccexp=exp(-ui*dt*e_ci)
-          if (Fabs(1:3).eq.'abs') ccexp=ccexp*exp(-ion_rate*dt/2.d0) 
+          if (Fabs.eq.'abs') ccexp=ccexp*exp(-ion_rate*dt/2.d0) 
        endif
 ! SP 17/07/17: new flags
        if (Fdis(1:3).eq."mar".or.Fdis(1:3).eq."nma") then
@@ -138,11 +138,11 @@
        if(Frad.eq."arl".or.Fdis.ne."nodis") &
                                call seed_random_number_sc(iseed)
 
-       if (Fmdm(1:3).ne."vac") then
+       if (Fmdm.ne."vac") then
            ! GG: 11/03/2019 begin changes
            call init_medium(c_prev,mu_prev,f_prev,h_int)
            if(this_Finit_int.eq.'sce') then
-            if(this_Fprop(1:3).eq."dip") then
+            if(this_Fprop.eq."dip") then
              ! mixing iter 1 and 0
              call preparing_for_scf_in_wavet(this_mix_coef, mu = mu_prev)
              ! reaction field
@@ -172,7 +172,7 @@
           call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
           call add_int_vac(f_prev,h_int)
 ! SP 16/07/17: added call to output at step 0 to have full output in outfiles
-          if (Fbin(1:3).ne.'bin') call out_header
+          if (Fbin.ne.'bin') call out_header
           call output(1,c,f_prev,h_int)
        elseif (Fres.eq.'Yesr') then
           if (Fdis.ne."nodis") call random_seq(restart_i)
@@ -242,7 +242,7 @@
        close (file_e)
        close (file_mu)
 
-       if(Fmdm(1:3).ne.'vac') call finalize_medium
+       if(Fmdm.ne.'vac') call finalize_medium
 
        return
 
@@ -277,7 +277,7 @@
 #ifndef MPI
        myrank=0
        write(name_f,'(a5,i0,a4)') "field",n_f,".dat"
-       if (Fbin(1:3).ne.'bin') then
+       if (Fbin.ne.'bin') then
           open (7,file=name_f,status="unknown")
        else
           open (7,file=name_f,status="unknown",form="unformatted")
@@ -286,7 +286,7 @@
 #ifdef MPI
        if (myrank.eq.0) then
           write(name_f,'(a9)') "field.dat"
-          if (Fbin(1:3).ne.'bin') then
+          if (Fbin.ne.'bin') then
              open (7,file=name_f,status="unknown")
           else
              open (7,file=name_f,status="unknown",form="unformatted")
@@ -425,7 +425,7 @@
         end select
         if (myrank.eq.0) then
         ! write out field 
-           if (Fbin(1:3).ne.'bin') then
+           if (Fbin.ne.'bin') then
               do i=1,n_tot
                  t_a=dt*(i-1)
                  if (mod(i,n_out).eq.0) &
@@ -464,7 +464,7 @@
        integer(i4b)             :: j,k
 
 #ifdef OMP
-       if (Fopt(1:3).eq.'omp') then
+       if (Fopt.eq.'omp') then
           ctmp=0.d0
 !$OMP PARALLEL REDUCTION(+:ctmp) 
 !$OMP DO
@@ -540,7 +540,7 @@
 
        t=(i-1)*dt 
 #ifdef OMP
-       if (Fopt(1:3).eq.'omp') then
+       if (Fopt.eq.'omp') then
           ctmp=0.d0
 !$OMP PARALLEL REDUCTION(+:ctmp) 
 !$OMP DO
@@ -561,13 +561,13 @@
 #endif
 
 ! SC 07/02/16: added printing of g_neq, g_eq 
-       if(Fmdm(1:3).ne.'vac') then 
+       if(Fmdm.ne.'vac') then 
           g_eq_t=e_a
           g_neq_t=e_a
           g_neq2_t=e_a
           e_vac=e_a
           call get_energies(e_vac,g_eq_t,g_neq_t,g_neq2_t)
-          if (Fbin(1:3).ne.'bin') then
+          if (Fbin.ne.'bin') then
              write (file_e,'(i8,f14.4,7e20.8)') i,t,e_a,e_vac, &
                    g_eq_t,g_neq2_t,g_neq_t,int_rad,int_rad_int
           else
@@ -575,14 +575,14 @@
                    g_eq_t,g_neq2_t,g_neq_t,int_rad,int_rad_int
           endif
        else
-          if (Fbin(1:3).ne.'bin') then
+          if (Fbin.ne.'bin') then
              write (file_e,'(i8,f14.4,3e22.10)') i,t,e_a,int_rad,int_rad_int
           else
              write (file_e) i,t,e_a,int_rad,int_rad_int
           endif 
        endif
 
-       if (Fbin(1:3).ne.'bin') then
+       if (Fbin.ne.'bin') then
           write (fmt_ci,'("(i8,f14.4,",I0,"e17.8E3)")') 2*n_ci
           write (file_c,fmt_ci) i,t,c(:)
           write (file_mu,'(i8,f14.4,3e22.10)') i,t,mu_a(:)
@@ -595,7 +595,7 @@
        if(j.lt.1) j=1
        Sdip(:,1,j)=mu_a(:)
 ! SP 270817: using get_* functions to communicate with TDPlas
-       if(Fmdm(1:3).ne."vac") call get_medium_dip(Sdip(:,2,j))
+       if(Fmdm.ne."vac") call get_medium_dip(Sdip(:,2,j))
        Sfld(:,j)=f(:,i)
 
        return
@@ -751,7 +751,7 @@
           c_prev=c
 
 ! SP 16/07/17: added call to medium propagation at step 2 to have full output
-          if (Fmdm(1:3).ne."vac") then
+          if (Fmdm.ne."vac") then
              i=2
              call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
           endif
@@ -782,7 +782,7 @@
             f_prev2=f(:,i-2)
             f_prev=f(:,i-1)
             h_int=zero 
-            if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+            if (Fmdm.ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
             call add_int_vac(f_prev,h_int)
 ! SC field
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
@@ -798,7 +798,7 @@
             endif 
 #endif
 #ifdef OMP
-            if (Fopt(1:3).eq.'omp') then
+            if (Fopt.eq.'omp') then
                ctmp=0.d0
 !$OMP PARALLEL REDUCTION(+:ctmp) 
 !$OMP DO
@@ -833,7 +833,7 @@
                ijump=i
                n_jump=n_jump+1
 #ifndef MPI
-              if (Fwrt(1:3).eq.'yes') write(*,*) 'Quantum jump at step:', i, (i-1)*dt 
+              if (Fwrt.eq.'yes') write(*,*) 'Quantum jump at step:', i, (i-1)*dt 
 #endif 
                c_prev=c
             else
@@ -856,7 +856,7 @@
             f_prev2=f(:,i-2)
             f_prev=f(:,i-1)
             h_int=zero 
-            if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+            if (Fmdm.ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
             call add_int_vac(f_prev,h_int)
 ! SC field
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
@@ -892,7 +892,7 @@
             f_prev2=f(:,i-2)
             f_prev=f(:,i-1)
             h_int=zero 
-            if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+            if (Fmdm.ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
             call add_int_vac(f_prev,h_int)
 ! SC field
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
@@ -902,7 +902,7 @@
             c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int,c_prev))
 #endif
 #ifdef OMP
-            if (Fopt(1:3).eq.'omp') then
+            if (Fopt.eq.'omp') then
                ctmp=0.d0
 !$OMP PARALLEL REDUCTION(+:ctmp) 
 !$OMP DO
@@ -982,7 +982,7 @@
 
 ! SP 16/07/17: added call to medium propagation at step 2 to have full
 ! output
-          if (Fmdm(1:3).ne."vac") then
+          if (Fmdm.ne."vac") then
              i=2
              call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
           endif
@@ -1011,7 +1011,7 @@
             f_prev2=f(:,i-2)
             f_prev=f(:,i-1)
             h_int=zero
-            if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+            if (Fmdm.ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
             call add_int_vac(f_prev,h_int)
 ! SC field
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
@@ -1027,7 +1027,7 @@
             endif
 #endif
 #ifdef OMP
-            if (Fopt(1:3).eq.'omp') then
+            if (Fopt.eq.'omp') then
                ctmp=0.d0
 !$OMP PARALLEL REDUCTION(+:ctmp) 
 !$OMP DO
@@ -1064,7 +1064,7 @@
                ijump=i
                n_jump=n_jump+1
 #ifndef MPI
-              if (Fwrt(1:3).eq.'yes') write(*,*) 'Quantum jump at step:', i, (i-1)*dt
+              if (Fwrt.eq.'yes') write(*,*) 'Quantum jump at step:', i, (i-1)*dt
 #endif
                c_prev=c
             else
@@ -1087,7 +1087,7 @@
             f_prev2=f(:,i-2)
             f_prev=f(:,i-1)
             h_int=zero
-            if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+            if (Fmdm.ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
             call add_int_vac(f_prev,h_int)
 ! SC field
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
@@ -1123,7 +1123,7 @@
             f_prev2=f(:,i-2)
             f_prev=f(:,i-1)
             h_int=zero
-            if (Fmdm(1:3).ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+            if (Fmdm.ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
             call add_int_vac(f_prev,h_int)
 ! SC field
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
@@ -1132,7 +1132,7 @@
             c=c_prev2-2.d0*ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))
 #endif
 #ifdef OMP
-            if (Fopt(1:3).eq.'omp') then
+            if (Fopt.eq.'omp') then
                ctmp=0.d0
 !$OMP PARALLEL REDUCTION(+:ctmp) 
 !$OMP DO
@@ -1224,7 +1224,7 @@
        do j=1,nci
           write(ii,*) c_prev2(j)
        enddo
-       if (Fdis(1:5).ne.'nodis') then
+       if (Fdis.ne.'nodis') then
           write(ii,*) 'Seed'
           write(ii,*) iseed
           write(ii,*) 'Number of quantum jumps'

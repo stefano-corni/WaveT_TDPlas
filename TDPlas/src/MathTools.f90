@@ -273,7 +273,7 @@
        dip(3)=dot_product(c,matmul(mut(3,:,:),c))
 #endif
 #ifdef OMP
-      if (Fopt(1:3).eq.'omp') then
+      if (Fopt.eq.'omp') then
          ctmp=0.d0
 !$OMP PARALLEL REDUCTION(+:ctmp) 
 !$OMP DO
@@ -339,7 +339,7 @@
 #endif
 
 #ifdef OMP
-       if (Fopt(1:3).eq.'omp') then
+       if (Fopt.eq.'omp') then
           allocate(ctmp(nts_act*n_ci))
 !$OMP PARALLEL REDUCTION (+:cc)
 !$OMP DO 
@@ -397,7 +397,7 @@
 !       enddo 
 !#endif
 !#ifdef OMP
-!       if (Fopt(1:3).eq.'omp') then
+!       if (Fopt.eq.'omp') then
 !          if (Fprop(1:3).eq."chr".or.Fprop(1:3).eq."osc") then
 !             ctmp=0.d0
 !!$OMP PARALLEL REDUCTION(+:ctmp) 
@@ -589,7 +589,7 @@
        cmat_mult=matmul(a,b)
 #endif       
 #ifdef OMP
-       if (Fopt(1:3).eq.'omp') then
+       if (Fopt.eq.'omp') then
           !tmp=0.d0
 !$OMP PARALLEL reduction (+:tmp)
 !$OMP DO
