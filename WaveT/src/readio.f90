@@ -213,16 +213,16 @@
        read(*,nml=spectra) 
        call write_nml_spectra() 
 
-       if (Fdis(1:5).ne."nodis") call read_dis_params
+       if (Fdis.ne."nodis") call read_dis_params
 
        if (Fres.eq.'Yesr') call read_restart()
 
-       if (Fdis(1:5).ne.'nodis'.or.Fexp.ne.'exp') then 
-           Fabs(1:3)='non'
+       if (Fdis.ne.'nodis'.or.Fexp.ne.'exp') then 
+           Fabs='non'
            write(*,*) 'Absorber switched off with SSE or full Euler'
        endif
 
-       if (Fabs(1:3).eq.'abs') call read_ion_rate
+       if (Fabs.eq.'abs') call read_ion_rate
 
        if( postprocessing ) then
         !Namelist for postprocessing
@@ -406,7 +406,7 @@
           do i=1,n_ci
              read(ii,*) c_i_prev2(i)
           enddo
-          if (Fdis(1:5).ne.'nodis') then
+          if (Fdis.ne.'nodis') then
              read(ii,*) junk
              read(ii,*) restart_seed
              iseed=restart_seed
@@ -698,7 +698,7 @@
           endif
        endif
        if (Fful.eq.'Yesf') deallocate(ik)
-       if (Fabs(1:3).eq.'abs') deallocate(ion_rate)
+       if (Fabs.eq.'abs') deallocate(ion_rate)
 
        return
 
@@ -882,7 +882,7 @@
       !Initialize array for coherence
       coh=''
       !Initialize variable for formatted/unformatted output
-      write_bin(1:1)='n'
+      write_bin='n'
 
       return
 
@@ -974,24 +974,24 @@
        select case (absorber)
         case ('y', 'Y')
          write(*,*) 'Absorber in dynamics'
-         Fabs(1:3)='abs'
+         Fabs='abs'
         case ('n', 'N')
-         Fabs(1:3)='non'
+         Fabs='non'
        end select
        select case (binary)
         case ('y','Y')
          write(*,*) 'Output files in binary format'
-         Fbin(1:3)='bin'
+         Fbin='bin'
         case ('n','N')
-         Fbin(1:3)='non'
+         Fbin='non'
        end select
        if (n_ci.gt.ncit.and.nthreads.gt.1) then
            write(*,*) 'Explicit loops are used for matrix/vector'
            write(*,*) 'for propagation, if OMP is switched on.'
-           Fopt(1:3)='omp'
+           Fopt='omp'
        else
           write(*,*) 'Matmul is used in the propagation.'
-          Fopt(1:3)='non'
+          Fopt='non'
        endif 
        write(*,*) ''
 
@@ -1136,10 +1136,10 @@
        select case (out_sse)
         case ('y','Y')
           write(*,*) 'SSE quantum jumps written in output'
-          Fwrt(1:3)='yes'
+          Fwrt='yes'
         case ('n','N')
           write(*,*) 'SSE quantum jumps not written'
-          Fwrt(1:3)='non' 
+          Fwrt='non' 
        end select
        write(*,*) ''
 
@@ -1169,17 +1169,17 @@
        write(50,*) 'nstates =',n_ci 
        write(50,*) 'n_f =',n_f
        write(50,*) 'nsteps =',inn
-       write(50,*) 'read_bin =','"',binary(1:1),'"'
-       write(50,*) 'write_bin =','"',write_bin(1:1),'"'
-       write(50,*) 'tar =', '"',tar(1:3),'"',  ' != pop, coh or all '
-       if (tar(1:3).eq.'all'.or.tar(1:3).eq.'pop') then
-         write(50,*) 'all_pop =','"',all_pop(1:3),'"',' != yes all pop '
+       write(50,*) 'read_bin =','"',binary,'"'
+       write(50,*) 'write_bin =','"',write_bin,'"'
+       write(50,*) 'tar =', '"',tar,'"',  ' != pop, coh or all '
+       if (tar.eq.'all'.or.tar.eq.'pop') then
+         write(50,*) 'all_pop =','"',all_pop,'"',' != yes all pop '
        endif
-       if (tar(1:3).eq.'all'.or.tar(1:3).eq.'coh') then
-         write(50,*) 'all_coh =','"',all_coh(1:3),'"',' != yes all coh ' 
+       if (tar.eq.'all'.or.tar.eq.'coh') then
+         write(50,*) 'all_coh =','"',all_coh,'"',' != yes all coh ' 
        endif
-       if (all_pop(1:3).ne.'yes') then  
-          if (tar(1:3).eq.'all'.or.tar(1:3).eq.'pop') then 
+       if (all_pop.ne.'yes') then  
+          if (tar.eq.'all'.or.tar.eq.'pop') then 
              write(50,*) 'pop = '
              do i=1,n_ci
                 if (pop(i).ne.-1) write(50,*)  pop(i)
@@ -1187,8 +1187,8 @@
           endif
        endif
 
-       if (all_coh(1:3).ne.'yes') then
-          if (tar(1:3).eq.'all'.or.tar(1:3).eq.'coh') then
+       if (all_coh.ne.'yes') then
+          if (tar.eq.'all'.or.tar.eq.'coh') then
              write(50,*) 'coh ='
              do i=1,n_ci*(n_ci-1)/2
                 tmp=coh(i)

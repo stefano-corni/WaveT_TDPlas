@@ -6,7 +6,7 @@ medium='nan'
 n_f=1
 dt=0.2
 n_step=26000
-n_out=1
+n_out=20
 / 
 
 &field

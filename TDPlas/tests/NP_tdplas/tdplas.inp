@@ -2,7 +2,7 @@
 /
 
 &MEDIUM
-medium_type='nan'
+medium_type='qna'
 medium_pol='chr'
 bem_type='diag'
 bem_read_write='wri'
@@ -13,8 +13,8 @@ input_surface='bui',
 spheres_number=2
 sphere_position_x= 50. 140.
 sphere_position_y=  0.   0.
-sphere_position_z=  0.   0. 
-sphere_radius=     50.  25.       
+sphere_position_z=  0.   0.
+sphere_radius=     50.  25.
 /
 
 &EPS_FUNCTION
@@ -27,3 +27,8 @@ eps_w0=0.
 f_vel=0. 
 /
 
+&PRINT_CHARGES
+n_prnt_charges= 8
+prnt_charges= 2. 3. 4. 5. 7. 14. 8. 9.
+charge_mopac='yes'
+/

@@ -4,6 +4,7 @@
       use pedra_friends
       use MathTools
       use interface_qmcode
+      use eps_module
 #ifdef OMP
       use omp_lib
 #endif
@@ -56,11 +57,26 @@
       complex(cmp), allocatable :: Kdiag_omega(:)         !< Diagonal K matrix in frequency domain
       real(dbl), allocatable :: scrd3(:) ! Scratch vector dim=3
 
+      real(dbl), allocatable :: BEM_2ppDA(:,:),BEM_2ppDAx(:,:)
+      real(dbl), allocatable :: BEM_Sm1(:,:)
+      real(dbl), allocatable :: BEM_ADt(:,:)
+
+      real(dbl), allocatable :: gg(:), w2(:), kf(:)
+
+      real(dbl), allocatable :: sin_delta(:), cos_delta(:), kf_prime(:), kf0(:)
+
+      real(dbl), allocatable :: fact3(:),fact3x(:)
+
+      real(dbl), allocatable :: BEM_Qdf(:,:), BEM_Qdfx(:,:)
+      real(dbl), allocatable :: BEM_Qdf_2g(:,:), BEM_Qdfx_2g(:,:)
+
       type poles_t                                                                                     
         real(dbl), allocatable    :: omega_p(:)          !< real part of the poles of the diagonal Kerne
         real(dbl), allocatable    :: gamma_p(:)          !< imaginary part of the poles of the diagonal 
         complex(cmp), allocatable :: eps_omega_p(:)      !< complex dielectric function valued on the re
         real(dbl), allocatable    :: re_deps_domega_p(:) !< real part of the derivative of the complex d
+        real(dbl), allocatable    :: im_deps_domega_p(:) !< real part of the derivative of the complex d
+        real(dbl), allocatable    :: A_coeff_p(:)        !< numerator in DL expansion
       end type                                                                                         
                                                                                                           
       type(poles_t), allocatable :: poles(:) 
@@ -74,9 +90,9 @@
              BEM_Qt,BEM_R,BEM_Qw,BEM_Qf,BEM_Qd,BEM_Q0,BEM_W2,BEM_Modes,&
              BEM_Qtx,BEM_Qfx,BEM_Qdx,BEM_Q0x,                          &
              do_BEM_prop,do_BEM_freq,do_BEM_quant,do_MPL_prop,         &
-             do_eps_drl,do_eps_deb,do_charge_freq,                     &
+             do_eps_drl,do_eps_deb,do_charge_freq,out_gcharges,        &
              deallocate_BEM_public,deallocate_MPL_public,BEM_Qg,BEM_2G,&
-             do_eps_gen
+             do_eps_gen,BEM_ADt,kf,w2,gg,kf_prime,BEM_Qdf,BEM_Qdfx,BEM_Qdf_2g,BEM_Qdfx_2g,kf0
 
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -100,19 +116,23 @@
 
        !Cavity read/write and S D matrices 
        call init_BEM
+       if(Fbem.eq.'diag') then
+         call init_BEM_diagonal
+       endif
        if(Fgamess.eq.'yes') then
          allocate(BEM_Qd(nts_act,nts_act))
          allocate(BEM_Q0(nts_act,nts_act))
          !Standard or Diagonal BEM           
-         if(Fbem(1:4).eq.'stan') then
-           if (myrank.eq.0)write(6,*) "Standard BEM not implemented yet"
+         if(Fbem.eq.'stan') then
+           call init_BEM_standard
+           call do_BEM_standard
+           if (myrank.eq.0)write(6,*) "Standard BEM is experimental"
 #ifdef MPI
        call mpi_finalize(ierr_mpi)
 #endif
-           stop
-         elseif(Fbem(1:4).eq.'diag') then
-           call init_BEM_diagonal
-           call do_BEM_diagonal
+         elseif(Fbem.eq.'diag') then
+             call init_BEM_diagonal
+             call do_BEM_diagonal
          endif
          !Write out matrices for gamess                     
          call out_BEM_gamess
@@ -122,29 +142,31 @@
 #endif
          stop
        endif
-       if(Fprop(1:3).eq."chr") then
+       if(Fprop.eq."chr-ief".or.Fprop.eq."chr-ied".or.Fprop.eq."chr-ons") then
          if(.not.allocated(BEM_Qd)) allocate(BEM_Qd(nts_act,nts_act))
          if(.not.allocated(BEM_Q0)) allocate(BEM_Q0(nts_act,nts_act))
-         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then 
+         if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then 
            allocate(BEM_Qdx(nts_act,nts_act))
            allocate(BEM_Q0x(nts_act,nts_act))
          endif
        endif
-       if(Fprop(1:6).eq."chr-ie") then
+       if(Fprop.eq."chr-ief".or.Fprop.eq."chr-ied") then
          !Standard or Diagonal BEM           
-         if(Fbem(1:4).eq.'stan') then
-           if(myrank.eq.0)write(6,*) "Standard BEM not implemented yet"
+         if(Fbem.eq.'stan') then
+           call init_BEM_standard
+           call do_BEM_standard
+           if (myrank.eq.0)write(6,*) "Standard BEM is experimental"
 #ifdef MPI
        call mpi_finalize(ierr_mpi)
 #endif
-           stop
-         elseif(Fbem(1:4).eq.'diag') then
-           call init_BEM_diagonal
+         elseif(Fbem.eq.'diag') then
            call do_BEM_diagonal
            !Save Modes for quantum BEM         
-           if(Fmdm(1:1).eq."Q") then
+           if(Fmdm.eq."Qnan") then
              allocate(BEM_Modes(nts_act,nts_act))
+             write(*,*) "I'm inside the cycle"
              BEM_Modes=TSm12
+           endif
            endif
          endif
          !Write out matrices for gamess                     
@@ -154,26 +176,32 @@
          if(Feps.eq."deb") then
            allocate(BEM_R(nts_act,nts_act))
            allocate(BEM_Qt(nts_act,nts_act))
-           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') allocate(BEM_Qtx(nts_act,nts_act))
-           if(Fbem(1:4).eq.'stan') call do_propBEM_dia_deb ! 'dia' to be replaced by 'std' 
-           if(Fbem(1:4).eq.'diag') call do_propBEM_dia_deb
+           if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') allocate(BEM_Qtx(nts_act,nts_act))
+           if(Fbem.eq.'stan') call do_propBEM_std_deb
+           if(Fbem.eq.'diag') call do_propBEM_dia_deb
          elseif(Feps.eq."drl") then
            allocate(BEM_Qw(nts_act,nts_act))
            allocate(BEM_Qf(nts_act,nts_act))
-           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') allocate(BEM_Qfx(nts_act,nts_act))
-           if(Fbem(1:4).eq.'stan') call do_propBEM_dia_drl ! 'dia' to be replaced by 'std' 
-           if(Fbem(1:4).eq.'diag') call do_propBEM_dia_drl
+           if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') allocate(BEM_Qfx(nts_act,nts_act))
+           if(Fbem.eq.'stan') call do_propBEM_std_drl
+           if(Fbem.eq.'diag') call do_propBEM_dia_drl
          elseif(Feps.eq."gen") then 
            allocate(BEM_Qg(nts_act,nts_act)) 
            allocate(BEM_Qw(nts_act,nts_act))
            allocate(BEM_Qf(nts_act,nts_act)) 
-           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') allocate(BEM_Qfx(nts_act,nts_act))  
-           if(Fbem(1:4).eq.'stan') call do_propBEM_dia_gen ! 'dia' to be replace by 'std'  
-           if(Fbem(1:4).eq.'diag') call do_propBEM_dia_gen
+           allocate(BEM_Qdf(nts_act,nts_act))
+           allocate(BEM_Qdf_2g(nts_act,nts_act))
+           if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
+            allocate(BEM_Qfx(nts_act,nts_act))
+            allocate(BEM_Qdfx(nts_act,nts_act))
+           allocate(BEM_Qdfx_2g(nts_act,nts_act))
+           endif  
+           if(Fbem.eq.'stan') call do_propBEM_std_gen
+           if(Fbem.eq.'diag') call do_propBEM_dia_gen
          endif
          !Write out propagation matrices         
          if(Fwrite.eq."high") call out_BEM_propmat  
-       elseif(Fprop(1:7).eq."chr-ons") then
+         if(Fprop.eq."chr-ons") then
          allocate(Sm1(nts_act,nts_act))
          ! Form $S^{-1}$ matrix
          Sm1=inv(BEM_S)
@@ -188,20 +216,37 @@
          BEM_Q0=-ONS_f0*Sm1
          BEM_Qd=-ONS_fd*Sm1
          if(Feps.eq."drl") then
-           allocate(BEM_Qf(nts_act,nts_act))
+         !  allocate(BEM_Qf(nts_act,nts_act))
            BEM_Qf=-ONS_ff(1)*Sm1
          endif
          if(Floc.eq.'loc') then
            BEM_Q0x=ONS_fx0*Sm1
            BEM_Qdx=ONS_fxd*Sm1
          endif
-         deallocate(Sm1)
        endif
+       if(Fmdm.eq."Qnan") then
+          if (Fbem.eq.'diag') then
+             allocate(BEM_Qd(nts_act,nts_act))
+             allocate(BEM_Q0(nts_act,nts_act))
+             call do_BEM_diagonal
+             allocate(BEM_Modes(nts_act,nts_act))
+             BEM_Modes=TSm12
+             call out_gcharges
+             write(*,*) "Printing quantum plasmons charges"
+          else 
+             write(*,*) "Quantum nanoparticle requires BEM diagonal"
+             write(*,*) "Please specify bem_type=""diag"""
+             if (allocated(BEM_Qd)) deallocate(BEM_Qd)
+             if (allocated(BEM_Q0)) deallocate(BEM_Q0)
+             stop
+          endif
+       endif
+
+       if (allocated(Sm1)) deallocate(Sm1)
        !Deallocate private arrays              
        call finalize_BEM
-
        return
- 
+
       end subroutine
 
 
@@ -223,7 +268,7 @@
        call init_BEM
        allocate(BEM_Qd(nts_act,nts_act))
        allocate(BEM_Q0(nts_act,nts_act))
-       if(Floc=='loc'.and.Fmdm(2:4).eq.'sol') then
+       if(Floc=='loc'.and.Fmdm.eq.'Csol') then
          allocate(BEM_Qdx(nts_act,nts_act))
          allocate(BEM_Q0x(nts_act,nts_act))
        end if
@@ -233,7 +278,7 @@
        ! Write out matrices                     
        call out_BEM_gamess
        ! Write out local-field matrices
-       if(Floc=='loc'.and.Fmdm(2:4).eq.'sol') then
+       if(Floc=='loc'.and.Fmdm.eq.'Csol') then
         call out_BEM_lf
        end if
        ! Calculate potential on tesserae
@@ -241,19 +286,17 @@
        !call do_pot_from_field(fmax(:,1),pot)
 
        pot(:)=zero
-#ifdef OMP
+
 !$OMP PARALLEL REDUCTION(+:pot)
-!$OMP DO 
-#endif
+!$OMP DO
+
        do its=1,nts_act
           pot(its)=pot(its)-fmax(1,1)*cts_act(its)%x
           pot(its)=pot(its)-fmax(2,1)*cts_act(its)%y
           pot(its)=pot(its)-fmax(3,1)*cts_act(its)%z
        enddo
-#ifdef OMP
-!$OMP enddo
+
 !$OMP END PARALLEL
-#endif
 
        allocate(Kdiag_omega(nts_act))
        allocate(q_omega(nts_act))
@@ -283,10 +326,11 @@
        call init_BEM_diagonal
        call do_BEM_diagonal
        !Save Modes for quantum BEM         
+
        allocate(BEM_Modes(nts_act,nts_act))
        BEM_Modes=TSm12
        call finalize_BEM
-
+       call out_gcharges
        return
  
       end subroutine
@@ -308,7 +352,7 @@
 #endif
        allocate(scrd3(3))
        sgn=one                 
-       if(Fmdm(2:4).eq."nan") sgn=-one  
+       if(Fmdm.eq."Cnan".or.Fmdm.eq."Qnan") sgn=-one  
        if (FinitBEM.eq.'wri') then
        ! Write out geometric info and stop
          ! Build the cavity/nanoparticle surface
@@ -324,11 +368,11 @@
          !call output_surf
          if (myrank.eq.0) then
             call output_surf
-            write(6,*) "Written out cavity.inp with surface points"
+            write(6,*) "Created output file with surface points"
          endif
          ! Build and write out Calderon SD matrices
          allocate(BEM_S(nts_act,nts_act))
-         if (Fprop(1:7).ne.'chr-ons') allocate(BEM_D(nts_act,nts_act))
+         if (Fprop.ne.'chr-ons') allocate(BEM_D(nts_act,nts_act))
          call do_BEM_SD
          if (myrank.eq.0) call write_BEM_SD
          if (myrank.eq.0)write(6,*) "Matrixes S D have been written out"
@@ -340,7 +384,7 @@
        !Read in geometric info and proceed
          !call read_cavity_file
          allocate(BEM_S(nts_act,nts_act))
-         if (Fprop(1:7).ne.'chr-ons') allocate(BEM_D(nts_act,nts_act))
+         if (Fprop.ne.'chr-ons') allocate(BEM_D(nts_act,nts_act))
          call read_BEM_SD
          if (myrank.eq.0) write(6,*) &
          "BEM surface and Matrixes S D have been read in"
@@ -375,6 +419,9 @@
        if(allocated(K0x)) deallocate(K0x)
        if(allocated(Kdx)) deallocate(Kdx)
        if(allocated(poles)) deallocate(poles)
+       if(allocated(BEM_2ppDA)) deallocate(BEM_2ppDA)
+       if(allocated(BEM_2ppDAx)) deallocate(BEM_2ppDAx)
+       if(allocated(BEM_Sm1)) deallocate(BEM_Sm1)
 
        return
  
@@ -389,7 +436,7 @@
 ! Modified:
 !------------------------------------------------------------------------
 
-       if (Fprop(1:3).eq.'chr') then
+       if(Fprop.eq.'chr-ief'.or.Fprop.eq.'chr-ied'.or.Fprop.eq.'chr-ons') then
          if(allocated(BEM_Qd)) deallocate(BEM_Qd)
          if(allocated(BEM_Q0)) deallocate(BEM_Q0)
          if(allocated(BEM_Qt)) deallocate(BEM_Qt)
@@ -406,6 +453,19 @@
          if(allocated(BEM_Qf)) deallocate(BEM_Qfx)
          if(allocated(BEM_Qg)) deallocate(BEM_Qg)
          if(allocated(BEM_2G)) deallocate(BEM_2G)   
+
+       if(allocated(BEM_Qdf)) deallocate(BEM_Qdf)
+       if(allocated(BEM_Qdfx)) deallocate(BEM_Qdfx)
+       if(allocated(BEM_Qdf)) deallocate(BEM_Qdf_2g)
+       if(allocated(BEM_Qdfx)) deallocate(BEM_Qdfx_2g)
+
+       if(allocated(BEM_ADt)) deallocate(BEM_ADt)
+
+       if(allocated(kf)) deallocate(kf)
+       if(allocated(w2)) deallocate(w2)
+       if(allocated(gg)) deallocate(gg)
+
+
        endif
 
        return
@@ -430,7 +490,7 @@
 #endif
 
        ! SP 05/07/17 Only one cavity!!! 
-       if(Fmdm(2:4).eq."sol") nsph=1 
+       if(Fmdm.eq."Csol") nsph=1 
        call init_MPL
        if(MPL_ord.eq.1) then
        !SPHEROID
@@ -611,24 +671,20 @@
        real(dbl) :: temp
        integer(i4b) :: i,j
 
-#ifdef OMP 
 !$OMP PARALLEL 
 !$OMP DO 
-#endif
        do i=1,nts_act
         do j=1,nts_act
           call green_s(i,j,temp)
           BEM_S(i,j)=temp
-          if (Fprop(1:7).ne.'chr-ons') then 
+          if (Fprop.ne.'chr-ons') then 
             call green_d(i,j,temp)
             BEM_D(i,j)=temp
           endif
         enddo
        enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
        return
  
@@ -725,6 +781,8 @@
        real(8), allocatable :: eigt(:,:),eigt_t(:,:)
        real(8), allocatable :: eigv(:)
        real(dbl) :: fac_eps0,fac_epsd
+ 
+       integer(i4b) :: npoles
 
 #ifndef MPI
        myrank=0
@@ -755,17 +813,13 @@
 
        Sp12=matmul(scr1,eigt_t)                   
 
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO
-#endif
        do i=1,nts_act
          scr1(:,i)=eigt(:,i)/sqrt(eigv(i))
        enddo
-#ifdef OMP
 !$OMP ENDDO 
 !$OMP END PARALLEL
-#endif
        deallocate(eigv)
 
        BEM_Sm12=matmul(scr1,eigt_t)                   
@@ -775,36 +829,28 @@
        deallocate(eigt)
        deallocate(eigt_t)
 
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO
-#endif
        do i=1,nts_act
          scr1(:,i)=BEM_D(:,i)*cts_act(i)%area
        enddo
-#ifdef OMP
 !$OMP ENDDO 
 !$OMP END PARALLEL
-#endif
 
        scr3=matmul(BEM_Sm12,scr1)                   
        scr2=matmul(scr3,Sp12)                   
 
        !S^-1/2 D A S^1/2+S^1/2 A D* S^-1/2 and diagonalize
 
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO
-#endif
        do j=1,nts_act
         do i=1,nts_act
            BEM_T(i,j)=0.5*(scr2(i,j)+scr2(j,i))
         enddo
        enddo
-#ifdef OMP
 !$OMP ENDDO 
 !$OMP END PARALLEL
-#endif
        deallocate(scr2,scr3)
        call diag_mat(BEM_T,BEM_L,nts_act)
        if(Fwrite.eq."high") then
@@ -818,7 +864,7 @@
            fac_eps0=(eps_0+one)/(eps_0-one)
            K0(:)=(twp-sgn*BEM_L(:))/(twp*fac_eps0-sgn*BEM_L(:))
            ! GG: analogous to K_0 matrix in the case of local-field for solvent external medium
-           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') K0x(:)=-(twp+BEM_L(:))/(twp*fac_eps0-BEM_L(:)) 
+           if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') K0x(:)=-(twp+BEM_L(:))/(twp*fac_eps0-BEM_L(:)) 
          else
            K0(:)=zero
          endif
@@ -826,7 +872,7 @@
            fac_epsd=(eps_d+one)/(eps_d-one)
            Kd(:)=(twp-sgn*BEM_L(:))/(twp*fac_epsd-sgn*BEM_L(:))
            ! GG: analogous to K_d matrix in the case of local-field for solvent external medium
-           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') Kdx(:)=-(twp+BEM_L(:))/(twp*fac_epsd-BEM_L(:))
+           if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') Kdx(:)=-(twp+BEM_L(:))/(twp*fac_epsd-BEM_L(:))
          else
            Kd=zero
          endif
@@ -835,13 +881,13 @@
                  ((twp-sgn*BEM_L(:))*eps_d+twp+BEM_L(:))/tau_deb
          fact2(:)=K0(:)*fact1(:)
          ! GG: analogous to \tau K_0 matrix in the case of local-field for solvent external medium
-         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') fact2x(:)=K0x(:)*fact1(:)
+         if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') fact2x(:)=K0x(:)*fact1(:)
        elseif (Feps.eq."drl") then       
 !        Drude-Lorentz dielectric function
          Kd=zero 
          fact2(:)=(twp-sgn*BEM_L(:))*eps_A/(two*twp)  
 ! SC: the first eigenvector should be 0 for the NP
-         if (Fmdm(2:4).eq.'nan') fact2(1)=0.d0
+         if (Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') fact2(1)=0.d0
          ! SC: no spurious negative square frequencies
 
          do i=1,nts_act
@@ -857,38 +903,47 @@
          BEM_W2(:)=fact2(:)+eps_w0*eps_w0  
          K0(:)=fact2(:)/BEM_W2(:)
          ! GG: analogous to K_f and K_0 matrices in the case of local-field for solvent external medium
-         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+         if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
            fact2x(:)=-(twp+BEM_L(:))*eps_A/(two*twp)
            K0x(:)=fact2x(:)/BEM_W2(:)
          endif
- 
        elseif (Feps.eq."gen") then
          !GG: for a general dielectric function
          ! finding the real part of the poles of the PCM response diagonal kernel
          ! the values of the dielectric function
          ! and the real part of its derivative
          fact1(:) = (twp+sgn*BEM_L(:))/(twp-sgn*BEM_L(:))
-         call do_poles(poles,fact1)
+
+         ! considering multiple roots - write all the solutions
+         ! FIXME: the case of degenerate const values can be made efficient
+         open(2,file="poles.out")
+         open(3,file="lambda_values.out")
+         write(2,*) "tess. index ", " ref. value ", " pole idx per tess. ", "omega ", " gamma ", " eps ", " deps/domega "
+         do i=1, nts_act
+          call do_poles(poles(i),npoles,fact1(i),i)
+         enddo
+         close(2)
+         close(3)
+
          Kd=zero
 
          fact2 = zero
          BEM_W2 = zero
          BEM_2G = zero
-#ifdef OMP
-!$OMP PARALLEL 
-!$OMP DO
-#endif
+         allocate(sin_delta(1),cos_delta(1))
          do i=1,nts_act
           if( allocated(poles(i)%omega_p) ) then
-           fact2(i)   = sum(abs(two*poles(i)%omega_p(:)*(poles(i)%eps_omega_p(:)-one)/poles(i)%re_deps_domega_p(:)))
-           BEM_W2(i)  = sum(poles(i)%omega_p(:)**2+poles(i)%gamma_p(:)**2)
-           BEM_2G(i)  = sum(two*poles(i)%gamma_p(:))
+           j = minloc(poles(i)%gamma_p(:)*poles(i)%re_deps_domega_p(:),1)
+           fact2(i)   = two*poles(i)%omega_p(j)*(fact1(i)+one)/&
+                        dsqrt(poles(i)%re_deps_domega_p(j)**2+poles(i)%im_deps_domega_p(j)**2)
+           sin_delta(1) = poles(i)%im_deps_domega_p(j)/dsqrt(poles(i)%re_deps_domega_p(j)**2+poles(i)%im_deps_domega_p(j)**2)
+           cos_delta(1) = poles(i)%re_deps_domega_p(j)/dsqrt(poles(i)%re_deps_domega_p(j)**2+poles(i)%im_deps_domega_p(j)**2)
+           fact3(i) = fact2(i)/poles(i)%omega_p(j)*sin_delta(1)
+           fact2(i) = fact2(i)*poles(i)%gamma_p(j)/poles(i)%omega_p(j)*sin_delta(1)+fact2(i)*cos_delta(1)
+           BEM_W2(i)  = poles(i)%omega_p(j)**2+poles(i)%gamma_p(j)**2
+           BEM_2G(i)  = two*poles(i)%gamma_p(j)
           endif
          end do
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
-#endif
 
 ! SC: the first eigenvector should be 0 for the NP
 !         if (Fmdm(2:4).eq.'nan') fact2(1)=0.d0
@@ -897,18 +952,20 @@
            fac_eps0=(eps_0+one)/(eps_0-one)
            K0(:)=(twp-sgn*BEM_L(:))/(twp*fac_eps0-sgn*BEM_L(:))
            ! GG: analogous to K_0 matrix in the case of local-field for solvent external medium
-           if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') K0x(:)=-(twp+BEM_L(:))/(twp*fac_eps0-BEM_L(:))
+           if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') K0x(:)=-(twp+BEM_L(:))/(twp*fac_eps0-BEM_L(:))
          else
            K0(:)=zero
          endif
          ! GG: analogous to K_f and K_0 matrices in the case of local-field for solvent external medium
-         if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') fact2x(:)=-fact2(:) * fact1(:)
+         if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
+          fact2x(:)=-fact2(:) * fact1(:)
+          fact3x(:)=-fact3(:) * fact1(:)
+         endif
        endif
        if(Fwrite.eq."high") then 
          if (myrank.eq.0) &
              write(6,*) "Done BEM eigenmodes"
        endif
-
        Sm12T=matmul(BEM_Sm12,BEM_T)
 
        TSm12=transpose(Sm12T)
@@ -917,39 +974,35 @@
 
       ! SC 05/11/2016 write out the transition charges in pqr format
        if(Fwrite.eq."high".and.myrank.eq.0) call output_charge_pqr
+
       ! Do BEM_Q0 and and BEM_Qd 
 
 
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO
-#endif
        do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*K0(i) 
+
        enddo
-#ifdef OMP
+
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
        BEM_Q0=-matmul(scr1,TSm12) 
-
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO
-#endif
        do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*Kd(i) 
        enddo
-#ifdef OMP
+
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
        BEM_Qd=-matmul(scr1,TSm12) 
+
        ! GG: analogous to Q_0 and Q_d matrices in the case of
        ! local-field for solvent external medium
-       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
         do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*K0x(i)
         enddo
@@ -970,6 +1023,173 @@
        return
  
       end subroutine
+
+      subroutine do_BEM_standard
+!------------------------------------------------------------------------
+! @brief Compute BEM matrices within diagonal approach 
+!
+! @date Created: G. Gil
+! Modified:
+!------------------------------------------------------------------------
+
+       integer(i4b) :: i,j
+       real(dbl), allocatable :: scr1(:,:),scr2(:,:),scr3(:,:)
+       real(dbl) :: scrd3(3), dist
+
+       type(poles_t) :: poles_eps
+
+       integer(i4b) :: npoles
+
+#ifndef MPI
+       myrank=0
+#endif
+       allocate(scr1(nts_act,nts_act),scr2(nts_act,nts_act),scr3(nts_act,nts_act))
+
+       ! Form S^-1 matrix
+
+       BEM_Sm1=inv(BEM_S)
+
+       ! Form -DA
+       BEM_ADt = zero
+       scr1=zero
+       do i=1,nts_act
+!         scr1(i,i)= -sgn * BEM_D(i,i)*cts_act(i)%area
+         scr1(:,i)= -sgn * BEM_D(:,i)*cts_act(i)%area
+       enddo
+
+       ! Form transpose DA
+
+       BEM_ADt= -transpose(scr1)
+
+       ! Form 2 pi - DA
+
+       BEM_2ppDA = scr1
+       do i=1,nts_act
+         BEM_2ppDA(i,i)= BEM_2ppDA(i,i) + twp
+       enddo
+
+       ! Form eps0 dependent matrix term
+
+       scr2 = scr1
+       do i=1,nts_act
+         scr2(i,i)= scr2(i,i) + twp * (eps_0+one) / (eps_0-one)
+       enddo
+
+       ! inverse
+
+       scr2 = inv(scr2)
+
+       ! Form Q0
+
+       BEM_Q0=-matmul(BEM_Sm1,matmul(scr2,BEM_2ppDA))
+
+       ! Form epsd dependent matrix term
+
+       scr3 = scr1
+       do i=1,nts_act
+         scr3(i,i)= scr3(i,i) + twp * (eps_d+one) / (eps_d-one)
+       enddo
+
+       ! inverse
+
+       scr3 = inv(scr3)
+
+       ! Form Qd
+
+       BEM_Qd=-matmul(BEM_Sm1,matmul(scr3,BEM_2ppDA))
+
+       ! GG: analogous to Q_0 and Q_d matrices in the case of
+       ! local-field for solvent external medium
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
+        BEM_2ppDAx = scr1
+        do i=1,nts_act
+          BEM_2ppDAx(i,i)= -BEM_2ppDAx(i,i) + twp
+        enddo
+        BEM_Q0x=matmul(BEM_Sm1,matmul(scr2,BEM_2ppDAx))
+        BEM_Qdx=matmul(BEM_Sm1,matmul(scr3,BEM_2ppDAx))
+       endif
+
+       deallocate(scr1,scr2,scr3)
+
+       if ( Feps.eq."gen" ) then
+
+        !open(2,file="poles.out")
+        !open(3,file="lambda_values.out")
+        !write(2,*) "tess. index ", " ref. value ", " pole idx per tess.", " omega ", " gamma ", " eps ", " deps/domega "
+        !call do_poles(poles_eps,npoles,one,0)
+        !close(2)
+        !close(3)
+        
+        open(4,file="poles.inp")
+        read(4,*) npoles
+        
+        allocate(poles_eps%omega_p(npoles),poles_eps%gamma_p(npoles),&
+                 poles_eps%re_deps_domega_p(npoles),poles_eps%im_deps_domega_p(npoles),poles_eps%A_coeff_p(npoles))
+        
+        do i=1,npoles
+           read(4,*) poles_eps%omega_p(i),poles_eps%gamma_p(i),poles_eps%A_coeff_p(i)
+           !        poles_eps%re_deps_domega_p(i),poles_eps%im_deps_domega_p(i)
+        enddo
+        close(4)        
+        allocate(kf(npoles),w2(npoles),gg(npoles),kf0(npoles),kf_prime(npoles))
+        allocate(sin_delta(npoles),cos_delta(npoles))
+        
+        !Residues method
+        !kf(:) = (two/pi)*poles_eps%omega_p(:)/dsqrt(poles_eps%re_deps_domega_p(:)**2+poles_eps%im_deps_domega_p(:)**2)
+        !sin_delta(:) = poles_eps%im_deps_domega_p(:)/dsqrt(poles_eps%re_deps_domega_p(:)**2+poles_eps%im_deps_domega_p(:)**2)
+        !cos_delta(:) = poles_eps%re_deps_domega_p(:)/dsqrt(poles_eps%re_deps_domega_p(:)**2+poles_eps%im_deps_domega_p(:)**2)
+        !kf_prime(:) = kf(:)/poles_eps%omega_p(:)*sin_delta(:)
+        !kf(:) = kf(:)*poles_eps%gamma_p(:)/poles_eps%omega_p(:)*sin_delta(:)+kf(:)*cos_delta(:)
+        
+        sin_delta(:) = zero
+        cos_delta(:) = one
+        kf_prime(:) = zero
+        kf(:) = poles_eps%A_coeff_p(:)/(two*pi)
+        
+        w2(:) = poles_eps%omega_p(:)**2+poles_eps%gamma_p(:)**2
+        gg(:) = two*poles_eps%gamma_p(:)
+        kf0(:) = -kf(:) / w2(:) / poles_eps%omega_p(:) * (poles_eps%omega_p(:)*cos_delta(:)+poles_eps%gamma_p(:)*sin_delta(:))
+
+        !allocate(kf(npoles-1),w2(npoles-1),gg(npoles-1),kf0(npoles-1),kf_prime(npoles-1))
+        !allocate(sin_delta(npoles-1),cos_delta(npoles-1))
+
+        !do j = 1, npoles
+        !i=j
+        !if(j==4) cycle
+        !if(j>4) i=j-1
+        !kf(i) = (two/pi)*poles_eps%omega_p(i)/dsqrt(poles_eps%re_deps_domega_p(i)**2+poles_eps%im_deps_domega_p(i)**2)
+        !sin_delta(i) = poles_eps%im_deps_domega_p(i)/dsqrt(poles_eps%re_deps_domega_p(i)**2+poles_eps%im_deps_domega_p(i)**2)
+        !cos_delta(i) = poles_eps%re_deps_domega_p(i)/dsqrt(poles_eps%re_deps_domega_p(i)**2+poles_eps%im_deps_domega_p(i)**2)
+        !kf_prime(i) = kf(i)/poles_eps%omega_p(i)*sin_delta(i)
+        !kf(i) = kf(i)*poles_eps%gamma_p(i)/poles_eps%omega_p(i)*sin_delta(i)+kf(i)*cos_delta(i)
+        !w2(i) = poles_eps%omega_p(i)**2+poles_eps%gamma_p(i)**2
+        !gg(i) = two*poles_eps%gamma_p(i)
+        !kf0(i) = -kf(i) / w2(i) / poles_eps%omega_p(i) * (poles_eps%omega_p(i)*cos_delta(i)+poles_eps%gamma_p(i)*sin_delta(i))
+        !enddo 
+
+        !j = minloc(poles_eps%gamma_p(:)*poles_eps%re_deps_domega_p(:),1)
+
+        !j=5
+
+        !allocate(kf(1),w2(1),gg(1))
+        !allocate(sin_delta(1),cos_delta(1),kf_prime(1))
+
+        !kf(1) = (two/pi)*poles_eps%omega_p(j)/dsqrt(poles_eps%re_deps_domega_p(j)**2+poles_eps%im_deps_domega_p(j)**2)
+        !sin_delta(1) = poles_eps%im_deps_domega_p(j)/dsqrt(poles_eps%re_deps_domega_p(j)**2+poles_eps%im_deps_domega_p(j)**2)
+        !cos_delta(1) = poles_eps%re_deps_domega_p(j)/dsqrt(poles_eps%re_deps_domega_p(j)**2+poles_eps%im_deps_domega_p(j)**2)
+        !kf_prime(1) = kf(1)/poles_eps%omega_p(j)*sin_delta(1)
+        !kf(1) = kf(1)*poles_eps%gamma_p(j)/poles_eps%omega_p(j)*sin_delta(1)+kf(1)*cos_delta(1)
+        !w2(1) = poles_eps%omega_p(j)**2+poles_eps%gamma_p(j)**2
+        !gg(1) = two*poles_eps%gamma_p(j)
+
+       endif
+
+       if (myrank.eq.0) write(6,*) "Done BEM general"
+
+
+       return
+
+      end subroutine
  
 
       subroutine init_BEM_diagonal
@@ -982,8 +1202,8 @@
 
        allocate(fact1(nts_act),fact2(nts_act))
        allocate(Kd(nts_act),K0(nts_act))
-        if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
-        allocate(fact2x(nts_act))
+        if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
+        allocate(fact2x(nts_act),fact3x(nts_act))
         allocate(Kdx(nts_act),K0x(nts_act))
        endif 
        allocate(BEM_L(nts_act))
@@ -996,7 +1216,26 @@
        allocate(TSm12(nts_act,nts_act))
        allocate(TSp12(nts_act,nts_act))
 
+       allocate(fact3(nts_act))
+
        if( Feps.eq.'gen') allocate(poles(nts_act))
+
+       return
+
+      end subroutine
+
+      subroutine init_BEM_standard
+!------------------------------------------------------------------------
+! @brief Initialize standard BEM
+!
+! @date Created: G. Gil
+! Modified:
+!------------------------------------------------------------------------
+
+       allocate(BEM_Sm1(nts_act,nts_act),BEM_2ppDA(nts_act,nts_act),BEM_ADt(nts_act,nts_act))
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
+        allocate(BEM_2ppDAx(nts_act,nts_act))
+       endif
 
        return
 
@@ -1021,7 +1260,7 @@
        !complex(cmp), allocatable :: q_omega(:),mu_omega(:)
        !complex(cmp), allocatable :: Kdiag_omega(:)
 
-       sgn=-1
+       sgn=-one
 ! SP 16/07/17: added eps_w0 to Kdiag_omega
        if(eps_w0.eq.zero) eps_w0=1.d-8 
 ! SP 16/07/17: changed the following to avoid divergence at low omega 
@@ -1033,23 +1272,32 @@
 
        do i=1,n_omega
 
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO
-#endif
           do its=2,nts_act
-             Kdiag_omega(its)=(twp-sgn*BEM_L(its))/ &
-!        ((one-omega_a*(omega_a+ui*eps_gm)*2.d0/eps_A)*twp-sgn*BEM_L(its))
-             ((one+(eps_w0**2-omega_a(i)*(omega_a(i)+ui*eps_gm))*two/eps_A)*twp-&
-              sgn*BEM_L(its))
-       !a=twp+BEM_L(its)+two*twp*(eps_w0**2-omega_a**2)/eps_A
-       !b=two*twp*eps_gm*omega_a/eps_A
-       !if(its.eq.1) write(6,*) a**2, b**2
+           select case( Feps )
+           case('deb')
+            ! debye eps
+            omega(1) = omega_a(i)
+            call do_eps_deb
+           case('drl')
+            ! drude-lorentz eps
+            omega(1) = omega_a(i)
+            call do_eps_drl
+           case('gen')
+            ! for now gold case
+            ! extra case should be place here selecting possible material
+            !eps_gold(omega_a(i))
+            
+            !If eps is read in file eps.inp use the following line
+            eps = eps_omegas(i)
+
+           end select
+           Kdiag_omega(its)=(twp-sgn*BEM_L(its))/( ((eps+onec)/(eps-onec))*twp -sgn*BEM_L(its))
+           write(*,*)
           enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
           q_omega=matmul(BEM_Sm12,pot)
           q_omega=matmul(transpose(BEM_T),q_omega)
@@ -1058,19 +1306,15 @@
           q_omega=-matmul(BEM_Sm12,q_omega)
           mu_omega=0.d0
 
-#ifdef OMP
 !$OMP PARALLEL REDUCTION(+:mu_omega)
 !$OMP DO 
-#endif
           do its=1,nts_act
              mu_omega(1)=mu_omega(1)+q_omega(its)*(cts_act(its)%x)
              mu_omega(2)=mu_omega(2)+q_omega(its)*(cts_act(its)%y)
              mu_omega(3)=mu_omega(3)+q_omega(its)*(cts_act(its)%z)
           enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
           write (7,'(7e15.6)') omega_a(i),real(mu_omega(:)),aimag(mu_omega(:))
 
@@ -1097,36 +1341,28 @@
        allocate(scr1(nts_act,nts_act))
 !      Form the \tilde{Q} and R for debye propagation
 
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO 
-#endif
         do i=1,nts_act
           scr1(:,i)=Sm12T(:,i)*fact1(i) 
         enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
         BEM_R=matmul(scr1,TSp12)
 
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO
-#endif
         do i=1,nts_act
           scr1(:,i)=Sm12T(:,i)*fact2(i) 
         enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
         BEM_Qt=-matmul(scr1,TSm12)
         ! GG: analogous to \tilde{Q} matrix in the case of local-field
         ! for solvent external medium
-        if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+        if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
          do i=1,nts_act
            scr1(:,i)=Sm12T(:,i)*fact2x(i)
          enddo
@@ -1136,6 +1372,31 @@
         deallocate(scr1)
 
         return
+
+      end subroutine
+
+      subroutine do_propBEM_std_deb
+!------------------------------------------------------------------------
+! @brief Propagation of matrices for diagonal BEM (debye)
+!
+! @date Created: G. Gil
+! Modified:
+!------------------------------------------------------------------------
+
+       real(dbl) :: factor
+
+!      Form the \tilde{Q} and R for debye propagation
+
+       factor = (eps_0-one)/(eps_d-one)/tau_deb
+
+       BEM_R=  factor * matmul(BEM_Qd,inv(BEM_Q0))
+       BEM_Qt= factor * matmul(BEM_Q0,matmul(inv(BEM_Qd),BEM_Q0))
+
+       ! GG: analogous to \tilde{Q} matrix in the case of local-field
+       ! for solvent external medium
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') BEM_Qtx= factor * matmul(BEM_Q0x,matmul(inv(BEM_Qdx),BEM_Q0x))
+
+       return
 
       end subroutine
 
@@ -1154,41 +1415,88 @@
        allocate(scr1(nts_act,nts_act))
 !      Form the Q_w and Q_f for drude-lorentz propagation
 
-#ifdef OMP
-!$OMP PARALLEL 
+!$OMP PARALLEL
 !$OMP DO
-#endif
        do i=1,nts_act
-         scr1(:,i)=Sm12T(:,i)*BEM_W2(i) 
+         scr1(:,i)=Sm12T(:,i)*BEM_W2(i)
        enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
        BEM_Qw=matmul(scr1,TSp12)
 
-#ifdef OMP
 !$OMP PARALLEL 
 !$OMP DO
-#endif
        do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*fact2(i) 
        enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
        BEM_Qf=-matmul(scr1,TSm12)
-       !GG
-       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
         do i=1,nts_act
           scr1(:,i)=Sm12T(:,i)*fact2x(i)
         enddo
         BEM_Qfx=-matmul(scr1,TSm12)
        endif
+
+!$OMP PARALLEL
+!$OMP DO
+       do i=1,nts_act
+         scr1(:,i)=Sm12T(:,i)*BEM_2G(i)*fact3(i)
+       enddo
+!$OMP enddo
+!$OMP END PARALLEL
+
+       BEM_Qdf_2g=-matmul(scr1,TSm12)
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
+        do i=1,nts_act
+          scr1(:,i)=Sm12T(:,i)*fact3x(i)
+        enddo
+        BEM_Qdfx_2g=-matmul(scr1,TSm12)
+       endif
+
+      ! addition with respect to do_propBEM_dia_drl
+!$OMP PARALLEL
+!$OMP DO
+       do i=1,nts_act
+         scr1(:,i)=Sm12T(:,i)*BEM_2G(i)
+       enddo
+!$OMP enddo
+!$OMP END PARALLEL
+
+       BEM_Qg=matmul(scr1,TSp12)
+
        deallocate(scr1)
+
+       return
+
+      end subroutine
+
+      subroutine do_propBEM_std_drl
+!------------------------------------------------------------------------
+! @brief Propagation of matrices for diagonal BEM (drude-lorentz)
+!
+! @date Created: G. Gil
+! Modified:
+!------------------------------------------------------------------------
+
+      real(dbl) :: factor
+      integer(i4b) :: i
+
+!      Form the Q_w and Q_f for drude-lorentz propagation
+
+      factor = -eps_A/(twp*two)
+
+       BEM_Qw= factor * BEM_2ppDA
+       do i=1,nts_act
+        BEM_Qw(i,i)=BEM_Qw(i,i) + eps_w0*eps_w0
+       enddo
+
+       BEM_Qf= factor * matmul(BEM_Sm1,BEM_2ppDA)
+
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') BEM_Qfx= -factor * matmul(BEM_Sm1,BEM_2ppDAx)
 
        return
 
@@ -1209,52 +1517,72 @@
        allocate(scr1(nts_act,nts_act))
 !      Form the Q_w and Q_f for general dielectric function propagation
 
-#ifdef OMP
 !$OMP PARALLEL
 !$OMP DO
-#endif
        do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*BEM_W2(i)
        enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
        BEM_Qw=matmul(scr1,TSp12)
 
-#ifdef OMP
 !$OMP PARALLEL
 !$OMP DO
-#endif
        do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*fact2(i)
        enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
        BEM_Qf=-matmul(scr1,TSm12)
-       if(Floc.eq.'loc'.and.Fmdm(2:4).eq.'sol') then
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
         do i=1,nts_act
           scr1(:,i)=Sm12T(:,i)*fact2x(i)
         enddo
         BEM_Qfx=-matmul(scr1,TSm12)
        endif
 
-      ! addition with respect to do_propBEM_dia_drl
-#ifdef OMP
 !$OMP PARALLEL
 !$OMP DO
-#endif
+       do i=1,nts_act
+         scr1(:,i)=Sm12T(:,i)*fact3(i)
+       enddo
+!$OMP enddo
+!$OMP END PARALLEL
+
+       BEM_Qdf=-matmul(scr1,TSm12)
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
+        do i=1,nts_act
+          scr1(:,i)=Sm12T(:,i)*fact3x(i)
+        enddo
+        BEM_Qdfx=-matmul(scr1,TSm12)
+       endif
+
+!$OMP PARALLEL
+!$OMP DO
+       do i=1,nts_act
+         scr1(:,i)=Sm12T(:,i)*BEM_2G(i)*fact3(i)
+       enddo
+!$OMP enddo
+!$OMP END PARALLEL
+
+       BEM_Qdf_2g=-matmul(scr1,TSm12)
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') then
+        do i=1,nts_act
+          scr1(:,i)=Sm12T(:,i)*fact3x(i)
+        enddo
+        BEM_Qdfx_2g=-matmul(scr1,TSm12)
+       endif
+
+      ! addition with respect to do_propBEM_dia_drl
+!$OMP PARALLEL
+!$OMP DO
        do i=1,nts_act
          scr1(:,i)=Sm12T(:,i)*BEM_2G(i)
        enddo
-#ifdef OMP
 !$OMP enddo
 !$OMP END PARALLEL
-#endif
 
        BEM_Qg=matmul(scr1,TSp12)
 
@@ -1264,6 +1592,23 @@
 
       end subroutine
 
+      subroutine do_propBEM_std_gen
+!------------------------------------------------------------------------------
+! @brief Propagation of matrices for diagonal BEM (general dielectric function)
+!
+! @date Created: G. Gil
+! Modified:
+!------------------------------------------------------------------------------
+
+!      Form the Q_f for general dielectric function propagation
+
+       BEM_Qf= -matmul(BEM_Sm1,BEM_2ppDA)
+
+       if(Floc.eq.'loc'.and.Fmdm.eq.'Csol') BEM_Qfx= matmul(BEM_Sm1,BEM_2ppDAx)
+
+       return
+
+      end subroutine
 
       subroutine do_propMPL_deb   
 !------------------------------------------------------------------------
@@ -1432,7 +1777,7 @@
       end subroutine
 
 
-      subroutine do_eps_deb      
+      subroutine do_eps_deb
 !------------------------------------------------------------------------
 ! @brief Compute deb cmplx eps(\omega) and (3*eps(\omega))/(2*eps(\omega)+1)
 !
@@ -1482,7 +1827,7 @@
       end subroutine
 
 
-      subroutine do_poles(poles,const)
+      subroutine do_poles(sol,npoles,const,j)
 !------------------------------------------------------------------------------
 ! @brief Compute the real part of the poles of the PCM response kernel
 !   * real part of the poles - frequencies
@@ -1494,67 +1839,94 @@
 ! Modified:
 !------------------------------------------------------------------------------
 
-       type(poles_t), intent(out) :: poles(:)
-       real(dbl),     intent(in)  :: const(:)
+       implicit none
 
-       integer(i4b) :: i, j
+       type(poles_t), intent(out) :: sol
+       integer(i4b),  intent(out) :: npoles
+       real(dbl),     intent(in)  :: const
+       integer(i4b),  intent(in)  :: j
+
        real(dbl) :: val_omega
-       real(dbl) :: val_gamma
-       complex(cmp) :: val_eps
-       real(dbl) :: val_epsp
-       integer(i4b) :: count
-       integer(i4b) :: const_size
 
-       ! FIXME: the case of degenerate const values can be made efficient
+       integer(i4b), parameter :: niter = 1000
+       integer(i4b) :: i, k, kp, end_idx(npts), iter, ipole
 
-       const_size = size(const)
+        ! General notes:
+        ! 1) We assume first-order Taylor expansion for eps around frequency of the pole.
+        !    This means that the function whose roots we are interested in is not Re{eps} but Re{eps} + Im{d eps/d omega} x gamma 
+        !    Also this means that gamma can be written as gamma =  Im{eps} / Re{d eps/d omega}.
+        !    Since gamma is positive by definition, Re{d eps/d omega} > 0.
+        ! 2) This is consistent with other assumptions: simple poles and only one gamma per omega.
 
-       ! considering multiple roots - write all the solutions
-       open(2,file="poles.out")
-       open(3,file="lambda_values.out")
-       write(2,*) "tess. index ", " ref. value ", " pole idx per tess. ", " omega ", " gamma ", " eps ", " deps/domega "
-       do j=1, const_size
-        count = 0
-        write(3,*) const(j)
+
+        ipole = 0
+        write(3,*) const
+        end_idx = 0
         do i=1,npts-1
-         if(    ( (real(eps_omegas(i+1))+const(j).gt.zero) .and. (real(eps_omegas(i))+const(j)  .lt.zero) ) &
-            .or.( (real(eps_omegas(i+1))+const(j).lt.zero) .and. (real(eps_omegas(i))+const(j)  .gt.zero) ) ) then
-          val_omega = -(omegas(i+1)-omegas(i))/real(eps_omegas(i+1)-eps_omegas(i))*(real(eps_omegas(i))+const(j)) + &
-                        omegas(i)
-          val_eps = (eps_omegas(i+1)-eps_omegas(i))/(omegas(i+1)-omegas(i)) * (val_omega-omegas(i)) + eps_omegas(i)
-          val_epsp = re_deps_domegas(i)
-          val_gamma = abs(aimag(eps_omegas(i))/re_deps_domegas(i))
-          write(2,*) j, const(j), i, val_omega, val_gamma, val_eps, val_epsp
-          count = count + 1
-         endif
+         ! first approximation to the root / function crossing zero
+         if(.not.(((func_eps(i+1)+const.gt.zero) .and. (func_eps(i)+const.lt.zero)) .or. &
+                  ((func_eps(i+1)+const.lt.zero) .and. (func_eps(i)+const.gt.zero))     )) cycle
+          k = i
+          ! Newton method to find roots of discrete functions
+          do iter = 1, niter
+            !write(*,*) "pt=", i, "iter=", iter, "final pt=", k, abs(dfunc_eps(k)), re_deps_domegas(k) 
+            val_omega = omegas(k) -(func_eps(k)+const)/dfunc_eps(k)
+            kp = k
+            k = minloc(abs(omegas(:)-val_omega),1)
+            if( k == kp ) exit
+          enddo
+          ! constraint to estimate gamma from first-order Taylor
+          if( nint(sign(one,re_deps_domegas(k))) .eq. -1 ) cycle
+          !write(*,*) "pt=", i, "iter=", iter, "final pt=", k 
+          ipole = ipole + 1
+          end_idx(i) = k
         end do
-        if( count .ge. 1 ) then
-         write(55,*) "How many poles per PCM matrix kernel component", j,"?", count
-         allocate(poles(j)%omega_p(1:count),poles(j)%gamma_p(1:count))
-         allocate(poles(j)%eps_omega_p(1:count),poles(j)%re_deps_domega_p(1:count))
-         count = 0
+        npoles=ipole
+        !write(55,*) "How many poles per PCM matrix kernel component", j,"?", npoles
+        if( npoles .ge. 1 ) then
+         ! Since Newton method from different initial points can arrive to the same root, we remove roots considered multiply.
+         if( npoles .ge. 2) then
+           ipole = 0
+           do i=1, npts-1
+             if( end_idx(i) .eq. 0 ) cycle
+             ipole = ipole + 1
+             if( ipole .eq. 1 ) then
+               k = end_idx(i)
+               cycle
+             endif
+             if( end_idx(i) .eq. k ) then
+               ipole = ipole - 1
+               end_idx(i) = 0
+             else
+               k = end_idx(i)
+             endif         
+           enddo
+           npoles=ipole
+         endif
+         !write(55,*) "How many poles per PCM matrix kernel component", j,"?", npoles
+         allocate(sol%omega_p(npoles),sol%gamma_p(npoles),sol%A_coeff_p(npoles))
+         allocate(sol%eps_omega_p(npoles),sol%re_deps_domega_p(npoles),sol%im_deps_domega_p(npoles))
+         ipole = 0
          do i=1,npts-1
-          if(    ( (real(eps_omegas(i+1))+const(j).gt.zero) .and. (real(eps_omegas(i))+const(j)  .lt.zero) ) &
-             .or.( (real(eps_omegas(i+1))+const(j).lt.zero) .and. (real(eps_omegas(i))+const(j)  .gt.zero) ) ) then
-           count = count + 1
-           poles(j)%omega_p(count) = -(omegas(i+1)-omegas(i))/real(eps_omegas(i+1)-eps_omegas(i))*(real(eps_omegas(i))+const(j)) + &
-                                       omegas(i)
-           poles(j)%eps_omega_p(count) = (eps_omegas(i+1)-eps_omegas(i))/(omegas(i+1)-omegas(i))*(val_omega-omegas(i)) + &
-                                          eps_omegas(i)
-           poles(j)%re_deps_domega_p(count) = re_deps_domegas(i)
-           poles(j)%gamma_p(count) = abs(aimag(eps_omegas(i))/re_deps_domegas(i))
-          endif
+           if( end_idx(i) .eq. 0 ) cycle
+           ipole = ipole + 1
+           k = end_idx(i)
+           ! computing omega, gamma, eps and derivative of eps
+           sol%omega_p(ipole) = omegas(k) -(func_eps(k)+const)/dfunc_eps(k)
+           sol%eps_omega_p(ipole) = cmplx(re_deps_domegas(k)*(val_omega-omegas(k)) + real(eps_omegas(k),dbl),&
+                                          im_deps_domegas(k)*(val_omega-omegas(k)) + dimag(eps_omegas(k))    )
+           sol%re_deps_domega_p(ipole) = re_deps_domegas(k)
+           sol%im_deps_domega_p(ipole) = im_deps_domegas(k)
+           sol%gamma_p(ipole) = dimag(eps_omegas(k))/re_deps_domegas(k)
+           sol%A_coeff_p(ipole)=one
+           write(2,*) j, const, k, sol%omega_p(ipole), sol%gamma_p(ipole), sol%eps_omega_p(ipole),& 
+                                   sol%re_deps_domega_p(ipole), sol%im_deps_domega_p(ipole), func_eps(k), i
          end do
         else
-     write(55,*) "Warning! No poles for the PCM matrix kernel component", j 
+     !write(55,*) "Warning! No poles for the PCM matrix kernel component", j 
         endif
-       end do
-       close(2)
-       close(3)
-
 
       end subroutine
-
 
 
 
@@ -1578,7 +1950,7 @@
        write(7,*) nts_act
        do j=1,nts_act
         do i=1,nts_act
-          if (Fprop(1:7).eq.'chr-ons') then 
+          if (Fprop.eq.'chr-ons') then 
             write(7,'(2E26.16)')BEM_S(i,j)
           else
             write(7,'(2E26.16)')BEM_S(i,j),BEM_D(i,j)
@@ -1612,7 +1984,7 @@
           read(7,*) nts_act
           do j=1,nts_act
              do i=1,nts_act
-                if (Fprop(1:7).eq.'chr-ons') then 
+                if (Fprop.eq.'chr-ons') then 
                    read(7,*) BEM_S(i,j)
                 else
                    read(7,*) BEM_S(i,j), BEM_D(i,j)
@@ -1624,7 +1996,7 @@
 #ifdef MPI
       call mpi_bcast(nts_act,  1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
       call mpi_bcast(BEM_S,    nts_act*nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
-      if (Fprop(1:7).ne.'chr-ons') then
+      if (Fprop.ne.'chr-ons') then
          call mpi_bcast(BEM_D, nts_act*nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
       endif
 #endif
@@ -1853,7 +2225,6 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-
        integer :: its,i
        character(30) :: fname
        real(dbl) :: area, maxt
@@ -1924,4 +2295,64 @@
 
       end subroutine
 
+      subroutine out_gcharges                            
+!------------------------------------------------------------------------
+! @brief Output charges for quantum plasmons
+!
+! @date Created: J. Fregoni
+! Modified:
+!------------------------------------------------------------------------
+       integer(i4b) :: i,j,p
+       character(len=52) :: my_fmt, my_fmt1
+       real(dbl),allocatable,dimension(:) :: omega_p,we
+       real(dbl), allocatable :: qg(:,:)        !<Charges associated to each mode    
+       
+       allocate(we(nts_act))
+       allocate(qg(nts_act,nts_act))
+       allocate(omega_p(nts_act))
+       do i = 1, max_mod_todiag      
+           omega_p(i)=sqrt(BEM_W2(i))
+           we(i)=sqrt((omega_p(i)**2-eps_w0**2)/(two*omega_p(i)))
+           qg(i,:)=BEM_Modes(i,:)*we(i)
+       enddo
+       we(1)=zero
+       qg(1,:)=zero
+       open(9,file="qnp_charges.dat",status="unknown")
+       write(my_fmt,'(a,i0,a)') "(",max_mod_todiag+3,"E15.6)"
+       write(my_fmt1,'(a,i0,a)') "(A22,",max_mod_todiag+3,"E15.6)"
+       write(9,my_fmt1) "# Plasmon_Frequencies",(omega_p(i),i=2,max_mod_todiag)
+       write(9,*) "# Modes: x y z q_m1 q_m2 .... q_mN   with   N = ", max_mod_todiag 
+       do j=1,nts_act
+         write(9,my_fmt) cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,(qg(i,j),i=1,max_mod_todiag)
+       enddo
+         close(9) 
+
+       !JF 13/11/2019 Output charges for external QM coupling in .pqr,
+       !trajectory like
+       open(23,file="qnp_charges.pqr",status="unknown")
+       write(my_fmt,'(a,i0,a)') "(",max_mod_todiag,"E20.6)"
+       do p=2,max_mod_todiag
+         write(23,*) "mode number = ",p,"   Size = ", nts_act, my_fmt
+         do j=1,nts_act
+         write(23,'("ATOM ",I6," H    H  ",I6,3F11.3,3X,E13.6,2X,"1.5")')&
+             j,j,cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,qg(p,j)
+         enddo
+       enddo
+       write(*,*) "Charges printed ok"
+       close(23)
+       !JF Includes mopac print format for charges in gmop.mat file
+       if(Fmop.eq."yes") then
+        open(20,file="qnp_mop.dat",status="unknown")
+        write(20,*) "#sphere center ?"
+        write(20,*) "xcoord   ycoord   zcoord  area   ",(p,p=2,max_mod_todiag)
+          do j=1,nts_act
+            write(20,'(4F11.3,3X,100000(ES16.6E3,3X))')&
+            cts_act(j)%x,cts_act(j)%y,cts_act(j)%z,cts_act(j)%area,(qg(p,j),p=2,max_mod_todiag)
+          enddo
+          write(*,*) "Mopac Charges printed"
+       endif
+       close(20) 
+       deallocate(qg,we,omega_p)
+      return
+      end subroutine
       end module

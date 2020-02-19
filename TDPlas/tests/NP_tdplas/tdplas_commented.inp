@@ -3,7 +3,7 @@
 
 &MEDIUM
 medium_type='nan'     !nan: NP as external medium,  sol,q(uantum)so(l),q(uantum)nan(oparticle)
-medium_pol='chr'      !chr: use apaprent polarization charge, other option:dip(ole)
+medium_pol='chr'      !chr: use apparent polarization charge, other option:dip(ole)
 bem_type='diag'       !diag: use diagonal IEF, no other option working currently
 bem_read_write='wri'  ! wri: just write matrices and boundary; other options: rea(d) full run reading matrix and boundary
 /

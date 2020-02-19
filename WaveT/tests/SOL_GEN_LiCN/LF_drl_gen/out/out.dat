@@ -55,8 +55,13 @@
  *************OMP*****************
 
  OMP parallelization on
+<<<<<<< HEAD
 The number of processors available =        4
 The number of threads available    =        4
+=======
+The number of processors available =        3
+The number of threads available    =        3
+>>>>>>> general_eps_giulia
 
  *************OMP*****************
  Apparent charges are propagated
@@ -76,11 +81,1278 @@ The number of threads available    =        4
  Essential output written.
  TEST: Solvent local field
  OMP-optimized loops for charges
+<<<<<<< HEAD
 Done reading input & setting up the field, took     0.021s
  BEM surface and Matrixes S D have been read in
  BEM correctly initialized
+=======
+Done reading input & setting up the field, took     0.073s
+ BEM surface and Matrixes S D have been read in
+ BEM correctly initialized
+ pt=           9 iter=           1 final pt=           9   6.0806402249506268        6.0805457654868613     
+ pt=           9 iter=           1 final pt=           9
+ pt=           7 iter=           1 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           7 iter=           1 final pt=           7
+ pt=           7 iter=           1 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           7 iter=           1 final pt=           7
+ pt=           7 iter=           1 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           7 iter=           1 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           2 final pt=           7   12.874811525308095        12.874488032015293     
+ pt=           6 iter=           2 final pt=           7
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+ pt=           6 iter=           1 final pt=           6   20.331610527387728        20.330919808122005     
+ pt=           6 iter=           1 final pt=           6
+>>>>>>> general_eps_giulia
  Done BEM diagonal
  Medium contribution to ground state free energy:   0.0000000000000000     
  G_neq at t=0:   0.0000000000000000     
  Initiated VV propagator
+<<<<<<< HEAD
 Done , total elapsed time    25.808s
+=======
+Done , total elapsed time    91.007s
+>>>>>>> general_eps_giulia
