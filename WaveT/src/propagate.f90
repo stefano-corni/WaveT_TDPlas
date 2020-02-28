@@ -10,9 +10,7 @@
       use omp_lib
 #endif
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
 #endif
 
       implicit none
@@ -40,7 +38,6 @@
 !
       contains
 !
-      subroutine prop
 !------------------------------------------------------------------------
 ! @brief Propogate C(t) using a second
 ! order Euler algorithm 
@@ -49,6 +46,7 @@
 ! @date Created   : 
 ! Modified  : E. Coccia Dec-Apr 2017
 !------------------------------------------------------------------------
+      subroutine prop
 
        implicit none
        integer(i4b)                :: i,j,k
@@ -248,7 +246,6 @@
 
       end subroutine prop
 !
-      subroutine create_field
 !------------------------------------------------------------------------
 ! @brief Create electric field 
 ! 
@@ -256,6 +253,7 @@
 ! @date Created   : 
 ! Modified  : E. Coccia 16 Jan 2018
 !------------------------------------------------------------------------
+      subroutine create_field 
 
        implicit none
 
@@ -447,13 +445,13 @@
       end subroutine create_field
 
 !
-      subroutine do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
 !------------------------------------------------------------------------
 ! @brief Compute C^T mu C and save previous dipoles 
 !
 ! @date Created   : 
 ! Modified  : E. Coccia 20/11/2017
 !------------------------------------------------------------------------
+      subroutine do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
 
        implicit none
 
@@ -519,13 +517,13 @@
  
       end subroutine do_mu
 
-      subroutine output(i,c,f_prev,h_int)     
 !------------------------------------------------------------------------
 ! @brief Write output files 
 !
 ! @date Created   : 
 ! Modified  : E. Coccia 20/11/2017
 !------------------------------------------------------------------------
+      subroutine output(i,c,f_prev,h_int)
 
        implicit none
 
@@ -603,13 +601,13 @@
       end subroutine output
 
 
-      subroutine add_int_vac(f_prev,h_int)
 !------------------------------------------------------------------------
 ! @brief Create the field term of the hamiltonian 
 !
 ! @date Created   : 
 ! Modified  : E. Coccia 22/11/2017
 !------------------------------------------------------------------------
+      subroutine add_int_vac(f_prev,h_int)
 
        implicit none
 
@@ -627,14 +625,14 @@
  
       end subroutine add_int_vac
 
-      subroutine add_int_rad(mu_prev,mu_prev2,mu_prev3,mu_prev4, &
-                                                   mu_prev5,h_int)
 !------------------------------------------------------------------------
 ! @brief Calculate the Aharonov Lorentz radiative damping 
 !
 ! @date Created   : S. Corni 
 ! Modified  : E. Coccia 22/11/2017
 !------------------------------------------------------------------------
+      subroutine add_int_rad(mu_prev,mu_prev2,mu_prev3,mu_prev4, &
+                                                   mu_prev5,h_int)
 
        implicit none
 
@@ -683,13 +681,13 @@
 
       end subroutine add_int_rad
 
-      subroutine out_header
 !------------------------------------------------------------------------
 ! @brief Write headers to output files 
 !
 ! @date Created   : S. Corni 
 ! Modified  : E. Coccia 22/11/2017
 !------------------------------------------------------------------------
+      subroutine out_header
 
        implicit none
 
@@ -708,7 +706,6 @@
       end subroutine out_header
 
 
-      subroutine exp_euler_prop(ccexp,nci)
 !------------------------------------------------------------------------
 ! @brief Energy term is propagated analytically
 ! Interaction term via second-order Euler 
@@ -716,6 +713,7 @@
 ! @date Created   : E. Coccia 15 Nov 2017
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine exp_euler_prop(ccexp,nci)
 
         implicit none
 
@@ -939,8 +937,6 @@
 
       end subroutine exp_euler_prop
 
-
-      subroutine full_euler_prop(nci)
 !------------------------------------------------------------------------
 ! @brief Energy and interaction terms are propagated
 ! via second-order Euler 
@@ -948,6 +944,7 @@
 ! @date Created   : E. Coccia 15 Nov 2017
 ! Modified  :
 !------------------------------------------------------------------------      
+      subroutine full_euler_prop(nci)
 
         implicit none
 
@@ -1170,13 +1167,13 @@
       
       end subroutine full_euler_prop
 
-      subroutine wrt_restart(i,t,c,c_prev,c_prev2,nci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend)
 !------------------------------------------------------------------------
 ! @brief Write restart file 
 ! 
 ! @date Created   : E. Coccia 21 Nov 2017
 ! Modified  :
 !------------------------------------------------------------------------      
+      subroutine wrt_restart(i,t,c,c_prev,c_prev2,nci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend)
   
        implicit none
 

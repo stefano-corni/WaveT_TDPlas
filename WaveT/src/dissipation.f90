@@ -4,9 +4,7 @@ module dissipation
   use random
   use interface_tdplas, only: set_q0charges,this_Fmdm_relax
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
 #endif
   use, intrinsic :: iso_c_binding
 #ifdef OMP
@@ -26,7 +24,6 @@ module dissipation
 !
   contains
 
-  subroutine add_dis_m(h_dis,nci)
 !------------------------------------------------------------------------
 ! @brief Markovian SSE (eq 25 J. Phys: Condens. Matter vol. 24 (2012) 273201)
 ! Add the dissipative contribution to H 
@@ -37,6 +34,7 @@ module dissipation
 ! Modified  : E. Coccia 27 Nov 2017 (remove dissipation from dephasing "i-0")
 ! @param h_dis
 !------------------------------------------------------------------------
+  subroutine add_dis_m(h_dis,nci)
 
    implicit none
    integer, intent(in)    :: nci
@@ -136,7 +134,6 @@ module dissipation
   end subroutine add_dis_m
 
 
-  subroutine add_dis_nm(h_dis,nci)
 !------------------------------------------------------------------------
 ! @brief Non-Markovian SSE (eq 25 J. Phys: Condens. Matter vol. 24 (2012) 273201)
 ! Add the dissipative contribution to H 
@@ -145,6 +142,7 @@ module dissipation
 ! @Date Created   : E. Coccia 20 Dec 2016
 ! Modified  :
 !------------------------------------------------------------------------
+  subroutine add_dis_nm(h_dis,nci)
 
     implicit none
     integer, intent(in)    :: nci
@@ -159,7 +157,6 @@ module dissipation
 
   end subroutine add_dis_nm
 
-  subroutine loss_norm(c,nci,pjump)
 !------------------------------------------------------------------------
 ! @brief Contributions to the loss of norm 
 ! Quantum jump from J. Opt. Soc. Am. B. vol. 10 (1993) 524 
@@ -173,6 +170,7 @@ module dissipation
 ! Modified  :
 ! @param dtot, dsp, dnr, dde, pjump(:)
 !------------------------------------------------------------------------
+  subroutine loss_norm(c,nci,pjump)
 
    implicit none
    complex(cmp),  intent(in)   :: c(nci)
@@ -212,9 +210,7 @@ module dissipation
                pjump(ik(j,i)) = sp_gam(ik(j,i))*weight
            enddo
          enddo
-#ifdef OMP
 !$OMP END PARALLEL
-#endif
       else
          do i=nexc,1,-1
             tmp=abs(c(i+1))
@@ -245,10 +241,8 @@ module dissipation
       enddo
       !k=nexc
       if (Fopt.eq.'omp') then
-#ifdef OMP
 !$OMP PARALLEL reduction (+:dnr)
 !$OMP DO
-#endif
          do i=nexc,1,-1
             tmp=abs(c(i+1))
             do j=i-1,1,-1
@@ -269,9 +263,7 @@ module dissipation
                endif
             enddo
          enddo
-#ifdef OMP
 !$OMP END PARALLEL
-#endif
       else
          do i=nexc,1,-1
             tmp=abs(c(i+1))
@@ -406,7 +398,6 @@ module dissipation
 
   end subroutine loss_norm 
 
-  subroutine quan_jump(c,c_prev,nci,pjump)
 !------------------------------------------------------------------------
 ! @brief Quantum jump from J. Opt. Soc. Am. B. vol. 10 (1993) 524 
 ! Random events: dissipation, nonradiative and dephasing
@@ -415,6 +406,7 @@ module dissipation
 ! Modified  :
 ! @param pjump(:), c(:) 
 !------------------------------------------------------------------------
+  subroutine quan_jump(c,c_prev,nci,pjump)
 
    implicit none
    complex(cmp), intent(inout)   :: c(nci)
@@ -580,13 +572,13 @@ module dissipation
 
   end subroutine quan_jump
 
-  subroutine set_pair(istate,ig,ie)
 !------------------------------------------------------------------------
 ! @brief Set paits for intermedate relaxations 
 !
 ! @date Created   : E. Coccia 10 Oct 2017
 ! Modified  :
 !------------------------------------------------------------------------
+  subroutine set_pair(istate,ig,ie)
     
    implicit none
    integer(i4b),  intent(in)    :: istate
@@ -605,7 +597,6 @@ module dissipation
   end subroutine set_pair
 
 
-  subroutine add_h_rnd(h_rnd,nci,w,w_prev)
 !------------------------------------------------------------------------
 ! @brief Random term in the Hamiltonian for the stochastic propagation 
 ! Random events: dissipation, nonradiative and dephasing
@@ -614,6 +605,7 @@ module dissipation
 ! Modified  :
 ! @param w(:), w_prev(:), h_rnd(:,:)
 !------------------------------------------------------------------------
+  subroutine add_h_rnd(h_rnd,nci,w,w_prev) 
 
    implicit none
    integer, intent(in)        :: nci
@@ -676,7 +668,6 @@ module dissipation
 
   end subroutine add_h_rnd
 
-  subroutine define_h_dis(h_dis,nci)
 !------------------------------------------------------------------------    
 ! @brief Define the Markovian (imar=0) or non-Markovian (imar=1)
 ! dissipative term in the system Hamiltonian
@@ -685,6 +676,7 @@ module dissipation
 ! Modified  :
 ! @param h_dis
 !------------------------------------------------------------------------
+  subroutine define_h_dis(h_dis,nci)
 
    implicit none  
    integer, intent(in)    :: nci 
@@ -703,7 +695,6 @@ module dissipation
  
   end subroutine define_h_dis
 
-  subroutine rnd_noise(w,w_prev,nci,first) 
 !------------------------------------------------------------------------
 ! @brief Define the random fluctuating term in the
 ! stochastic propagator
@@ -712,6 +703,7 @@ module dissipation
 ! Modified  :
 ! @param w(:), w_rnd(:)
 !------------------------------------------------------------------------
+  subroutine rnd_noise(w,w_prev,nci,first)
 
    implicit none
    integer, intent(in)    :: nci
@@ -753,7 +745,6 @@ module dissipation
 
  end subroutine rnd_noise
 
-  subroutine add_h_rnd2(h_rnd2,nci)
 !------------------------------------------------------------------------
 ! @brief Define the square of the dissipation/dephasing operator 
 ! Random events: dissipation, nonradiative and dephasing
@@ -762,6 +753,7 @@ module dissipation
 ! Modified  :
 ! @param h_rnd2(:,:)
 !------------------------------------------------------------------------
+ subroutine add_h_rnd2(h_rnd2,nci)
 
    implicit none
    integer, intent(in)        :: nci
@@ -801,7 +793,6 @@ module dissipation
 
   end subroutine add_h_rnd2
 
-  function disp(h_dis,c,nci)
 !------------------------------------------------------------------------
 ! @brief Element-by-element multiplication 
 !
@@ -809,6 +800,7 @@ module dissipation
 ! Modified  :
 ! @param h_dis,c
 !------------------------------------------------------------------------
+  function disp(h_dis,c,nci)
 
    implicit none
    integer(i4b), intent(in)      :: nci
@@ -822,13 +814,13 @@ module dissipation
 
   end function disp
 
-  subroutine random_seq(restart_i)
 !------------------------------------------------------------------------
 ! @brief Genarate a dummy sequence of rnd numbers 
 ! 
 ! @date Created   : E. Coccia 24 Nov 2017
 ! Modified  :
 !------------------------------------------------------------------------ 
+  subroutine random_seq(restart_i)
 
     implicit none
 

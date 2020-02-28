@@ -1,1 +1,5 @@
 In all/, the chosen quantity (pop, coh or both) is computed for all the states. In selected/, one chooses in pop_coh.inp which state(s) to use for the calculation.
+<<<<<<< HEAD
+Coefficient file c_t_1.dat is found above in the out/ directory.
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822

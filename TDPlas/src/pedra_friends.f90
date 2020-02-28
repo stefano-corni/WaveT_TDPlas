@@ -3,9 +3,7 @@
       use constants
       use interface_qmcode
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
 #endif
 
       implicit none

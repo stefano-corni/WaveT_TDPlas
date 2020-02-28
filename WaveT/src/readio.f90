@@ -3,18 +3,11 @@
       use random
 
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
 #endif
 
       implicit none
 
-#ifdef MPI
-#ifdef SCALI
-      include 'mpif.h'
-#endif
-#endif
 
       save
 !
@@ -136,13 +129,14 @@
 !
       contains
 !
-      subroutine read_input
 !------------------------------------------------------------------------
 ! @brief Read input namelists 
 !
 ! @date Created   : 
 ! Modified  : E. Coccia 20/11/2017
 !------------------------------------------------------------------------
+      subroutine read_input
+
 
 
        !integer(i4b):: i,nspectra
@@ -153,7 +147,7 @@
        !Molecular parameters 
        namelist /general/n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,& 
                          dt,n_step,n_out,propa,n_restart,lsim,absorber,&
-                         binary,ncit,Ip,postprocessing
+                         binary,ncit,Ip
        !External field paramaters
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
                         npulse,tdelay,pshift
@@ -223,26 +217,22 @@
        endif
 
        if (Fabs.eq.'abs') call read_ion_rate
-
-       if( postprocessing ) then
-        !Namelist for postprocessing
-        call init_nml_pop_coh()
-        read(*,nml=pop_coh) 
-        call write_nml_pop_coh()
+       if (postprocessing) then
+       !Namelist for postprocessing
+       call init_nml_pop_coh()
+       read(*,nml=pop_coh) 
+       call write_nml_pop_coh()
        endif
-
        return
 
       end subroutine read_input
-!
-!
-      subroutine read_gau_out
 !------------------------------------------------------------------------
 ! @brief Read input files 
 !
 ! @date Created   : 
 ! Modified  : E. Coccia 20/11/2017
 !------------------------------------------------------------------------
+      subroutine read_gau_out
 
        implicit none
 
@@ -353,15 +343,16 @@
 
        return
 
-      end subroutine
+      end subroutine read_gau_out
 
-      subroutine read_restart()
+
 !------------------------------------------------------------------------
 ! @brief Read restart file
 !
 ! @date Created   : E. Coccia 18 Apr 2018
 ! Modified        :
 !------------------------------------------------------------------------
+      subroutine read_restart()
 
           implicit none
 
@@ -430,7 +421,6 @@
       end subroutine read_restart
 
 !
-      subroutine read_dis_params()
 !------------------------------------------------------------------------
 ! @brief Read nonradiative and dephasing rates 
 ! Define spontaneous emission coefs from Einstein coefficients 
@@ -439,6 +429,7 @@
 ! @date Created   : E. Coccia 21 Dec 2016
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine read_dis_params()
      
        implicit none
         integer     :: i,j,k,idum,ierr0,ierr1,ierr2,ierr3,ierr4,err,kk   
@@ -642,13 +633,13 @@
 
       end subroutine read_dis_params
 
-      subroutine map_nrel(nexc,nrel,irel)
 !------------------------------------------------------------------------
 ! @brief Map state pairs for intermediate relaxations 
 !
 ! @date Created   : E. Coccia 10 Oct 2017
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine map_nrel(nexc,nrel,irel)
      
        implicit none
 
@@ -671,13 +662,17 @@
 
       end subroutine map_nrel
 
-      subroutine deallocate_dis()
 !------------------------------------------------------------------------
 ! @brief Deallocate arrays for the dissipation 
 !
 ! @date Created   : E. Coccia 22 Dec 2016
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine deallocate_dis()
+
+#ifndef MPI
+       myrank=0
+#endif
 
 #ifndef MPI
        myrank=0
@@ -704,7 +699,6 @@
 
       end subroutine deallocate_dis
 
-      subroutine define_gamma(de_gam,de_gam1,nci)
 !------------------------------------------------------------------------
 ! @brief Move from "physical" gammas to gammas 
 ! for keeping the population constant
@@ -714,6 +708,7 @@
 ! Modified  :
 ! @param de_gam(:), de_gam1(:)  
 !------------------------------------------------------------------------
+      subroutine define_gamma(de_gam,de_gam1,nci)
 
        implicit none
        integer                :: i
@@ -730,7 +725,6 @@
 
       end subroutine define_gamma
 
-      subroutine init_nml_general()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist general 
 !
@@ -739,6 +733,7 @@
 ! @param n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,propa,n_restart 
 !        lsim,absorber,binary,ncit 
 !------------------------------------------------------------------------
+      subroutine init_nml_general()
 
        ! Time step in the propagation (a.u.)
        dt=0.05
@@ -776,7 +771,6 @@
 
       end subroutine init_nml_general
 
-      subroutine init_nml_field()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist field 
 !
@@ -784,6 +778,7 @@
 ! Modified  :
 ! @param dt,n_step,n_out,Ffld,t_mid,sigma,omega,radiative,iseed,fmax 
 !------------------------------------------------------------------------
+      subroutine init_nml_field()
 
        ! Type of field
        Ffld='gau'
@@ -810,7 +805,6 @@
 
       end subroutine init_nml_field
 
-      subroutine init_nml_spectra()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist spectra 
 !
@@ -818,6 +812,7 @@
 ! Modified  :
 ! @param start,tau,dir_ft 
 !------------------------------------------------------------------------
+      subroutine init_nml_spectra()
 
        ! Parameter for computing spectra
        nspectra=1
@@ -830,7 +825,6 @@
 
       end subroutine init_nml_spectra
 
-      subroutine init_nml_sse()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist sse 
 !
@@ -838,6 +832,7 @@
 ! Modified  :
 ! @param dissipative,idep,dis_prop,nrnd,tdis,nr_typ,krnd 
 !------------------------------------------------------------------------
+      subroutine init_nml_sse()
 
        ! Do dissipation 
        dissipative='non'
@@ -860,7 +855,6 @@
 
       end subroutine init_nml_sse
 
-      subroutine init_nml_pop_coh()
 !------------------------------------------------------------------------
 ! @brief Read variables in the namelist pop_coh and put conditions 
 !
@@ -868,6 +862,7 @@
 ! Modified  :
 ! @param tar,all_pop,all_coh,pop,coh 
 !------------------------------------------------------------------------
+      subroutine init_nml_pop_coh()
 
       !allocate(pop(n_ci))
       !allocate(coh(n_ci*(n_ci)/2))
@@ -888,7 +883,6 @@
 
       end subroutine init_nml_pop_coh
 
-      subroutine write_nml_general()
 !------------------------------------------------------------------------
 ! @brief Write variables in the namelist general and put conditions 
 !
@@ -896,6 +890,7 @@
 ! Modified  :
 ! @param n_ci_read,n_ci,mol_cc,n_f,medium 
 !------------------------------------------------------------------------
+      subroutine write_nml_general()
 
        if (n_ci.le.0) then
           write(*,*) 'ERROR: number of excited states is wrong', n_ci
@@ -999,7 +994,6 @@
 
       end subroutine write_nml_general
 
-      subroutine write_nml_field()
 !------------------------------------------------------------------------
 ! @brief Write variables in the namelist field and put conditions 
 !
@@ -1007,6 +1001,7 @@
 ! Modified  :
 ! @param dt,n_step,n_out,Ffld,t_mid,sigma,omega,radiative,iseed,fmax 
 !------------------------------------------------------------------------
+      subroutine write_nml_field()
 
        integer :: i
 
@@ -1049,7 +1044,6 @@
 
       end subroutine write_nml_field
 
-      subroutine write_nml_spectra()
 !------------------------------------------------------------------------
 ! @brief Write variables in the namelist spectra and put conditions 
 !
@@ -1057,6 +1051,7 @@
 ! Modified  :
 ! @param start,tau,dir_ft 
 !------------------------------------------------------------------------
+      subroutine write_nml_spectra()
  
        if (medium.ne.'vac') then 
           nspectra=2
@@ -1071,7 +1066,6 @@
 
       end subroutine write_nml_spectra
 
-      subroutine write_nml_sse()
 !------------------------------------------------------------------------
 ! @brief Write variables in the namelist sse and put conditions 
 !
@@ -1079,6 +1073,7 @@
 ! Modified  :
 ! @param dissipative,idep,dis_prop,nrnd,tdis,nr_typ,krnd 
 !------------------------------------------------------------------------
+      subroutine write_nml_sse()
 
        select case (dissipative)
         case ('mar', 'Mar', 'MAR')
@@ -1147,13 +1142,13 @@
 
       end subroutine write_nml_sse
 
-      subroutine write_nml_pop_coh()
 !------------------------------------------------------------------------
 ! @brief Write pop_coh namelist for postprocessing 
 !
 ! @date Created   : E. Coccia 22 Aug 2018
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine write_nml_pop_coh()
 
        implicit none
 
@@ -1206,13 +1201,14 @@
 
       end subroutine write_nml_pop_coh
 
-      subroutine checkfile(filename,channel)
 !------------------------------------------------------------------------
 ! @brief Check file existence 
 !
 ! @date Created   : E. Coccia 20 Nov 2017
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine checkfile(filename,channel)
+
         implicit none
 
         character*12,   intent(in)  :: filename
@@ -1234,13 +1230,13 @@
 
       end subroutine checkfile 
 
-      subroutine mpibcast_readio()
 !------------------------------------------------------------------------
 ! @brief MPI broadcast of input variables 
 !
 ! @date Created   : E. Coccia 20 Apr 2018
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine mpibcast_readio()
 
 #ifdef MPI
        !n_f and iseed generated ad hoc for each process
@@ -1301,13 +1297,13 @@
 
       end subroutine mpibcast_readio 
 
-      subroutine mpibcast_e_dip()
 !------------------------------------------------------------------------
 ! @brief MPI broadcast of energies, dipoles and initial coefs 
 !
 ! @date Created   : E. Coccia 23 Apr 2018
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine mpibcast_e_dip()
 
 #ifdef MPI
        if (myrank.ne.0) then
@@ -1326,13 +1322,13 @@
 
       end subroutine mpibcast_e_dip
 
-      subroutine mpibcast_sse()
 !------------------------------------------------------------------------
 ! @brief MPI broadcast of SSE relaxation and dephasing rates 
 !
 ! @date Created   : E. Coccia 23 Apr 2018
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine mpibcast_sse()
 
 #ifdef MPI
        call mpi_bcast(nexc,       1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
@@ -1378,13 +1374,13 @@
       end subroutine mpibcast_sse
 
 
-      subroutine mpibcast_restart()
 !------------------------------------------------------------------------
 ! @brief MPI broadcast of restart variables 
 !
 ! @date Created   : E. Coccia 23 Apr 2018
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine mpibcast_restart()
 
 #ifdef MPI
 
@@ -1417,13 +1413,13 @@
 
       end subroutine mpibcast_restart 
    
-      subroutine mpibcast_ion_rate
 !------------------------------------------------------------------------
 ! @brief Broadcast ion_rate 
 !
 ! @date Created   : E. Coccia 31 May 2018
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine mpibcast_ion_rate
 
 #ifdef MPI
 
@@ -1438,13 +1434,13 @@
       end subroutine mpibcast_ion_rate
 
  
-      subroutine read_ion_rate()
 !------------------------------------------------------------------------
 ! @brief Read ionization rates 
 !
 ! @date Created   : E. Coccia 31 May 2018
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine read_ion_rate()
 
        implicit none
 

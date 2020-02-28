@@ -5,9 +5,7 @@
       use, intrinsic :: iso_c_binding
 
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
 #endif
 
       implicit none
@@ -33,13 +31,13 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!  DRIVER  ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine do_scf(q_or_f,c_prev)                  
 !------------------------------------------------------------------------
 ! @brief SCF friver routine 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine do_scf(q_or_f,c_prev)
 
        implicit none
        real(dbl), intent(INOUT):: q_or_f(:)     !< charges or field  
@@ -125,16 +123,15 @@
 
        return
 
-      end subroutine
+      end subroutine do_scf
 
-
-      subroutine init_scf                      
 !------------------------------------------------------------------------
 ! @brief Init/allocation SCF 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine init_scf
 
        allocate(eigv_c(n_ci),eigt_c(n_ci,n_ci))
        allocate(eigv_cp(n_ci),eigt_cp(n_ci,n_ci))
@@ -144,16 +141,15 @@
 
        return
 
-      end subroutine
+      end subroutine init_scf
 
-
-      subroutine finalize_scf                      
 !------------------------------------------------------------------------
 ! @brief Finalize/deallocation SCF 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine finalize_scf
 
        deallocate(eigv_c,eigt_c)
        deallocate(eigv_cp,eigt_cp)
@@ -163,19 +159,19 @@
 
        return
 
-      end subroutine
+      end subroutine finalize_scf
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!  SCF  ROUTINES     !!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine do_c_oldbasis                      
 !------------------------------------------------------------------------
 ! @brief Write the new coefficients in the old basis 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine do_c_oldbasis
 
        implicit none
 
@@ -210,16 +206,16 @@
 
        return
 
-      end subroutine
+      end subroutine do_c_oldbasis
 
 
-      subroutine do_field(f)                      
 !------------------------------------------------------------------------
 ! @brief Compute field from dipole 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine do_field(f)
 
        implicit none 
 
@@ -234,16 +230,15 @@
 
        return
 
-      end subroutine
+      end subroutine do_field
 
-
-      subroutine do_charges(q)                      
 !------------------------------------------------------------------------
 ! @brief Compute charges from potential 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine do_charges(q)
 
        implicit none 
 
@@ -260,16 +255,15 @@
 
        return
 
-      end subroutine
+      end subroutine do_charges
 
-
-      subroutine do_matrix_q(q)                      
 !------------------------------------------------------------------------
 ! @brief Compute Hamiltonian with new charges 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine do_matrix_q(q)
 
        real(dbl), intent(IN):: q(this_nts_act)     
        integer(4)::j,k     
@@ -285,16 +279,16 @@
 
        return
 
-      end subroutine
+      end subroutine do_matrix_q
 
 
-      subroutine do_matrix_f(f)                      
 !------------------------------------------------------------------------
 ! @brief Compute Hamiltonian with new field 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine do_matrix_f(f)
 
        real(dbl), intent(IN):: f(3)     
        integer(4)::i,j,k     
@@ -310,16 +304,16 @@
 
        return
 
-      end subroutine
+      end subroutine do_matrix_f
 
 
-      subroutine check_conv(mxe,mxv,Mdim)                       
 !------------------------------------------------------------------------
 ! @brief Check convergence 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine check_conv(mxe,mxv,Mdim)
 
        real(dbl),intent(inout) :: mxe,mxv
        integer(i4b),intent(in) :: Mdim 
@@ -342,16 +336,16 @@
 
        return
 
-      end subroutine
+      end subroutine check_conv
 
 
-      subroutine do_energies(e_scf,e_ini)
 !------------------------------------------------------------------------
 ! @brief Define total energy 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine do_energies(e_scf,e_ini)
 
        implicit none
 
@@ -368,20 +362,20 @@
 
        return
 
-      end subroutine
+      end subroutine do_energies
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!! OUTPUT/TRANSFORMATION ROUTINES !!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine out_charges(q)
 !------------------------------------------------------------------------
 ! @brief Write out the charges in the charges0_scf.dat file 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine out_charges(q)
 
        implicit none
 
@@ -406,10 +400,9 @@
 
        return 
 
-      end subroutine      
+      end subroutine out_charges     
 
 
-      subroutine out_vts
 !------------------------------------------------------------------------
 ! @brief Transform to the new basis and write out potential integrals on
 ! tesserae (vts) 
@@ -417,6 +410,7 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine out_vts
 
        implicit none
 
@@ -464,16 +458,15 @@
 
        return 
 
-      end subroutine      
+      end subroutine out_vts      
 
-
-      subroutine out_dipoles
 !------------------------------------------------------------------------
 ! @brief Transform to the new basis and write out dipole integrals (mut)  
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine out_dipoles
 
        implicit none
 
@@ -503,16 +496,15 @@
 
        return 
 
-      end subroutine      
+      end subroutine out_dipoles      
 
-
-      subroutine out_energies
 !------------------------------------------------------------------------
 ! @brief Write out new energies and reset the zero of energy
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine out_energies
 
        implicit none
 
@@ -536,7 +528,6 @@
 
        return 
 
-      end subroutine      
-
+      end subroutine out_energies      
 
       end module

@@ -1,1 +1,5 @@
 All the tests here produce a formatted output file(s). To get the unformatted one(s), use write_bin='y' in pop_coh.inp.
+<<<<<<< HEAD
+Coefficient file c_t_1.dat is found above in out/ directory.
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822

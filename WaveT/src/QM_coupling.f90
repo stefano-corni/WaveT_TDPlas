@@ -36,9 +36,7 @@
       use omp_lib
 #endif
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
 #endif
       implicit none
                                                !> This description comes first.
@@ -62,20 +60,16 @@
              Hqm_evt,Hqm_evl   ! variables   
 !
 !
-!------------------------------------------------------------------------
-! @brief Module for molecule-environment QM coupling.      
-! @param 
-!------------------------------------------------------------------------
-!
       contains
 !
-      subroutine do_QM_coupling                         
 !------------------------------------------------------------------------
 !     @brief Driver routine of QM_coupling  
 !     @date Created   : S.Pipolo 02 May 2017
 !     Modified  :
 !     @param  
 !----------------------------------------------------------------------------
+      subroutine do_QM_coupling
+
        ! allocate matrices and initialize                                  
 
        implicit none 
@@ -111,16 +105,16 @@
        ! deallocate                                    
        call fin_QM_coupling 
       return
-      end subroutine
+      end subroutine do_QM_coupling
 !
 !
-      subroutine init_QM_coupling                         
 !------------------------------------------------------------------------
 !     @brief Init routine of QM_coupling  
 !     @date Created   : S.Pipolo 02 May 2017
 !     Modified  :
 !     @param Hqm_dim,Hqm,Hqm_evt,Hqm_evl
 !----------------------------------------------------------------------------
+      subroutine init_QM_coupling
 
        implicit none
        FQBEM='diag-all' !enforces use of correct QM_coupling flag
@@ -150,31 +144,33 @@
        allocate(Hqm_evl(Hqm_dim))
        write(*,*) "QM initialization done"
       return
-      end subroutine
+      end subroutine init_QM_coupling
 !
 !
-      subroutine fin_QM_coupling                         
 !------------------------------------------------------------------------
 !     @brief Finalize routine of QM_coupling  
 !     @date Created   : S.Pipolo 02 May 2017
 !     Modified  :
 !     @param Hqm,Hqm_evt,Hqm_evl
 !----------------------------------------------------------------------------
+      subroutine fin_QM_coupling
+
        implicit none
        call deallocate_BEM_public_in_wavet
        deallocate(we,omega_p,g,qg)
        deallocate(Hqm,Hqm_evt,Hqm_evl)
        deallocate(occ)
       return
-      end subroutine
+      end subroutine fin_QM_coupling
 !     
-      subroutine do_matrix                       
 !------------------------------------------------------------------------
 !     @brief Build Hamiltonian Super-matrix
 !     @date Created   : S.Pipolo 02 May 2017
 !     Modified  :
 !     @param Hqm,Hqm_evt,Hqm_evl
 !----------------------------------------------------------------------------
+      subroutine do_matrix
+
        implicit none
 !       real(dbl):: omega_p  !< mode frequency 
        real(dbl):: gFi !< molecule-semiclassical_field coupling 
@@ -244,7 +240,9 @@
 !>    @author S.Pipolo 
 !>    @param Hqm_evl  
 !----------------------------------------------------------------------------
-      subroutine out_QM_coupling                         
+      subroutine out_QM_coupling
+
+       implicit none
        integer(i4b) :: i,j   
        character(len=32) :: my_fmt
        open(7,file="Hqm_matrix.dat",status="unknown")
@@ -259,7 +257,7 @@
        close(8) 
        call out_gcharges_in_wavet
       return
-      end subroutine
+      end subroutine out_QM_coupling
 !
 !------------------------------------------------------------------------
 !>     @brief computes the molecule-environment quantum couplig elements "g"

@@ -1,0 +1,27 @@
+ **********************************************
+ *                                            *
+ *               Tool for a                   *
+ *                 2D FFT                     *
+ *                                            *
+ *                   by                       *
+ *              Stefano Corni                 *
+ *                  and                       *
+ *             Emanuele Coccia                *
+ *                                            *
+ **********************************************
+ 
+ Number of points for t1         100
+ Center of the first pulse   4000.00000000000     
+ Time step along the first interval (au)   10.3353436439500     
+ Time step along the third interval (au)   4.00000000000000     
+ Direction for FFT   1.00000000000000       0.000000000000000E+000
+  0.000000000000000E+000
+ Sigma of the envelope of the third pulse (au)   1240.24123727250     
+ Frequency range for w1 (au)  0.135000000000000       0.650000000000000     
+ Frequency range for w3 (au)  0.135000000000000       0.650000000000000     
+ Detectorhomodyne            
+ Output frequency           1
+ 
+ End of the calculation
+ 
+Done , total elapsed time     6.321s

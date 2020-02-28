@@ -5,9 +5,7 @@
       use pedra_friends
       use interface_qmcode
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
 #endif
 
       implicit none
@@ -130,13 +128,13 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!  DRIVER  ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine read_medium
 !------------------------------------------------------------------------
 ! @brief Driver routine for reading medium input 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine read_medium
 
        namelist /propagate/interaction_stride,interaction_init,        &
                          interaction_type,propagation_type,            &
@@ -189,13 +187,13 @@
       end subroutine read_medium
 
 
-      subroutine read_medium_freq
 !------------------------------------------------------------------------
 ! @brief Driver routine for reading medium input form main_freq 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine read_medium_freq
 
        namelist /freq/ fmax,n_omega,omega_ini,omega_end,debug_type, &
                        out_level,test_type
@@ -228,14 +226,13 @@
       end subroutine read_medium_freq
 
 
-      subroutine read_medium_tdplas
 !------------------------------------------------------------------------
 ! @brief Driver routine for main_tdplas 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
-
+      subroutine read_medium_tdplas
 
        !namelist /tdplas/ debug
        namelist /medium/ medium_type,medium_init,medium_pol,bem_type,  &
@@ -297,13 +294,13 @@
 !!!!!!!!!!!!!!!!!!!!!  INITIALIZATION  ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine init_nml_all 
 !------------------------------------------------------------------------
 ! @brief Initialize variables for all mains to safe values 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine init_nml_all
 
 
        ! Output and debug
@@ -340,16 +337,15 @@
 
        return
 
-      end subroutine
+      end subroutine init_nml_all
 
-
-      subroutine init_nml_propagate()
 !------------------------------------------------------------------------
 ! @brief Initialize variables for propagation main (will be tdplas) 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine init_nml_propagate()
 
        medium_init='fro'
        medium_type='nan'
@@ -367,10 +363,8 @@
 
        return
 
-      end subroutine 
+      end subroutine init_nml_propagate 
 
-
-      subroutine init_nml_nanoparticle()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist nanoparticle 
 !
@@ -378,6 +372,7 @@
 ! Modified  : SP 10/07/17
 ! @param epsilon_omega,eps_0,eps_d,eps_A,eps_gm,eps_w0,f_vel
 !------------------------------------------------------------------------
+      subroutine init_nml_nanoparticle()
 
        epsilon_omega='drl'
        tau_deb=1000.
@@ -393,7 +388,6 @@
       end subroutine init_nml_nanoparticle
 
 
-      subroutine init_nml_solvent()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist solvent 
 !
@@ -401,6 +395,7 @@
 ! Modified  : SP 10/07/17
 ! @param epsilon_omega,eps_0,eps_d,eps_A,eps_gm,eps_w0,f_vel
 !------------------------------------------------------------------------
+      subroutine init_nml_solvent()
 
        epsilon_omega='deb'
        tau_deb=1000.
@@ -416,13 +411,13 @@
       end subroutine init_nml_solvent
 
 
-      subroutine init_nml_freq()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist freq 
 !
 ! @date Created   : E. Coccia 11 May 2017
 ! Modified  : SP 10/07/17
 !------------------------------------------------------------------------
+      subroutine init_nml_freq() 
 
        ! SP: No propagation: Fprop set to other than "dip" or "chr" 
        Fprop="non"
@@ -451,13 +446,13 @@
       end subroutine init_nml_freq
 
 
-      subroutine init_nml_tdplas()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist tdplas 
 !
 ! @date Created   : E. Coccia 16 May 2017
 ! Modified  : SP 14/07/17
 !------------------------------------------------------------------------
+      subroutine init_nml_tdplas()
 
        ! SP: No propagation: Fprop set to other than "dip" or "chr" 
        Fprop="non"
@@ -487,13 +482,13 @@
 !!!!!!!!!!!!!!!!!!  VARIABLE DEFINITION ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine write_nml_all 
 !------------------------------------------------------------------------
 ! @brief Write variables for all mains 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine write_nml_all
 
        ! Output level
        select case (out_level)
@@ -570,16 +565,15 @@
        end select
        return
 
-      end subroutine
+      end subroutine write_nml_all
 
-
-      subroutine write_nml_propagate()
 !------------------------------------------------------------------------
 ! @brief Write solvent and nanoparticle shared variables 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine write_nml_propagate()
 
        ! propagation_type refers to which quantity is propagated by equations of motions
        !   dip: only the dipolar (i.e., Onsager) reaction/local field/dipole is propagated
@@ -639,29 +633,16 @@
 
        return
 
-      end subroutine
+      end subroutine write_nml_propagate
 
 
-      subroutine write_nml_tdplas()
-!------------------------------------------------------------------------
-! @brief Write variables in the namelist tdplas and put conditions 
-!
-! @date Created   : E. Coccia 16 May 2017
-! Modified  :
-! @param epsilon_omega,eps_0,eps_d,tau_deb,eps_A,eps_gm,
-!        eps_w0,f_vel,input_surface,xr,yr,zr,rr,nsph  
-!------------------------------------------------------------------------
-       return
-      end subroutine  write_nml_tdplas
-
-
-      subroutine write_nml_eps_function()
 !------------------------------------------------------------------------
 ! @brief Write solvent and nanoparticle shared variables 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine write_nml_eps_function()
 
        real(dbl)::a,b,c,eps_real,eps_imag
        integer(i4b)::i,j
@@ -714,16 +695,15 @@
 
        return
 
-      end subroutine
+      end subroutine  write_nml_eps_function
 
-
-      subroutine write_nml_interaction()
 !------------------------------------------------------------------------
 ! @brief Write solvent and nanoparticle shared variables 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine write_nml_interaction()
 
        n_q=interaction_stride
        write(*,*) 'Frequency of updating the interaction potential', n_q
@@ -776,16 +756,15 @@
 
        return
 
-      end subroutine
+      end subroutine write_nml_interaction
 
-
-      subroutine write_nml_medium()
 !------------------------------------------------------------------------
 ! @brief Write solvent and nanoparticle shared variables 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine write_nml_medium()
 
 ! PER STEFANO:
 ! SP 14/07/17: medium_type is the same of medium in maedium.f90 except for the vacuum case
@@ -911,19 +890,19 @@
 
        return
 
-      end subroutine 
+      end subroutine write_nml_medium 
 
 
 !------------------------------------------------------------------------
 ! SP 14/07/17 calculations should probably go in a different module. which one?
 !             Probably pedra_firends....
-      subroutine write_nml_surface()
 !------------------------------------------------------------------------
 ! @brief Write variables for surface/medium object 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine write_nml_surface()
 
        integer(i4b)::i,j
 
@@ -1043,20 +1022,20 @@
 
        return
 
-      end subroutine 
+      end subroutine write_nml_surface 
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!  READ/WRITE ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine read_sph_fromfile
 !------------------------------------------------------------------------
 ! @brief Read spheres/oids parameters from file 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine read_sph_fromfile
 
        integer(i4b) :: i,j,its
        real(dbl)  :: scr       
@@ -1081,16 +1060,15 @@
 
        return
 
-      end subroutine
+      end subroutine read_sph_fromfile
 
-
-      subroutine read_gau_out_medium
 !------------------------------------------------------------------------
 ! @brief Read transition potentials on tesserae 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine read_gau_out_medium
 
        integer(i4b) :: i,j,its,nts
        real(dbl)  :: scr       
@@ -1155,16 +1133,15 @@
 
        return
 
-      end subroutine
+      end subroutine read_gau_out_medium
 
-
-      subroutine output_surf
 !------------------------------------------------------------------------
 ! @brief Output surface.xyz file 
 !      
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine output_surf
 
        integer :: i
 
@@ -1174,16 +1151,16 @@
           write (7,'(3F22.10)') cts_act(i)%x,cts_act(i)%y,cts_act(i)%z
         enddo
        close(unit=7)
-      end subroutine
 
+      end subroutine output_surf
 
-      subroutine deallocate_medium
 !------------------------------------------------------------------------
 ! @brief Deallocate medium arrays 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine deallocate_medium
 
        if(allocated(q0)) deallocate(q0)
        if(allocated(vts)) deallocate(vts)
@@ -1196,15 +1173,16 @@
 
        return
 
-      end subroutine
+      end subroutine deallocate_medium
 
-      subroutine mpibcast_readio_mdm()
 !------------------------------------------------------------------------
 ! @brief Broadcast input data
 !      
 ! @date Created: E. Coccia 24/4/18 
 ! Modified: 
 !------------------------------------------------------------------------
+      subroutine mpibcast_readio_mdm()
+
 #ifdef MPI
 
        call mpi_bcast(interaction_init,     flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
@@ -1406,9 +1384,9 @@
            write(*,*) max_mod_todiag,"quantum plasmonic mode will be",&
                          &"diagonalized and printed"
            if (max_mod_todiag.gt.nts_act) then
-              write(*,*) "Trying to print the ",max_mod_todiag," plasmon"
-              write(*,*)  "but it exceeds the number of computed plasmonic modes"
-              write(*,*) "Print another mode or increase the number of tesserae"
+             write(*,*) "Trying to print the ",max_mod_todiag," plasmon"
+     write(*,*)  "but it exceeds the number of computed plasmonic modes"
+     write(*,*) "Print another mode or increase the number of tesserae"
            stop
            endif
        endif
@@ -1420,4 +1398,4 @@
        endif
 
       end subroutine write_nml_print_charges
-  end module
+      end module

@@ -1,5 +1,7 @@
-FC = gfortran
+# compilers
 #FC = ifort
+FC = gfortran
+#FC = mpiifort
 # useful predefined compiler flags for different architectures and compilers
 # they are not necessarily used in the compiling unless you refer to them in FFLAGS
 #FFLAGS_XEON= -O3 -ftz -align -arch pn4 -tune pn4 -xN -tpp7
@@ -25,6 +27,7 @@ LDLAGS=
 
 # actual flags used in the compilation
 #FFLAGS= $(FFLAGS_GF) ${OMP} #-heap-arrays 1024
+#FFLAGS= -O3 -ftz -align all ${MPI} ${OMP} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds
 #FFLAGS= -O -g ${OMP} #-heap-arrays 1024
 #FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds
 #FFLAGS= -Og -g -fcheck-array-temporaries ${OMP} -fbounds-check #debug flag list to check coherence of array dimension 
@@ -38,7 +41,7 @@ CPP=-cpp
 # libraries to be linked - paths to be set by the user
 LIBS = -L/usr/lib -llapack -lblas -lpthread #FOR PADOVA
 #LIBS =  -Wl,--start-group -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -Wl,--end-group#FOR HYDRA
-
+INC =  -I/usr/local/include
 # executable directory
 BINPATH=../bin
 # tdplas library file
@@ -63,10 +66,10 @@ $(BINPATH):
 	mkdir $(BINPATH)
 
 $(BINPATH)/tdplas.x: main_tdplas.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $< $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $< $(TDPLASLIB) $(LIBS) 
 
 $(BINPATH)/freq_bem.x: main_freq.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $< $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $< $(TDPLASLIB) $(LIBS) 
 
 $(BINPATH)/eps_gold.x: main_eps.o
 	$(FC) $(CPP) $(FFLAGS) -o $@ $< $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)

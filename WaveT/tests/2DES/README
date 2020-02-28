@@ -1,0 +1,9 @@
+1) Run create_t_grid.sh to create the (t1,t3) "grid" for 2D calculation
+
+2) Run create_dir_1_delay_time.sh to create the directories for the (t1,t3) WaveT calculations
+
+3) run_wavet_1_delay_time.sh to run WaveT inside the directories
+
+4) mv (cp) all mu_t*.dat files in the same place, i.e. mv (cp) */mu_t*.dat .
+
+5) run make_fft.x < fft.inp > fft.out

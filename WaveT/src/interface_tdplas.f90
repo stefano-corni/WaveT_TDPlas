@@ -21,12 +21,10 @@ module interface_tdplas
                         
 #endif
 #ifdef MPI
-#ifndef SCALI
       use mpi
 #endif
-#ifdef SCALI
-      include 'mpif.h'
-#endif
+#ifdef OMP
+      use omp_lib 
 #endif
 
       implicit none
@@ -102,13 +100,13 @@ module interface_tdplas
         return
       end subroutine set_q0charges
       
-      subroutine get_medium_dip(mdm_dip)
 !------------------------------------------------------------------------
 ! @brief Set the dipole(t) in Sdip for spectra 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
+      subroutine get_medium_dip(mdm_dip)
         implicit none
         real(dbl), intent(inout) :: mdm_dip(3)
 #ifdef TDPLAS
@@ -120,13 +118,14 @@ module interface_tdplas
       end subroutine get_medium_dip
      
  
-      subroutine read_medium_input
 !------------------------------------------------------------------------
 ! @brief Read medium input 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
+      subroutine read_medium_input
+
         implicit none
         integer :: ii,shap(3)
 #ifdef TDPLAS
@@ -181,13 +180,14 @@ module interface_tdplas
       end subroutine read_medium_input
       
       
-      subroutine get_energies(e_vac,g_eq_t,g_neq_t,g_neq2_t)     
 !------------------------------------------------------------------------
 ! @brief Get energies 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
+      subroutine get_energies(e_vac,g_eq_t,g_neq_t,g_neq2_t)
+
         implicit none
         real(dbl), intent(inout) :: e_vac,g_neq_t,g_neq2_t,g_eq_t
 #ifdef TDPLAS
@@ -199,13 +199,13 @@ module interface_tdplas
       end subroutine get_energies
       
       
-      subroutine init_medium(c,mu,f,h)     
 !------------------------------------------------------------------------
 ! @brief Initialize medium 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
+     subroutine init_medium(c,mu,f,h)
 
         implicit none
         complex(cmp), intent(in) :: c(:)    !< (1:n_ci)           - molecular wavefunction coefficients
@@ -261,13 +261,13 @@ module interface_tdplas
       end subroutine init_medium
       
       
-      subroutine prop_medium(i,c,mu,f,h)     
 !------------------------------------------------------------------------
 ! @brief Propagate medium 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
+      subroutine prop_medium(i,c,mu,f,h)
 
         implicit none
 
@@ -315,13 +315,13 @@ module interface_tdplas
       end subroutine prop_medium
       
      
-      subroutine finalize_medium
 !------------------------------------------------------------------------
 ! @brief Finalize medium 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
+      subroutine finalize_medium
 
         implicit none
 
@@ -335,13 +335,13 @@ module interface_tdplas
 
       end subroutine finalize_medium
 
-      subroutine mpibcast_read_medium 
 !------------------------------------------------------------------------
 ! @brief Broadcast input medium if parallel 
 !
 ! @date Created   : E. Coccia 9/5/18 
 ! Modified  :  
 !------------------------------------------------------------------------
+      subroutine mpibcast_read_medium
 
         implicit none
 
@@ -355,6 +355,12 @@ module interface_tdplas
 
       end subroutine mpibcast_read_medium 
 
+!------------------------------------------------------------------------
+! @brief Interface between TDPlas and QM code 
+!
+! @date Created   : 
+! Modified  :  
+!------------------------------------------------------------------------
       subroutine set_global_tdplas_in_wavet(this_dt,this_mdm,this_mol_cc,this_n_ci,this_n_ci_read,this_c_i,this_e_ci,this_mut,&
 				                                    this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
                                             this_Fbin,this_Fopt,this_nthr,this_res,this_n_res)
@@ -647,7 +653,7 @@ module interface_tdplas
 !$OMP PARALLEL REDUCTION(+:pot)
 !$OMP DO 
 #endif
-        do its=1,this_nts_act
+do its=1,this_nts_act
           pot(its)=pot(its)-fld(1)*this_cts_act(its)%x           
           pot(its)=pot(its)-fld(2)*this_cts_act(its)%y          
           pot(its)=pot(its)-fld(3)*this_cts_act(its)%z         
@@ -656,7 +662,6 @@ module interface_tdplas
 !$OMP enddo
 !$OMP END PARALLEL
 #endif
-
       end subroutine do_pot_from_field
 
 !------------------------------------------------------------------------
@@ -690,7 +695,6 @@ module interface_tdplas
 !$OMP enddo
 !$OMP END PARALLEL
 #endif
-
       end subroutine do_pot_from_dip
 
 subroutine export_mdm_qmcoup

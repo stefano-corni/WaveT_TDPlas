@@ -20,6 +20,10 @@
  Number of states           3
  Quantifier:
  l1-norm
+<<<<<<< HEAD
+ Use formatted coefficient files
+=======
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822
  
  
  Coherence quantifier: l1-norm
