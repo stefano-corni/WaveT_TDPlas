@@ -13,7 +13,8 @@
       !read(5,*) n_omega,omega_ini,omega_end
       allocate(omega_list(n_omega))
       do i=1,n_omega
-       omega_list(i)=(omega_end-omega_ini)/(n_omega-1)*(i-1)+omega_ini
+       omega_list(i)=omegas(i)
+       !omega_list(i)=(omega_end-omega_ini)/(n_omega-1)*(i-1)+omega_ini       
        !write(6,*) 'omega',omega_list(i)
       enddo
       call system_clock(current)

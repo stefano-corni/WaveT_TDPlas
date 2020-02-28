@@ -1,37 +1,58 @@
-FC = ifort
+FC = gfortran
+#FFLAGS_XEON= -O3 -ftz -align -arch pn4 -tune pn4 -xN -tpp7
+#FFLAGS_PAR= -parallel -par_threshold75 -par_report3
+#FFLAGS_HYD= -O3 -ftz -align -xHost
+#FFLAGS_HYD_PAR= -O3 -ftz -align -xHost -parallel -par_threshold75 -par_report3
+#FFLAGS_DEB= -debug -C -traceback
+#FFLAGS_P3= -O3 -ftz -align -arch pn3 -tune pn3 -tpp6
+#FFLAGS_P4= -O3 -ftz -align -arch pn4 -tune pn4 -tpp7 -xN
+#FFLAGS_MIO= -O3 -ftz -align -arch pn4 -tune pn4 -tpp7 -xB -ipo
+#FFLAGS_WS= -O3 -ftz -align -xP -no-prec-div -ipo
+#FFLAGS_LAP= -O3 -ftz -align -xAVX -no-prec-div 
+#FFLAGS_GF= -O3
+#MPI= -DPARALLEL
+LDLAGS= 
+OMP= -fopenmp -DOMP
+#FFLAGS= $(FFLAGS_GF_DEB)
+#LIBS =  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
+#INC = -I/usr/include/ -I/unimore/prod/fftw-3.3.4/include/
 
-# open mp flags
-# comment first line and uncommment the second for ifort
-
-#OMP= -fopenmp -DOMP
-OMP= -qopenmp -DOMP
+#FC = ifort
+#FFLAGS_XEON= -O3 -ftz -align -arch pn4 -tune pn4 -xN -tpp7
+#FFLAGS_PAR= -parallel -par_threshold75 -par_report3
+#FFLAGS_DEB= -debug -C -g
+#FFLAGS_DEB= -debug -traceback -C -g -diag-disable  warn -parallel -par_threshold75 -par_report3
+#FFLAGS_DEB_PAR= -g -diag-disable  warn -parallel -par_threshold75 -par_report3
+#FFLAGS_P3= -O3 -ftz -align -arch pn3 -tune pn3 -tpp6
+#FFLAGS_P4= -O3 -ftz -align -arch pn4 -tune pn4 -tpp7 -xN
+#FFLAGS_MIO= -O3 -ftz -align -xAVX
+#FFLAGS_HYD= -O3 -ftz -align -xHost
+#FFLAGS_HYD_PAR= -O3 -ftz -align -xHost -parallel -par_threshold75 -par_report3 #-check bounds 
+#FFLAGS_WS= -O3 -ftz -align -xP -no-prec-div -ipo
+#FFLAGS_GF= -O3 
+#LDLAGS=
+#OMP= -openmp -DOMP
+#FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
 
 # mpi flags
-
-MPI=
-
-# other flags - to clean up?
-
-LDLAGS=
+MPI= 
 
 # actual flags used in the compilation
 #FFLAGS= -O3 ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
-#FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
-FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024
+FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
 
 # preprocessor flag
 # comment the first and uncomment the second if compiler is ifort
 
 CPP= -cpp
+#CPP= -fpp
 
 # libraries to be linked
 
-#LIBS = -L/usr/lib -llapack -lblas -lfftw3
-#INC = -I/usr/include/
-LIBS = -mkl
-INC = -I/home/coccia/Libs/fftw-3.3.8 
+LIBS = -L/usr/lib -llapack -lblas -lfftw3 -L/usr/local/lib/
+INC = -I/usr/local/include/ -I.
 LIBSPAR= -L/opt/scali/lib64 -lfmpi -lmpi
-INCPAR= -I/opt/scali/include64 -I/local/home/corni/emanuele/fftw-3.3.4/include/
+INCPAR= -I/opt/scali/include64 -I/usr/local/lib
 
 # executable and tools directories
 
@@ -42,7 +63,7 @@ TOOLSPATH=tools
 
 WAVETOBJ = random.o constants.o readio.o spectra.o interface_tdplas.o scf.o QM_coupling.o dissipation.o propagate.o
 OBJ= $(WAVETOBJ) main.o
-OBJ_SPECTRA= $(WAVETOBJ) main_spectra.o 
+OBJ_SPECTRA= $(WAVETOBJ) main_spectra.o
 OBJ_VIB= constants.o readio.o $(TOOLSPATH)/vib.o $(TOOLSPATH)/vib_tool.o
 OBJ_COH= constants.o $(TOOLSPATH)/coherence_tool.o
 OBJ_FFT= constants.o $(TOOLSPATH)/fft_tool.o
@@ -52,13 +73,13 @@ OBJ_NUCL= constants.o $(TOOLSPATH)/nucl_wavep_tool.o
 # tdplas binding flag
 # write no if you want to compile wavet without any link to tdplas
 
-TDPLASLINK=YES
+TDPLASLINK= YES
 TDPLASLIB=
 TDPLASINC=
 TDPLASPP=
 
-
 ifeq ($(TDPLASLINK),YES)
+
 # tdplas directory
 
 TDPLAS=../../TDPlas/src/
@@ -81,19 +102,19 @@ endif
 
 serial: $(BINPATH) scf.o $(BINPATH)/WaveT-serial.x $(BINPATH)/make_spectra.x $(BINPATH)/make_vib.x $(BINPATH)/make_coherence.x $(BINPATH)/make_2dfft.x $(BINPATH)/make_pop_coh.x $(BINPATH)/make_nucl_wavep.x
 
-parallel: $(BINPATH) scf.o $(BINPATH)/WaveT-parallel.x
+parallel: $(BINPATH) $(BINPATH)/WaveT-parallel.x
 
 $(BINPATH):
 	mkdir $(BINPATH)
 
 $(BINPATH)/make_spectra.x: main_spectra.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_SPECTRA) $(TDPLASLIB) $(LIBS)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_SPECTRA) $(TDPLASLIB) $(LIB_CURIE) $(LIBS) $(LIBSF)
 
 $(BINPATH)/WaveT-serial.x: main.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(TDPLASLIB) $(LIBS) 
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/WaveT-parallel.x: main.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(INCPAR) $(TDPLASLIB) $(LIBS) $(LIBSPAR) 
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(INCPAR) $(TDPLASLIB) $(LIBS) $(LIBSPAR) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/make_vib.x: $(OBJ_VIB)
 	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_VIB)
@@ -102,7 +123,7 @@ $(BINPATH)/make_coherence.x: $(OBJ_COH)
 	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_COH)
 
 $(BINPATH)/make_2dfft.x: $(OBJ_FFT)
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_FFT) $(LIBS) 
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_FFT) $(LIBS) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/make_pop_coh.x: $(OBJ_POP_COH)
 	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_POP_COH)
@@ -116,12 +137,6 @@ clean:
 clean_obj:
 	rm -f *.o *.mod *.il *.optrpt $(TOOLSPATH)/*.o $(TOOLSPATH)/*.mod $(TOOLSPATH)/*.il $(TOOLSPATH)/*.optrpt
 
-main_spectra.o: main_spectra.f90
-	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
-
-spectra.o: spectra.f90
-	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
-
 random.o: random.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
@@ -133,6 +148,9 @@ interface_tdplas.o: interface_tdplas.f90
 
 readio.o: readio.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
+
+spectra.o: spectra.f90
+	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
 QM_coupling.o: QM_coupling.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
@@ -167,6 +185,9 @@ $(TOOLSPATH)/nucl_wavep_tool.o: $(TOOLSPATH)/nucl_wavep_tool.f90
 main.o: main.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
+main_spectra.o: main_spectra.f90
+	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
+
 # dependencies
 
 random.o:
@@ -177,8 +198,6 @@ interface_tdplas.o: constants.o
 
 readio.o: random.o
 
-main_spectra.o: readio.o spectra.o interface_tdplas.o
-
 spectra.o: readio.o
 
 QM_coupling.o: constants.o interface_tdplas.o
@@ -188,6 +207,8 @@ scf.o: constants.o readio.o interface_tdplas.o
 dissipation.o: random.o constants.o readio.o interface_tdplas.o
 
 propagate.o: spectra.o dissipation.o interface_tdplas.o
+
+main_spectra.o: readio.o spectra.o interface_tdplas.o
 
 main.o: constants.o readio.o spectra.o QM_coupling.o dissipation.o propagate.o interface_tdplas.o
 

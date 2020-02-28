@@ -55,29 +55,33 @@
 
        if (myrank.eq.0) then
           write(6,*) "SCF Cycle"
-          write(6,*) "Max_cycle ", ncycmax
+          write(6,*) "Max_cycle ", this_ncycmax
        endif
-       thrv=10**(-thrshld+2)
-       thre=10**(-thrshld)
+       thrv=10**(-this_thrshld+2)
+       thre=10**(-this_thrshld)
        if (myrank.eq.0) write(6,*) "Threshold ", thrv,thre
        call init_scf ! Initialize/allocate
        ! scf cycle
-       do while (docycle.and.ncyc.le.ncycmax) 
+       do while (docycle.and.ncyc.le.this_ncycmax) 
          ! Build the Hamiltonian
-         if(Fint.eq."ons".and.Fprop(1:3).eq."chr") then 
-           call do_field_from_charges(q_or_f,fld)
-           call do_matrix_f(fld)
+         if(this_Fint.eq."ons") then
+           if(this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then 
+             call do_field_from_charges_in_wavet(q_or_f,fld)
+             call do_matrix_f(fld)
+           endif
          endif
-         if(Fint.eq."ons".and.Fprop(1:3).eq."dip") & 
+         if(this_Fint.eq."ons".and.this_Fprop.eq."dip") & 
                            call do_matrix_f(q_or_f)
-         if(Fint.eq."pcm") call do_matrix_q(q_or_f)
+         if(this_Fint.eq."pcm") call do_matrix_q(q_or_f)
          ! Diagonalize Hamiltonian                          
          eigt_c=Htot
-         call diag_mat(eigt_c,eigv_c,n_ci)       
+         call diag_mat_in_wavet(eigt_c,eigv_c,n_ci)       
          ! Update charges or field with new coefficients 
          call do_c_oldbasis
-         if(Fprop(1:3).eq."dip") call do_field(q_or_f)
-         if(Fprop(1:3).eq."chr") call do_charges(q_or_f)
+         if(this_Fprop.eq."dip") call do_field(q_or_f)
+         if(this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then
+            call do_charges(q_or_f)
+         endif
          call do_energies(e_scf,e_ini)
          ! Check convergence                                
          if (ncyc.gt.2) then 
@@ -99,7 +103,7 @@
        enddo
        if (myrank.eq.0) write(6,*) "SCF Done"
        ! Write-out integrals/properties in the new basis 
-       if (Fprop(1:3).eq.'chr') then
+       if (this_Fprop.eq.'chr-ief'.or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then
          if (myrank.eq.0) then
             call out_charges(q_or_f)
             call out_vts
@@ -132,7 +136,7 @@
        allocate(eigv_c(n_ci),eigt_c(n_ci,n_ci))
        allocate(eigv_cp(n_ci),eigt_cp(n_ci,n_ci))
        allocate(Htot(n_ci,n_ci))
-       if(Fprop(1:3).eq."chr") allocate(pot(this_nts_act))
+       if(this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") allocate(pot(this_nts_act))
        allocate(c_c(n_ci))
 
        return
@@ -222,7 +226,7 @@
          mu(i)=dot_product(c_c,matmul(mut(i,:,:),c_c))
        enddo
        ! SP 04/0717 matmul for general spheroid orientation
-       f=(1.-mix_coef)*f+mix_coef*matmul(mat_f0,mu)
+       f=(1.-this_mix_coef)*f+this_mix_coef*matmul(this_mat_f0,mu)
 
        return
 
@@ -242,12 +246,12 @@
        integer(i4b)::i    
 
        do i=1,this_nts_act
-         pot(i)=dot_product(c_c,matmul(vts(i,:,:),c_c))
+         pot(i)=dot_product(c_c,matmul(this_vts(i,:,:),c_c))
        enddo 
 
-       q=(1.-mix_coef)*q+mix_coef*matmul(BEM_Q0,pot)
+       q=(1.-this_mix_coef)*q+this_mix_coef*matmul(this_BEM_Q0,pot)
 ! SC 12/8/2016: apparently for NP, charge compensation is needed
-       if (Fmdm(2:4).eq.'nan') q=q-sum(q)/this_nts_act
+       if (Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') q=q-sum(q)/this_nts_act
 
        return
 
@@ -266,7 +270,7 @@
 
        do j=1,n_ci
          do k=1,j   
-           Htot(k,j)=-dot_product(vts(:,k,j),q(:)-q0(:))
+           Htot(k,j)=-dot_product(this_vts(:,k,j),q(:)-this_q0(:))
            Htot(j,k)=Htot(k,j)
          enddo
          Htot(j,j)=Htot(j,j)+e_ci(j)
@@ -291,7 +295,7 @@
 
        do j=1,n_ci
          do k=1,j   
-           Htot(k,j)=dot_product(mut(:,k,j),f(:)-fr_0(:))
+           Htot(k,j)=dot_product(mut(:,k,j),f(:)-this_fr_0(:))
            Htot(j,k)=Htot(k,j)
          enddo
          Htot(j,j)=Htot(j,j)+e_ci(j)
@@ -392,7 +396,7 @@
        if (myrank.eq.0) write(6,*) "Written out the SCF charges"
        ! SP 23/10/16: update the q0 vector to have a consistent correction if a
        !              propagation is performed after the SCF cycle
-       q0(:)=q(:)
+       this_q0(:)=q(:)
 
        return 
 
@@ -418,8 +422,8 @@
 
 
        do its=1,this_nts_act
-        vts(its,:,:)=matmul(vts(its,:,:),eigt_c)
-        vts(its,:,:)=matmul(transpose(eigt_c),vts(its,:,:))
+        this_vts(its,:,:)=matmul(this_vts(its,:,:),eigt_c)
+        this_vts(its,:,:)=matmul(transpose(eigt_c),this_vts(its,:,:))
        enddo
 
 
@@ -428,12 +432,12 @@
        write (7,*) this_nts_act
        write (7,*) "V0  check Vnuc"
        do its=1,this_nts_act
-        write (7,*) vts(its,1,1)-vtsn(its),0.d0,vtsn(its)
+        write (7,*) this_vts(its,1,1)-this_vtsn(its),0.d0,this_vtsn(its)
        enddo
        do j=2,n_ci
          write(7,*) 0,j-1
          do its=1,this_nts_act
-          write(7,*) vts(its,1,j)
+          write(7,*) this_vts(its,1,j)
          enddo
        enddo
        !Vij
@@ -441,12 +445,12 @@
         do j=2,i-1   
          write(7,*) i-1,j-1
          do its=1,this_nts_act
-          write(7,*) vts(its,i,j)             
+          write(7,*) this_vts(its,i,j)             
          enddo
         enddo
          write(7,*) i-1,i-1
          do its=1,this_nts_act
-          write(7,*) vts(its,i,i)-vtsn(its)             
+          write(7,*) this_vts(its,i,i)-this_vtsn(its)             
          enddo
        enddo
        close(unit=7)

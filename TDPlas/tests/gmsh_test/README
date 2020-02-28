@@ -3,3 +3,5 @@ Create the required matrix for a WaveT run or a freq_bem calculation by using th
    gawk -f gmsh.awk sfera.msh 
 2. Then run
    ../../TDPlas/bin/tdplas.x < tdplas.inp > tdplas.out
+
+The script create_mesh.sh creates the file.msh from info on sphere position and size contained in spheres.inp

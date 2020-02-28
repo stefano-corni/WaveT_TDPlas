@@ -255,7 +255,7 @@
        dip(3)=dot_product(c,matmul(mut(3,:,:),c))
 #endif
 #ifdef OMP
-      if (Fopt(1:3).eq.'omp') then
+      if (Fopt.eq.'omp') then
          ctmp=0.d0
 !$OMP PARALLEL REDUCTION(+:ctmp) 
 !$OMP DO
@@ -321,7 +321,7 @@
 #endif
 
 #ifdef OMP
-       if (Fopt(1:3).eq.'omp') then
+       if (Fopt.eq.'omp') then
           allocate(ctmp(nts_act*n_ci))
 !$OMP PARALLEL REDUCTION (+:cc)
 !$OMP DO 
@@ -379,7 +379,7 @@
 !       enddo 
 !#endif
 !#ifdef OMP
-!       if (Fopt(1:3).eq.'omp') then
+!       if (Fopt.eq.'omp') then
 !          if (Fprop(1:3).eq."chr".or.Fprop(1:3).eq."osc") then
 !             ctmp=0.d0
 !!$OMP PARALLEL REDUCTION(+:ctmp) 
@@ -469,7 +469,9 @@
 
        integer(4) :: i,j,its
        real(dbl)  :: diff(3),dist,vts_dip
-
+       
+       if(allocated(vts)) deallocate(vts)
+       allocate(vts(nts_act,n_ci,n_ci))
        do its=1,nts_act
           diff(1)=(mol_cc(1)-cts_act(its)%x)
           diff(2)=(mol_cc(2)-cts_act(its)%y)
@@ -478,11 +480,11 @@
           do i=1,n_ci
              do j=i,n_ci
                 vts_dip=-dot_product(mut(:,j,i),diff)/dist**3
-                if(its.eq.nts_act) write (6,'(2i6,3f8.3,2e13.5)') i,j, &
-                          cts_act(its)%x,cts_act(its)%y, &
-                          cts_act(its)%z,vts_dip,vts(its,i,j)
                 vts(its,j,i)=vts_dip
                 vts(its,i,j)=vts_dip
+                !if(its.eq.nts_act) write (6,'(2i6,3f8.3,2e13.5)') i,j, &
+                !          cts_act(its)%x,cts_act(its)%y, &
+                !          cts_act(its)%z,vts_dip,vts(its,i,j)
              enddo
           enddo
        enddo
@@ -515,7 +517,7 @@
 #endif       
 #ifdef OMP
 
-       if (Fopt_chr(1:3).eq.'omp') then
+       if (Fopt_chr.eq.'omp') then
           !tmp=0.d0
 !$OMP PARALLEL reduction (+:tmp)
 !$OMP DO
@@ -562,7 +564,7 @@
        cmat_mult=matmul(a,b)
 #endif       
 #ifdef OMP
-       if (Fopt(1:3).eq.'omp') then
+       if (Fopt.eq.'omp') then
           !tmp=0.d0
 !$OMP PARALLEL reduction (+:tmp)
 !$OMP DO
@@ -608,7 +610,7 @@
 !#endif       
 !#ifdef OMP
 
-!       if (Fopt_chr(1:3).eq.'omp') then
+!       if (Fopt_chr.eq.'omp') then
 !!$OMP PARALLEL reduction (+:tmp)
 !!$OMP DO
 !         do j=1,nts_act

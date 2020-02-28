@@ -193,9 +193,11 @@ module dissipation
          pjump(i) = sp_gam(i)*weight
       enddo
       !k=nexc
-      if (Fopt(1:3).eq.'omp') then
+      if (Fopt.eq.'omp') then
+#ifdef OMP
 !$OMP PARALLEL reduction (+:dsp)
 !$OMP DO
+#endif
          do i=nexc,1,-1
             tmp=abs(c(i+1))
             do j=i-1,1,-1
@@ -238,7 +240,7 @@ module dissipation
          endif
       enddo
       !k=nexc
-      if (Fopt(1:3).eq.'omp') then
+      if (Fopt.eq.'omp') then
 !$OMP PARALLEL reduction (+:dnr)
 !$OMP DO
          do i=nexc,1,-1
@@ -460,13 +462,13 @@ module dissipation
       !c(1)=c(1)/sqrt(pjump(istate)*dsp/dt)
       i_sp=i_sp+1
 #ifndef MPI 
-      if (Fwrt(1:3).eq.'yes') then
+      if (Fwrt.eq.'yes') then
       write(*,*) 'Jump due to spontaneous emission, channel n.:', istate, 'between', ie, 'and', ig 
       endif
 #endif
 
       !Update charges to those in equilibrium with the ground state
-      if (Fmdm(1:3).ne."vac") then
+      if (Fmdm.ne."vac") then
        if (this_Fmdm_relax.eq."rel") call set_q0charges
       endif
 
@@ -515,7 +517,7 @@ module dissipation
 
       i_nr = i_nr +1
 #ifndef MPI 
-      if (Fwrt(1:3).eq.'yes') then
+      if (Fwrt.eq.'yes') then
       write(*,*) 'Jump due to nonradiative relaxation, channel n.:', istate, 'between', ie, 'and', ig
       endif
 #endif
@@ -560,7 +562,7 @@ module dissipation
       endif
       i_de = i_de + 1
 #ifndef MPI 
-      if (Fwrt(1:3).eq.'yes') then 
+      if (Fwrt.eq.'yes') then 
       write(*,*) 'Jump due to pure dephasing, channel n.:', istate 
       endif
 #endif
@@ -615,10 +617,10 @@ module dissipation
 
 
 !   if (tdis.eq.0) then
-   if (Fdis(5:9).eq."EuMar") then
+   if (Fdis.eq."mar-EuMar") then
       wrnd=w
 !   elseif (tdis.eq.1) then
-   elseif (Fdis(5:9).eq."LeiMa") then
+   elseif (Fdis.eq."mar-LeiMa") then
       wrnd=w+w_prev
    endif 
 
@@ -683,7 +685,7 @@ module dissipation
 
    h_dis=zero
 
-   if (Fdis(1:3).eq."mar") then 
+   if (Fdis.eq."mar-qjump".or.Fdis.eq."mar-EuMar".or.Fdis.eq."mar-LeiMa") then 
       call add_dis_m(h_dis,n_ci)
    elseif (Fdis.eq."nma") then 
       call add_dis_nm(h_dis,n_ci) 
@@ -710,7 +712,7 @@ module dissipation
    integer                :: i,j
 
 !   if (tdis.eq.1) then
-   if (Fdis(5:9).eq."LeiMa") then
+   if (Fdis.eq."mar-LeiMa") then
       if (first) then
          w=0.d0
          w_prev=0.d0
@@ -730,7 +732,7 @@ module dissipation
          enddo
       endif
 !   elseif (tdis.eq.0) then
-   elseif (Fdis(5:9).eq."EuMar") then
+   elseif (Fdis.eq."mar-EuMar") then
       w=0.d0
       do i=1,3*nci
          do j=1,nrnd

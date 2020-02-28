@@ -51,10 +51,10 @@
        !Send input data to all the processes
        call mpibcast_readio()
        call mpibcast_e_dip()
-       if (Fdis(1:5).ne."nodis") call mpibcast_sse()
+       if (Fdis.ne."nodis") call mpibcast_sse()
        if (Fres.eq.'Yesr')       call mpibcast_restart()
        if (Fmdm.ne.'vac')        call mpi_bcast(nspectra,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
-       if (Fabs(1:3).eq.'abs')   call mpibcast_ion_rate()
+       if (Fabs.eq.'abs')   call mpibcast_ion_rate()
 #endif
 
 
@@ -71,7 +71,7 @@
 #endif
 
        ! Fmdm(1:3) means the first three letters of the char flag Fmdm 
-          if (Fmdm(1:3).ne."vac") then
+          if (Fmdm.ne."vac") then
              call set_global_tdplas_in_wavet(dt,Fmdm,mol_cc,n_ci,n_ci_read,c_i, &
                                              e_ci,mut,fmax,omega,Ffld,n_out,n_f, &
                                              tdelay,pshift,Fbin,Fopt,nthreads, &
@@ -96,7 +96,7 @@
 #endif
 
 !      propagate or diagonalise matrix
-       if(Fmdm(1:1).eq.'Q') then
+       if(Fmdm.eq.'Qnan'.or.Fmdm.eq.'Qsol') then
          call do_QM_coupling
        else 
          call prop

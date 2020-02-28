@@ -78,13 +78,14 @@ The number of threads available    =        4
  Medium polarization frozen to molecule in its GS
  Surface read from file cavity.inp
  Essential output written.
+ charges for MOPAC2002 interface NOT PRINTED
  TEST: Nanoparticle local field
  OMP-optimized loops for charges
-Done reading input & setting up the field, took     0.017s
+Done reading input & setting up the field, took     0.113s
  BEM surface and Matrixes S D have been read in
  BEM correctly initialized
  Done BEM diagonal
- Medium contribution to ground state free energy:  -1.5836197193835593E-004
+ Medium contribution to ground state free energy:  -1.5836197193835612E-004
  G_neq at t=0:   0.0000000000000000     
  Initiated VV propagator
-Done , total elapsed time    36.503s
+Done , total elapsed time    73.879s

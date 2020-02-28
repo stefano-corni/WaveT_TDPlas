@@ -7,7 +7,12 @@ program make_spectra
 
 !     read in the input parameter for the present evolution
       call read_input
-      if (Fmdm(1:3).ne."vac") call read_medium_input
+      call set_global_tdplas_in_wavet(dt,Fmdm,mol_cc,n_ci,n_ci_read,c_i, &
+                                      e_ci,mut,fmax,omega,Ffld,n_out,n_f, &
+                                      tdelay,pshift,Fbin,Fopt,nthreads, &
+                                      restart,n_restart)
+
+      if (Fmdm.ne."vac") call read_medium_input
       call init_spectra
 
 !     calculate spectra               
