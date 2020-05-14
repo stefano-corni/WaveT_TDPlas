@@ -1,0 +1,13 @@
+TDPLASDIR=/media/gabriel/Data/forked-wavet/WaveT/TDPlas/
+OCTOPUSDIR=/media/gabriel/Data/forked-octopus/octopus/
+cd $OCTOPUSDIR
+make clean
+cd ./src
+make clean
+cd $TDPLASDIR
+make clean
+make
+cp $TDPLASDIR/src/tdplas.mod $OCTOPUSDIR/src/hamiltonian/.
+cd $OCTOPUSDIR
+make -j
+make install

@@ -102,6 +102,8 @@
       real(dbl), allocatable    :: im_deps_domegas(:) !< imaginary part of the derivative of the dielectric function at the sampling frequencies
       real(dbl), allocatable    :: func_eps(:), dfunc_eps(:) 
 
+      character(7) :: linked_to
+
       private
       public read_medium,deallocate_medium,Fint,Feps,Fprop,          &
              nsph,sph_maj,sph_min,sph_centre,sph_vrs,                &
@@ -114,14 +116,14 @@
              FinitBEM,Fsurf,Finit_mdm,read_medium_freq,              &
              read_medium_tdplas,n_omega,omega_ini,omega_end,         &
              Fwrite,Fmdm_relax,Fgamess,mpibcast_readio_mdm,Fopt_chr, &
-             ntst,Fmdm_res,Finv, read_medium_eps
+             ntst,Fmdm_res,Finv, read_medium_eps, linked_to
 !
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!  DRIVER  ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine read_medium
+      subroutine read_medium(nts,cts)
 !------------------------------------------------------------------------
 ! @brief Driver routine for reading medium input 
 !
@@ -129,11 +131,16 @@
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
 
+       integer                    , optional, intent(out) :: nts
+       type(tess_pcm), allocatable, optional, intent(out) :: cts(:)
+
+       integer i
+
        namelist /propagate/interaction_stride,interaction_init,        &
                          interaction_type,propagation_type,            &
                          scf_mix_coeff,scf_max_cycles,scf_threshold,   &
                          local_field,debug_type,out_level,test_type,   &
-                         medium_relax,ntst
+                         medium_relax,ntst,linked_to
        namelist /medium/ medium_type,medium_init,medium_pol,bem_type,  &
                          bem_read_write                  
        namelist /surface/input_surface,spheres_number,spheroids_number,&
@@ -144,23 +151,25 @@
        namelist /eps_function/epsilon_omega,eps_0,eps_d,eps_A, &
                          eps_gm,eps_w0,f_vel,tau_deb       
       
+       open(1987,file='tdplas.inp')
        call init_nml_all() 
        call init_nml_propagate() 
-       read(*,nml=propagate) 
+       read(1987,nml=propagate) 
        call write_nml_propagate()
        call write_nml_interaction()
-       read(*,nml=medium) 
+       read(1987,nml=medium) 
        call write_nml_medium()
-       read(*,nml=surface) 
+       read(1987,nml=surface) 
        call write_nml_surface()
        if (Fmdm(2:4).eq.'nan') then
          call init_nml_nanoparticle() 
        elseif (Fmdm(2:4).eq.'sol') then
          call init_nml_solvent()
        endif
-       read(*,nml=eps_function) 
+       read(1987,nml=eps_function) 
        call write_nml_eps_function()
        call write_nml_all()
+       close(1987)
 
        if (nts_act.gt.ntst.and.nthr.gt.1) then 
           Fopt_chr(1:3)='omp'
@@ -168,6 +177,12 @@
        else
           Fopt_chr(1:3)='non'
           write(*,*) 'Matmul is always used' 
+       endif
+
+       if(present(cts)) then
+        nts = nts_act
+        allocate(cts(nts))
+        cts = cts_act
        endif
 
        return
@@ -821,7 +836,11 @@
          select case(bem_read_write)
          case ('rea','Rea','REA')
           FinitBEM='rea'
-          if(Fprop(1:3).eq."chr") call read_gau_out_medium
+          if(Fprop(1:3).eq."chr") then
+            if( linked_to == 'wavet  ' ) then
+              call read_gau_out_medium
+            endif
+          endif
           write(6,*) "This is full run reading matrix and boundary"
          case ('wri','Wri', 'WRI')
           FinitBEM='wri'
