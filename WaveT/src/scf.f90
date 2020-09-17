@@ -5,9 +5,7 @@
       use, intrinsic :: iso_c_binding
 
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
 #endif
 
       implicit none
@@ -33,13 +31,13 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!  DRIVER  ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine do_scf(q_or_f,c_prev)                  
 !------------------------------------------------------------------------
 ! @brief SCF friver routine 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine do_scf(q_or_f,c_prev)
 
        implicit none
        real(dbl), intent(INOUT):: q_or_f(:)     !< charges or field  
@@ -50,6 +48,7 @@
        real(dbl) :: e_scf, e_ini                !< GS energies
        real(dbl) :: fld(3)                      !  field from charges
        integer(i4b):: max_p(1)    
+       integer(i4b):: its
 
 #ifndef MPI
        myrank=0
@@ -66,15 +65,14 @@
        ! scf cycle
        do while (docycle.and.ncyc.le.this_ncycmax) 
          ! Build the Hamiltonian
-         if(this_Fint.eq."ons") then
-           if(this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then 
-             call do_field_from_charges_in_wavet(q_or_f,fld)
-             call do_matrix_f(fld)
-           endif
+         if(this_Fint.eq."ons".and. &
+           (this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or. &
+           this_Fprop.eq."chr-ons")) then 
+           call do_field_from_charges_in_wavet(q_or_f,fld)
+           call do_htot(fld)
+         else
+           call do_htot(q_or_f)
          endif
-         if(this_Fint.eq."ons".and.this_Fprop.eq."dip") & 
-                           call do_matrix_f(q_or_f)
-         if(this_Fint.eq."pcm") call do_matrix_q(q_or_f)
          ! Diagonalize Hamiltonian                          
          eigt_c=Htot
          call diag_mat_in_wavet(eigt_c,eigv_c,n_ci)       
@@ -106,6 +104,11 @@
        if (myrank.eq.0) write(6,*) "SCF Done"
        ! Write-out integrals/properties in the new basis 
        if (this_Fprop.eq.'chr-ief'.or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then
+       ! transform vts to the SCF state basis
+        do its=1,this_nts_act
+         this_vts(its,:,:)=matmul(this_vts(its,:,:),eigt_c)
+         this_vts(its,:,:)=matmul(transpose(eigt_c),this_vts(its,:,:))
+        enddo
          if (myrank.eq.0) then
             call out_charges(q_or_f)
             call out_vts
@@ -125,16 +128,15 @@
 
        return
 
-      end subroutine
+      end subroutine do_scf
 
-
-      subroutine init_scf                      
 !------------------------------------------------------------------------
 ! @brief Init/allocation SCF 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine init_scf
 
        allocate(eigv_c(n_ci),eigt_c(n_ci,n_ci))
        allocate(eigv_cp(n_ci),eigt_cp(n_ci,n_ci))
@@ -144,16 +146,15 @@
 
        return
 
-      end subroutine
+      end subroutine init_scf
 
-
-      subroutine finalize_scf                      
 !------------------------------------------------------------------------
 ! @brief Finalize/deallocation SCF 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine finalize_scf
 
        deallocate(eigv_c,eigt_c)
        deallocate(eigv_cp,eigt_cp)
@@ -163,19 +164,19 @@
 
        return
 
-      end subroutine
+      end subroutine finalize_scf
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!  SCF  ROUTINES     !!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine do_c_oldbasis                      
 !------------------------------------------------------------------------
 ! @brief Write the new coefficients in the old basis 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine do_c_oldbasis
 
        implicit none
 
@@ -210,16 +211,16 @@
 
        return
 
-      end subroutine
+      end subroutine do_c_oldbasis
 
 
-      subroutine do_field(f)                      
 !------------------------------------------------------------------------
 ! @brief Compute field from dipole 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine do_field(f)
 
        implicit none 
 
@@ -234,16 +235,15 @@
 
        return
 
-      end subroutine
+      end subroutine do_field
 
-
-      subroutine do_charges(q)                      
 !------------------------------------------------------------------------
 ! @brief Compute charges from potential 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine do_charges(q)
 
        implicit none 
 
@@ -260,66 +260,51 @@
 
        return
 
-      end subroutine
+      end subroutine do_charges
 
-
-      subroutine do_matrix_q(q)                      
 !------------------------------------------------------------------------
-! @brief Compute Hamiltonian with new charges 
+! @brief Compute Hamiltonian with charges or fields 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: S.Corni 
 !------------------------------------------------------------------------
+      subroutine do_htot(q_or_f)
 
-       real(dbl), intent(IN):: q(this_nts_act)     
-       integer(4)::j,k     
-
-       do j=1,n_ci
-         do k=1,j   
-           Htot(k,j)=-dot_product(this_vts(:,k,j),q(:)-this_q0(:))
-           Htot(j,k)=Htot(k,j)
-         enddo
-         Htot(j,j)=Htot(j,j)+e_ci(j)
-         if(this_Fwrite.eq."high") write(6,*) j,Htot(j,j)
-       enddo
-
-       return
-
-      end subroutine
-
-
-      subroutine do_matrix_f(f)                      
-!------------------------------------------------------------------------
-! @brief Compute Hamiltonian with new field 
-!
-! @date Created: S. Pipolo
-! Modified:
-!------------------------------------------------------------------------
-
-       real(dbl), intent(IN):: f(3)     
+       real(dbl), intent(IN):: q_or_f(:)     
        integer(4)::i,j,k     
 
-       do j=1,n_ci
-         do k=1,j   
-           Htot(k,j)=dot_product(mut(:,k,j),f(:)-this_fr_0(:))
+       if (this_Fint.eq."pcm") then
+        do j=1,n_ci
+         do k=j,n_ci
+           Htot(k,j)=dot_product(this_vts(:,k,j),q_or_f(:)-this_q0(:))
            Htot(j,k)=Htot(k,j)
          enddo
          Htot(j,j)=Htot(j,j)+e_ci(j)
          if(this_Fwrite.eq."high") write(6,*) j,Htot(j,j)
-       enddo
+        enddo
+       else
+        do j=1,n_ci
+         do k=j,n_ci   
+           Htot(k,j)=dot_product(mut(:,k,j),q_or_f(:)-this_fr_0(:))
+           Htot(j,k)=Htot(k,j)
+         enddo
+         Htot(j,j)=Htot(j,j)+e_ci(j)
+         if(this_Fwrite.eq."high") write(6,*) j,Htot(j,j)
+        enddo
+       endif
 
        return
 
-      end subroutine
+      end subroutine do_htot
 
 
-      subroutine check_conv(mxe,mxv,Mdim)                       
 !------------------------------------------------------------------------
 ! @brief Check convergence 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine check_conv(mxe,mxv,Mdim)
 
        real(dbl),intent(inout) :: mxe,mxv
        integer(i4b),intent(in) :: Mdim 
@@ -342,16 +327,16 @@
 
        return
 
-      end subroutine
+      end subroutine check_conv
 
 
-      subroutine do_energies(e_scf,e_ini)
 !------------------------------------------------------------------------
 ! @brief Define total energy 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine do_energies(e_scf,e_ini)
 
        implicit none
 
@@ -368,20 +353,20 @@
 
        return
 
-      end subroutine
+      end subroutine do_energies
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!! OUTPUT/TRANSFORMATION ROUTINES !!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine out_charges(q)
 !------------------------------------------------------------------------
 ! @brief Write out the charges in the charges0_scf.dat file 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine out_charges(q)
 
        implicit none
 
@@ -406,10 +391,9 @@
 
        return 
 
-      end subroutine      
+      end subroutine out_charges     
 
 
-      subroutine out_vts
 !------------------------------------------------------------------------
 ! @brief Transform to the new basis and write out potential integrals on
 ! tesserae (vts) 
@@ -417,6 +401,7 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine out_vts
 
        implicit none
 
@@ -427,10 +412,6 @@
 #endif
 
 
-       do its=1,this_nts_act
-        this_vts(its,:,:)=matmul(this_vts(its,:,:),eigt_c)
-        this_vts(its,:,:)=matmul(transpose(eigt_c),this_vts(its,:,:))
-       enddo
 
 
        open(unit=7,file="ci_pot_scf.inp",status="unknown", &
@@ -464,16 +445,15 @@
 
        return 
 
-      end subroutine      
+      end subroutine out_vts      
 
-
-      subroutine out_dipoles
 !------------------------------------------------------------------------
 ! @brief Transform to the new basis and write out dipole integrals (mut)  
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine out_dipoles
 
        implicit none
 
@@ -503,16 +483,15 @@
 
        return 
 
-      end subroutine      
+      end subroutine out_dipoles      
 
-
-      subroutine out_energies
 !------------------------------------------------------------------------
 ! @brief Write out new energies and reset the zero of energy
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine out_energies
 
        implicit none
 
@@ -536,7 +515,6 @@
 
        return 
 
-      end subroutine      
-
+      end subroutine out_energies      
 
       end module

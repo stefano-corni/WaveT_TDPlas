@@ -4,9 +4,7 @@ module dissipation
   use random
   use interface_tdplas, only: set_q0charges,this_Fmdm_relax
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
 #endif
   use, intrinsic :: iso_c_binding
 #ifdef OMP
@@ -26,7 +24,6 @@ module dissipation
 !
   contains
 
-  subroutine add_dis_m(h_dis,nci)
 !------------------------------------------------------------------------
 ! @brief Markovian SSE (eq 25 J. Phys: Condens. Matter vol. 24 (2012) 273201)
 ! Add the dissipative contribution to H 
@@ -37,6 +34,7 @@ module dissipation
 ! Modified  : E. Coccia 27 Nov 2017 (remove dissipation from dephasing "i-0")
 ! @param h_dis
 !------------------------------------------------------------------------
+  subroutine add_dis_m(h_dis,nci)
 
    implicit none
    integer, intent(in)    :: nci
@@ -70,7 +68,7 @@ module dissipation
       do i=2,nci
          if (Fdis_rel.eq."dip") then
             rate = nr_gam(i-1)*tmom2(i-1)
-         elseif (Fdis_rel.eq."mat") then
+         else
             rate = nr_gam(i-1)
          endif
          h_dis(i) = h_dis(i) + rate
@@ -81,7 +79,7 @@ module dissipation
             k=k+1
             if (Fdis_rel.eq."dip") then
                rate = nr_gam(k)*tmom2(k)
-            elseif (Fdis_rel.eq."mat") then
+            else 
                rate = nr_gam(k)
             endif
             h_dis(i) = h_dis(i) + rate
@@ -108,7 +106,7 @@ module dissipation
 ! S_alpha = sqrt(nr_gam_alpha) d_(alpha,0)  |Phi_0> <Phi_alpha|
          if (Fdis_rel.eq."dip") then
             rate = nr_gam(i-1)*tmom2(i-1)
-         elseif (Fdis_rel.eq."mat") then
+         else 
             rate = nr_gam(i-1)
          endif
          h_dis(i) = h_dis(i) + rate
@@ -136,7 +134,6 @@ module dissipation
   end subroutine add_dis_m
 
 
-  subroutine add_dis_nm(h_dis,nci)
 !------------------------------------------------------------------------
 ! @brief Non-Markovian SSE (eq 25 J. Phys: Condens. Matter vol. 24 (2012) 273201)
 ! Add the dissipative contribution to H 
@@ -145,6 +142,7 @@ module dissipation
 ! @Date Created   : E. Coccia 20 Dec 2016
 ! Modified  :
 !------------------------------------------------------------------------
+  subroutine add_dis_nm(h_dis,nci)
 
     implicit none
     integer, intent(in)    :: nci
@@ -159,7 +157,6 @@ module dissipation
 
   end subroutine add_dis_nm
 
-  subroutine loss_norm(c,nci,pjump)
 !------------------------------------------------------------------------
 ! @brief Contributions to the loss of norm 
 ! Quantum jump from J. Opt. Soc. Am. B. vol. 10 (1993) 524 
@@ -173,6 +170,7 @@ module dissipation
 ! Modified  :
 ! @param dtot, dsp, dnr, dde, pjump(:)
 !------------------------------------------------------------------------
+  subroutine loss_norm(c,nci,pjump)
 
    implicit none
    complex(cmp),  intent(in)   :: c(nci)
@@ -212,9 +210,7 @@ module dissipation
                pjump(ik(j,i)) = sp_gam(ik(j,i))*weight
            enddo
          enddo
-#ifdef OMP
 !$OMP END PARALLEL
-#endif
       else
          do i=nexc,1,-1
             tmp=abs(c(i+1))
@@ -238,17 +234,15 @@ module dissipation
             dnr = dnr + nr_gam(i)*weight
             pjump(i+nf) = nr_gam(i)*weight
 !      elseif (nr_typ.eq.1) then
-         elseif (Fdis_rel.eq."mat") then
+         else
             dnr = dnr + nr_gam(i)*tmp**2
             pjump(i+nf) = nr_gam(i)*tmp**2
          endif
       enddo
       !k=nexc
       if (Fopt.eq.'omp') then
-#ifdef OMP
 !$OMP PARALLEL reduction (+:dnr)
 !$OMP DO
-#endif
          do i=nexc,1,-1
             tmp=abs(c(i+1))
             do j=i-1,1,-1
@@ -261,7 +255,7 @@ module dissipation
                    dnr = dnr + nr_gam(ik(j,i))*weight
                    pjump(ik(j,i)+nf) = nr_gam(ik(j,i))*weight
 !      elseif (nr_typ.eq.1) then
-               elseif (Fdis_rel.eq."mat") then
+               else
                    !dnr = dnr + nr_gam(k)*tmp**2
                    !pjump(k+nf) = nr_gam(k)*tmp**2
                    dnr = dnr + nr_gam(ik(j,i))*tmp**2
@@ -269,9 +263,7 @@ module dissipation
                endif
             enddo
          enddo
-#ifdef OMP
 !$OMP END PARALLEL
-#endif
       else
          do i=nexc,1,-1
             tmp=abs(c(i+1))
@@ -285,7 +277,7 @@ module dissipation
                    dnr = dnr + nr_gam(ik(j,i))*weight
                    pjump(ik(j,i)+nf) = nr_gam(ik(j,i))*weight
 !      elseif (nr_typ.eq.1) then
-               elseif (Fdis_rel.eq."mat") then
+               else
                    !dnr = dnr + nr_gam(k)*tmp**2
                    !pjump(k+nf) = nr_gam(k)*tmp**2
                    dnr = dnr + nr_gam(ik(j,i))*tmp**2
@@ -346,7 +338,7 @@ module dissipation
          if (Fdis_rel.eq."dip") then
             dnr = dnr + nr_gam(i)*weight
 !      elseif (nr_typ.eq.1) then
-         elseif (Fdis_rel.eq."mat") then
+         else
             dnr = dnr + nr_gam(i)*tmp**2
          endif
          pjump(i) = sp_gam(i)*weight
@@ -354,7 +346,7 @@ module dissipation
          if (Fdis_rel.eq."dip") then
             pjump(i+nexc) = nr_gam(i)*weight
 !      elseif (nr_typ.eq.1) then
-         elseif (Fdis_rel.eq."mat") then
+         else
             pjump(i+nexc) = nr_gam(i)*tmp**2
          endif
       enddo
@@ -406,7 +398,6 @@ module dissipation
 
   end subroutine loss_norm 
 
-  subroutine quan_jump(c,c_prev,nci,pjump)
 !------------------------------------------------------------------------
 ! @brief Quantum jump from J. Opt. Soc. Am. B. vol. 10 (1993) 524 
 ! Random events: dissipation, nonradiative and dephasing
@@ -415,13 +406,14 @@ module dissipation
 ! Modified  :
 ! @param pjump(:), c(:) 
 !------------------------------------------------------------------------
+  subroutine quan_jump(c,c_prev,nci,pjump)
 
    implicit none
    complex(cmp), intent(inout)   :: c(nci)
    complex(cmp), intent(in)      :: c_prev(nci)
    integer(i4b), intent(in)      :: nci
    real(dbl),     intent(in)     :: pjump(2*nf+nexc+1)
-   integer(i4b)                  :: i,istate,ig,ie
+   integer(i4b)                  :: i,istate,ig,ie,ideg,ideg1
    real(dbl)                     :: eta, eta1, tmp1, tmp2, tmp3, modc, creal, ireal
    real(dbl)                     :: left, right 
    complex(cmp)                  :: cph 
@@ -501,14 +493,48 @@ module dissipation
          creal = real(c_prev(ie))*sqrt(nr_gam(istate)*tmom2(istate))
          ireal = aimag(c_prev(ie))*sqrt(nr_gam(istate)*tmom2(istate))
 !      elseif (nr_typ.eq.1) then
-      elseif (Fdis_rel.eq."mat") then
+      else
          creal = real(c_prev(ie))*sqrt(nr_gam(istate))
          ireal = aimag(c_prev(ie))*sqrt(nr_gam(istate))
       endif
-      c(ig)  = cmplx(creal,ireal)
-      c(ig+1:nci) = zeroc
-      c(1:ig-1) = zeroc
-      c(ig)=c(ig)/sqrt(pjump(istate+nf)*dnr/dt) 
+      if (Fdis_rel.eq."ene".or.Fdis_rel.eq."egl") then
+         if (deg(ie).ne.deg(istate)) then
+            c(istate) = cmplx(creal,ireal)
+            c(1:istate-1)=zeroc
+            c(istate+1:nci)=zeroc
+            c(istate)=c(istate)/sqrt(pjump(istate+nf)*dnr/dt)
+            ideg=0
+            do while (deg(istate).eq.deg(istate-ideg))
+               ideg=ideg+1
+               if (istate-ideg.eq.0) exit
+               c(istate-ideg)=c(istate)
+            enddo
+         else
+            ideg=0
+            do while (deg(ie).eq.deg(istate-ideg))
+               ideg=ideg+1
+               if (istate-ideg.eq.0) exit
+            enddo
+            if (istate-ideg.gt.0) then
+               c(istate-ideg) = cmplx(creal,ireal)
+               c(1:istate-ideg-1)=zeroc
+               c(istate-ideg+1:nci)=zeroc
+               c(istate-ideg)=c(istate-ideg)/sqrt(pjump(istate+nf)*dnr/dt)
+               ideg1=0
+               do while (deg(istate-ideg).eq.deg(istate-ideg-ideg1))
+                  ideg1=ideg1+1
+                  if (istate-ideg-ideg1.eq.0) exit
+                  c(istate-ideg-ideg1)=c(istate-ideg)
+               enddo
+            endif
+         endif
+      else
+         c(ig)  = cmplx(creal,ireal)
+         c(ig+1:nci) = zeroc
+         c(1:ig-1) = zeroc
+         c(ig)=c(ig)/sqrt(pjump(istate+nf)*dnr/dt)
+      endif
+
 
 !      if (nr_typ.eq.0) then
       !if (Fdis_rel.eq."dip") then
@@ -580,13 +606,13 @@ module dissipation
 
   end subroutine quan_jump
 
-  subroutine set_pair(istate,ig,ie)
 !------------------------------------------------------------------------
 ! @brief Set paits for intermedate relaxations 
 !
 ! @date Created   : E. Coccia 10 Oct 2017
 ! Modified  :
 !------------------------------------------------------------------------
+  subroutine set_pair(istate,ig,ie)
     
    implicit none
    integer(i4b),  intent(in)    :: istate
@@ -605,7 +631,6 @@ module dissipation
   end subroutine set_pair
 
 
-  subroutine add_h_rnd(h_rnd,nci,w,w_prev)
 !------------------------------------------------------------------------
 ! @brief Random term in the Hamiltonian for the stochastic propagation 
 ! Random events: dissipation, nonradiative and dephasing
@@ -614,6 +639,7 @@ module dissipation
 ! Modified  :
 ! @param w(:), w_prev(:), h_rnd(:,:)
 !------------------------------------------------------------------------
+  subroutine add_h_rnd(h_rnd,nci,w,w_prev) 
 
    implicit none
    integer, intent(in)        :: nci
@@ -647,7 +673,7 @@ module dissipation
       if (Fdis_rel.eq."dip") then
          rate = sqrt(nr_gam(i-1)*tmom2(i-1))
 !      elseif (nr_typ.eq.1) then
-      elseif (Fdis_rel.eq."mat") then
+      else
          rate = sqrt(nr_gam(i-1))
       endif
       rtmp = rtmp + rate*wrnd(i+nci)
@@ -676,7 +702,6 @@ module dissipation
 
   end subroutine add_h_rnd
 
-  subroutine define_h_dis(h_dis,nci)
 !------------------------------------------------------------------------    
 ! @brief Define the Markovian (imar=0) or non-Markovian (imar=1)
 ! dissipative term in the system Hamiltonian
@@ -685,6 +710,7 @@ module dissipation
 ! Modified  :
 ! @param h_dis
 !------------------------------------------------------------------------
+  subroutine define_h_dis(h_dis,nci)
 
    implicit none  
    integer, intent(in)    :: nci 
@@ -703,7 +729,6 @@ module dissipation
  
   end subroutine define_h_dis
 
-  subroutine rnd_noise(w,w_prev,nci,first) 
 !------------------------------------------------------------------------
 ! @brief Define the random fluctuating term in the
 ! stochastic propagator
@@ -712,6 +737,7 @@ module dissipation
 ! Modified  :
 ! @param w(:), w_rnd(:)
 !------------------------------------------------------------------------
+  subroutine rnd_noise(w,w_prev,nci,first)
 
    implicit none
    integer, intent(in)    :: nci
@@ -753,7 +779,6 @@ module dissipation
 
  end subroutine rnd_noise
 
-  subroutine add_h_rnd2(h_rnd2,nci)
 !------------------------------------------------------------------------
 ! @brief Define the square of the dissipation/dephasing operator 
 ! Random events: dissipation, nonradiative and dephasing
@@ -762,6 +787,7 @@ module dissipation
 ! Modified  :
 ! @param h_rnd2(:,:)
 !------------------------------------------------------------------------
+ subroutine add_h_rnd2(h_rnd2,nci)
 
    implicit none
    integer, intent(in)        :: nci
@@ -801,7 +827,6 @@ module dissipation
 
   end subroutine add_h_rnd2
 
-  function disp(h_dis,c,nci)
 !------------------------------------------------------------------------
 ! @brief Element-by-element multiplication 
 !
@@ -809,6 +834,7 @@ module dissipation
 ! Modified  :
 ! @param h_dis,c
 !------------------------------------------------------------------------
+  function disp(h_dis,c,nci)
 
    implicit none
    integer(i4b), intent(in)      :: nci
@@ -822,13 +848,13 @@ module dissipation
 
   end function disp
 
-  subroutine random_seq(restart_i)
 !------------------------------------------------------------------------
 ! @brief Genarate a dummy sequence of rnd numbers 
 ! 
 ! @date Created   : E. Coccia 24 Nov 2017
 ! Modified  :
 !------------------------------------------------------------------------ 
+  subroutine random_seq(restart_i)
 
     implicit none
 

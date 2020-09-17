@@ -5,9 +5,7 @@
       use pedra_friends
       use interface_qmcode
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
 #endif
 
       implicit none
@@ -130,13 +128,13 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!  DRIVER  ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine read_medium
 !------------------------------------------------------------------------
 ! @brief Driver routine for reading medium input 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine read_medium
 
        namelist /propagate/interaction_stride,interaction_init,        &
                          interaction_type,propagation_type,            &
@@ -171,6 +169,21 @@
        endif
        read(*,nml=eps_function) 
        call write_nml_eps_function()
+       
+       if(FinitBEM.eq.'rea') then
+          if(Fprop.eq.'chr-ief'.or.Fprop.eq.'chr-ied' &
+                           & .or.Fprop.eq.'chr-ons') then
+              call read_gau_out_medium
+          endif
+       endif
+       if (Fsurf.eq.'fil') then
+          if (FinitBEM.eq.'wri') then
+              call read_cavity_full_file
+          elseif (FinitBEM.eq.'rea') then
+              call read_cavity_file
+          endif
+       endif
+       
        if (Fmdm.eq.'Qnan') then
          read(*,nml=print_charges) 
          call write_nml_print_charges()
@@ -189,13 +202,13 @@
       end subroutine read_medium
 
 
-      subroutine read_medium_freq
 !------------------------------------------------------------------------
 ! @brief Driver routine for reading medium input form main_freq 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine read_medium_freq
 
        namelist /freq/ fmax,n_omega,omega_ini,omega_end,debug_type, &
                        out_level,test_type
@@ -228,14 +241,13 @@
       end subroutine read_medium_freq
 
 
-      subroutine read_medium_tdplas
 !------------------------------------------------------------------------
 ! @brief Driver routine for main_tdplas 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
-
+      subroutine read_medium_tdplas
 
        !namelist /tdplas/ debug
        namelist /medium/ medium_type,medium_init,medium_pol,bem_type,  &
@@ -297,20 +309,23 @@
 !!!!!!!!!!!!!!!!!!!!!  INITIALIZATION  ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine init_nml_all 
 !------------------------------------------------------------------------
 ! @brief Initialize variables for all mains to safe values 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine init_nml_all
 
 
        ! Output and debug
        out_level="low"
        debug_type="non"
        test_type="non"
+       !Use only with gmsh
+       Finv='non'
        ! Sphere and Spheroid
+       Fshape='none'
        spheres_number=0 
        sphere_radius=zero
        sphere_position_x=zero
@@ -337,40 +352,37 @@
        ! Threshold value for optimized loops
        ntst=150
        print_lf_matrix='non'
+       medium_init='fro'
+       medium_type='nan'
+       medium_pol='chr'
 
        return
 
-      end subroutine
+      end subroutine init_nml_all
 
-
-      subroutine init_nml_propagate()
 !------------------------------------------------------------------------
 ! @brief Initialize variables for propagation main (will be tdplas) 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine init_nml_propagate()
 
-       medium_init='fro'
-       medium_type='nan'
-       medium_pol='chr'
+       !medium_init='fro'
+       !medium_type='nan'
+       !medium_pol='chr'
        medium_relax="non"
        interaction_stride=1
        interaction_type='pcm'
        interaction_init='non-scf'
-       bem_type='diag'
-       bem_read_write='rea'
-       input_surface='fil'
        propagation_type='ief'
        local_field='loc'
        medium_res='n'
 
        return
 
-      end subroutine 
+      end subroutine init_nml_propagate 
 
-
-      subroutine init_nml_nanoparticle()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist nanoparticle 
 !
@@ -378,6 +390,7 @@
 ! Modified  : SP 10/07/17
 ! @param epsilon_omega,eps_0,eps_d,eps_A,eps_gm,eps_w0,f_vel
 !------------------------------------------------------------------------
+      subroutine init_nml_nanoparticle()
 
        epsilon_omega='drl'
        tau_deb=1000.
@@ -393,7 +406,6 @@
       end subroutine init_nml_nanoparticle
 
 
-      subroutine init_nml_solvent()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist solvent 
 !
@@ -401,6 +413,7 @@
 ! Modified  : SP 10/07/17
 ! @param epsilon_omega,eps_0,eps_d,eps_A,eps_gm,eps_w0,f_vel
 !------------------------------------------------------------------------
+      subroutine init_nml_solvent()
 
        epsilon_omega='deb'
        tau_deb=1000.
@@ -416,13 +429,13 @@
       end subroutine init_nml_solvent
 
 
-      subroutine init_nml_freq()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist freq 
 !
 ! @date Created   : E. Coccia 11 May 2017
 ! Modified  : SP 10/07/17
 !------------------------------------------------------------------------
+      subroutine init_nml_freq() 
 
        ! SP: No propagation: Fprop set to other than "dip" or "chr" 
        Fprop="non"
@@ -451,13 +464,13 @@
       end subroutine init_nml_freq
 
 
-      subroutine init_nml_tdplas()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist tdplas 
 !
 ! @date Created   : E. Coccia 16 May 2017
 ! Modified  : SP 14/07/17
 !------------------------------------------------------------------------
+      subroutine init_nml_tdplas()
 
        ! SP: No propagation: Fprop set to other than "dip" or "chr" 
        Fprop="non"
@@ -487,13 +500,13 @@
 !!!!!!!!!!!!!!!!!!  VARIABLE DEFINITION ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine write_nml_all 
 !------------------------------------------------------------------------
 ! @brief Write variables for all mains 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine write_nml_all
 
        ! Output level
        select case (out_level)
@@ -530,7 +543,7 @@
         write(6,*) "TEST: Nanoparticle reaction field"
        case ('n-l','N-l','n-L','N-L')
         Ftest='n-l'
-        Ffld='snd'
+        !Ffld='snd'
         Floc='loc'
         write(6,*) "TEST: Nanoparticle local field"
        case ('s-r','S-r','s-R','S-R')
@@ -539,7 +552,7 @@
         write(6,*) "TEST: Solvent reaction field"
        case ('s-l','S-l','s-L','S-L')
         Ftest='s-l'
-        Ffld='snd'
+        !Ffld='snd'
         Floc='loc'
         write(6,*) "TEST: Solvent local field"
        case ('QMT','Qmt','qmt')
@@ -570,16 +583,15 @@
        end select
        return
 
-      end subroutine
+      end subroutine write_nml_all
 
-
-      subroutine write_nml_propagate()
 !------------------------------------------------------------------------
 ! @brief Write solvent and nanoparticle shared variables 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine write_nml_propagate()
 
        ! propagation_type refers to which quantity is propagated by equations of motions
        !   dip: only the dipolar (i.e., Onsager) reaction/local field/dipole is propagated
@@ -612,6 +624,7 @@
         Floc='loc'
         write(6,*) "Local field effects are included"
        case default
+        Floc='non'
         write(6,*) "Local field effects are NOT included"
        end select
 ! SP 270917: added when merging to newer master 
@@ -639,29 +652,16 @@
 
        return
 
-      end subroutine
+      end subroutine write_nml_propagate
 
 
-      subroutine write_nml_tdplas()
-!------------------------------------------------------------------------
-! @brief Write variables in the namelist tdplas and put conditions 
-!
-! @date Created   : E. Coccia 16 May 2017
-! Modified  :
-! @param epsilon_omega,eps_0,eps_d,tau_deb,eps_A,eps_gm,
-!        eps_w0,f_vel,input_surface,xr,yr,zr,rr,nsph  
-!------------------------------------------------------------------------
-       return
-      end subroutine  write_nml_tdplas
-
-
-      subroutine write_nml_eps_function()
 !------------------------------------------------------------------------
 ! @brief Write solvent and nanoparticle shared variables 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine write_nml_eps_function()
 
        real(dbl)::a,b,c,eps_real,eps_imag
        integer(i4b)::i,j
@@ -674,7 +674,8 @@
          case ('gen','Gen','GEN','gral','Gral','GRAL')
            write(*,*) 'Generic dielectric function is used'
            Feps='gen'
-           open(1,file='eps.inp')
+         if (Feps.eq.'gen'.and.Feps.eq.'diag') then  
+         open(1,file='eps.inp')
            read(1,*) npts
            n_omega=npts
            allocate(omegas(npts),eps_omegas(npts),re_deps_domegas(npts),im_deps_domegas(npts),func_eps(npts),dfunc_eps(npts))
@@ -704,6 +705,7 @@
            close(3)
            close(4)
            close(1)
+        endif
          case default
            write(*,*) "Error, specify eps(omega) type DEB or DRL"
 #ifdef MPI
@@ -714,16 +716,15 @@
 
        return
 
-      end subroutine
+      end subroutine  write_nml_eps_function
 
-
-      subroutine write_nml_interaction()
 !------------------------------------------------------------------------
 ! @brief Write solvent and nanoparticle shared variables 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine write_nml_interaction()
 
        n_q=interaction_stride
        write(*,*) 'Frequency of updating the interaction potential', n_q
@@ -776,16 +777,15 @@
 
        return
 
-      end subroutine
+      end subroutine write_nml_interaction
 
-
-      subroutine write_nml_medium()
 !------------------------------------------------------------------------
 ! @brief Write solvent and nanoparticle shared variables 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine write_nml_medium()
 
 ! PER STEFANO:
 ! SP 14/07/17: medium_type is the same of medium in maedium.f90 except for the vacuum case
@@ -838,10 +838,7 @@
            Fbem="diag"
           case ('stan','Stan','STAN')
            Fbem="stan"
-           write(6,*) 'Standard BEM formulation is experimental'
-#ifdef MPI
-           call mpi_finalize(ierr_mpi)
-#endif
+           write(6,*) 'Standard BEM formulation'
           case default
            write(*,*) "Error, specify a BEM type "
 #ifdef MPI
@@ -876,15 +873,15 @@
 #endif
           stop
          end select
+!SC 16/7/2020: print_lf_matrix does nothing.
          select case(print_lf_matrix)
           case ('yes','Yes', 'YES')
-             Floc='loc'
-             write(6,*) "This run just writes matrices and boundary"
-          case ('non','Non', 'NON')
-             Floc='non'
+!             Floc='loc'
+             write(6,*) "printing of local field matrix via",&
+                     " print_lf_matrix is not implemented."
           case default
-          write(*,*) "Local-field matrix won't be written"
-          write(*,*) "Specify print_lf_matrix 'yes' to print. "
+!          write(*,*) "Local-field matrix won't be written"
+!          write(*,*) "Specify print_lf_matrix 'yes' to print. "
          end select
        endif
        !if (Fprop(1:3).eq.'chr'.or.Fprop(1:3).eq.'dip') then
@@ -911,19 +908,19 @@
 
        return
 
-      end subroutine 
+      end subroutine write_nml_medium 
 
 
 !------------------------------------------------------------------------
 ! SP 14/07/17 calculations should probably go in a different module. which one?
 !             Probably pedra_firends....
-      subroutine write_nml_surface()
 !------------------------------------------------------------------------
 ! @brief Write variables for surface/medium object 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine write_nml_surface()
 
        integer(i4b)::i,j
 
@@ -992,11 +989,6 @@
          case ('fil','FIL','Fil')
           Fsurf='fil'
           write(6,*) "Surface read from file cavity.inp"
-          if (FinitBEM.eq.'wri') then
-           call read_cavity_full_file
-          elseif (FinitBEM.eq.'rea') then
-           call read_cavity_file
-          endif
          case ('gms','GMS','Gms')
           Fsurf='gms'
           write(6,*) "Surface read from file surface_msh.inp"
@@ -1043,20 +1035,20 @@
 
        return
 
-      end subroutine 
+      end subroutine write_nml_surface 
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!  READ/WRITE ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine read_sph_fromfile
 !------------------------------------------------------------------------
 ! @brief Read spheres/oids parameters from file 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine read_sph_fromfile
 
        integer(i4b) :: i,j,its
        real(dbl)  :: scr       
@@ -1081,20 +1073,23 @@
 
        return
 
-      end subroutine
+      end subroutine read_sph_fromfile
 
-
-      subroutine read_gau_out_medium
 !------------------------------------------------------------------------
 ! @brief Read transition potentials on tesserae 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
+! Modified: S.Corni (27/06/2020): now the state pair is read from ci_pot,
+!           we do not assume upper or lower triangular. Should work
+!           for current gamess version as well
 !------------------------------------------------------------------------
+      subroutine read_gau_out_medium
 
        integer(i4b) :: i,j,its,nts
        real(dbl)  :: scr       
-
+       if(allocated(vts)) deallocate(vts)
+       if(allocated(vtsn)) deallocate(vtsn)
        open(7,file="ci_pot.inp",status="old")
        read(7,*) nts
        if(nts_act.eq.0.or.nts.eq.nts_act) then
@@ -1108,63 +1103,47 @@
        endif
        allocate (vts(nts_act,n_ci,n_ci))
        allocate (vtsn(nts_act))
+       vts=zero
+       vtsn=zero
        ! V00
        read(7,*) 
        do its=1,nts_act
         read(7,*) vts(its,1,1),scr,vtsn(its)
-        vts(its,1,1)=vts(its,1,1)+vtsn(its)
        enddo
-       !V0j
-       do j=2,n_ci_read
-         read(7,*) 
-         if (j.le.n_ci) then
-          do its=1,nts_act
-          read(7,*) vts(its,1,j)
-          enddo
-          vts(:,j,1)=vts(:,1,j)
-         else
-          do its=1,nts_act
-           read(7,*)
-          enddo
-         endif
-       enddo
-       !Vij
-       do i=2,n_ci_read
-        do j=2,i   
-         read(7,*) 
-         if (i.le.n_ci.and.j.le.n_ci) then
-          do its=1,nts_act
-           read(7,*) vts(its,i,j)             
-          enddo
-          vts(:,j,i)=vts(:,i,j)
-         else
-          do its=1,nts_act
-           read(7,*) 
-          enddo
-         endif
+       !all the others
+10     read(7,*,end=20) i,j
+       i=i+1
+       j=j+1
+       if (i.le.n_ci.and.j.le.n_ci) then
+        do its=1,nts_act
+         read(7,*) vts(its,i,j)
+         vts(its,j,i)=vts(its,i,j)
         enddo
-        ! add nuclear potential
-        if (i.le.n_ci) then
-         do its=1,nts_act
-          vts(its,i,i)=vts(its,i,i)+vtsn(its)
-         enddo
-        endif
+       else
+        do its=1,nts_act
+         read(7,*) 
+        enddo
+       endif 
+       goto 10
+20     close(7)
+       do i=1,n_ci
+        do its=1,nts_act
+         vts(its,i,i)=vts(its,i,i)+vtsn(its)
+        enddo
        enddo
 
-       close(7)
 
        return
 
-      end subroutine
+      end subroutine read_gau_out_medium
 
-
-      subroutine output_surf
 !------------------------------------------------------------------------
 ! @brief Output surface.xyz file 
 !      
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine output_surf
 
        integer :: i
 
@@ -1174,16 +1153,16 @@
           write (7,'(3F22.10)') cts_act(i)%x,cts_act(i)%y,cts_act(i)%z
         enddo
        close(unit=7)
-      end subroutine
 
+      end subroutine output_surf
 
-      subroutine deallocate_medium
 !------------------------------------------------------------------------
 ! @brief Deallocate medium arrays 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine deallocate_medium
 
        if(allocated(q0)) deallocate(q0)
        if(allocated(vts)) deallocate(vts)
@@ -1196,48 +1175,34 @@
 
        return
 
-      end subroutine
+      end subroutine deallocate_medium
 
-      subroutine mpibcast_readio_mdm()
 !------------------------------------------------------------------------
 ! @brief Broadcast input data
 !      
 ! @date Created: E. Coccia 24/4/18 
 ! Modified: 
 !------------------------------------------------------------------------
+      subroutine mpibcast_readio_mdm()
+
 #ifdef MPI
 
-       call mpi_bcast(interaction_init,     flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(interaction_type,     flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(propagation_type,     flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(local_field,          flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(debug_type,           flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(out_level,            flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(test_type,            flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(medium_res,           flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(medium_relax,         flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(medium_type,          flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(medium_init,          flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
-       call mpi_bcast(medium_pol,           flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(bem_type,             flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(bem_read_write,       flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
-       call mpi_bcast(input_surface,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
-       call mpi_bcast(epsilon_omega,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)  
        call mpi_bcast(Fwrite,               flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Ftest,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Floc,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
-       call mpi_bcast(Ffld,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       !call mpi_bcast(Ffld,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fdeb,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fgamess,              flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fprop,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fmdm_relax,           flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Fmdm_res,             flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Feps,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
        call mpi_bcast(Finit_int,            flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fint,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fmdm_pol,             flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fmdm,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
        call mpi_bcast(Fbem,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
-       call mpi_bcast(Fqbem,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       !call mpi_bcast(Fqbem,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(FinitBEM,             flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Finit_mdm,            flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fshape,               flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
@@ -1267,10 +1232,6 @@
        call mpi_bcast(MPL_ord,              1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(ntst,                 1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
-       call mpi_bcast(interaction_stride,   1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(scf_mix_coeff,        1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(scf_max_cycles,       1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(scf_threshold,        1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(spheres_number,       1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(spheroids_number,     1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(eps_0,                1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
@@ -1304,7 +1265,23 @@
           call mpi_bcast(vtsn,              nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
           call mpi_bcast(vts,               nts_act*n_ci*n_ci,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        endif
-
+       if (Fsurf.eq.'fil') then
+           if(FinitBEM.eq."rea") then
+                call mpi_bcast(nsphe,   1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)            
+                if(nsphe.gt.0) then
+                    if(.not.allocated(sfe_act))  allocate (sfe_act(nsphe))
+                    call mpi_bcast(sfe_act%x,    nsphe,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+                    call mpi_bcast(sfe_act%y,    nsphe,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+                    call mpi_bcast(sfe_act%z,    nsphe,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
+                endif
+                if(.not.allocated(cts_act)) allocate (cts_act(nts_act))
+                call mpi_bcast(cts_act%x,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+                call mpi_bcast(cts_act%y,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+                call mpi_bcast(cts_act%z,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
+                call mpi_bcast(cts_act%area, nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+                call mpi_bcast(cts_act%rsfe, nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
+           endif
+        endif
 #endif
 
        return
@@ -1406,9 +1383,9 @@
            write(*,*) max_mod_todiag,"quantum plasmonic mode will be",&
                          &"diagonalized and printed"
            if (max_mod_todiag.gt.nts_act) then
-              write(*,*) "Trying to print the ",max_mod_todiag," plasmon"
-              write(*,*)  "but it exceeds the number of computed plasmonic modes"
-              write(*,*) "Print another mode or increase the number of tesserae"
+             write(*,*) "Trying to print the ",max_mod_todiag," plasmon"
+     write(*,*)  "but it exceeds the number of computed plasmonic modes"
+     write(*,*) "Print another mode or increase the number of tesserae"
            stop
            endif
        endif
@@ -1420,4 +1397,4 @@
        endif
 
       end subroutine write_nml_print_charges
-  end module
+      end module

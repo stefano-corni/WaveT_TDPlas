@@ -6,7 +6,7 @@
        use dissipation 
        use propagate
        use QM_coupling    
-       use interface_tdplas, only: read_medium_input,mpibcast_read_medium,set_global_tdplas_in_wavet
+       use interface_tdplas,only:read_medium_input,mpibcast_read_medium,set_global_tdplas_in_wavet,transfer_matrix_tdplas_to_wavet
 #ifdef OMP
        use omp_lib
 #endif
@@ -89,6 +89,8 @@
       !Send input data to all the processes
       call mpibcast_read_medium()
 #endif
+       !call read_gau_out_medium_in_wavet
+            call transfer_matrix_tdplas_to_wavet
 
        call init_spectra
 

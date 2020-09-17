@@ -1346,17 +1346,13 @@
           open(7,file="cavity.inp",status="old")
          !read(7,*)  
           read(7,*) nts,nsphe
-!         if(nts_act.eq.0.or.nts.eq.nts_act) then
-          nts_act=nts
+         if(nts_act.eq.0.or.nts.eq.nts_act) then
+           nts_act=nts
+         else
+           write(*,*) "Tesserae number conflict"
+           stop
+         endif
        endif
-!         else
-!           write(*,*) "Tesserae number conflict"
-!           stop
-!         endif
-#ifdef MPI
-         call mpi_bcast(nts_act, 1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
-         call mpi_bcast(nsphe,   1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
-#endif
          if(.not.allocated(sfe_act).and.nsphe.gt.0) &
            allocate (sfe_act(nsphe))
          if(.not.allocated(cts_act)) allocate (cts_act(nts_act))
@@ -1382,16 +1378,6 @@
 
            close(7)
         endif 
-#ifdef MPI
-        call mpi_bcast(sfe_act%x,    nsphe,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-        call mpi_bcast(sfe_act%y,    nsphe,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-        call mpi_bcast(sfe_act%z,    nsphe,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
-        call mpi_bcast(cts_act%x,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-        call mpi_bcast(cts_act%y,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-        call mpi_bcast(cts_act%z,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
-        call mpi_bcast(cts_act%area, nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-        call mpi_bcast(cts_act%rsfe, nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
-#endif
 
        return
       end subroutine

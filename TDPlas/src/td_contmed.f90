@@ -11,9 +11,7 @@
 #endif         
 
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
 #endif
 
       use, intrinsic :: iso_c_binding
@@ -90,7 +88,7 @@
 !SC 07/02/16: added output_gneq
       public init_mdm,prop_mdm,finalize_mdm,qtot,ref,get_gneq, &
              get_ons,get_mdm_dip,set_charges,preparing_for_scf,&
-             init_after_scf
+             init_after_scf,get_qr_fr
 
       contains
 !
@@ -187,13 +185,13 @@
 
       end subroutine init_mdm
 
-      subroutine prop_mdm(i, mu_t, f_tp, pot_t, potf_t, h_int)
 !------------------------------------------------------------------------
 ! @brief Medium propagation called by WaveT or other programs 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia 5/7/18
 !------------------------------------------------------------------------
+      subroutine prop_mdm(i, mu_t, f_tp, pot_t, potf_t, h_int)
 
       implicit none
 
@@ -203,7 +201,7 @@
       real(dbl), optional, intent(in)    :: potf_t(:)        !< (1:nts_act)     - external  potential
       real(dbl)          , intent(inout) :: h_int(n_ci,n_ci) !< (1:n_ci,1:n_ci) - interaction hamiltonian
        integer(i4b), intent(IN) :: i                    
-       integer(i4b) :: its,k,j,npoles                    
+       integer(i4b) :: its,k,j                    
 
  
       ! Propagate medium only every n_q timesteps  
@@ -213,8 +211,24 @@
          h_int(:,:)=h_int(:,:)+h_mdm(:,:)
          return
        endif
+!
        t=(i-1)*dt
+       ! Build the interaction Hamiltonian Reaction/Local with previous charges
+       if(Fdeb.ne."off") call do_interaction_h
+#ifndef MPI
+       if (i.eq.1.and.Fwrite.eq."high") then
+        write(6,*) "h_mdm at the first propagation step"
+        do j=1,n_ci
+         do k=1,n_ci
+          write (6,*) j,k,h_mdm(j,k)
+         enddo
+        enddo
+       endif
+#endif
+       ! Update the interaction Hamiltonian 
+       h_int(:,:)=h_int(:,:)+h_mdm(:,:)
 
+!      Start the propagation
        if(Ftest.eq."s-r") mu_tp=mut(:,1,1) !Only for debug purposes
        if (Fprop.eq."dip") then
 
@@ -232,7 +246,6 @@
  
          pot_tp  = pot_t
          potf_tp = potf_t
-         npoles = size(kf)
        ! Charges propagation: 
          call prop_chr
          ! Calculate medium's dipole from charges 
@@ -258,26 +271,12 @@
            call do_gneq(pot_t,vts,dqr_t,qr_t,q0,BEM_Qd,nts_act,1)
          endif
        endif
-       ! Build the interaction Hamiltonian Reaction/Local
-       if(Fdeb.ne."off") call do_interaction_h
-#ifndef MPI
-       if (i.eq.1.and.Fwrite.eq."high") then
-        write(6,*) "h_mdm at the first propagation step"
-        do j=1,n_ci
-         do k=1,n_ci
-          write (6,*) j,k,h_mdm(j,k)
-         enddo
-        enddo
-       endif
-#endif
        ! SP 230916: added to perform tests on the local/reaction field
        if(Ftest.eq."n-r") then  
          call do_ref(mu_t)
        elseif(Ftest.eq."n-l".or.Ftest.eq."s-r".or.Ftest.eq."s-l") then
          call do_ref
        end if
-       ! Update the interaction Hamiltonian 
-       h_int(:,:)=h_int(:,:)+h_mdm(:,:)
        ! SP 24/02/16  Write output
        if (mod(i,n_out).eq.0.or.i.eq.1) then
           if (Fbin.eq.'bin') then
@@ -292,16 +291,16 @@
 
        return
 
-      end subroutine
+      end subroutine prop_mdm
 
 
-      subroutine finalize_mdm   
 !------------------------------------------------------------------------
 ! @brief Medium finalization called by WaveT or other programs 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine finalize_mdm
 
        deallocate(h_mdm,h_mdm_0)
        call finalize_prop
@@ -323,16 +322,15 @@
 
        return
 
-      end subroutine
+      end subroutine finalize_mdm
 
-
-      subroutine get_gneq(e_vac_t,g_eqr_t,g_neqr_t,g_neq2_t)
 !------------------------------------------------------------------------
 ! @brief Solvent contribution to free energies 
 !
 ! @date Created: S. Corni 
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine get_gneq(e_vac_t,g_eqr_t,g_neqr_t,g_neq2_t)
 
        real(dbl),intent(inout):: e_vac_t,g_eqr_t,g_neqr_t,g_neq2_t
 
@@ -343,16 +341,16 @@
 
        return
 
-      end subroutine
+      end subroutine get_gneq
 
 
-      subroutine get_mdm_dip(mdm_dip)
 !------------------------------------------------------------------------
 ! @brief Medium dipole for spectra 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine get_mdm_dip(mdm_dip)
 
        real(dbl),intent(out):: mdm_dip(3)
 
@@ -360,16 +358,15 @@
 
        return
 
-      end subroutine
+      end subroutine get_mdm_dip
 
-
-      subroutine set_charges(q)
 !------------------------------------------------------------------------
 ! @brief Set charges 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine set_charges(q)
 
        real(dbl),intent(in):: q(nts_act)
 
@@ -377,7 +374,25 @@
 
        return
 
-      end subroutine
+      end subroutine set_charges
+
+!------------------------------------------------------------------------
+! @brief  Get the current reaction field charges or Onsager reaction fields
+!
+! @date Created: S. Corni
+! Modified:
+!------------------------------------------------------------------------
+      subroutine get_qr_fr(q)
+
+       real(dbl),intent(out):: q(:)
+
+       if (Fint.eq."ons") then
+        q=fr_t
+       else 
+        q=qr_t
+       endif
+       return
+      end subroutine get_qr_fr
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -387,7 +402,6 @@
 !------------------------------------------------------------------------
 !> Build the interaction matrix in the molecular unperturbed state basis 
 !------------------------------------------------------------------------
-      subroutine do_interaction_h
 !------------------------------------------------------------------------
 ! @brief Build the interaction matrix in the molecular unperturbed state
 ! basis 
@@ -395,6 +409,7 @@
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia 5/7/18
 !------------------------------------------------------------------------
+      subroutine do_interaction_h
 
        integer(i4b):: i,j
 
@@ -434,16 +449,15 @@
 
        return
 
-      end subroutine
+      end subroutine do_interaction_h
 
-
-      subroutine correct_hamiltonian
 !------------------------------------------------------------------------
 ! @brief Build interaction matrix at time 0 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine correct_hamiltonian
 
        implicit none
 
@@ -458,7 +472,7 @@
          q_mdm=q0+(qtot0-sum(q0))/nts_act
 
 !$OMP PARALLEL REDUCTION(+:h_mdm_0)
-!$OMP DO
+!$OMP DO 
          do its=1,nts_act     
            h_mdm_0(:,:)=h_mdm_0(:,:)+q_mdm(its)*vts(its,:,:)
          enddo
@@ -466,6 +480,7 @@
 !$OMP END PARALLEL 
 
        endif
+
 #ifndef MPI
        if(Fwrite.eq."high") then
          do i=1,n_ci
@@ -477,20 +492,20 @@
 #endif
        return
 
-      end subroutine
+      end subroutine correct_hamiltonian
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!! Initialization/deallocation !!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine init_potential(pot_t,potf_t)
 !------------------------------------------------------------------------
 ! @brief Initialize potentials for propaagation 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine init_potential(pot_t,potf_t)
 
        real(dbl), intent(IN) :: pot_t(:)
        real(dbl), intent(IN) :: potf_t(:)
@@ -529,23 +544,22 @@
 
        return
 
-      end subroutine
+      end subroutine init_potential
 
-
-      subroutine init_charges
 !------------------------------------------------------------------------
 ! @brief Initialize charges for propagation 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine init_charges
 
        implicit none
 
        integer(i4b):: its
        real(dbl), allocatable :: qd(:)
 
-       integer(i4b) :: npoles,ipoles
+       integer(i4b) :: ipoles
 
 #ifndef MPI
        myrank=0
@@ -614,12 +628,12 @@
          qx_tp2(:)=zero    
          dqx_t(:)=zero 
        endif
-       if(Feps.eq."drl".or.Feps.eq."gen") then
+       if(Feps.eq."drl") then
          allocate(dqr_tp(nts_act))
          allocate(fqr_tp(nts_act))
          allocate(fqr_t(nts_act))
          dqr_tp(:)=zero
-         fqr_tp=zero
+         fqr_tp=-mat_mult(BEM_Qw,qr_t)+mat_mult(BEM_Qf,pot_tp)
          if(Floc.eq."loc") then
            allocate(dqx_tp(nts_act))
            allocate(fqx_tp(nts_act))
@@ -627,8 +641,9 @@
            dqx_tp(:)=zero
            fqx_tp=zero
          endif
-         if( Fbem.eq."stan" ) then
-          npoles = size(kf)
+       endif
+         if(Feps.eq."gen") then
+          !npoles = size(kf)
           allocate(qr_t_p(nts_act,npoles))
           allocate(qr_tp_p(nts_act,npoles))
           allocate(dqr_t_p(nts_act,npoles))
@@ -637,11 +652,16 @@
           allocate(fqr_t_p(nts_act,npoles))
           allocate(sum_r(npoles))
           allocate(sum_x(npoles))
+          qr_tp(:)=zero
           do ipoles=1,npoles
-           qr_tp_p(:,ipoles)= kf0(ipoles) * ( matmul(BEM_Qf,pot_0)+matmul(BEM_ADt,q0) ) ! check - initialization
+           qr_tp_p(:,ipoles)=kf0(ipoles)*(matmul(BEM_Qf,pot_0)+matmul(BEM_ADt,q0) ) ! check - initialization
+           qr_tp(:)=qr_tp(:)+qr_tp_p(:,ipoles)
+          enddo
+          do ipoles=1,npoles
+              fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+kf(ipoles)*matmul(BEM_Qf,pot_tp)+kf(ipoles)*matmul(BEM_ADt,qr_tp)!
+              fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/nts_act
           enddo
           dqr_tp_p(:,:)=zero
-          fqr_tp_p=zero
           if(Floc.eq."loc") then
             allocate(qx_t_p(nts_act,npoles))
             allocate(qx_tp_p(nts_act,npoles))
@@ -653,7 +673,6 @@
             dqx_tp_p(:,:)=zero
             fqx_tp_p=zero
           endif
-         endif
        endif
        deallocate(qd)
 
@@ -663,15 +682,15 @@
 
        return
 
-      end subroutine
+      end subroutine init_charges
 
-      subroutine init_dip_and_field(mu_t)
 !------------------------------------------------------------------------
 ! @brief Initialize dipoles and field for propagation  
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine init_dip_and_field(mu_t)
 
        implicit none
 
@@ -709,18 +728,18 @@
 
        return
 
-      end subroutine
+      end subroutine init_dip_and_field
 !     
 !------------------------------------------------------------------------
 !> Initialize Dipole for propagation with spherical object                
 !------------------------------------------------------------------------
-      subroutine init_dip_sphe
 !------------------------------------------------------------------------
 ! @brief Initialize dipole for propagation with spherical object
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine init_dip_sphe
 
        implicit none
 
@@ -770,13 +789,13 @@
 !------------------------------------------------------------------------
 !> Initialize Dipole for propagation with spheroidal object                
 !------------------------------------------------------------------------
-      subroutine init_dip_spho
 !------------------------------------------------------------------------
 ! @brief Initialize dipole for propagation with spheroidal object 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine init_dip_spho
 
       ! inizialize onsager 
        implicit none
@@ -820,16 +839,16 @@
 
        return
 
-      end subroutine
+      end subroutine init_dip_spho
 
 
-      subroutine init_dip_spho_sol
 !------------------------------------------------------------------------
 ! @brief Initialize free energy (spheroidal) 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine init_dip_spho_sol
 
        implicit none
 
@@ -858,16 +877,15 @@
 
        return
 
-      end subroutine
+      end subroutine init_dip_spho_sol
 
-
-      subroutine init_dip_sphe_sol
 !------------------------------------------------------------------------
 ! @brief Initialize free energy (spherical) 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine init_dip_sphe_sol
 
        implicit none
 
@@ -894,65 +912,78 @@
 
        return
 
-      end subroutine
+      end subroutine init_dip_sphe_sol
 
-      subroutine preparing_for_scf(mix,mu_t,pot_t)
+      subroutine preparing_for_scf(mix,pot_or_mut)
 
        implicit none
 
        real(dbl) :: mix
 
-       real(dbl), optional :: mu_t(:)
-       real(dbl), optional :: pot_t(:)
+       real(dbl), intent(in) :: pot_or_mut(:)
 
        if (Fprop.eq."dip") then
-        if( .not.present(mu_t) ) stop "Error: in preparing for scf."
         if(Fshape.eq."sphe") then
-         fr_t=mix*ONS_f0*mu_t+(1.-mix)*fr_0
+         fr_t=mix*ONS_f0*pot_or_mut+(1.-mix)*fr_0
         else if(Fshape.eq."spho") then
-         fr_t=mix_coef*matmul(mat_f0,mu_t)+(1.-mix_coef)*fr_0
+         fr_t=mix*matmul(mat_f0,pot_or_mut)+(1.-mix)*fr_0
         end if
        else
-        if( .not.present(pot_t) ) stop "Error: in preparing for scf."
-        qr_tp=mix*matmul(BEM_Q0,pot_t)+(1.-mix)*q0
+        qr_t=mix*matmul(BEM_Q0,pot_or_mut)+(1.-mix)*q0
        endif
 
       end subroutine preparing_for_scf
 
-      subroutine init_after_scf
+      subroutine init_after_scf(pot_or_mut)
 
        implicit none
+       integer(4) :: ipoles  
+       real(dbl), intent(in) :: pot_or_mut(:)
 
        if (Fprop.eq."dip") then
         if(Fshape.eq."sphe") then
-         g_neq_0=-0.5*ONS_f0*dot_product(mu_tp,mu_tp)
-         g_neq2_0=-0.5*ONS_fd*dot_product(mu_tp,mu_tp)
+         g_neq_0=-0.5*ONS_f0*dot_product(pot_or_mut,pot_or_mut)
+         g_neq2_0=-0.5*ONS_fd*dot_product(pot_or_mut,pot_or_mut)
         else if(Fshape.eq."spho") then
-         g_neq_0=-0.5*dot_product(mu_tp,matmul(mat_f0,mu_tp))
-         g_neq2_0=-0.5*dot_product(mu_tp,matmul(mat_fd,mu_tp))
+         g_neq_0=-0.5*dot_product(pot_or_mut,matmul(mat_f0,pot_or_mut))
+         g_neq2_0=-0.5*dot_product(pot_or_mut,matmul(mat_fd,pot_or_mut))
         end if
        else
-        qr_tp=matmul(BEM_Q0,pot_tp)
-        g_neq_0=0.5*dot_product(qr_tp,pot_tp)
-        qr_tp=matmul(BEM_Qd,pot_tp)
-        g_neq2_0=0.5*dot_product(qr_tp,pot_tp)
-        qr_tp=matmul(BEM_Q0,pot_tp)
+        qr_tp=matmul(BEM_Q0,pot_or_mut)
+        g_neq_0=0.5*dot_product(qr_tp,pot_or_mut)
+        qr_tp=matmul(BEM_Qd,pot_or_mut)
+        g_neq2_0=0.5*dot_product(qr_tp,pot_or_mut)
+        qr_tp=matmul(BEM_Q0,pot_or_mut)
         qr_t(:)=qr_tp(:)
         dqr_t(:)=zero  
+        dqr_tp(:)=zero  
+        if (Feps.eq."drl") &
+          fqr_tp=-mat_mult(BEM_Qw,qr_t)+mat_mult(BEM_Qf,pot_or_mut)
+        if( Fbem.eq."stan" ) then 
+          do ipoles=1,npoles
+           qr_tp_p(:,ipoles)= kf0(ipoles) * ( matmul(BEM_Qf,pot_or_mut)+matmul(BEM_ADt,qr_t) ) ! check - initialization
+          enddo
+          dqr_tp_p(:,:)=zero
+          fqr_tp_p=zero
+        endif
         if(Fint.eq."ons") call do_field_from_charges(qr_t,fr_0)
        endif
+       ! SC 27/06/2020: set q0 to the charge after the SCF inside tdplas as well
+       q0=qr_t
+       ! SC 27/06/2020: recalculate the hamiltonian from q0 
+       call correct_hamiltonian
 
        if (myrank.eq.0) write(6,*) 'G_neq at t=0:',g_neq_0
 
       end subroutine init_after_scf
 
-      subroutine finalize_prop
 !------------------------------------------------------------------------
 ! @brief Deallocate propagation variables 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine finalize_prop
 
        integer(i4b) :: its  
 
@@ -995,7 +1026,7 @@
 
        return
 
-      end subroutine
+      end subroutine finalize_prop
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!! Propagation routines !!!!!!!!!!!!!!!!!!!!!! 
@@ -1005,13 +1036,13 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-      subroutine prop_chr
 !------------------------------------------------------------------------
 ! @brief Potential and charges propagation 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine prop_chr
 
        implicit none
 
@@ -1084,16 +1115,16 @@
 
        return
 
-      end subroutine
+      end subroutine prop_chr
 
 
-      subroutine prop_dip(f_tp)
 !------------------------------------------------------------------------
 ! @brief Dipole and field propagation 
 !
 ! @date Created: S. Pipolo
 ! Modified: 
 !------------------------------------------------------------------------
+      subroutine prop_dip(f_tp)
 
       ! evolve onsager field/dipole  
        implicit none
@@ -1120,16 +1151,15 @@
 
        return
 
-      end subroutine
+      end subroutine prop_dip
 
-
-      subroutine init_vv_propagator
 !------------------------------------------------------------------------
 ! @brief Initialization for velocity Verlet propagation (vv) 
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine init_vv_propagator
 
 #ifndef MPI
        myrank=0
@@ -1144,9 +1174,8 @@
 
        return
 
-      end subroutine
+      end subroutine init_vv_propagator
 
-      subroutine init_vv_propagator_gen
 !------------------------------------------------------------------------
 ! @brief Initialization for velocity Verlet propagation (vv) 
 !
@@ -1154,6 +1183,7 @@
 ! Modified:
 ! Notes: Taken from init_vv_propagator and replacing eps_gm by BEM_Qg 
 !------------------------------------------------------------------------
+      subroutine init_vv_propagator_gen
 
        real(dbl), allocatable :: BEM_I(:,:)
        integer :: j
@@ -1187,13 +1217,11 @@
 ! Modified:
 !------------------------------------------------------------------------
 
-       integer(i4b) :: npoles
 
 #ifndef MPI
        myrank=0
 #endif       
 
-       npoles = size(kf)
  
        allocate(std_f1(npoles),std_f3(npoles),std_f5(npoles))
 
@@ -1209,7 +1237,6 @@
       end subroutine
 
 
-      subroutine prop_ons_drl
 !------------------------------------------------------------------------
 ! @brief Drude-Lorentz propagation of charges with Onsager-BEM equations
 ! ! SP 07/07/17 vv propagaton 
@@ -1217,6 +1244,7 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine prop_ons_drl
 
       ! charge propagation with drude/lorentz and cosmo/onsager equations
 
@@ -1242,10 +1270,8 @@
 
        return
 
-      end subroutine
+      end subroutine prop_ons_drl
 
-
-      subroutine prop_ons_deb
 !------------------------------------------------------------------------
 ! @brief Drude-Lorentz propagation of charges with Onsager-BEM equations
 ! ! SP 07/07/17 updated with vv propagaton 
@@ -1253,6 +1279,7 @@
 ! @date Created: S. Pipolo
 ! Modified: G. Gil
 !------------------------------------------------------------------------
+      subroutine prop_ons_deb
 
       ! charge propagation with drude/lorentz and onsager equations
 
@@ -1272,18 +1299,18 @@
 
        return
 
-      end subroutine
+      end subroutine prop_ons_deb
 !     
 !------------------------------------------------------------------------
 !> Drude-Lorentz propagation Fprop=chr-ief standard algorithm 
 !------------------------------------------------------------------------
-      subroutine prop_ief_drl
 !------------------------------------------------------------------------
 ! @brief Drude-Lorentz propagation Fprop=chr-ief standard algorithm 
 !
 ! @date Created: S. Pipolo
 ! Modified: G. Gil
 !------------------------------------------------------------------------
+      subroutine prop_ief_drl
 
       ! Charge propagation with drude/lorentz and IEF equations 
 
@@ -1321,10 +1348,8 @@
 
        return
 
-      end subroutine
+      end subroutine prop_ief_drl
 
-
-      subroutine prop_vv_ief_drl
 !------------------------------------------------------------------------
 ! @brief Drude-Lorentz propagation Fprop=chr-ief velocity-verlet
 ! algorithm 
@@ -1332,6 +1357,7 @@
 ! @date Created: S. Pipolo
 ! Modified: G. Gil
 !------------------------------------------------------------------------
+      subroutine prop_vv_ief_drl
 
       ! Charge propagation with drude/lorentz and IEF equations 
 
@@ -1345,18 +1371,20 @@
 !     mat_mult uses matmul or explicit loops (with OMP), 
 !     according to the value of nts
 
-       qr_t=qr_tp+f1*dqr_tp+f2*fqr_tp
 
        fqr_t=-mat_mult(BEM_Qw,qr_t)+mat_mult(BEM_Qf,pot_tp)
  
        dqr_t=f3*dqr_tp+f4*(fqr_t+fqr_tp)-f5*fqr_tp
+       qr_tp=qr_t
+       qr_t=qr_tp+f1*dqr_t+f2*fqr_t
        fqr_tp=fqr_t
        dqr_tp=dqr_t
-
+       write(*,*) 'fqr_t', sum(fqr_t)
+       write(*,*) 'dqr_t', sum(dqr_t)
+       write(*,*) 'qr_t', sum(qr_t)
 
       ! Local Field
        if(Floc.eq."loc") then
-        qx_t=qx_tp+f1*dqx_tp+f2*fqx_tp
         if(Fmdm.eq.'Csol') then
          !fqx_t=-matmul(BEM_Qw,qx_t)+matmul(BEM_Qfx,potf_tp)
          fqx_t=-mat_mult(BEM_Qw,qx_t)+mat_mult(BEM_Qfx,potf_tp)
@@ -1365,15 +1393,16 @@
          fqx_t=-mat_mult(BEM_Qw,qx_t)+mat_mult(BEM_Qf,potf_tp)
         endif
         dqx_t=f3*dqx_tp+f4*(fqx_t+fqx_tp)-f5*fqx_tp
+        qx_tp=qx_t
+        qx_t=qx_tp+f1*dqx_t+f2*fqx_t
         fqx_tp=fqx_t
         dqx_tp=dqx_t
        endif
 
        return
 
-      end subroutine
+      end subroutine prop_vv_ief_drl
 
-      subroutine prop_vv_ief_gen
 !------------------------------------------------------------------------
 ! @brief General dielectric function propagation Fprop=chr-ief
 ! velocity-verlet
@@ -1386,6 +1415,7 @@
 !        N.B. that matrix BEM_Qg is inside the BEM_f1, BEM_f3 and BEM_f5
 !        matrices
 !------------------------------------------------------------------------
+      subroutine prop_vv_ief_gen
 
        integer(i4b) :: i
        real(dbl) :: threshold
@@ -1436,25 +1466,23 @@
 
       ! Charge propagation with general dielectric function and IEF
       ! equations
-       integer(i4b) :: pidx, npoles
+       integer(i4b) :: pidx
        integer(i4b) :: i,j
        real(dbl) :: threshold
 
        threshold = .5d-8
 
-       npoles = size(kf) 
-       
+       qr_tp(:)=qr_t(:)
        qr_t(:) = zero
        if(Floc.eq."loc") qx_t(:) = zero
        do pidx = 1, npoles
-        qr_t_p(:,pidx)=qr_tp_p(:,pidx)+std_f1(pidx)*dqr_tp_p(:,pidx)+f2*fqr_tp_p(:,pidx)
-        qr_t_p(:,pidx)=qr_t_p(:,pidx)+kf_prime(pidx)*dt*0.5d0*(matmul(BEM_Qf,pot_tp-pot_tp2)+matmul(BEM_ADt,qr_tp-qr_tp2))
-        qr_t_p(:,pidx)=qr_t_p(:,pidx)-sum(qr_t_p(:,pidx))/nts_act
-        fqr_t_p(:,pidx)=-w2(pidx)*qr_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,pot_tp)+kf(pidx)*matmul(BEM_ADt,qr_t)+&
-                           +kf_prime(pidx)*(one-gg(pidx)*dt*0.5d0)*(matmul(BEM_Qf,pot_tp-pot_tp2)+matmul(BEM_ADt,qr_t-qr_tp))
+!       qr_t_p(:,pidx)=qr_t_p(:,pidx)+kf_prime(pidx)*dt*0.5d0*(matmul(BEM_Qf,pot_tp-pot_tp2)+matmul(BEM_ADt,qr_tp-qr_tp2))
+        fqr_t_p(:,pidx)=-w2(pidx)*qr_tp_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,pot_tp)+kf(pidx)*matmul(BEM_ADt,qr_tp)!+&
+!                          +kf_prime(pidx)*(one-gg(pidx)*dt*0.5d0)*(matmul(BEM_Qf,pot_tp-pot_tp2)+matmul(BEM_ADt,qr_t-qr_tp))
 !                          +kf_prime(pidx)*matmul(BEM_Qf,pot_tp-pot_tp2)/dt+kf_prime(pidx)*matmul(BEM_ADt,qr_t-qr_tp)/dt
         fqr_t_p(:,pidx)=fqr_t_p(:,pidx)-sum(fqr_t_p(:,pidx))/nts_act
         dqr_t_p(:,pidx)=std_f3(pidx)*dqr_tp_p(:,pidx)+f4*(fqr_t_p(:,pidx)+fqr_tp_p(:,pidx))-std_f5(pidx)*fqr_tp_p(:,pidx)
+        qr_t_p(:,pidx)=qr_tp_p(:,pidx)+std_f1(pidx)*dqr_t_p(:,pidx)+f2*fqr_t_p(:,pidx)
         fqr_tp_p(:,pidx)=fqr_t_p(:,pidx)
         dqr_tp_p(:,pidx)=dqr_t_p(:,pidx)
         qr_tp_p(:,pidx)=qr_t_p(:,pidx)
@@ -1463,16 +1491,16 @@
        if(Floc.eq."loc") then
         qx_t_p(:,pidx)=qx_tp_p(:,pidx)+std_f1(pidx)*dqx_tp_p(:,pidx)+f2*fqx_tp_p(:,pidx)
         if(Fmdm.eq.'Csol') then
-         qx_t_p(:,pidx)=qx_t_p(:,pidx)+kf_prime(pidx)*dt*0.5d0*(matmul(BEM_Qfx,potf_tp-potf_tp2)+matmul(BEM_ADt,qx_tp-qx_tp2))
+!        qx_t_p(:,pidx)=qx_t_p(:,pidx)+kf_prime(pidx)*dt*0.5d0*(matmul(BEM_Qfx,potf_tp-potf_tp2)+matmul(BEM_ADt,qx_tp-qx_tp2))
          qx_t_p(:,pidx)=qx_t_p(:,pidx)-sum(qx_t_p(:,pidx))/nts_act
-         fqx_t_p(:,pidx)=-w2(pidx)*qx_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qfx,potf_tp)+kf(pidx)*matmul(BEM_ADt,qx_tp)+&
-                          +kf_prime(pidx)*(one-gg(pidx)*dt*0.5d0)*(matmul(BEM_Qfx,potf_tp-potf_tp2)+matmul(BEM_ADt,qx_tp-qx_tp2))
+         fqx_t_p(:,pidx)=-w2(pidx)*qx_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qfx,potf_tp)+kf(pidx)*matmul(BEM_ADt,qx_tp)!+&
+!                          +kf_prime(pidx)*(one-gg(pidx)*dt*0.5d0)*(matmul(BEM_Qfx,potf_tp-potf_tp2)+matmul(BEM_ADt,qx_tp-qx_tp2))
 !                          +kf_prime(pidx)*matmul(BEM_Qfx,potf_tp-potf_tp2)/dt+kf_prime(pidx)*matmul(BEM_ADt,qx_tp-qx_tp2)/dt
         else if(Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') then
          qx_t_p(:,pidx)=qx_t_p(:,pidx)+kf_prime(pidx)*dt*0.5d0*(matmul(BEM_Qf,potf_tp-potf_tp2)+matmul(BEM_ADt,qx_tp-qx_tp2))
          qx_t_p(:,pidx)=qx_t_p(:,pidx)-sum(qx_t_p(:,pidx))/nts_act
-         fqx_t_p(:,pidx)=-w2(pidx)*qx_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,potf_tp)+kf(pidx)*matmul(BEM_ADt,qx_tp)+&
-                          +kf_prime(pidx)*(one-gg(pidx)*dt*0.5d0)*(matmul(BEM_Qf,potf_tp-potf_tp2)+matmul(BEM_ADt,qx_tp-qx_tp2))
+         fqx_t_p(:,pidx)=-w2(pidx)*qx_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,potf_tp)+kf(pidx)*matmul(BEM_ADt,qx_tp)!+&
+!                          +kf_prime(pidx)*(one-gg(pidx)*dt*0.5d0)*(matmul(BEM_Qf,potf_tp-potf_tp2)+matmul(BEM_ADt,qx_tp-qx_tp2))
 !                          +kf_prime(pidx)*matmul(BEM_Qf,potf_tp-potf_tp2)/dt+kf_prime(pidx)*matmul(BEM_ADt,qx_tp-qx_tp2)/dt
         endif
         dqx_t_p(:,pidx)=std_f3(pidx)*dqx_tp_p(:,pidx)+f4*(fqx_t_p(:,pidx)+fqx_tp_p(:,pidx))-std_f5(pidx)*fqx_tp_p(:,pidx)
@@ -1482,19 +1510,17 @@
         qx_t(:) = qx_t(:) + qx_t_p(:,pidx)
        endif
        enddo
-
        return
 
       end subroutine
   
-
-      subroutine prop_ief_deb
 !------------------------------------------------------------------------
 ! @brief Debye propagation Fprop=chr-ief 
 !
 ! @date Created: S. Pipolo
 ! Modified: G. Gil
 !------------------------------------------------------------------------
+      subroutine prop_ief_deb
 
       ! Charge propagation with debye and IEF equations 
 
@@ -1519,16 +1545,15 @@
 
        return
 
-      end subroutine
+      end subroutine prop_ief_deb
 
-
-      subroutine prop_ied_deb
 !------------------------------------------------------------------------
 ! @brief  Debye propagation Fprop=chr-ied  
 !
 ! @date Created: S. Pipolo
 ! Modified: G. Gil
 !------------------------------------------------------------------------
+      subroutine prop_ied_deb
 
       ! Charge propagation with debye and IEF equations one taud 
 
@@ -1553,16 +1578,15 @@
 
        return
 
-      end subroutine
+      end subroutine prop_ied_deb
 
-
-      subroutine prop_dip_spho_deb(f_tp)
 !------------------------------------------------------------------------
 ! @brief  Debye propagation of the spheroid reaction and local fields  
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine prop_dip_spho_deb(f_tp)
 
        real(dbl), intent(IN):: f_tp(3)  
        real(dbl) :: f(3),fp(3),mp(3),mp2(3)  
@@ -1597,16 +1621,15 @@
 
        return
 
-      end subroutine
+      end subroutine prop_dip_spho_deb
 
-
-      subroutine prop_dip_sphe_deb(f_tp)
 !------------------------------------------------------------------------
 ! @brief  Debye propagation of the sphere reaction and local fields  
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine prop_dip_sphe_deb(f_tp)
 
        real(dbl), intent(IN):: f_tp(3)  
        real(dbl) :: f(3),fp(3),mt(3),mp(3)  
@@ -1623,16 +1646,15 @@
 
        return
 
-      end subroutine
+      end subroutine prop_dip_sphe_deb
 
-
-      subroutine prop_dip_spho_drl(f_tp)
 !------------------------------------------------------------------------
 ! @brief Drude-Lorentz propagation of the spheroid reaction and local fields  
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine prop_dip_spho_drl(f_tp)
 
        real(dbl), intent(IN):: f_tp(3)  
        real(dbl):: f(3),fld(3),mr(3)
@@ -1707,16 +1729,15 @@
 
        return
 
-      end subroutine
+      end subroutine prop_dip_spho_drl
 
-
-      subroutine prop_dip_sphe_drl(f_tp)
 !------------------------------------------------------------------------
 ! @brief  Drude-Lorentz propagation of the sphere reaction and local fields  
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine prop_dip_sphe_drl(f_tp)
 
        real(dbl), intent(IN):: f_tp(3)  
        real(dbl):: f(3),fld(3)
@@ -1773,16 +1794,15 @@
 
        return
 
-      end subroutine
+      end subroutine prop_dip_sphe_drl
 
-
-      subroutine get_ons(f_med)
 !------------------------------------------------------------------------
 ! @brief Fetch the current value of the onsager field from elsewhere   
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine get_ons(f_med)
 
        real(dbl):: f_med(3)
 
@@ -1790,22 +1810,21 @@
 
        return
 
-      end subroutine
+      end subroutine get_ons
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!! Free-energy   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-
-      subroutine do_gneq(v_avg,mu_or_v,df_or_dq,f_or_q,f_or_q0,fact_d, &
-                           n_coor_or_ts,sig)
 !------------------------------------------------------------------------
 ! @brief Update non-equilibrium free energy   
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia 5/7/18
 !------------------------------------------------------------------------
+      subroutine do_gneq(v_avg,mu_or_v,df_or_dq,f_or_q,f_or_q0,fact_d, &
+                           n_coor_or_ts,sig)
 
         implicit none
 
@@ -1846,20 +1865,20 @@
 
         return
 
-      end subroutine
+      end subroutine do_gneq
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!! Test/Debug    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine do_ref(mu)      
 !------------------------------------------------------------------------
 ! @brief Test for Solvent/Nanoparticle reaction/local fields    
 !
 ! @date Created: S. Pipolo
 ! Modified: G. Gil
 !------------------------------------------------------------------------
+      subroutine do_ref(mu)
 
        real(dbl), optional, intent(IN) :: mu(3)
        complex(cmp) :: refc, E0
@@ -1925,20 +1944,20 @@
 
        return
 
-      end subroutine
+      end subroutine do_ref
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!! Input/Output  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine out_mdm(i)
 !------------------------------------------------------------------------
 ! @brief Output medium reaction/local field/dipoles    
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine out_mdm(i)
 
        integer(i4b),intent(IN) :: i  
        real(dbl):: fm(3)
@@ -1958,7 +1977,7 @@
            write (file_med,'(i8,f12.2,3e22.10)') i,t,fr_t(:)
          else
            call do_field_from_charges(qr_t,fr_t)
-           write (file_med,'(i8,f12.2,9e22.10)')i,t,mu_mdm(:,1),&
+           write (file_med,'(i8,f12.2,8e22.10)')i,t,mu_mdm(:,1),&
                                                     fr_t(:),qtot,qtot0
          endif
        end select
@@ -1967,14 +1986,13 @@
 
       end subroutine out_mdm
 
-
-      subroutine out_mdm_bin(i)
 !------------------------------------------------------------------------
 ! @brief Output medium reaction/local field/dipoles in binary format   
 !
 ! @date Created: E. Coccia 18/6/18 
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine out_mdm_bin(i) 
 
        integer(i4b),intent(IN) :: i
        real(dbl):: fm(3)
@@ -2002,13 +2020,13 @@
 
       end subroutine out_mdm_bin
 
-      subroutine read_charges_gau
 !------------------------------------------------------------------------
 ! @brief Read charges from gaussian "charges0.inp" output    
 !
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine read_charges_gau
 
         integer(4) :: i,nts
 
@@ -2043,7 +2061,7 @@
                     "charges calculated for the initial state"
         return
 
-      end subroutine
+      end subroutine read_charges_gau
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2054,7 +2072,6 @@
 !> create a new BEM_Q0=BEM_Qw^-1*BEM_Qf that should avoid
 !!               spurious charge dynamics for stationary states 
 !------------------------------------------------------------------------
-      subroutine init_BEM_Q0
 !------------------------------------------------------------------------
 ! @brief Create a new BEM_Q0=BEM_Qw^-1*BEM_Qf that should avoid
 !               spurious charge dynamics for stationary states    
@@ -2062,6 +2079,7 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine init_BEM_Q0
 
        implicit none
 
@@ -2083,19 +2101,19 @@
 
        return
 
-      end subroutine
+      end subroutine init_BEM_Q0
 
-subroutine wrt_restart_mdm()
 !------------------------------------------------------------------------
 ! @brief write restart 
 !
 ! @date Created   : E. Coccia 28 Nov 2017
 ! Modified  : G. Gil 02 Jul 2018
 !------------------------------------------------------------------------
+      subroutine wrt_restart_mdm()
 
        implicit none
 
-       integer(i4b)     :: i,npoles
+       integer(i4b)     :: i
 
        open(778, file='restart_mdm')
 
@@ -2132,7 +2150,6 @@ subroutine wrt_restart_mdm()
           endif
           if(Feps.eq."drl" .or. Feps.eq."gen") then
              if( Fbem.eq."stan" ) then
-             npoles = size(kf)
        write(778,*) 'Reaction-field polarization charges poles (PCM)'
              write(778,*) npoles
                 do i=1,nts_act
@@ -2176,18 +2193,17 @@ subroutine wrt_restart_mdm()
  
       end subroutine wrt_restart_mdm
 
-
-      subroutine read_medium_restart() 
 !------------------------------------------------------------------------
 ! @brief Read restart 
 !
 ! @date Created   : E. Coccia 28 Nov 2017
 ! Modified  : G. Gil 02 Jul 2018
 !------------------------------------------------------------------------
+      subroutine read_medium_restart()
        
        implicit none
 
-       integer(i4b)     :: i,j,npoles
+       integer(i4b)     :: i,j
        character(3)     :: cdum 
        logical          :: exist
 

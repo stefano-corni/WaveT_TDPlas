@@ -10,9 +10,7 @@
       use omp_lib
 #endif
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
 #endif
 
       implicit none
@@ -40,7 +38,6 @@
 !
       contains
 !
-      subroutine prop
 !------------------------------------------------------------------------
 ! @brief Propogate C(t) using a second
 ! order Euler algorithm 
@@ -49,6 +46,7 @@
 ! @date Created   : 
 ! Modified  : E. Coccia Dec-Apr 2017
 !------------------------------------------------------------------------
+      subroutine prop
 
        implicit none
        integer(i4b)                :: i,j,k
@@ -143,24 +141,29 @@
            call init_medium(c_prev,mu_prev,f_prev,h_int)
            if(this_Finit_int.eq.'sce') then
             if(this_Fprop.eq."dip") then
-             ! mixing iter 1 and 0
-             call preparing_for_scf_in_wavet(this_mix_coef, mu = mu_prev)
              ! reaction field
              allocate(q_or_f(3))
+             ! mixing iter 1 and 0
+             call preparing_for_scf_in_wavet(this_mix_coef,f_prev,q_or_f)
             else
              allocate(pot_prev(this_nts_act))
              call do_pot_from_coeff(c_prev,pot_prev)
-             ! mixing iter 1 and 0
-             call preparing_for_scf_in_wavet(this_mix_coef, pot = pot_prev)
              ! reaction-field polarization charges
              allocate(q_or_f(this_nts_act))
+             ! mixing iter 1 and 0
+             call preparing_for_scf_in_wavet(this_mix_coef,pot_prev,q_or_f)
             endif
             ! compute the molecular state in equilibrium with the medium starting from an excited state in the frozen approximation
             ! onsager model ("dip") or pcm model
             call do_scf(q_or_f,c_prev)
             ! compute the molecular dipole
             call do_dip_from_coeff(c_prev,mu_prev,n_ci)
-            call init_after_scf_in_wavet
+            if(this_Fprop.eq."dip") then
+             call init_after_scf_in_wavet(mu_prev)
+            else
+             call do_pot_from_coeff(c_prev,pot_prev)
+             call init_after_scf_in_wavet(pot_prev)
+            endif
            end if
            ! GG: 11/03/2019 end changes
            if (Fres.eq.'Nonr') then
@@ -248,7 +251,6 @@
 
       end subroutine prop
 !
-      subroutine create_field
 !------------------------------------------------------------------------
 ! @brief Create electric field 
 ! 
@@ -256,6 +258,7 @@
 ! @date Created   : 
 ! Modified  : E. Coccia 16 Jan 2018
 !------------------------------------------------------------------------
+      subroutine create_field 
 
        implicit none
 
@@ -447,13 +450,13 @@
       end subroutine create_field
 
 !
-      subroutine do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
 !------------------------------------------------------------------------
 ! @brief Compute C^T mu C and save previous dipoles 
 !
 ! @date Created   : 
 ! Modified  : E. Coccia 20/11/2017
 !------------------------------------------------------------------------
+      subroutine do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
 
        implicit none
 
@@ -519,13 +522,13 @@
  
       end subroutine do_mu
 
-      subroutine output(i,c,f_prev,h_int)     
 !------------------------------------------------------------------------
 ! @brief Write output files 
 !
 ! @date Created   : 
 ! Modified  : E. Coccia 20/11/2017
 !------------------------------------------------------------------------
+      subroutine output(i,c,f_prev,h_int)
 
        implicit none
 
@@ -603,13 +606,13 @@
       end subroutine output
 
 
-      subroutine add_int_vac(f_prev,h_int)
 !------------------------------------------------------------------------
 ! @brief Create the field term of the hamiltonian 
 !
 ! @date Created   : 
 ! Modified  : E. Coccia 22/11/2017
 !------------------------------------------------------------------------
+      subroutine add_int_vac(f_prev,h_int)
 
        implicit none
 
@@ -627,14 +630,14 @@
  
       end subroutine add_int_vac
 
-      subroutine add_int_rad(mu_prev,mu_prev2,mu_prev3,mu_prev4, &
-                                                   mu_prev5,h_int)
 !------------------------------------------------------------------------
 ! @brief Calculate the Aharonov Lorentz radiative damping 
 !
 ! @date Created   : S. Corni 
 ! Modified  : E. Coccia 22/11/2017
 !------------------------------------------------------------------------
+      subroutine add_int_rad(mu_prev,mu_prev2,mu_prev3,mu_prev4, &
+                                                   mu_prev5,h_int)
 
        implicit none
 
@@ -683,13 +686,13 @@
 
       end subroutine add_int_rad
 
-      subroutine out_header
 !------------------------------------------------------------------------
 ! @brief Write headers to output files 
 !
 ! @date Created   : S. Corni 
 ! Modified  : E. Coccia 22/11/2017
 !------------------------------------------------------------------------
+      subroutine out_header
 
        implicit none
 
@@ -708,7 +711,6 @@
       end subroutine out_header
 
 
-      subroutine exp_euler_prop(ccexp,nci)
 !------------------------------------------------------------------------
 ! @brief Energy term is propagated analytically
 ! Interaction term via second-order Euler 
@@ -716,6 +718,7 @@
 ! @date Created   : E. Coccia 15 Nov 2017
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine exp_euler_prop(ccexp,nci)
 
         implicit none
 
@@ -751,10 +754,13 @@
           c_prev=c
 
 ! SP 16/07/17: added call to medium propagation at step 2 to have full output
+          f_prev=f(:,2)
+          h_int=zero
           if (Fmdm.ne."vac") then
              i=2
              call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
           endif
+          call add_int_vac(f_prev,h_int)
           call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
 ! SP 16/07/17: heder called at step 1                                        
           !call out_header
@@ -779,14 +785,8 @@
        if (Fdis(5:9).eq."qjump") then
           !do i=3,n_step
           do i=istart,iend 
-            f_prev2=f(:,i-2)
-            f_prev=f(:,i-1)
-            h_int=zero 
-            if (Fmdm.ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-            call add_int_vac(f_prev,h_int)
-! SC field
-            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
-                                                mu_prev4,mu_prev5,h_int)
+!            f_prev2=f(:,i-2)
+!            f_prev=f(:,i-1)
 ! Quantum jump (spontaneous or nonradiative relaxation, pure dephasing)
 ! Algorithm from J. Opt. Soc. Am. B. vol. 10 (1993) 524
             dis=disp(h_dis,c_prev,nci)
@@ -841,6 +841,15 @@
                 c_prev2=c_prev
                 c_prev=c
             endif
+
+            f_prev=f(:,i)
+            h_int=zero
+            if (Fmdm.ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+            call add_int_vac(f_prev,h_int)
+! SC field
+            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
+                                               mu_prev4,mu_prev5,h_int)
+
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
@@ -853,14 +862,8 @@
        elseif (Fdis(1:3).eq."mar") then
           !do i=3,n_step
           do i=istart,iend
-            f_prev2=f(:,i-2)
-            f_prev=f(:,i-1)
-            h_int=zero 
-            if (Fmdm.ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-            call add_int_vac(f_prev,h_int)
-! SC field
-            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
-                                                mu_prev4,mu_prev5,h_int)
+!            f_prev2=f(:,i-2)
+!            f_prev=f(:,i-1)
 ! Dissipation by a continuous stochastic propagation
             call rnd_noise(w,w_prev,n_ci,first)
             call add_h_rnd(h_rnd,n_ci,w,w_prev)
@@ -877,6 +880,15 @@
             endif
             !c=c/sqrt(dot_product(c,c))
             c_prev=c
+
+            f_prev=f(:,i)
+            h_int=zero
+            if (Fmdm.ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+            call add_int_vac(f_prev,h_int)
+! SC field
+            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
+                                               mu_prev4,mu_prev5,h_int)
+
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
@@ -889,14 +901,8 @@
 ! No dissipation in the propagation 
           !do i=3,n_step
           do i=istart,iend
-            f_prev2=f(:,i-2)
-            f_prev=f(:,i-1)
-            h_int=zero 
-            if (Fmdm.ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-            call add_int_vac(f_prev,h_int)
-! SC field
-            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
-                                                mu_prev4,mu_prev5,h_int)
+!            f_prev2=f(:,i-2)
+!            f_prev=f(:,i-1)
 ! SC 31/10/17: modified propagation by adding the exp term
 #ifndef OMP
             c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int,c_prev))
@@ -925,6 +931,15 @@
             c=c/sqrt(dot_product(c,c))
             c_prev2=c_prev
             c_prev=c
+
+            f_prev=f(:,i)
+            h_int=zero
+            if (Fmdm.ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+            call add_int_vac(f_prev,h_int)
+! SC field
+            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
+                                               mu_prev4,mu_prev5,h_int)
+
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
@@ -939,8 +954,6 @@
 
       end subroutine exp_euler_prop
 
-
-      subroutine full_euler_prop(nci)
 !------------------------------------------------------------------------
 ! @brief Energy and interaction terms are propagated
 ! via second-order Euler 
@@ -948,6 +961,7 @@
 ! @date Created   : E. Coccia 15 Nov 2017
 ! Modified  :
 !------------------------------------------------------------------------      
+      subroutine full_euler_prop(nci)
 
         implicit none
 
@@ -982,10 +996,13 @@
 
 ! SP 16/07/17: added call to medium propagation at step 2 to have full
 ! output
+          f_prev=f(:,2)
+          h_int=zero
           if (Fmdm.ne."vac") then
              i=2
              call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
           endif
+          call add_int_vac(f_prev,h_int)
           call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
           if (mod(2,n_out).eq.0) call output(2,c,f_prev,h_int)
        endif
@@ -1008,14 +1025,8 @@
        if (Fdis(5:9).eq."qjump") then
           !do i=3,n_step
           do i=istart,iend
-            f_prev2=f(:,i-2)
-            f_prev=f(:,i-1)
-            h_int=zero
-            if (Fmdm.ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-            call add_int_vac(f_prev,h_int)
-! SC field
-            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
-                                               mu_prev4,mu_prev5,h_int)
+!            f_prev2=f(:,i-2)
+!            f_prev=f(:,i-1)
 ! Quantum jump (spontaneous or nonradiative relaxation, pure dephasing)
 ! Algorithm from J. Opt. Soc. Am. B. vol. 10 (1993) 524
             dis=disp(h_dis,c_prev,nci)
@@ -1072,6 +1083,15 @@
                 c_prev2=c_prev
                 c_prev=c
             endif
+
+            f_prev=f(:,i)
+            h_int=zero
+            if (Fmdm.ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+            call add_int_vac(f_prev,h_int)
+! SC field
+            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
+                                               mu_prev4,mu_prev5,h_int)
+
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
@@ -1084,14 +1104,8 @@
        elseif (Fdis(1:3).eq."mar") then
           !do i=3,n_step
           do i=istart,iend
-            f_prev2=f(:,i-2)
-            f_prev=f(:,i-1)
-            h_int=zero
-            if (Fmdm.ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-            call add_int_vac(f_prev,h_int)
-! SC field
-            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
-                                                mu_prev4,mu_prev5,h_int)
+!            f_prev2=f(:,i-2)
+!            f_prev=f(:,i-1)
 ! Dissipation by a continuous stochastic propagation
             call rnd_noise(w,w_prev,n_ci,first)
             call add_h_rnd(h_rnd,n_ci,w,w_prev)
@@ -1108,6 +1122,15 @@
             endif
             !c=c/sqrt(dot_product(c,c))
             c_prev=c
+
+            f_prev=f(:,i)
+            h_int=zero
+            if (Fmdm.ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+            call add_int_vac(f_prev,h_int)
+! SC field
+            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
+                                               mu_prev4,mu_prev5,h_int)
+
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
@@ -1120,14 +1143,8 @@
 ! No dissipation in the propagation 
           !do i=3,n_step
           do i=istart,iend
-            f_prev2=f(:,i-2)
-            f_prev=f(:,i-1)
-            h_int=zero
-            if (Fmdm.ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-            call add_int_vac(f_prev,h_int)
-! SC field
-            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
-                                                mu_prev4,mu_prev5,h_int)
+!            f_prev2=f(:,i-2)
+!            f_prev=f(:,i-1)
 #ifndef OMP
             c=c_prev2-2.d0*ui*dt*(e_ci*c_prev+matmul(h_int,c_prev))
 #endif
@@ -1156,6 +1173,15 @@
             c=c/sqrt(dot_product(c,c))
             c_prev2=c_prev
             c_prev=c
+
+            f_prev=f(:,i)
+            h_int=zero
+            if (Fmdm.ne."vac") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+            call add_int_vac(f_prev,h_int)
+! SC field
+            if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
+                                               mu_prev4,mu_prev5,h_int)
+
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
@@ -1170,13 +1196,13 @@
       
       end subroutine full_euler_prop
 
-      subroutine wrt_restart(i,t,c,c_prev,c_prev2,nci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend)
 !------------------------------------------------------------------------
 ! @brief Write restart file 
 ! 
 ! @date Created   : E. Coccia 21 Nov 2017
 ! Modified  :
 !------------------------------------------------------------------------      
+      subroutine wrt_restart(i,t,c,c_prev,c_prev2,nci,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend)
   
        implicit none
 
@@ -1247,5 +1273,3 @@
       end subroutine wrt_restart 
 
       end module
-
-

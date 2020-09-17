@@ -11,7 +11,7 @@ module interface_tdplas
                         mpibcast_readio_mdm,set_global_tdplas,Fmop,nmod,imod,max_mod_todiag, &
 ! used by main
                         Fwrite,fr_0,BEM_Q0,mat_f0,ncycmax,thrshld,vtsn,mix_coef,diag_mat,&
-                        do_field_from_charges,out_gcharges,&
+                        do_field_from_charges,out_gcharges,get_qr_fr,&
 ! used in scf
                         BEM_W2,Ftest,eps_w0,eps_A,BEM_Modes,sfe_act,&
                         do_BEM_quant,deallocate_bem_public,do_vts_from_dip,&
@@ -21,12 +21,10 @@ module interface_tdplas
                         
 #endif
 #ifdef MPI
-#ifndef SCALI
       use mpi
 #endif
-#ifdef SCALI
-      include 'mpif.h'
-#endif
+#ifdef OMP
+      use omp_lib 
 #endif
 
       implicit none
@@ -76,7 +74,7 @@ module interface_tdplas
              mpibcast_read_medium,set_global_tdplas_in_wavet,&
 ! used by main
              this_Fwrite,this_fr_0,this_BEM_Q0,this_mat_f0,this_ncycmax,this_thrshld,this_vtsn,&
-             this_mix_coef,diag_mat_in_wavet,&
+             this_mix_coef,diag_mat_in_wavet,transfer_matrix_tdplas_to_wavet,&
              do_field_from_charges_in_wavet, this_nts_act, &
 ! used in scf
              this_BEM_W2,this_Ftest,this_eps_w0,this_eps_A,this_BEM_Modes,this_sfe_act,&
@@ -102,13 +100,13 @@ module interface_tdplas
         return
       end subroutine set_q0charges
       
-      subroutine get_medium_dip(mdm_dip)
 !------------------------------------------------------------------------
 ! @brief Set the dipole(t) in Sdip for spectra 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
+      subroutine get_medium_dip(mdm_dip)
         implicit none
         real(dbl), intent(inout) :: mdm_dip(3)
 #ifdef TDPLAS
@@ -120,18 +118,28 @@ module interface_tdplas
       end subroutine get_medium_dip
      
  
-      subroutine read_medium_input
 !------------------------------------------------------------------------
 ! @brief Read medium input 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
+      subroutine read_medium_input
+
+#ifdef TDPLAS
+         call read_medium
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
+      return
+      end subroutine read_medium_input
+
+      subroutine transfer_matrix_tdplas_to_wavet
         implicit none
         integer :: ii,shap(3)
 #ifdef TDPLAS
-        call read_medium
         this_Fprop=Fprop
+        this_Fint=Fint
         this_Fwrite=Fwrite
         this_Finit_int=Finit_int
         this_Fmdm_relax = Fmdm_relax
@@ -178,16 +186,17 @@ module interface_tdplas
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
         return
-      end subroutine read_medium_input
+      end subroutine transfer_matrix_tdplas_to_wavet
       
       
-      subroutine get_energies(e_vac,g_eq_t,g_neq_t,g_neq2_t)     
 !------------------------------------------------------------------------
 ! @brief Get energies 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
+      subroutine get_energies(e_vac,g_eq_t,g_neq_t,g_neq2_t)
+
         implicit none
         real(dbl), intent(inout) :: e_vac,g_neq_t,g_neq2_t,g_eq_t
 #ifdef TDPLAS
@@ -199,13 +208,13 @@ module interface_tdplas
       end subroutine get_energies
       
       
-      subroutine init_medium(c,mu,f,h)     
 !------------------------------------------------------------------------
 ! @brief Initialize medium 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
+     subroutine init_medium(c,mu,f,h)
 
         implicit none
         complex(cmp), intent(in) :: c(:)    !< (1:n_ci)           - molecular wavefunction coefficients
@@ -261,13 +270,13 @@ module interface_tdplas
       end subroutine init_medium
       
       
-      subroutine prop_medium(i,c,mu,f,h)     
 !------------------------------------------------------------------------
 ! @brief Propagate medium 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
+      subroutine prop_medium(i,c,mu,f,h)
 
         implicit none
 
@@ -315,13 +324,13 @@ module interface_tdplas
       end subroutine prop_medium
       
      
-      subroutine finalize_medium
 !------------------------------------------------------------------------
 ! @brief Finalize medium 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
+      subroutine finalize_medium
 
         implicit none
 
@@ -335,13 +344,13 @@ module interface_tdplas
 
       end subroutine finalize_medium
 
-      subroutine mpibcast_read_medium 
 !------------------------------------------------------------------------
 ! @brief Broadcast input medium if parallel 
 !
 ! @date Created   : E. Coccia 9/5/18 
 ! Modified  :  
 !------------------------------------------------------------------------
+      subroutine mpibcast_read_medium
 
         implicit none
 
@@ -355,8 +364,14 @@ module interface_tdplas
 
       end subroutine mpibcast_read_medium 
 
+!------------------------------------------------------------------------
+! @brief Interface between TDPlas and QM code 
+!
+! @date Created   : 
+! Modified  :  
+!------------------------------------------------------------------------
       subroutine set_global_tdplas_in_wavet(this_dt,this_mdm,this_mol_cc,this_n_ci,this_n_ci_read,this_c_i,this_e_ci,this_mut,&
-				                                    this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
+	                                    this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
                                             this_Fbin,this_Fopt,this_nthr,this_res,this_n_res)
 
         implicit none
@@ -380,7 +395,7 @@ module interface_tdplas
 
 #ifdef TDPLAS
         call set_global_tdplas(this_dt,this_mdm,this_mol_cc,this_n_ci,this_n_ci_read,this_c_i,this_e_ci,this_mut,&
-				                       this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
+	                       this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
                                this_Fbin,this_Fopt,this_nthr,this_res,this_n_res)
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
@@ -395,7 +410,7 @@ module interface_tdplas
        implicit none
 
        integer(i4b), intent(in) :: Md
-       real(dbl), intent(inout) :: M(Md)
+       real(dbl), intent(inout) :: M(Md,Md)
        real(dbl), intent(out) :: E(Md)
 
 #ifdef TDPLAS
@@ -412,8 +427,8 @@ module interface_tdplas
 
        implicit none
 
-       real(dbl),intent(inout):: f(3)  
-       real(dbl),intent(in):: q(this_nts_act)  
+       real(dbl),intent(in):: q(:)
+       real(dbl),intent(out):: f(:)  
 
 #ifdef TDPLAS
        call do_field_from_charges(q,f)
@@ -459,32 +474,30 @@ module interface_tdplas
 
       end subroutine do_vts_from_dip_in_wavet
 
-      subroutine preparing_for_scf_in_wavet(mix,mu,pot)
+      subroutine preparing_for_scf_in_wavet(mix,pot_or_mu,q_or_f)
 
        implicit none
 
        real(dbl), intent(in) :: mix
-       real(dbl), optional, intent(in) :: mu(:)
-       real(dbl), optional, intent(in) :: pot(:)
+       real(dbl), intent(in) :: pot_or_mu(:)
+       real(dbl), intent(out) :: q_or_f(:)
 
 #ifdef TDPLAS
-       if (this_Fprop.eq."dip") then
-        call preparing_for_scf(mix, mu_t = mu)
-       else
-        call preparing_for_scf(mix, pot_t = pot)
-       endif
+        call preparing_for_scf(mix, pot_or_mu)
+        call get_qr_fr(q_or_f)
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
 
       end subroutine preparing_for_scf_in_wavet
 
-      subroutine init_after_scf_in_wavet
+      subroutine init_after_scf_in_wavet(pot_or_mut)
 
        implicit none
+       real(dbl), intent(in) :: pot_or_mut(:)
 
 #ifdef TDPLAS
-       call init_after_scf
+       call init_after_scf(pot_or_mut)
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
@@ -647,7 +660,7 @@ module interface_tdplas
 !$OMP PARALLEL REDUCTION(+:pot)
 !$OMP DO 
 #endif
-        do its=1,this_nts_act
+do its=1,this_nts_act
           pot(its)=pot(its)-fld(1)*this_cts_act(its)%x           
           pot(its)=pot(its)-fld(2)*this_cts_act(its)%y          
           pot(its)=pot(its)-fld(3)*this_cts_act(its)%z         
@@ -656,7 +669,6 @@ module interface_tdplas
 !$OMP enddo
 !$OMP END PARALLEL
 #endif
-
       end subroutine do_pot_from_field
 
 !------------------------------------------------------------------------
@@ -690,7 +702,6 @@ module interface_tdplas
 !$OMP enddo
 !$OMP END PARALLEL
 #endif
-
       end subroutine do_pot_from_dip
 
 subroutine export_mdm_qmcoup
