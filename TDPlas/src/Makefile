@@ -18,7 +18,7 @@ OMP= -fopenmp -DOMP
 #OMP= -qopenmp -DOMP
 
 # mpi flags (not used here)
-MPI= -DMPI
+MPI= 
 
 LDLAGS=
 #LDLAGS= --static --disable-shared --enable-static

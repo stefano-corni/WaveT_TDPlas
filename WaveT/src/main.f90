@@ -11,14 +11,7 @@
        use omp_lib
 #endif
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
-#endif
-#ifdef MPI
-#ifdef SCALI
-      include 'mpif.h'
-#endif
 #endif
        implicit none
 

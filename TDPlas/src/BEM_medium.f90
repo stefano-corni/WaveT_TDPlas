@@ -132,10 +132,7 @@
          !Write out matrices for gamess                     
          call out_BEM_gamess
          call finalize_BEM
-#ifdef MPI
-       call mpi_finalize(ierr_mpi)
-#endif
-         stop
+         return
        endif
        if(Fprop.eq."chr-ief".or.Fprop.eq."chr-ied".or.Fprop.eq."chr-ons") then
          if(.not.allocated(BEM_Qd)) allocate(BEM_Qd(nts_act,nts_act))
@@ -382,10 +379,6 @@
          call do_BEM_SD
          if (myrank.eq.0) call write_BEM_SD
          if (myrank.eq.0)write(6,*) "Matrixes S D have been written out"
-#ifdef MPI
-           call mpi_finalize(ierr_mpi)
-#endif
-         stop
        elseif (FinitBEM.eq.'rea') then
        !Read in geometric info and proceed
          !call read_cavity_file
@@ -789,7 +782,6 @@
        real(8), allocatable :: eigv(:)
        real(dbl) :: fac_eps0,fac_epsd
  
-       integer(i4b) :: npoles
 
 #ifndef MPI
        myrank=0
@@ -937,8 +929,6 @@
          fact2 = zero
          BEM_W2 = zero
          BEM_2G = zero
-!$OMP PARALLEL 
-!$OMP DO
          allocate(sin_delta(1),cos_delta(1))
          do i=1,nts_act
           if( allocated(poles(i)%omega_p) ) then
@@ -953,8 +943,6 @@
            BEM_2G(i)  = two*poles(i)%gamma_p(j)
           endif
          end do
-!$OMP enddo
-!$OMP END PARALLEL
 
 ! SC: the first eigenvector should be 0 for the NP
 !         if (Fmdm(2:4).eq.'nan') fact2(1)=0.d0
@@ -1045,26 +1033,12 @@
        real(dbl), allocatable :: scr1(:,:),scr2(:,:),scr3(:,:)
        real(dbl) :: scrd3(3), dist
 
-       type(poles_t) :: poles_eps
-
-       integer(i4b) :: npoles
 
 #ifndef MPI
        myrank=0
 #endif
        allocate(scr1(nts_act,nts_act),scr2(nts_act,nts_act),scr3(nts_act,nts_act))
        if ( Feps.eq."gen" ) then
-               open(4,file="poles.inp")
-               read(4,*) npoles
-
-               allocate(poles_eps%omega_p(npoles),poles_eps%gamma_p(npoles),&
-                        poles_eps%re_deps_domega_p(npoles),poles_eps%im_deps_domega_p(npoles),poles_eps%A_coeff_p(npoles))
-
-               do i=1,npoles
-                  read(4,*) poles_eps%omega_p(i),poles_eps%gamma_p(i),poles_eps%A_coeff_p(i)
-                  !        poles_eps%re_deps_domega_p(i),poles_eps%im_deps_domega_p(i)
-               enddo
-               close(4)
                allocate(kf(npoles),w2(npoles),gg(npoles),kf0(npoles),kf_prime(npoles))
                allocate(sin_delta(npoles),cos_delta(npoles))
                sin_delta(:) = zero

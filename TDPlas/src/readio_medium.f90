@@ -70,6 +70,7 @@
                         Fopt_chr,  & !< Optimized loops with OMP
                         Fmdm_res,  & !< Medium restart
                         Finv,      & !< Apply inversion symmetry when cavity is built using gmsh
+                        Ffind,     & !< Spheres are not founf gmsh file
                         Fmop         !< Prints charges for mopac2002 interface
       
 ! namelists user-friendly variables 
@@ -95,7 +96,7 @@
                         debug_type,bem_type,local_field,medium_type,   &
                         out_level,interaction_init,epsilon_omega,      &
                         test_type,medium_relax,gamess,print_lf_matrix, &
-                        inversion,charge_mopac 
+                        inversion,charge_mopac,find_spheres 
 
      ! variables read from eps.inp in the case of the general
      ! dielectric function case (i.e., eps_omega = 'gen')
@@ -120,7 +121,7 @@
              read_medium_tdplas,n_omega,omega_ini,omega_end,         &
              Fwrite,Fmdm_relax,Fgamess,mpibcast_readio_mdm,Fopt_chr, &
              ntst,Fmdm_res,Finv, read_medium_eps,nmod,imod,Fmop,     &
-             max_mod_todiag
+             max_mod_todiag,Ffind
 
 !
       contains
@@ -256,7 +257,7 @@
          sphere_position_x,sphere_position_y,sphere_position_z,        &
          spheroid_axis_x,spheroid_axis_y,spheroid_axis_z,              &
          spheroid_position_x,spheroid_position_y,spheroid_position_z,  &
-         sphere_radius,spheroid_radius,inversion                                
+         sphere_radius,spheroid_radius,inversion,find_spheres           
        namelist /eps_function/ epsilon_omega,eps_0,eps_d,eps_A,&
                                eps_gm,eps_w0,f_vel,tau_deb
        namelist /print_charges/n_prnt_charges,prnt_charges, &
@@ -324,6 +325,7 @@
        test_type="non"
        !Use only with gmsh
        Finv='non'
+       Ffind='yes'
        ! Sphere and Spheroid
        Fshape='none'
        spheres_number=0 
@@ -999,7 +1001,14 @@
           case ('non')
            Finv='non'
           end select
-          call read_gmsh_file(Finv)
+          select case(find_spheres)
+          case ('non','Non', 'NON')
+           Ffind='non'
+           write(6,*) 'Spheres will not be found in gmsh file'
+          case ('yes','Yes','YES')
+           Ffind='yes'
+          end select
+          call read_gmsh_file(Finv,Ffind)
          case ('bui','Bui','BUI')
           Fsurf='bui'
           write(6,*) "Building surface from spheres."
@@ -1209,6 +1218,8 @@
        call mpi_bcast(Fsurf,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fopt_chr,             flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Finv,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Ffind,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+
 
        if(Fprop.eq.'chr-ief'.or.Fprop.eq.'chr-ied'.or.Fprop.eq.'chr-ons') then
               call mpi_bcast(nts_act,    1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) 

@@ -206,7 +206,7 @@ scf.o: constants.o readio.o interface_tdplas.o
 
 dissipation.o: random.o constants.o readio.o interface_tdplas.o
 
-propagate.o: spectra.o dissipation.o interface_tdplas.o
+propagate.o: spectra.o dissipation.o interface_tdplas.o scf.o
 
 main_spectra.o: readio.o spectra.o interface_tdplas.o
 

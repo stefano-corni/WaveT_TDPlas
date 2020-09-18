@@ -643,7 +643,6 @@
          endif
        endif
          if(Feps.eq."gen") then
-          !npoles = size(kf)
           allocate(qr_t_p(nts_act,npoles))
           allocate(qr_tp_p(nts_act,npoles))
           allocate(dqr_t_p(nts_act,npoles))
@@ -657,10 +656,17 @@
            qr_tp_p(:,ipoles)=kf0(ipoles)*(matmul(BEM_Qf,pot_0)+matmul(BEM_ADt,q0) ) ! check - initialization
            qr_tp(:)=qr_tp(:)+qr_tp_p(:,ipoles)
           enddo
-          do ipoles=1,npoles
-              fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+kf(ipoles)*matmul(BEM_Qf,pot_tp)+kf(ipoles)*matmul(BEM_ADt,qr_tp)!
-              fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/nts_act
-          enddo
+          if (npoles.ne.1) then
+                  do ipoles=1,npoles-1
+                      fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+kf(ipoles)*(matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp))
+                      fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/nts_act
+                  enddo
+                  fqr_tp_p(:,npoles)=matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp)
+          else
+                  ipoles=1
+                  fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+kf(ipoles)*(matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp))
+                  fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/nts_act
+          endif
           dqr_tp_p(:,:)=zero
           if(Floc.eq."loc") then
             allocate(qx_t_p(nts_act,npoles))
@@ -1466,16 +1472,21 @@
 
       ! Charge propagation with general dielectric function and IEF
       ! equations
-       integer(i4b) :: pidx
+       integer(i4b) :: pidx,ncycle
        integer(i4b) :: i,j
        real(dbl) :: threshold
 
        threshold = .5d-8
+       if (npoles.eq.1) then
+               ncycle=npoles
+       else
+               ncycle=npoles-1
+       endif
 
        qr_tp(:)=qr_t(:)
        qr_t(:) = zero
        if(Floc.eq."loc") qx_t(:) = zero
-       do pidx = 1, npoles
+       do pidx = 1, ncycle
 !       qr_t_p(:,pidx)=qr_t_p(:,pidx)+kf_prime(pidx)*dt*0.5d0*(matmul(BEM_Qf,pot_tp-pot_tp2)+matmul(BEM_ADt,qr_tp-qr_tp2))
         fqr_t_p(:,pidx)=-w2(pidx)*qr_tp_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,pot_tp)+kf(pidx)*matmul(BEM_ADt,qr_tp)!+&
 !                          +kf_prime(pidx)*(one-gg(pidx)*dt*0.5d0)*(matmul(BEM_Qf,pot_tp-pot_tp2)+matmul(BEM_ADt,qr_t-qr_tp))
@@ -1510,6 +1521,29 @@
         qx_t(:) = qx_t(:) + qx_t_p(:,pidx)
        endif
        enddo
+       if (npoles.ne.1) then
+           pidx=npoles
+           !derivative method implemented
+           fqr_t_p(:,pidx)=matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp)
+           qr_t_p(:,pidx)=qr_tp_p(:,pidx)+kf0(pidx)*(fqr_t_p(:,pidx)-fqr_tp_p(:,pidx))
+
+           !qr_t_p(:,pidx)=qr_t_p(:,pidx)-sum(qr_t_p(:,pidx))/nts_act
+           fqr_tp_p(:,pidx)=fqr_t_p(:,pidx)
+           qr_tp_p(:,pidx)=qr_t_p(:,pidx)
+           qr_t(:) = qr_t(:) + qr_t_p(:,pidx)
+           if(Floc.eq."loc") then
+            if(Fmdm.eq.'Csol') then
+                 fqx_t_p(:,pidx)=matmul(BEM_Qfx,potf_tp)+matmul(BEM_ADt,qx_tp)
+                 qx_t_p(:,pidx)=qx_tp_p(:,pidx)+kf0(pidx)*(fqx_t_p(:,pidx)-fqx_tp_p(:,pidx))
+            else if(Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') then
+                 fqx_t_p(:,pidx)=matmul(BEM_Qf,potf_tp)+matmul(BEM_ADt,qx_tp)
+                 qx_t_p(:,pidx)=qx_tp_p(:,pidx)+kf0(pidx)*(fqx_t_p(:,pidx)-fqx_tp_p(:,pidx))
+            endif
+            fqx_tp_p(:,pidx)=fqx_t_p(:,pidx)
+            qx_tp_p(:,pidx)=qx_t_p(:,pidx)
+            qx_t(:) = qx_t(:) + qx_t_p(:,pidx)
+           endif
+       endif
        return
 
       end subroutine

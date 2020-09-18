@@ -39,14 +39,14 @@
       type(tess_pcm), target, allocatable :: cts_act(:), cts_pro(:)
       integer(i4b) :: nts_act, nts_pro
       type(sfera), allocatable :: sfe_act(:), sfe_pro(:)
-      integer(i4b) :: nesf_act, nesf_pro
+      integer(i4b) :: nesf_act, nesf_pro, nsphe
 
       save
       private
       public pedra_int, read_act, read_pro, dealloc_pedra, &
              nts_act, nts_pro,cts_act,cts_pro,nesf_pro,sfe_pro, &
              nesf_act,sfe_act,read_cavity_file,read_cavity_full_file,&
-             read_gmsh_file,tess_pcm,sfera
+             read_gmsh_file,tess_pcm,sfera,nsphe
 !
 
       contains
@@ -1335,7 +1335,7 @@
       end subroutine
 !
       subroutine read_cavity_file
-       integer(4) :: i,nts,nsphe
+       integer(4) :: i,nts
        real(dbl)  :: x,y,z,s,r      
 
 #ifndef MPI
@@ -1382,7 +1382,7 @@
        return
       end subroutine
 !
-      subroutine read_gmsh_file(inv)
+      subroutine read_gmsh_file(inv,Ffind)
 ! this routine read in gmsh mesh files
 !  AFTER they have been massaged by a proper
 !  gawk script. To be revised with better coding
@@ -1391,7 +1391,7 @@
       integer(4),allocatable :: el_nodes(:,:),isphere(:)
       logical,allocatable :: is_centre(:)
       character(6) :: line, junk
-      character(3) :: inv
+      character(3) :: inv,Ffind
       real(8),allocatable :: c_nodes(:,:) 
       real(8) :: vert(3,3),normal(3),area,dist,diff(3), &
         dist_max,area_tot 
@@ -1410,7 +1410,11 @@
 #endif 
       allocate(c_nodes(3,n_nodes))
       allocate(is_centre(n_nodes))
-      is_centre(:)=.true.
+      if (Ffind.eq.'yes') then 
+            is_centre(:)=.true.
+      else
+            is_centre(:)=.false.   !!CHANGE TO AVOID CREATION OF SPHERES WHEN USING DIFFERENT NP SHAPES WITH GMSH 
+      endif
       if (myrank.eq.0) then
          do i_nodes=1,n_nodes
             read(7,*) c_nodes(:,i_nodes)
