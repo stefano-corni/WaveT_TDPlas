@@ -1094,12 +1094,19 @@
        scr2 = inv(scr2)
 
        ! Form Q0
-       BEM_Q0=-matmul(scr2,matmul(BEM_Sm1,BEM_2ppDA))
-       !BEM_Q0=-matmul(BEM_Sm1,matmul(scr2,BEM_2ppDA))
+       if ( Feps.eq."gen" ) then
+               BEM_Q0=-matmul(scr2,matmul(BEM_Sm1,BEM_2ppDA))
+       else
+               BEM_Q0=-matmul(BEM_Sm1,matmul(scr2,BEM_2ppDA))
+       endif
 
        ! Form epsd dependent matrix term
-
-       scr3 = scr1
+       if (feps.eq.'gen') then
+            scr3=-BEM_ADt
+       else
+            scr3 = scr1
+       endif
+       
        do i=1,nts_act
          if(eps_d.ne.1) scr3(i,i)= scr3(i,i) + twp * (eps_d+one) / (eps_d-one)
        enddo
@@ -1109,8 +1116,12 @@
        scr3 = inv(scr3)
 
        ! Form Qd
-
-       BEM_Qd=-matmul(BEM_Sm1,matmul(scr3,BEM_2ppDA))
+       if (feps.eq.'gen') then
+               BEM_Qd=-matmul(scr3,matmul(BEM_Sm1,BEM_2ppDA))
+       else
+               BEM_Qd=-matmul(BEM_Sm1,matmul(scr3,BEM_2ppDA))
+       endif
+       
 
        ! GG: analogous to Q_0 and Q_d matrices in the case of
        ! local-field for solvent external medium
@@ -1119,8 +1130,13 @@
         do i=1,nts_act
           BEM_2ppDAx(i,i)= -BEM_2ppDAx(i,i) + twp
         enddo
-        BEM_Q0x=matmul(BEM_Sm1,matmul(scr2,BEM_2ppDAx))
-        BEM_Qdx=matmul(BEM_Sm1,matmul(scr3,BEM_2ppDAx))
+        if (feps.eq.'gen') then
+                BEM_Q0x=matmul(scr2,matmul(BEM_Sm1,BEM_2ppDAx))
+                BEM_Qdx=matmul(scr3,matmul(BEM_Sm1,BEM_2ppDAx))
+        else
+                BEM_Q0x=matmul(BEM_Sm1,matmul(scr2,BEM_2ppDAx))
+                BEM_Qdx=matmul(BEM_Sm1,matmul(scr3,BEM_2ppDAx))
+        endif
        endif
 
        deallocate(scr1,scr2,scr3)
