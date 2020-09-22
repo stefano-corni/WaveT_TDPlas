@@ -1066,7 +1066,7 @@
        ! Form transpose DA
        BEM_ADt= -transpose(scr1)
 
-       if (feps.eq.'gen') then
+       if (Feps.eq.'gen') then
             scr2=-BEM_ADt
        else
             scr2 = scr1
@@ -1101,7 +1101,7 @@
        endif
 
        ! Form epsd dependent matrix term
-       if (feps.eq.'gen') then
+       if (Feps.eq.'gen') then
             scr3=-BEM_ADt
        else
             scr3 = scr1
@@ -1116,7 +1116,7 @@
        scr3 = inv(scr3)
 
        ! Form Qd
-       if (feps.eq.'gen') then
+       if (Feps.eq.'gen') then
                BEM_Qd=-matmul(scr3,matmul(BEM_Sm1,BEM_2ppDA))
        else
                BEM_Qd=-matmul(BEM_Sm1,matmul(scr3,BEM_2ppDA))
@@ -1130,7 +1130,7 @@
         do i=1,nts_act
           BEM_2ppDAx(i,i)= -BEM_2ppDAx(i,i) + twp
         enddo
-        if (feps.eq.'gen') then
+        if (Feps.eq.'gen') then
                 BEM_Q0x=matmul(scr2,matmul(BEM_Sm1,BEM_2ppDAx))
                 BEM_Qdx=matmul(scr3,matmul(BEM_Sm1,BEM_2ppDAx))
         else
