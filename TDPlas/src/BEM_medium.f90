@@ -1066,7 +1066,7 @@
        ! Form transpose DA
        BEM_ADt= -transpose(scr1)
 
-       if (feps.eq.'gen') then
+       if (Feps.eq.'gen') then
             scr2=-BEM_ADt
        else
             scr2 = scr1
@@ -1100,7 +1100,7 @@
        endif
 
        ! Form epsd dependent matrix term
-       if (feps.eq.'gen') then
+       if (Feps.eq.'gen') then
             scr3=-BEM_ADt
        else
             scr3 = scr1
@@ -1114,7 +1114,7 @@
        scr3 = inv(scr3)
 
        ! Form Qd
-       if (feps.eq.'gen') then
+       if (Feps.eq.'gen') then
                BEM_Qd=-matmul(scr3,matmul(BEM_Sm1,BEM_2ppDA))
        else
                BEM_Qd=-matmul(BEM_Sm1,matmul(scr3,BEM_2ppDA))
@@ -1127,7 +1127,7 @@
         do i=1,nts_act
           BEM_2ppDAx(i,i)= -BEM_2ppDAx(i,i) + twp
         enddo
-        if (feps.eq.'gen') then
+        if (Feps.eq.'gen') then
                 BEM_Q0x=matmul(scr2,matmul(BEM_Sm1,BEM_2ppDAx))
                 BEM_Qdx=matmul(scr3,matmul(BEM_Sm1,BEM_2ppDAx))
         else
@@ -2130,7 +2130,7 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-     subroutine output_surf
+      subroutine output_surf
 
        integer(i4b) :: i
 ! This routine creates the same files also created by Gaussian
@@ -2138,11 +2138,11 @@
        open(unit=7,file="cavity.inp",status="unknown",form="formatted")
        write (7,*) nts_act,nesf_act
        do i=1,nesf_act
-         write (7,'(3F22.10)') sfe_act(i)%x,sfe_act(i)%y, &
+         write (7,'(3E26.16)') sfe_act(i)%x,sfe_act(i)%y, &
                                sfe_act(i)%z
        enddo
        do i=1,nts_act
-         write (7,'(4F22.10,D14.5)') cts_act(i)%x,cts_act(i)%y,cts_act(i)%z, &
+         write (7,'(5E26.16)') cts_act(i)%x,cts_act(i)%y,cts_act(i)%z, &
                                cts_act(i)%area,cts_act(i)%rsfe
        enddo
        close(unit=7)
