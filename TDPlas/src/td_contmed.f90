@@ -962,21 +962,36 @@
         qr_tp=matmul(BEM_Q0,pot_or_mut)
         qr_t(:)=qr_tp(:)
         dqr_t(:)=zero  
-        dqr_tp(:)=zero  
-        if (Feps.eq."drl") &
+        if (Feps.eq."drl") then
           fqr_tp=-mat_mult(BEM_Qw,qr_t)+mat_mult(BEM_Qf,pot_or_mut)
-        if( Fbem.eq."stan" ) then 
+          dqr_tp(:)=zero
+       endif
+        if( Fbem.eq."stan" ) then
+            qr_tp(:)=zero 
           do ipoles=1,npoles
-           qr_tp_p(:,ipoles)= kf0(ipoles) * ( matmul(BEM_Qf,pot_or_mut)+matmul(BEM_ADt,qr_t) ) ! check - initialization
+           qr_tp_p(:,ipoles)=kf0(ipoles)*(matmul(BEM_Qf,pot_or_mut)+matmul(BEM_ADt,qr_t) )
+           qr_tp(:)=qr_tp(:)+qr_tp_p(:,ipoles)
           enddo
           dqr_tp_p(:,:)=zero
-          fqr_tp_p=zero
+          if (npoles.ne.1) then
+           do ipoles=1,npoles-1
+             fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+kf(ipoles)*(matmul(BEM_Qf,pot_or_mut)+matmul(BEM_ADt,qr_tp))
+             fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/nts_act
+           enddo
+             fqr_tp_p(:,npoles)=matmul(BEM_Qf,pot_or_mut)+matmul(BEM_ADt,qr_tp)
+          else
+             ipoles=1
+             fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+kf(ipoles)*(matmul(BEM_Qf,pot_or_mut)+matmul(BEM_ADt,qr_tp))
+             fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/nts_act
+          endif
+           qr_t=qr_tp
         endif
         if(Fint.eq."ons") call do_field_from_charges(qr_t,fr_0)
        endif
        ! SC 27/06/2020: set q0 to the charge after the SCF inside tdplas as well
        q0=qr_t
        ! SC 27/06/2020: recalculate the hamiltonian from q0 
+       h_mdm_0=0
        call correct_hamiltonian
 
        if (myrank.eq.0) write(6,*) 'G_neq at t=0:',g_neq_0
