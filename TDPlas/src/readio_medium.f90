@@ -859,10 +859,6 @@
          select case(bem_read_write)
          case ('rea','Rea','REA')
           FinitBEM='rea'
-          if(Fprop.eq.'chr-ief'.or.Fprop.eq.'chr-ied' &
-                           & .or.Fprop.eq.'chr-ons') then
-              call read_gau_out_medium
-          endif
           write(6,*) "This is full run reading matrix and boundary"
          case ('wri','Wri', 'WRI')
           FinitBEM='wri'
@@ -1140,7 +1136,6 @@
          vts(its,i,i)=vts(its,i,i)+vtsn(its)
         enddo
        enddo
-
 
        return
 
