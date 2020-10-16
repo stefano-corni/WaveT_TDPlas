@@ -165,7 +165,7 @@
              call init_after_scf_in_wavet(pot_prev)
             endif
            end if
-           ! GG: 11/03/2019 end changes
+            !GG: 11/03/2019 end changes
            if (Fres.eq.'Nonr') then
               i=1
               call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
@@ -772,6 +772,7 @@
           iend=n_step
        elseif (Fres.eq.'Yesr') then
           istart=restart_i+1
+          call add_int_vac(f_prev,h_int)
           if (Fsim.eq.'y') then 
              iend=diff_step+restart_i
           elseif (Fsim.eq.'n') then
@@ -939,7 +940,6 @@
 ! SC field
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
                                                mu_prev4,mu_prev5,h_int)
-
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
@@ -1012,6 +1012,7 @@
           iend=n_step
        elseif (Fres.eq.'Yesr') then
           istart=restart_i+1
+          call add_int_vac(f_prev,h_int)
           if (Fsim.eq.'y') then 
              iend=diff_step+restart_i
           elseif (Fsim.eq.'n') then
@@ -1262,6 +1263,10 @@
        write(ii,*) mu_prev3(1), mu_prev3(2), mu_prev3(3)
        write(ii,*) mu_prev4(1), mu_prev4(2), mu_prev4(3)
        write(ii,*) mu_prev5(1), mu_prev5(2), mu_prev5(3)
+       write(ii,*) 'Interaction hamiltonian'
+       !do j=1,nci
+       !   write(ii,*) h_int(j,:)
+       !enddo
 
 
        close(ii)

@@ -174,11 +174,23 @@
           call init_vv_propagator_gen
          endif
       endif 
-      if (Fmdm.ne.'vac') call correct_hamiltonian
+      if (Fmdm.ne.'vac') then 
+            call correct_hamiltonian
+      endif
 ! SC set the initial values of the solvent component of the 
 ! neq free energies
       g_neq1=zero
       g_neq2=zero
+      if(Fmdm_res.eq.'Yesr') then
+              qr_t=qr_tp2
+              qx_t=qx_tp2
+              h_int=0
+              if(Fdeb.ne."off") call do_interaction_h
+              h_int(:,:)=h_int(:,:)+h_mdm(:,:)
+              qr_t=qr_tp
+              qx_t=qx_tp
+              !call do_gneq(pot_t,vts,dqr_t,qr_t,q0,BEM_Qd,nts_act,1)
+      endif
 
       return
 
@@ -213,7 +225,7 @@
        endif
 !
        t=(i-1)*dt
-       ! Build the interaction Hamiltonian Reaction/Local with previous charges
+! Build the interaction Hamiltonian Reaction/Local with previous charges
        if(Fdeb.ne."off") call do_interaction_h
 #ifndef MPI
        if (i.eq.1.and.Fwrite.eq."high") then
@@ -225,7 +237,7 @@
         enddo
        endif
 #endif
-       ! Update the interaction Hamiltonian 
+       ! Update the interaction Hamiltonian
        h_int(:,:)=h_int(:,:)+h_mdm(:,:)
 
 !      Start the propagation
@@ -285,7 +297,7 @@
              call out_mdm(i)
           endif
        endif
-
+       
        ! EC 28/11/17 Write restart
        if (mod(i,n_res).eq.0) call wrt_restart_mdm()
 
@@ -2018,15 +2030,15 @@
        if(Fprop.eq."chr-ief".or.Fprop.eq."chr-ied".or.Fprop.eq."chr-ons")then
                 call do_field_from_charges(qr_t,fr_t)
         endif
-         write (file_med,'(i8,f12.2,4e22.10)') i,t,fr_t(:),ref
+         write (file_med,'(i8,f12.2,4e22.10e3)') i,t,fr_t(:),ref
        case ('s-l')
-         write (file_med,'(i8,f12.2,4e22.10)') i,t,fx_t(:),ref
+         write (file_med,'(i8,f12.2,4e22.10e3)') i,t,fx_t(:),ref
        case default
          if(Fprop.eq."dip") then
-           write (file_med,'(i8,f12.2,3e22.10)') i,t,fr_t(:)
+           write (file_med,'(i8,f12.2,3e22.10e3)') i,t,fr_t(:)
          else
            call do_field_from_charges(qr_t,fr_t)
-           write (file_med,'(i8,f12.2,8e22.10)')i,t,mu_mdm(:,1),&
+           write (file_med,'(i8,f12.2,8e22.10e3)')i,t,mu_mdm(:,1),&
                                                     fr_t(:),qtot,qtot0
          endif
        end select
@@ -2181,7 +2193,11 @@
        if (Fint.eq.'pcm') then
           write(778,*) 'Reaction-field polarization charges (PCM)'
           do i=1,nts_act
-             write(778,*) qr_t(i)
+             write(778,*) qr_tp(i)
+          enddo
+          write(778,*) 'Reaction-field polarization charges prev (PCM)'
+          do i=1,nts_act
+             write(778,*) qr_tp2(i)
           enddo
           write(778,*) 'Molecular potential'
           do i=1,nts_act
@@ -2190,14 +2206,18 @@
           if (Floc.eq.'loc') then
              write(778,*) 'Local-field polarization charges (PCM)' 
              do i=1,nts_act
-                write(778,*) qx_t(i)
+                write(778,*) qx_tp(i)
+             enddo
+             write(778,*) 'Local-field polarization charges prev (PCM)'
+             do i=1,nts_act
+                write(778,*) qx_tp2(i)
              enddo
              write(778,*) 'External-field potential'
              do i=1,nts_act
                 write(778,*) potf_tp(i), potf_tp2(i)
              enddo
           endif
-          if(Feps.eq."drl" .or. Feps.eq."gen") then
+          if(Feps.eq."gen") then
              if( Fbem.eq."stan" ) then
        write(778,*) 'Reaction-field polarization charges poles (PCM)'
              write(778,*) npoles
@@ -2207,6 +2227,10 @@
        write(778,*) 'De reaction-field polarization charges poles (PCM)'
                 do i=1,nts_act
                    write(778,*) dqr_t_p(i,:)
+                enddo
+        write(778,*) 'Reaction-field force poles (PCM)'
+                do i=1,nts_act
+                   write(778,*) fqr_t_p(i,:)
                 enddo 
                 if (Floc.eq.'loc') then
             write(778,*) 'Local-field polarization charges poles (PCM)'
@@ -2217,16 +2241,20 @@
                    do i=1,nts_act
                       write(778,*) dqx_t_p(i,:)
                    enddo
+       write(778,*) 'Local-field force poles (PCM)'
+                do i=1,nts_act
+                   write(778,*) fqx_t_p(i,:)
+                enddo
                 endif
              else
              write(778,*) 'De reaction-field polarization charges (PCM)' 
                 do i=1,nts_act
-                   write(778,*) dqr_t(i)
+                   write(778,*) dqr_tp(i)
                 enddo
                 if (Floc.eq.'loc') then
                 write(778,*) 'De local-field polarization charges (PCM)' 
                 do i=1,nts_act
-                   write(778,*) dqx_t(i)
+                   write(778,*) dqx_tp(i)
                 enddo
                 endif
              endif
@@ -2283,6 +2311,10 @@
           enddo
           read(779,*) cdum
           do i=1,nts_act
+             read(779,*) qr_tp2(i)
+          enddo
+          read(779,*) cdum
+          do i=1,nts_act
              read(779,*) pot_tp(i), pot_tp2(i)
           enddo
           if (Floc.eq.'loc') then
@@ -2292,10 +2324,14 @@
              enddo
              read(779,*) cdum
              do i=1,nts_act
+                read(779,*) qx_tp2(i)
+             enddo
+             read(779,*) cdum
+             do i=1,nts_act
                 read(779,*) potf_tp(i), potf_tp2(i)
              enddo
           endif
-          if(Feps.eq."drl" .or. Feps.eq."gen") then
+          if(Feps.eq."gen") then
              if (Fbem.eq.'stan') then
                 read(779,*) cdum
                 read(779,*) npoles
@@ -2306,6 +2342,10 @@
                 do i=1,nts_act
                    read(779,*) (dqr_tp_p(i,j), j=1,npoles)
                 enddo
+                read(779,*) cdum
+                do i=1,nts_act
+                   read(779,*) (fqr_tp_p(i,j), j=1,npoles)
+                enddo
                 if (Floc.eq.'loc') then
                    read(779,*) cdum
                    do i=1,nts_act
@@ -2314,6 +2354,10 @@
                    read(779,*) cdum
                    do i=1,nts_act
                       read(779,*) (dqx_tp_p(i,j), j=1,npoles)
+                   enddo
+                   read(779,*) cdum
+                   do i=1,nts_act
+                      read(779,*) (fqx_tp_p(i,j), j=1,npoles)
                    enddo
                 endif 
              else

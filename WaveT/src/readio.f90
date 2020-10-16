@@ -39,6 +39,7 @@
       complex(cmp), allocatable :: c_i(:),c_i_prev(:),c_i_prev2(:) ! coefficients from cis
       real(dbl)                 :: mu_i_prev(3),mu_i_prev2(3),mu_i_prev3(3),mu_i_prev4(3),mu_i_prev5(3)
       real(dbl), allocatable    :: mut(:,:,:) !transition dipoles from cis
+      real(dbl), allocatable    :: h_int_i(:,:) !interaction hamiltonian for restart
       real(dbl), allocatable    :: nr_gam(:), de_gam(:) !decay rates for nonradiative and dephasing events
       real(dbl), allocatable    :: sp_gam(:) !decay rate for spontaneous emission  
       real(dbl), allocatable    :: sp_fact(:) !multiplicative factor for the decay rate for spontaneous emission
@@ -126,7 +127,7 @@
              mpibcast_e_dip,mpibcast_sse,mpibcast_restart,  &
              nspectra,Fabs,ion_rate,mpibcast_ion_rate,Fbin, &
              ncit,Fopt,ik,Fwrt,tar,all_pop,all_coh,pop,coh, &
-             write_bin,Ip,deg,wmax 
+             write_bin,Ip,deg,wmax,h_int_i 
              
 !
       contains
@@ -362,7 +363,7 @@
 
           implicit none
 
-          integer(i4b)  :: i,ii 
+          integer(i4b)  :: i,ii,j 
           character(4)  :: junk
           character(32) :: filename
 
@@ -388,6 +389,7 @@
           read(ii,*) junk
           read(ii,*) restart_t,restart_i,diff_step
           allocate(c_i_prev(n_ci),c_i_prev2(n_ci))
+          allocate(h_int_i(n_ci,n_ci))
           write(*,*) ''
           write(*,*) 'Restart from time', restart_t
           write(*,*) ''
@@ -419,7 +421,10 @@
           read(ii,*) mu_i_prev3(1),mu_i_prev3(2),mu_i_prev3(3)
           read(ii,*) mu_i_prev4(1),mu_i_prev4(2),mu_i_prev4(3)
           read(ii,*) mu_i_prev5(1),mu_i_prev5(2),mu_i_prev5(3)
-
+          !read(ii,*) junk
+          !do i=1,n_ci
+          !   read(ii,*) (h_int_i(i,j), j=1,n_ci)
+          !enddo
          close(ii)
 
          return
