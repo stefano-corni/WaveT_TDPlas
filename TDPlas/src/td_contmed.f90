@@ -189,7 +189,7 @@
               h_int(:,:)=h_int(:,:)+h_mdm(:,:)
               qr_t=qr_tp
               qx_t=qx_tp
-              !call do_gneq(pot_t,vts,dqr_t,qr_t,q0,BEM_Qd,nts_act,1)
+              call do_gneq(pot_t,vts,dqr_t,qr_t,q0,BEM_Qd,nts_act,1)
       endif
 
       return
@@ -259,7 +259,7 @@
          pot_tp  = pot_t
          potf_tp = potf_t
        ! Charges propagation: 
-         call prop_chr
+         !call prop_chr
          ! Calculate medium's dipole from charges 
          qtot=zero
          mu_mdm=zero
@@ -299,6 +299,7 @@
        endif
        
        ! EC 28/11/17 Write restart
+       call prop_chr
        if (mod(i,n_res).eq.0) call wrt_restart_mdm()
 
        return
@@ -492,6 +493,11 @@
 !$OMP END PARALLEL 
 
        endif
+       write(80,*) vts
+       write(80,*) h_mdm_0
+       write(80,*) q_mdm
+       write(80,*) q0
+       write(80,*) qtot0
 
 #ifndef MPI
        if(Fwrite.eq."high") then
@@ -673,12 +679,13 @@
                       fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+kf(ipoles)*(matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp))
                       fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/nts_act
                   enddo
-                  fqr_tp_p(:,npoles)=matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp)
-          else
-                  ipoles=1
-                  fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+kf(ipoles)*(matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp))
-                  fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/nts_act
           endif
+          if (typ_prop.eq.0) then
+                 fqr_tp_p(:,npoles)=-w2(npoles)*qr_tp_p(:,npoles)+kf(npoles)*(matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp))
+                 fqr_tp_p(:,npoles)=fqr_tp_p(:,npoles)-sum(fqr_tp_p(:,npoles))/nts_act
+          elseif (typ_prop.eq.1) then
+                 fqr_tp_p(:,npoles)=matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp)
+          endif 
           dqr_tp_p(:,:)=zero
           if(Floc.eq."loc") then
             allocate(qx_t_p(nts_act,npoles))
@@ -977,7 +984,7 @@
         if (Feps.eq."drl") then
           fqr_tp=-mat_mult(BEM_Qw,qr_t)+mat_mult(BEM_Qf,pot_or_mut)
           dqr_tp(:)=zero
-       endif
+        endif
         if( Fbem.eq."stan" ) then
             qr_tp(:)=zero 
           do ipoles=1,npoles
@@ -986,17 +993,17 @@
           enddo
           dqr_tp_p(:,:)=zero
           if (npoles.ne.1) then
-           do ipoles=1,npoles-1
-             fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+kf(ipoles)*(matmul(BEM_Qf,pot_or_mut)+matmul(BEM_ADt,qr_tp))
-             fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/nts_act
-           enddo
-             fqr_tp_p(:,npoles)=matmul(BEM_Qf,pot_or_mut)+matmul(BEM_ADt,qr_tp)
-          else
-             ipoles=1
-             fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+kf(ipoles)*(matmul(BEM_Qf,pot_or_mut)+matmul(BEM_ADt,qr_tp))
-             fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/nts_act
+              do ipoles=1,npoles-1
+                fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+kf(ipoles)*(matmul(BEM_Qf,pot_or_mut)+matmul(BEM_ADt,qr_tp))
+                fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/nts_act
+              enddo
           endif
-           qr_t=qr_tp
+          if (typ_prop.eq.0) then
+              fqr_tp_p(:,npoles)=-w2(npoles)*qr_tp_p(:,npoles)+kf(npoles)*(matmul(BEM_Qf,pot_or_mut)+matmul(BEM_ADt,qr_tp))
+              fqr_tp_p(:,npoles)=fqr_tp_p(:,npoles)-sum(fqr_tp_p(:,npoles))/nts_act
+          elseif (typ_prop.eq.1) then
+              fqr_tp_p(:,npoles)=matmul(BEM_Qf,pot_or_mut)+matmul(BEM_ADt,qr_tp)
+          endif
         endif
         if(Fint.eq."ons") call do_field_from_charges(qr_t,fr_0)
        endif
@@ -1504,7 +1511,7 @@
        real(dbl) :: threshold
 
        threshold = .5d-8
-       if (npoles.eq.1) then
+       if (typ_prop.eq.0) then
                ncycle=npoles
        else
                ncycle=npoles-1
@@ -1514,10 +1521,7 @@
        qr_t(:) = zero
        if(Floc.eq."loc") qx_t(:) = zero
        do pidx = 1, ncycle
-!       qr_t_p(:,pidx)=qr_t_p(:,pidx)+kf_prime(pidx)*dt*0.5d0*(matmul(BEM_Qf,pot_tp-pot_tp2)+matmul(BEM_ADt,qr_tp-qr_tp2))
         fqr_t_p(:,pidx)=-w2(pidx)*qr_tp_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,pot_tp)+kf(pidx)*matmul(BEM_ADt,qr_tp)!+&
-!                          +kf_prime(pidx)*(one-gg(pidx)*dt*0.5d0)*(matmul(BEM_Qf,pot_tp-pot_tp2)+matmul(BEM_ADt,qr_t-qr_tp))
-!                          +kf_prime(pidx)*matmul(BEM_Qf,pot_tp-pot_tp2)/dt+kf_prime(pidx)*matmul(BEM_ADt,qr_t-qr_tp)/dt
         fqr_t_p(:,pidx)=fqr_t_p(:,pidx)-sum(fqr_t_p(:,pidx))/nts_act
         dqr_t_p(:,pidx)=std_f3(pidx)*dqr_tp_p(:,pidx)+f4*(fqr_t_p(:,pidx)+fqr_tp_p(:,pidx))-std_f5(pidx)*fqr_tp_p(:,pidx)
         qr_t_p(:,pidx)=qr_tp_p(:,pidx)+std_f1(pidx)*dqr_t_p(:,pidx)+f2*fqr_t_p(:,pidx)
@@ -1527,34 +1531,25 @@
         qr_t(:) = qr_t(:) + qr_t_p(:,pidx)
       ! Local Field
        if(Floc.eq."loc") then
-        qx_t_p(:,pidx)=qx_tp_p(:,pidx)+std_f1(pidx)*dqx_tp_p(:,pidx)+f2*fqx_tp_p(:,pidx)
         if(Fmdm.eq.'Csol') then
-!        qx_t_p(:,pidx)=qx_t_p(:,pidx)+kf_prime(pidx)*dt*0.5d0*(matmul(BEM_Qfx,potf_tp-potf_tp2)+matmul(BEM_ADt,qx_tp-qx_tp2))
-         qx_t_p(:,pidx)=qx_t_p(:,pidx)-sum(qx_t_p(:,pidx))/nts_act
-         fqx_t_p(:,pidx)=-w2(pidx)*qx_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qfx,potf_tp)+kf(pidx)*matmul(BEM_ADt,qx_tp)!+&
-!                          +kf_prime(pidx)*(one-gg(pidx)*dt*0.5d0)*(matmul(BEM_Qfx,potf_tp-potf_tp2)+matmul(BEM_ADt,qx_tp-qx_tp2))
-!                          +kf_prime(pidx)*matmul(BEM_Qfx,potf_tp-potf_tp2)/dt+kf_prime(pidx)*matmul(BEM_ADt,qx_tp-qx_tp2)/dt
+         fqx_t_p(:,pidx)=-w2(pidx)*qx_tp_p(:,pidx)+kf(pidx)*matmul(BEM_Qfx,potf_tp)+kf(pidx)*matmul(BEM_ADt,qx_tp)!+&
         else if(Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') then
-         qx_t_p(:,pidx)=qx_t_p(:,pidx)+kf_prime(pidx)*dt*0.5d0*(matmul(BEM_Qf,potf_tp-potf_tp2)+matmul(BEM_ADt,qx_tp-qx_tp2))
-         qx_t_p(:,pidx)=qx_t_p(:,pidx)-sum(qx_t_p(:,pidx))/nts_act
-         fqx_t_p(:,pidx)=-w2(pidx)*qx_t_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,potf_tp)+kf(pidx)*matmul(BEM_ADt,qx_tp)!+&
-!                          +kf_prime(pidx)*(one-gg(pidx)*dt*0.5d0)*(matmul(BEM_Qf,potf_tp-potf_tp2)+matmul(BEM_ADt,qx_tp-qx_tp2))
-!                          +kf_prime(pidx)*matmul(BEM_Qf,potf_tp-potf_tp2)/dt+kf_prime(pidx)*matmul(BEM_ADt,qx_tp-qx_tp2)/dt
+         fqx_t_p(:,pidx)=-w2(pidx)*qx_tp_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,potf_tp)+kf(pidx)*matmul(BEM_ADt,qx_tp)!+&
         endif
         dqx_t_p(:,pidx)=std_f3(pidx)*dqx_tp_p(:,pidx)+f4*(fqx_t_p(:,pidx)+fqx_tp_p(:,pidx))-std_f5(pidx)*fqx_tp_p(:,pidx)
+        qx_t_p(:,pidx)=qx_tp_p(:,pidx)+std_f1(pidx)*dqx_t_p(:,pidx)+f2*fqx_t_p(:,pidx)
+        qx_t_p(:,pidx)=qx_t_p(:,pidx)-sum(qx_t_p(:,pidx))/nts_act
         fqx_tp_p(:,pidx)=fqx_t_p(:,pidx)
         dqx_tp_p(:,pidx)=dqx_t_p(:,pidx)
         qx_tp_p(:,pidx)=qx_t_p(:,pidx)
         qx_t(:) = qx_t(:) + qx_t_p(:,pidx)
        endif
        enddo
-       if (npoles.ne.1) then
+       if (typ_prop.ne.0.and.npoles.ne.1) then
            pidx=npoles
            !derivative method implemented
            fqr_t_p(:,pidx)=matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp)
            qr_t_p(:,pidx)=qr_tp_p(:,pidx)+kf0(pidx)*(fqr_t_p(:,pidx)-fqr_tp_p(:,pidx))
-
-           !qr_t_p(:,pidx)=qr_t_p(:,pidx)-sum(qr_t_p(:,pidx))/nts_act
            fqr_tp_p(:,pidx)=fqr_t_p(:,pidx)
            qr_tp_p(:,pidx)=qr_t_p(:,pidx)
            qr_t(:) = qr_t(:) + qr_t_p(:,pidx)

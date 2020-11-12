@@ -497,6 +497,8 @@ module interface_tdplas
        real(dbl), intent(in) :: pot_or_mut(:)
 
 #ifdef TDPLAS
+       q0=this_q0
+       vts=this_vts
        call init_after_scf(pot_or_mut)
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"

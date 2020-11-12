@@ -68,6 +68,7 @@
       real(dbl), allocatable :: BEM_Qdf(:,:), BEM_Qdfx(:,:)
       real(dbl), allocatable :: BEM_Qdf_2g(:,:), BEM_Qdfx_2g(:,:)
       integer(i4b) :: npoles
+      integer(i4b)           :: typ_prop  !< choiche for propagation of last pole
       type poles_t                                                                                     
         real(dbl), allocatable    :: omega_p(:)          !< real part of the poles of the diagonal Kerne
         real(dbl), allocatable    :: gamma_p(:)          !< imaginary part of the poles of the diagonal 
@@ -81,7 +82,7 @@
 
       save
       private
-      public eps,eps_f,BEM_L,BEM_T,ONS_ff,ONS_fw,              &
+      public eps,eps_f,BEM_L,BEM_T,ONS_ff,ONS_fw,typ_prop,             &
              BEM_Sm12,MPL_F0,MPL_Ft0,MPL_Fd,MPL_Fx0,MPL_Ftx0,MPL_Fxd,  &
              MPL_Tauxm1,MPL_Taum1,mat_f0,mat_fd,MPL_Ff,MPL_Fw,         &
              ONS_f0,ONS_fd,ONS_taum1,ONS_fx0,ONS_fxd,ONS_tauxm1,       &
@@ -2319,7 +2320,7 @@
 #endif
        if (myrank.eq.0) then
         open(4,file="poles.inp")
-        read(4,*) npoles
+        read(4,*) npoles,typ_prop
 
         allocate(poles_eps%omega_p(npoles),poles_eps%gamma_p(npoles),&
                  poles_eps%re_deps_domega_p(npoles),poles_eps%im_deps_domega_p(npoles),poles_eps%A_coeff_p(npoles))
