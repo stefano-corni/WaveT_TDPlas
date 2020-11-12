@@ -493,12 +493,6 @@
 !$OMP END PARALLEL 
 
        endif
-       write(80,*) vts
-       write(80,*) h_mdm_0
-       write(80,*) q_mdm
-       write(80,*) q0
-       write(80,*) qtot0
-
 #ifndef MPI
        if(Fwrite.eq."high") then
          do i=1,n_ci
