@@ -1315,19 +1315,19 @@
            !call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
            !if (myrank.ne.0) cts_act%rsfe=tmp
 
-           if (myrank.eq.0) tmp=cts_act%n(1)
-           call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           if (myrank.ne.0) cts_act%n(1)=tmp
+           !if (myrank.eq.0) tmp=cts_act%n(1)
+           !call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           !if (myrank.ne.0) cts_act%n(1)=tmp
 
-           if (myrank.eq.0) tmp=cts_act%n(2)
-           call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           if (myrank.ne.0) cts_act%n(2)=tmp
+           !if (myrank.eq.0) tmp=cts_act%n(2)
+           !call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           !if (myrank.ne.0) cts_act%n(2)=tmp
 
-           if (myrank.eq.0) tmp=cts_act%n(3)
-           call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           if (myrank.ne.0) cts_act%n(3)=tmp
+           !if (myrank.eq.0) tmp=cts_act%n(3)
+           !call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           !if (myrank.ne.0) cts_act%n(3)=tmp
 
-           deallocate(tmp)
+           !deallocate(tmp)
 
 #endif
 
@@ -1387,19 +1387,19 @@
 !  AFTER they have been massaged by a proper
 !  gawk script. To be revised with better coding
       integer(4) :: n_nodes,i_nodes,its,jts,j_max,its_a,tmp
-      integer(4) :: isfe,nts_eff
-      integer(4),allocatable :: el_nodes(:,:),isphere(:)
+      integer(4) :: isfe,nts_eff,n_shapes,k
+      integer(4),allocatable :: el_nodes(:,:),isphere(:),shapes_tess(:)
       logical,allocatable :: is_centre(:)
       character(6) :: line, junk
       character(3) :: inv,Ffind
-      real(8),allocatable :: c_nodes(:,:) 
+      real(8),allocatable :: c_nodes(:,:)
       real(8) :: vert(3,3),normal(3),area,dist,diff(3), &
         dist_max,area_tot 
 
 #ifndef MPI
        myrank=0
 #endif
-
+      n_shapes=1
       nesf_act=0
       if (myrank.eq.0) then
          open(7,file="surface_msh.inp",status="old")
@@ -1434,6 +1434,9 @@
       if (myrank.eq.0) then
          do its=1,nts_eff
             read(7,*) el_nodes(:,its),isphere(its)
+            if (its.gt.1) then
+                   if (isphere(its).ne.isphere(its-1)) n_shapes=n_shapes+1
+            endif
             ! if the node is part of a tessera cannot be a centre
             is_centre(el_nodes(1,its))=.false.
             is_centre(el_nodes(2,its))=.false.
@@ -1446,6 +1449,8 @@
          enddo
          close(7)
       endif
+      allocate(shapes_tess(n_shapes))
+      k=1
       ! Find centres
       do i_nodes=1,n_nodes
         if(is_centre(i_nodes)) nesf_act=nesf_act+1
@@ -1465,6 +1470,12 @@
         enddo
         ! Set sphere radii  
         do its=1,nts_eff
+          if (its.gt.1) then
+                   if (isphere(its).ne.isphere(its-1))then
+                          shapes_tess(k)=its-1 
+                          k=k+1
+                  endif
+          endif
           diff(1)=c_nodes(1,el_nodes(1,its))-sfe_act(isphere(its))%x 
           diff(2)=c_nodes(2,el_nodes(1,its))-sfe_act(isphere(its))%y  
           diff(3)=c_nodes(3,el_nodes(1,its))-sfe_act(isphere(its))%z 
@@ -1557,7 +1568,7 @@
          open(7,file="cavity_full.inp",status="unknown")
          write(7,*) nts_act
          do its=1,nts_act
-         write(7,'(8D14.5)') cts_act(its)%x,cts_act(its)%y,cts_act(its)%z, &
+         write(7,'(8E26.16)') cts_act(its)%x,cts_act(its)%y,cts_act(its)%z, &
                  cts_act(its)%area,cts_act(its)%rsfe, &
                  cts_act(its)%n(:) 
          enddo

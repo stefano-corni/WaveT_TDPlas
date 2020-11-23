@@ -180,6 +180,7 @@
        if (Fsurf.eq.'fil') then
           if (FinitBEM.eq.'wri') then
               call read_cavity_full_file
+              write(98,*) cts_act
           elseif (FinitBEM.eq.'rea') then
               call read_cavity_file
           endif
@@ -271,6 +272,13 @@
        call write_nml_medium() 
        read(*,nml=surface) 
        call write_nml_surface() 
+       if (Fsurf.eq.'fil') then
+          if (FinitBEM.eq.'wri') then
+              call read_cavity_full_file
+          elseif (FinitBEM.eq.'rea') then
+              call read_cavity_file
+          endif
+       endif
        read(*,nml=eps_function) 
        call write_nml_eps_function()
        if (Fmdm.eq.'Qnan') then
