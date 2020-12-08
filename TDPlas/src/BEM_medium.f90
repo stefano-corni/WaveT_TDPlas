@@ -715,22 +715,48 @@
           value=dot_product(cts_act(j)%n,scrd3)/dist**3 
        else
           sum_d=0.d0
+         
+         if (i.le.n_end_1) then
+                 do k=1,n_end_1
+                    if (k.ne.i) then
+                            scrd3(1)=(cts_act(i)%x-cts_act(k)%x)
+                            scrd3(2)=(cts_act(i)%y-cts_act(k)%y)
+                            scrd3(3)=(cts_act(i)%z-cts_act(k)%z)
+                            dist=sqrt(dot_product(scrd3,scrd3))
+                            sum_d=sum_d+dot_product(cts_act(k)%n,scrd3)/dist**3*cts_act(k)%area
+                     endif
+                  enddo
+          else
+                  do k=n_end_1+1,nts_act
+                    if (k.ne.i) then
+                            scrd3(1)=(cts_act(i)%x-cts_act(k)%x)
+                            scrd3(2)=(cts_act(i)%y-cts_act(k)%y)
+                            scrd3(3)=(cts_act(i)%z-cts_act(k)%z)
+                            dist=sqrt(dot_product(scrd3,scrd3))
+                            sum_d=sum_d+dot_product(cts_act(k)%n,scrd3)/dist**3*cts_act(k)%area
+                     endif
+                  enddo
+           endif
 
-          do k=1,i-1
-             scrd3(1)=(cts_act(i)%x-cts_act(k)%x)
-             scrd3(2)=(cts_act(i)%y-cts_act(k)%y)
-             scrd3(3)=(cts_act(i)%z-cts_act(k)%z)
-             dist=sqrt(dot_product(scrd3,scrd3))
-             sum_d=sum_d+dot_product(cts_act(k)%n,scrd3)/dist**3*cts_act(k)%area 
-          enddo
+         ! do k=1,i-1
+         !    scrd3(1)=(cts_act(i)%x-cts_act(k)%x)
+         !    scrd3(2)=(cts_act(i)%y-cts_act(k)%y)
+         !    scrd3(3)=(cts_act(i)%z-cts_act(k)%z)
+         !    dist=sqrt(dot_product(scrd3,scrd3))
+         !    if (cts_act(i)%z/cts_act(k)%z.gt.0) then
+         !            sum_d=sum_d+dot_product(cts_act(k)%n,scrd3)/dist**3*cts_act(k)%area 
+         !    endif
+         ! enddo
 
-          do k=i+1,nts_act
-             scrd3(1)=(cts_act(i)%x-cts_act(k)%x)
-             scrd3(2)=(cts_act(i)%y-cts_act(k)%y)
-             scrd3(3)=(cts_act(i)%z-cts_act(k)%z)
-             dist=sqrt(dot_product(scrd3,scrd3))
-             sum_d=sum_d+dot_product(cts_act(k)%n,scrd3)/dist**3*cts_act(k)%area 
-          enddo
+         ! do k=i+1,nts_act
+         !    scrd3(1)=(cts_act(i)%x-cts_act(k)%x)
+         !    scrd3(2)=(cts_act(i)%y-cts_act(k)%y)
+         !    scrd3(3)=(cts_act(i)%z-cts_act(k)%z)
+         !    dist=sqrt(dot_product(scrd3,scrd3))
+         !    if (cts_act(i)%z/cts_act(k)%z.gt.0) then
+         !            sum_d=sum_d+dot_product(cts_act(k)%n,scrd3)/dist**3*cts_act(k)%area
+         !    endif
+         ! enddo
 
           sum_d=-(2.0*pi+sum_d)/cts_act(i)%area
           value=sum_d
@@ -1909,6 +1935,7 @@
             write(7,'(2E26.16)')BEM_S(i,j)
           else
             write(7,'(2E26.16)')BEM_S(i,j),BEM_D(i,j)
+            if (i.eq.j) write(90,*) BEM_D(i,j)
           endif
         enddo
        enddo

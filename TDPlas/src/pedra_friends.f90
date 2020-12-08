@@ -39,14 +39,14 @@
       type(tess_pcm), target, allocatable :: cts_act(:), cts_pro(:)
       integer(i4b) :: nts_act, nts_pro
       type(sfera), allocatable :: sfe_act(:), sfe_pro(:)
-      integer(i4b) :: nesf_act, nesf_pro, nsphe
+      integer(i4b) :: nesf_act, nesf_pro, nsphe, n_end_1
 
       save
       private
       public pedra_int, read_act, read_pro, dealloc_pedra, &
              nts_act, nts_pro,cts_act,cts_pro,nesf_pro,sfe_pro, &
              nesf_act,sfe_act,read_cavity_file,read_cavity_full_file,&
-             read_gmsh_file,tess_pcm,sfera,nsphe
+             read_gmsh_file,tess_pcm,sfera,nsphe,n_end_1
 !
 
       contains
@@ -1272,7 +1272,7 @@
 
       if (myrank.eq.0) then
          open(7,file="cavity_full.inp",status="old")
-         read(7,*) nts_act
+         read(7,*) nts_act, n_end_1
          allocate(cts_act(nts_act))
          do its=1,nts_act
             read(7,*) cts_act(its)%x,cts_act(its)%y,cts_act(its)%z, &
