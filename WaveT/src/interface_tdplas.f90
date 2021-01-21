@@ -288,7 +288,7 @@ module interface_tdplas
         real(dbl), allocatable      :: pot(:)  !< (1:nts_act)     - molecular potential
         real(dbl), allocatable      :: potf(:) !< (1:nts_act)     - external  potential
 
-        integer(i4b), intent(inout) :: i
+        integer(i4b), intent(in) :: i
 
 #ifdef TDPLAS
         if(this_Fprop.eq."dip") then
