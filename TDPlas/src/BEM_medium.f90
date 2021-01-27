@@ -1935,7 +1935,6 @@
             write(7,'(2E26.16)')BEM_S(i,j)
           else
             write(7,'(2E26.16)')BEM_S(i,j),BEM_D(i,j)
-            if (i.eq.j) write(90,*) BEM_D(i,j)
           endif
         enddo
        enddo
