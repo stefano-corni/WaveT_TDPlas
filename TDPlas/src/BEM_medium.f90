@@ -1131,10 +1131,10 @@
             scr3=-BEM_ADt
        else
             scr3 = scr1
+            do i=1,nts_act
+              if(eps_d.ne.1) scr3(i,i)= scr3(i,i) + twp * (eps_d+one) / (eps_d-one)
+            enddo
        endif
-       do i=1,nts_act
-         if(eps_d.ne.1) scr3(i,i)= scr3(i,i) + twp * (eps_d+one) / (eps_d-one)
-       enddo
 
        ! inverse
 
