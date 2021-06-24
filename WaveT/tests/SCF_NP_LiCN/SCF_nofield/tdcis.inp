@@ -1,0 +1,44 @@
+&general 
+n_ci=4
+n_ci_read=4
+mol_cc= 0.0 0.0 -5.66919
+medium='nan'
+n_f=1
+dt=0.05
+n_step=4000
+n_out=1
+propa='n'
+n_restart=100000
+/ 
+
+&field
+Ffld='gau'
+sigma(1)=1.0
+t_mid=20.0
+radiative='non'
+npulse=1
+fmax(1,1) = 0.000000
+fmax(2,1) = 0.000000
+fmax(3,1) = 0.0000
+/
+
+&sse
+dissipative='non'
+/
+
+&spectra
+start=0,
+
+tau=
+1000.0
+1000.0
+
+dir_ft=
+0.0
+0.0
+1.0
+/
+
+&pop_coh
+/
+

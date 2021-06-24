@@ -2,32 +2,29 @@
       use tdplas
       implicit none
       integer :: st,current,rate
-      !integer(4) :: n_omega,i
-      integer :: i 
-      real(8),allocatable :: omega_list(:)
-      !real(8) :: omega_ini,omega_end
-!
-!     read in the input parameter for the present evolution
+
+!      type(tdplas_user_input) user_input
+      character(flg) :: calculation = "frequency" 
       call system_clock(st,rate)
-      call read_medium_freq
-      !read(5,*) n_omega,omega_ini,omega_end
-      allocate(omega_list(n_omega))
-      do i=1,n_omega
-       omega_list(i)=omegas(i)
-       !omega_list(i)=(omega_end-omega_ini)/(n_omega-1)*(i-1)+omega_ini       
-       !write(6,*) 'omega',omega_list(i)
-      enddo
+
+!      call read_input_tdplas(calculation, user_input)
+!      call check_input(user_input)
+!      call init_tdplas(calculation, user_input)
+!      call check_global_var
+!      call write_out(calculation)
+
+      call readio_tdplas(calculation)
+
       call system_clock(current)
       write(6,'("Done reading input, took", &
             F10.3,"s")') real(current-st)/real(rate)
-!
-!     diagonalise matrix
-      call do_BEM_freq(omega_list,n_omega) 
+
+!!     diagonalise matrix
+      call do_BEM_freq 
       call system_clock(current)
       write(6,'("Done , total elapsed time", &
             F10.3,"s")') real(current-st)/real(rate)
-!         
-      deallocate(omega_list)
+         
 
       stop
 

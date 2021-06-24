@@ -39,7 +39,8 @@ MPI=
 
 # actual flags used in the compilation
 #FFLAGS= -O3 ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
-FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+#FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+FFLAGS= -Og -g -fimplicit-none -fcheck=all -fbacktrace ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
 
 # preprocessor flag
 # comment the first and uncomment the second if compiler is ifort
@@ -61,7 +62,7 @@ TOOLSPATH=tools
 
 # objects
 
-WAVETOBJ = random.o constants.o readio.o spectra.o interface_tdplas.o scf.o QM_coupling.o dissipation.o propagate.o
+WAVETOBJ = random.o constants.o readio.o spectra.o interface_tdplas.o scf.o QM_coupling.o dissipation.o initialise.o propagate.o
 OBJ= $(WAVETOBJ) main.o
 OBJ_SPECTRA= $(WAVETOBJ) main_spectra.o
 OBJ_VIB= constants.o readio.o $(TOOLSPATH)/vib.o $(TOOLSPATH)/vib_tool.o
@@ -158,6 +159,9 @@ QM_coupling.o: QM_coupling.f90
 scf.o: scf.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
+initialise.o: initialise.f90
+	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
+
 dissipation.o: dissipation.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
@@ -200,17 +204,19 @@ readio.o: random.o
 
 spectra.o: readio.o
 
-QM_coupling.o: constants.o interface_tdplas.o
+QM_coupling.o: constants.o interface_tdplas.o 
 
-scf.o: constants.o readio.o interface_tdplas.o
+scf.o: constants.o readio.o interface_tdplas.o 
+
+initialise.o: constants.o readio.o interface_tdplas.o scf.o QM_coupling.o
 
 dissipation.o: random.o constants.o readio.o interface_tdplas.o
 
-propagate.o: spectra.o dissipation.o interface_tdplas.o
+propagate.o: spectra.o dissipation.o interface_tdplas.o initialise.o
 
 main_spectra.o: readio.o spectra.o interface_tdplas.o
 
-main.o: constants.o readio.o spectra.o QM_coupling.o dissipation.o propagate.o interface_tdplas.o
+main.o: constants.o readio.o spectra.o initialise.o dissipation.o propagate.o interface_tdplas.o
 
 vib.o: readio.o
 

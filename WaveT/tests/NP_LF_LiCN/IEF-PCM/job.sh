@@ -8,4 +8,4 @@
 #PBS -l mem=24000MB
 cd  $PBS_O_WORKDIR
 
-WaveT-serial.x < tdcis.inp 
+WaveT-serial.x < tdcis.inp > tdcis.out

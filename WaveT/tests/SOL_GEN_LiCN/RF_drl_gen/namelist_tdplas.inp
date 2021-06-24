@@ -1,0 +1,27 @@
+&SYSTEM
+/
+&OUT_MATRIX
+/
+&MEDIUM
+medium_type='sol'
+medium_init0='vacuum'
+bem_type='diagonal'
+bem_read_write='read'
+local_field='non'
+/
+&SURFACE
+create_cavity = 'read_file'
+input_surface='cavity'
+/
+
+&EPS_FUNCTION
+epsilon_omega='read_file'
+/
+&PROPAGATE  
+propagation_type='charge-ief'
+interaction_type='pcm'
+interaction_stride=1
+interaction_init='nsc'
+/
+
+

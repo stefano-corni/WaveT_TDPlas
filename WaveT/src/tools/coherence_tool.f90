@@ -215,7 +215,7 @@ program decoherence
  !Define coherences 
  do m=1,nrep
     do j=1,nsteps
-       call compute_coherence(c(j,:,m),cc(j,:,m),nstates)
+       call compute_coherence(c(j,:,m),cc(j,:,m),nstates,npair)
     enddo
  enddo
 

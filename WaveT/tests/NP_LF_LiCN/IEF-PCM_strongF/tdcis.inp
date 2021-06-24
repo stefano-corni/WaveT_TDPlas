@@ -1,0 +1,32 @@
+&general 
+n_ci=10 
+n_ci_read=10  
+mol_cc= 0. 0. 0.
+medium='nan'
+n_f=1
+dt=0.01
+n_step=25000
+n_out=1
+/ 
+&field                                                                                                         
+Ffld='pip'                                                                                                     
+omega=0.3239892104044628
+sigma=125.,            
+t_mid=125.            
+radiative='non'      
+fmax= 0. 0.0 0.5    
+!iseed=1238        
+/                 
+                 
+&sse            
+dissipative='non'
+/              
+              
+&spectra     
+start=80    
+tau= 2000. 2000.    
+dir_ft= 1. 1. 1. 
+/                 
+
+
+

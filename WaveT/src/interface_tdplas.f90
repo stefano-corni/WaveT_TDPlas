@@ -2,21 +2,26 @@ module interface_tdplas
       use constants
       use readio
 #ifdef TDPLAS
-      use tdplas, only: set_charges,Fmdm_relax,&
+      use tdplas, only: set_charges,global_prop_Fmdm_relax,&
 ! used by dissipation
                         get_mdm_dip,get_gneq,init_mdm,prop_mdm,finalize_mdm,&
-                        preparing_for_scf,init_after_scf,& ! used by propagate
-                        read_medium,&
+                        preparing_for_scf,init_after_scf,& 
+! used by propagate
+                        readio_and_init_tdplas_for_wt,&
 ! used by main and main_spectra
-                        mpibcast_readio_mdm,set_global_tdplas,Fmop,nmod,imod,max_mod_todiag, &
+                        mpibcast_readio_mdm,quantum_init,global_qmodes_Fmop,global_qmodes_nprint,&
 ! used by main
-                        Fwrite,fr_0,BEM_Q0,mat_f0,ncycmax,thrshld,vtsn,mix_coef,diag_mat,&
-                        do_field_from_charges,out_gcharges,&
+                        global_sys_Fwrite,fr_0,BEM_Q0,mat_f0,global_prop_max_cycles,&
+                        global_prop_threshold,quantum_vtsn,global_prop_mix_coef,diag_mat,&
+                        do_field_from_charges,out_gcharges,get_qr_fr,&
 ! used in scf
-                        BEM_W2,Ftest,eps_w0,eps_A,BEM_Modes,sfe_act,&
-                        do_BEM_quant,deallocate_bem_public,do_vts_from_dip,&
+                        BEM_W2,global_sys_Ftest,drudel_eps_w0,drudel_eps_A,BEM_Modes,pedra_surf_spheres,&
+                        do_BEM_quant,do_vts_from_dip,deallocate_BEM_public,global_qmodes_nmodes,&
+                        global_qmodes_qmmodes,&
 ! used by QM_coupling 
-                        q0,vts,nts_act,Fprop,Fint,cts_act,Finit_int,nesf_act,Fbem
+                        q0,quantum_vts,pedra_surf_n_tessere,global_prop_Fprop,global_prop_Fint,&
+                        pedra_surf_tessere,global_prop_Finit_int,pedra_surf_n_spheres,global_medium_Fbem,&
+                        global_sys_Fdeb 
 ! used only here in interface_tdplas
                         
 #endif
@@ -50,21 +55,23 @@ module interface_tdplas
 
       real(dbl), allocatable :: this_vts(:,:,:), this_vtsn(:) !<transition potentials on tesserae from cis
 
-      integer(i4b) :: this_nts_act, this_nesf_act,this_nmod,this_max_mod_todiag
+      integer(i4b) :: this_nts_act, this_nesf_act,this_nprint,this_max_mod_todiag
 
       type(tess_pcm_in_wavet), target, allocatable :: this_cts_act(:)
       type(sfera_in_wavet), allocatable :: this_sfe_act(:)
       integer(i4b) :: this_ncycmax !< maximum number of SCF cycles
       integer(i4b), allocatable :: this_imod(:) !<modes to print 
-      real(dbl) :: this_thrshld    !< SCF threshold on (i) eigenvalues 10^-thrshld (ii) eigenvectors 10^-(thrshld+2)
+      real(dbl) :: this_thrshld    !< SCF threshold on (i) eigenvalues 10^-global_prop_thrshld (ii) eigenvectors 10^-(global_prop_thrshld+2)
       real(dbl), allocatable :: this_BEM_Q0(:,:)
       real(dbl), allocatable :: this_BEM_W2(:)
       real(dbl), allocatable :: this_BEM_Modes(:,:)
       real(dbl), allocatable :: this_q0(:)
       real(dbl) :: this_fr_0(3)                       !< Reaction field at time 0 defined with Finit_mdm, here because used in scf
       real(dbl), allocatable :: this_mat_f0(:,:) !< Onsager's total matrices needed for scf, free_energy and propagation
-      real(dbl) :: this_mix_coef   !< SCF mixing ratio of old (1-mix_coef) and new (mix_coef) charges/field       
+      real(dbl) :: this_mix_coef   !< SCF mixing ratio of old (1-global_prop_mix_coef) and new (global_prop_mix_coef) charges/field       
       real(dbl) :: this_eps_A,this_eps_w0
+      integer(i4b), allocatable :: this_qmmodes(:)
+      integer(i4b) :: this_nmodes
       public set_q0charges,this_Fmdm_relax,export_mdm_qmcoup, &
 ! used by dissipation
              get_medium_dip,get_energies,init_medium,prop_medium,finalize_medium,this_Finit_int,this_Fprop,&
@@ -78,8 +85,9 @@ module interface_tdplas
              do_field_from_charges_in_wavet, this_nts_act, &
 ! used in scf
              this_BEM_W2,this_Ftest,this_eps_w0,this_eps_A,this_BEM_Modes,this_sfe_act,&
-             do_BEM_quant_in_wavet,deallocate_bem_public_in_wavet,do_vts_from_dip_in_wavet,&
-             this_Fmop,this_imod,this_nmod,this_max_mod_todiag
+             do_BEM_quant_in_wavet,do_vts_from_dip_in_wavet,&
+             this_Fmop,this_imod,this_nprint,this_max_mod_todiag,deallocate_BEM_public_in_wavet,&
+             this_qmmodes,this_nmodes
 ! used by QM_coupling 
       contains
   
@@ -127,51 +135,62 @@ module interface_tdplas
       subroutine read_medium_input
 
         implicit none
-        integer :: ii,shap(3)
+        integer :: ii,shap(3), nthr
+
 #ifdef TDPLAS
-        call read_medium
-        this_Fprop=Fprop
-        this_Fwrite=Fwrite
-        this_Finit_int=Finit_int
-        this_Fmdm_relax = Fmdm_relax
-        if(this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then 
-            this_nts_act=nts_act
-            shap=shape(vts)
-         if(shap(1).eq.this_nts_act) then
-            allocate(this_vts(this_nts_act,n_ci,n_ci))
-            this_vts=vts
-            allocate(this_vtsn(this_nts_act))
-            this_vtsn=vtsn
-         else
-            allocate(this_vts(this_nts_act,n_ci,n_ci)) 
-            allocate(this_vtsn(this_nts_act))
-            this_vts=zero
-            this_vtsn=zero
-            write(*,*) "Warning! the vts matrix is not read from ci_pot.inp"
-         endif
+#ifdef OMP
+        nthr=omp_get_max_threads()
+#endif
+        call readio_and_init_tdplas_for_wt(nthr)
+        ! SP 18/05/20: added the following line to compute potentials from dipoles for the reaction field test
+        !              better using global_sys_Fdeb
+        this_Fprop=global_prop_Fprop
+        this_Fwrite=global_sys_Fwrite
+        this_Finit_int=global_prop_Finit_int
+        this_Fmdm_relax = global_prop_Fmdm_relax
+        this_Fint=global_prop_Fint
+        this_Ftest=global_sys_Ftest
+        this_nts_act=pedra_surf_n_tessere
+        if(global_sys_Fdeb.eq."vmu") then
+                call do_vts_from_dip_in_wavet
+                write(6,*) "Done replacing ci_pot with potential from dipole"
+        elseif(this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then 
+            ! SP 17/05/20 shape is not a standard f90 function
+            shap=shape(quantum_vts)
+            if(shap(1).eq.this_nts_act) then
+               allocate(this_vts(this_nts_act,n_ci,n_ci))
+               this_vts=quantum_vts
+               allocate(this_vtsn(this_nts_act))
+               this_vtsn=quantum_vtsn
+            else
+               write(6,*) "Error: the number of tesserae for the potential is different than those in the cavity/NP"
+               write(6,*) shap(1)," vs ",this_nts_act
+               write(6,*) "This is usually due to incoerent ci_pot.inp and cavity.inp files. I stop here" 
+               stop
+            endif
         end if
-        this_ncycmax=ncycmax
-        this_thrshld=thrshld
-        this_mix_coef=mix_coef 
-        this_eps_w0=eps_w0
-        this_eps_A=eps_A
-        this_nesf_act=nesf_act
+        this_ncycmax=global_prop_max_cycles
+        this_thrshld=global_prop_threshold
+        this_mix_coef=global_prop_mix_coef 
+        this_eps_w0=drudel_eps_w0
+        this_eps_A=drudel_eps_A
+        this_nesf_act=pedra_surf_n_spheres
         allocate(this_sfe_act(this_nesf_act))
-        !this_sfe_act=sfe_act
+        !this_sfe_act=pedra_surf_spheres
         do ii=1, this_nesf_act
-         this_sfe_act(ii)%x=sfe_act(ii)%x
-         this_sfe_act(ii)%y=sfe_act(ii)%y
-         this_sfe_act(ii)%z=sfe_act(ii)%z
-         this_sfe_act(ii)%r=sfe_act(ii)%r
+         this_sfe_act(ii)%x=pedra_surf_spheres(ii)%x
+         this_sfe_act(ii)%y=pedra_surf_spheres(ii)%y
+         this_sfe_act(ii)%z=pedra_surf_spheres(ii)%z
+         this_sfe_act(ii)%r=pedra_surf_spheres(ii)%r
         end do
         allocate(this_cts_act(this_nts_act))
-        !this_cts_act=cts_act
+        !this_cts_act=pedra_surf_tessere
         do ii=1, this_nts_act
-         this_cts_act(ii)%x=cts_act(ii)%x
-         this_cts_act(ii)%y=cts_act(ii)%y
-         this_cts_act(ii)%z=cts_act(ii)%z
-         this_cts_act(ii)%rsfe=cts_act(ii)%rsfe
-         this_cts_act(ii)%n(:)=cts_act(ii)%n(:)
+         this_cts_act(ii)%x=pedra_surf_tessere(ii)%x
+         this_cts_act(ii)%y=pedra_surf_tessere(ii)%y
+         this_cts_act(ii)%z=pedra_surf_tessere(ii)%z
+         this_cts_act(ii)%rsfe=pedra_surf_tessere(ii)%rsfe
+         this_cts_act(ii)%n(:)=pedra_surf_tessere(ii)%n(:)
         end do
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
@@ -214,8 +233,8 @@ module interface_tdplas
         real(dbl)   , intent(inout) :: h(:,:)  !< (1:n_ci,1:n_ci) - interaction hamiltonian
 
 
-        real(dbl), allocatable      :: pot(:)  !< (1:nts_act)     - molecular potential
-        real(dbl), allocatable      :: potf(:) !< (1:nts_act)     - external potential
+        real(dbl), allocatable      :: pot(:)  !< (1:pedra_surf_n_tessere)     - molecular potential
+        real(dbl), allocatable      :: potf(:) !< (1:pedra_surf_n_tessere)     - external potential
 #ifdef TDPLAS
         if(this_Fprop.eq."dip") then
          ! initializing medium with molecular dipole and external field
@@ -247,7 +266,7 @@ module interface_tdplas
            allocate(this_BEM_W2(this_nts_act))
            this_BEM_W2=BEM_W2
          end if
-         if(Fmdm.eq."Qnan") then
+         if(Fmdm.eq."qnan") then
           allocate(this_BEM_Modes(this_nts_act,this_nts_act))
           this_BEM_Modes=BEM_Modes
          end if
@@ -276,10 +295,10 @@ module interface_tdplas
         real(dbl)   , intent(in) :: f(:)    !< (1:3)              - external field
         real(dbl)   , intent(inout) :: h(:,:)  !< (1:n_ci,1:n_ci) - interaction hamiltonian
 
-        real(dbl), allocatable      :: pot(:)  !< (1:nts_act)     - molecular potential
-        real(dbl), allocatable      :: potf(:) !< (1:nts_act)     - external  potential
+        real(dbl), allocatable      :: pot(:)  !< (1:pedra_surf_n_tessere)     - molecular potential
+        real(dbl), allocatable      :: potf(:) !< (1:pedra_surf_n_tessere)     - external  potential
 
-        integer(i4b), intent(inout) :: i
+        integer(i4b), intent(in) :: i
 
 #ifdef TDPLAS
         if(this_Fprop.eq."dip") then
@@ -298,7 +317,8 @@ module interface_tdplas
          ! computing external potential in the long-wavelength limit
          call do_pot_from_field(f,potf)
          ! propagating medium with molecular and external potentials
-         if(this_Ftest.eq."n-r") then
+         ! SP 15/05/20 changed this_Ftest with global_sys_Ftest
+         if(global_sys_Ftest.eq."n-r") then
           call prop_mdm(i, mu_t = mu, pot_t = pot, potf_t = potf, h_int = h)
          else
           call prop_mdm(i, pot_t = pot, potf_t = potf, h_int = h)
@@ -363,7 +383,7 @@ module interface_tdplas
 !------------------------------------------------------------------------
       subroutine set_global_tdplas_in_wavet(this_dt,this_mdm,this_mol_cc,this_n_ci,this_n_ci_read,this_c_i,this_e_ci,this_mut,&
 				                                    this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
-                                            this_Fbin,this_Fopt,this_nthr,this_res,this_n_res)
+                                            this_Fbin,this_Fopt,this_res,this_n_res)
 
         implicit none
 
@@ -380,14 +400,13 @@ module interface_tdplas
         character(3)  , intent(in) :: this_Fbin                      ! binary output
         character(3)  , intent(in) :: this_Fopt                      ! matrix/vector multiplication 
         integer(i4b)  , intent(in) :: this_n_out,this_n_f	         ! auxiliaries for output
-        integer(i4b)  , intent(in) :: this_nthr                      ! number of threads
         character(1)  , intent(in) :: this_res                      ! restart for medium 
         integer(i4b)  , intent(in) :: this_n_res                    ! frequency for restart
 
 #ifdef TDPLAS
-        call set_global_tdplas(this_dt,this_mdm,this_mol_cc,this_n_ci,this_n_ci_read,this_c_i,this_e_ci,this_mut,&
-				                       this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
-                               this_Fbin,this_Fopt,this_nthr,this_res,this_n_res)
+        call quantum_init(this_dt,this_mol_cc,this_n_ci,this_n_ci_read,this_mut,this_e_ci,this_c_i,&
+			       this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,&
+                               this_Fbin,this_Fopt, this_n_res)
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
@@ -401,7 +420,7 @@ module interface_tdplas
        implicit none
 
        integer(i4b), intent(in) :: Md
-       real(dbl), intent(inout) :: M(Md)
+       real(dbl), intent(inout) :: M(Md,Md)
        real(dbl), intent(out) :: E(Md)
 
 #ifdef TDPLAS
@@ -418,7 +437,7 @@ module interface_tdplas
 
        implicit none
 
-       real(dbl),intent(inout):: f(3)  
+       real(dbl),intent(out):: f(3)  
        real(dbl),intent(in):: q(this_nts_act)  
 
 #ifdef TDPLAS
@@ -432,9 +451,15 @@ module interface_tdplas
       subroutine do_BEM_quant_in_wavet
 
        implicit none
+       integer(i4b) :: i
 
 #ifdef TDPLAS
        call do_BEM_quant
+       this_nmodes=global_qmodes_nmodes
+       allocate(this_qmmodes(this_nmodes))
+       do i=1,this_nmodes
+         this_qmmodes(i)=global_qmodes_qmmodes(i)
+       enddo
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
@@ -458,39 +483,39 @@ module interface_tdplas
        implicit none
 #ifdef TDPLAS
        call do_vts_from_dip
-       this_vts=vts
+       this_vts=quantum_vts
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
 
       end subroutine do_vts_from_dip_in_wavet
 
-      subroutine preparing_for_scf_in_wavet(mix,mu,pot)
+      subroutine preparing_for_scf_in_wavet(mix,pot_or_mu,q_or_f)
 
        implicit none
 
        real(dbl), intent(in) :: mix
-       real(dbl), optional, intent(in) :: mu(:)
-       real(dbl), optional, intent(in) :: pot(:)
+       real(dbl), intent(in) :: pot_or_mu(:)
+       real(dbl), intent(out) :: q_or_f(:)
 
 #ifdef TDPLAS
-       if (this_Fprop.eq."dip") then
-        call preparing_for_scf(mix, mu_t = mu)
-       else
-        call preparing_for_scf(mix, pot_t = pot)
-       endif
+        call preparing_for_scf(mix, pot_or_mu)
+        call get_qr_fr(q_or_f)
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
 
       end subroutine preparing_for_scf_in_wavet
 
-      subroutine init_after_scf_in_wavet
+      subroutine init_after_scf_in_wavet(pot_or_mut)
 
        implicit none
+       real(dbl), intent(in) :: pot_or_mut(:)
 
 #ifdef TDPLAS
-       call init_after_scf
+! SC 16/10/2020: vts in tdplas must be updated
+       quantum_vts=this_vts
+       call init_after_scf(pot_or_mut)
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
@@ -698,19 +723,36 @@ do its=1,this_nts_act
       end subroutine do_pot_from_dip
 
 subroutine export_mdm_qmcoup
-implicit none
-         this_nmod=nmod
-         this_max_mod_todiag=max_mod_todiag
-         if(this_max_mod_todiag.lt.this_nts_act)then
-            allocate(this_imod(this_nmod))
-            this_imod=imod
-         endif
+   implicit none
+   integer(i4b) :: i
+         this_nprint=global_qmodes_nprint
          allocate(this_BEM_W2(this_nts_act))
          this_BEM_W2=BEM_W2
          allocate(this_BEM_Modes(this_nts_act,this_nts_act))
          this_BEM_Modes=BEM_Modes
 end subroutine
 
+!------------------------------------------------------------------------
+! @brief Computes the modulus of a vector
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+      function mdl(v) result(m)
+
+        real(dbl), dimension(:), intent(in) :: v
+        real(dbl) :: m
+        integer(i4b) :: i
+
+        m=zero
+
+        do i=1,size(v)
+          m=m+v(i)*v(i)
+        enddo
+
+        m=sqrt(m)
+
+      end function mdl
 
 
 end module interface_tdplas

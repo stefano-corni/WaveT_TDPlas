@@ -1,5 +1,0 @@
-eps.inp is obtained as fitting of the function (eps-1)/(eps+1) with experimental eps
-
-poles.inp:
-> first line: number of poles (npoles)
-> npoles lines: omega(pole), gamma(pole), A coefficient of drl expansion(pole) 

@@ -1,7 +1,10 @@
-Create the required matrix for a WaveT run or a freq_bem calculation by using the mesh provided by GMSH. To run:
-1. First create the file surface_msh.inp by
-   gawk -f gmsh.awk sfera.msh 
-2. Then run
-   ../../TDPlas/bin/tdplas.x < tdplas.inp > tdplas.out
+Creates the required matrices for a WaveT run or a freq_bem calculation by using the mesh provided by GMSH. 
+The script create_mesh.sh creates the file.msh, calling the executable gmsh, from info on sphere position and size contained in spheres.inp
+To run:
+1. Edit the spheres.inp file to chose the desired particle shape
+2. Create the mesh 
+ # ./create_mesh.sh           
+3. Then run (e.g.)
+ # ../../TDPlas/bin/tdplas.x < tdplas_nas.inp > tdplas.out
 
-The script create_mesh.sh creates the file.msh from info on sphere position and size contained in spheres.inp
+SPipolo 20/09/2020

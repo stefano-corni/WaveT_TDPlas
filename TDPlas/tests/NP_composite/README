@@ -1,0 +1,9 @@
+EXAMPLE TO CREATE FILES FOR A SYSTEM WITH 2 OR MORE NPs FROM MESHES
+
+cd rod
+./tdplas.x tdplas.out
+cd ../ellipsoid
+./tdplas.x tdplas.out
+cd ../composite
+cat ../rod/cavity_full.inp ../ellipsoid/cavity_full.inp > cavity_full.inp
+./tdplas.x > tdplas.out

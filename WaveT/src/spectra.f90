@@ -56,9 +56,9 @@
         Deq_np(:)=Sdip(:,2,1+istart)
         do i=1,vdim
           Sdip(:,1,i+istart)=(Sdip(:,1,i+istart)-Deq(:))*    & 
-                                                exp(-i*dt/tau(1))
+                                                exp(-abs(i*dt-t_mid)/tau(1))
           Sdip(:,2,i+istart)=(Sdip(:,2,i+istart)-Deq_np(:))* & 
-                                                exp(-i*dt/tau(2))
+                                                exp(-abs(i*dt-t_mid)/tau(2))
           Sdip(:,3,i+istart)= Sdip(:,1,i+istart)+Sdip(:,2,i+istart)
         enddo
         ! SP 28/10/16: normalize the dir_ft

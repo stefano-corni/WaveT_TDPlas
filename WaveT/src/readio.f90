@@ -35,7 +35,7 @@
       real(dbl)                 :: tdelay(npulsemax), pshift(npulsemax)  ! time delay and phase shift with two pulses
       !real(dbl), allocatable    :: c_i(:),e_ci(:)  ! energy from cis
       real(dbl), allocatable    :: e_ci(:)  ! energy from cis
-      complex(cmp), allocatable :: c_i(:),c_i_prev(:),c_i_prev2(:) ! coefficients from cis
+      complex(cmp), allocatable :: c_i(:),c_i_t(:),c_i_prev(:),c_i_prev2(:) ! coefficients from cis
       real(dbl)                 :: mu_i_prev(3),mu_i_prev2(3),mu_i_prev3(3),mu_i_prev4(3),mu_i_prev5(3)
       real(dbl), allocatable    :: mut(:,:,:) !transition dipoles from cis
       real(dbl), allocatable    :: nr_gam(:), de_gam(:) !decay rates for nonradiative and dephasing events
@@ -118,7 +118,7 @@
              de_gam1,krnd,Fdis,Fdis_deph,Fdis_rel,nf,irel,  &
              npulse,tdelay,pshift,nrel,Fful,  &
              Fexp,Fres,restart_t,restart_i,n_restart,       &
-             c_i_prev,c_i_prev2,mu_i_prev,mu_i_prev2,       &
+             c_i_t,c_i_prev,c_i_prev2,mu_i_prev,mu_i_prev2, &
              mu_i_prev3,mu_i_prev4,mu_i_prev5,restart_seed, &
              n_jump,Fsim,diff_step,mpibcast_readio,         &
              mpibcast_e_dip,mpibcast_sse,mpibcast_restart,  &
@@ -167,11 +167,13 @@
        write(*,*) '**   under external electromagnetic perturbations **'
        write(*,*) '**                                                **'
        write(*,*) '**                     by                         **'
-       write(*,*) '**                Stefano Corni                   **'
-       write(*,*) '**                Silvio Pipolo                   **'
        write(*,*) '**               Emanuele Coccia                  **'
-       write(*,*) '**                 Gabriel Gil                    **'
+       write(*,*) '**                Stefano Corni                   **'
+       write(*,*) "**               Giulia Dall'Osto                 **"
        write(*,*) '**                Jacopo Fregoni                  **'
+       write(*,*) '**                 Gabriel Gil                    **'
+       write(*,*) '**                Silvio Pipolo                   **'
+       write(*,*) '**                 Marta Rosa                     **'
        write(*,*) '**                                                **'
        write(*,*) '****************************************************'
        write(*,*) '****************************************************'    
@@ -356,7 +358,7 @@
 
           implicit none
 
-          integer(i4b)  :: i,ii 
+          integer(i4b)  :: i,ii, c_size
           character(4)  :: junk
           character(32) :: filename
 
@@ -380,14 +382,14 @@
 
           call checkfile(filename,ii)
           read(ii,*) junk
-          read(ii,*) restart_t,restart_i,diff_step
-          allocate(c_i_prev(n_ci),c_i_prev2(n_ci))
+          read(ii,*) restart_t,restart_i,diff_step,c_size
+          allocate(c_i_t(c_size),c_i_prev(c_size),c_i_prev2(c_size))
           write(*,*) ''
           write(*,*) 'Restart from time', restart_t
           write(*,*) ''
           read(ii,*) junk
           do i=1,n_ci
-             read(ii,*) c_i(i)
+             read(ii,*) c_i_t(i)
           enddo
           read(ii,*) junk
           do i=1,n_ci
@@ -544,7 +546,7 @@
           enddo
        endif
 
-       if (Fmdm.eq.'Cnan') then
+       if (Fmdm.eq.'cnan') then
 
           open(7,file="ci_mut_np.inp",status="old",iostat=ierr4,err=104)
           allocate(mut_np2(nf,3))
@@ -687,7 +689,7 @@
        deallocate(tomega)
        if (idep.eq.0) deallocate(delta)
        if (myrank.eq.0) then
-          if (Fdis.ne."nodis".and.Fmdm.eq.'Cnan') deallocate(mut_np2)
+          if (Fdis.ne."nodis".and.Fmdm.eq.'cnan') deallocate(mut_np2)
           if (Fful.eq.'Yesf') then
              deallocate(irel)
           endif
@@ -918,16 +920,16 @@
        select case (medium)
         case ('sol','Sol','SOL')
           write(*,*) "Solvent as external medium"
-          Fmdm='Csol'
+          Fmdm='csol'
         case ('qso','Qso','QSO')
           write(*,*) "Quantum Solvent as external medium"
-          Fmdm='Qsol'
+          Fmdm='qsol'
         case ('nan','Nan','NAN')
           write(*,*) "Nanoparticle as external medium"
-          Fmdm='Cnan'
+          Fmdm='cnan'
         case ('Qna','qna','QNA')
           write(*,*) "Quantum Nanoparticle as external medium"
-          Fmdm='Qnan'
+          Fmdm='qnan'
         case default
           write(*,*) "No external medium, vacuum calculation"
           Fmdm='vac'
@@ -1385,7 +1387,7 @@
 #ifdef MPI
 
        if (myrank.ne.0) then
-          allocate(c_i(n_ci))
+          allocate(c_i_t(n_ci))
           allocate(c_i_prev(n_ci))
           allocate(c_i_prev2(n_ci)) 
        endif
@@ -1403,7 +1405,7 @@
        call mpi_bcast(mu_i_prev4,   3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(mu_i_prev5,   3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
 
-       call mpi_bcast(c_i,          2*n_ci,MPI_COMPLEX,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(c_i_t,        2*n_ci,MPI_COMPLEX,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(c_i_prev,     2*n_ci,MPI_COMPLEX,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(c_i_prev2,    2*n_ci,MPI_COMPLEX,0,MPI_COMM_WORLD,ierr_mpi)
 

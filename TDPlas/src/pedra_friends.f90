@@ -1,84 +1,294 @@
-      Module pedra_friends
+        Module pedra_friends
 ! Modulo copiato spudoratamente da GAMESS
-      use constants
-      use interface_qmcode
+            use tdplas_constants
+            use cavity_types
+            use global_tdplas
 #ifdef MPI
-      use mpi
+            use mpi
 #endif
 
-      implicit none
+            implicit none
 
-      type tessera
-       real(dbl) :: z
-       real(dbl) :: phi
-       real(dbl) :: fz
-       real(dbl) :: dfdz
-       real(dbl) :: dz
-       real(dbl) :: area
-      end type
-!
-      type tess_pcm
-       real(dbl) :: x
-       real(dbl) :: y
-       real(dbl) :: z
-       real(dbl) :: area
-       real(dbl) :: n(3)
-       real(dbl) :: rsfe
-      end type
-!
-      type sfera
-       real(dbl) :: x
-       real(dbl) :: y
-       real(dbl) :: z
-       real(dbl) :: r
-      end type
 
-      real(dbl) :: dr=0.01
-      type(tess_pcm), target, allocatable :: cts_act(:), cts_pro(:)
-      integer(i4b) :: nts_act, nts_pro
-      type(sfera), allocatable :: sfe_act(:), sfe_pro(:)
-      integer(i4b) :: nesf_act, nesf_pro
 
-      save
-      private
-      public pedra_int, read_act, read_pro, dealloc_pedra, &
-             nts_act, nts_pro,cts_act,cts_pro,nesf_pro,sfe_pro, &
-             nesf_act,sfe_act,read_cavity_file,read_cavity_full_file,&
-             read_gmsh_file,tess_pcm,sfera
-!
+            character(flg) :: pedra_surf_Fcav = "non"        !BEM                                  !
+            character(flg) :: pedra_surf_Finv = "non"        !BEM
+            character(flg) :: pedra_surf_Ffind = "yes"       !BEM
 
-      contains
 
-!
-      Subroutine read_act(xr,yr,zr,rr,nspheres,nsmax)
-      integer(i4b) :: isfe,nspheres,nsmax
-      real(dbl)    :: xr(nsmax),yr(nsmax),zr(nsmax),rr(nsmax)
+            integer(i4b) :: pedra_surf_n_tessere = 0                      !td_contmed, BEM, Mathtools
+            type(tess_pcm), target, allocatable :: pedra_surf_tessere(:)  !td_contmed, BEM, Mathtools
+            integer(i4b) :: pedra_surf_n_spheres = 0                      !BEM
+            type(sfera), allocatable :: pedra_surf_spheres(:)             !td_contmed, BEM
+            integer(i4b), allocatable :: pedra_surf_comp(:,:)      
+            integer(i4b) :: pedra_surf_n_particles = 1
+
+            !old pedra variables, to modify less than possible
+            real(dbl) :: dr=0.01
+            type(tess_pcm), target, allocatable :: cts_act(:), cts_pro(:)
+            integer(i4b) :: nts_act, nts_pro
+            type(sfera), allocatable :: sfe_act(:), sfe_pro(:)
+            integer(i4b) :: nesf_act, nesf_pro
+
+
+
+            save
+            private dr,                    &
+                    cts_act, cts_pro,      &
+                    nts_act, nts_pro,      &
+                    sfe_act, sfe_pro,      &
+                    nesf_act, nesf_pro,    &
+                    read_cavity_file,      &
+                    read_cavity_full_file
+
+
+            public  pedra_surf_Fcav,            &
+                    pedra_surf_Finv,            &
+                    pedra_surf_n_tessere,       &
+                    pedra_surf_tessere,         &
+                    pedra_surf_n_spheres,       &
+                    pedra_surf_spheres,         &
+                    pedra_surf_init,            &
+                    pedra_surf_Ffind,           &
+                    pedra_surf_comp,            &
+                    pedra_surf_n_particles
+
+
+
+            contains
+
+
+
+            subroutine pedra_surf_init(Fcav,          &
+                                  Finv,               &
+                                  Ffind,              &
+                                  particles_number,   &
+                                  spheres_number,     &
+                                  sphere_position_x,  &
+                                  sphere_position_y,  &
+                                  sphere_position_z,  &
+                                  sphere_radius,      &
+                                  medium_Fmdm)
+
+
+            character(flg)   :: Fcav
+            character(flg)   :: Finv
+            character(flg)   :: Ffind
+            character(flg)   :: medium_Fmdm
+            integer(i4b)     :: particles_number
+            integer(i4b)     :: spheres_number
+            real(dbl)        :: sphere_position_x(spheres_number)
+            real(dbl)        :: sphere_position_y(spheres_number)
+            real(dbl)        :: sphere_position_z(spheres_number)
+            real(dbl)        :: sphere_radius(spheres_number)
+
+
+            pedra_surf_Fcav = Fcav
+            pedra_surf_Finv = Finv
+            pedra_surf_Ffind = Ffind
+
+            select case(pedra_surf_Fcav)
+                case ('fil')
+                    if (global_medium_read_write.eq.'wri') then
+                        call read_cavity_full_file(particles_number)
+                    elseif (global_medium_read_write.eq.'rea') then
+                        call read_cavity_file
+                        if(particles_number.gt.1) call read_composite_file(particles_number)
+                    endif
+                case ('gms')
+                    call read_gmsh_file(pedra_surf_Finv,pedra_surf_Ffind)
+                case ('bui')
+          ! Build surface from spheres
+                    call read_act(sphere_position_x,&
+                                sphere_position_y,&
+                                sphere_position_z,&
+                                sphere_radius,spheres_number,spheres_number)
+                    if(medium_Fmdm.eq.'csol'.or.medium_Fmdm.eq.'qsol') call pedra_int('act')
+                    if(medium_Fmdm.eq.'cnan'.or.medium_Fmdm.eq.'qnan') call pedra_int('met')
+            end select
+            pedra_surf_n_spheres = nesf_act
+            pedra_surf_n_tessere = nts_act
+            if(pedra_surf_n_tessere.gt.0) then
+                allocate(pedra_surf_tessere(pedra_surf_n_tessere))
+                pedra_surf_tessere = cts_act
+            endif
+            if(pedra_surf_n_spheres.gt.0) then
+                allocate(pedra_surf_spheres(pedra_surf_n_spheres))
+                pedra_surf_spheres = sfe_act
+            endif
+
+
+            return
+
+        end subroutine
+
+
+
+      subroutine read_cavity_full_file(particles_number)
+
+      integer(4) :: i,j,its,particles_number
+      real(dbl), allocatable :: tmp(:)
 
 #ifndef MPI
-       myrank=0
+       tp_myrank=0
 #endif
 
-      !read (iunit,*) nesf_act
-      nesf_act=nspheres 
-      if (myrank.eq.0) then
-         write(6,*) "Number of spheres",nesf_act
-         write(6,*) "I_sphere  X     Y   Z   Radius"
-      endif 
-      allocate(sfe_act(nesf_act))
-      do isfe=1,nesf_act
-       !read (iunit,*) sfe_act(isfe)%x,sfe_act(isfe)%y,sfe_act(isfe)%z, &
-       !           sfe_act(isfe)%r
-       sfe_act(isfe)%x=xr(isfe)
-       sfe_act(isfe)%y=yr(isfe)
-       sfe_act(isfe)%z=zr(isfe)
-       sfe_act(isfe)%r=rr(isfe)
-       if (myrank.eq.0) write(6,'(I6,4F12.4)') isfe, sfe_act(isfe)%x,sfe_act(isfe)%y, &
-                 sfe_act(isfe)%z, sfe_act(isfe)%r
-      enddo
+      if (tp_myrank.eq.0) then
+         open(7,file="cavity_full.inp",status="old")
+         if (particles_number.eq.1) then
+            read(7,*) nts_act
+            allocate(cts_act(nts_act))
+            do its=1,nts_act
+
+                read(7,*) cts_act(its)%x,cts_act(its)%y,cts_act(its)%z, &
+                       cts_act(its)%area,cts_act(its)%rsfe, &
+                       cts_act(its)%n(:)
+             enddo
+         else
+            allocate(pedra_surf_comp(particles_number,3))
+            open(8,file="composite_system.inp",status="unknown")
+            write(8,*) particles_number
+            write(8,*) "ntesserae  begin  end"   
+            nts_act=0
+            do i=1,particles_number
+                read(7,*) pedra_surf_comp(i,1)
+                pedra_surf_comp(i,2)=nts_act+1
+                pedra_surf_comp(i,3)=nts_act+pedra_surf_comp(i,1)
+                nts_act=nts_act+pedra_surf_comp(i,1)
+                write(8,'(3i8)') pedra_surf_comp(i,:)
+                do its=pedra_surf_comp(i,2),pedra_surf_comp(i,3)
+                   read(7,*) 
+                enddo
+            enddo
+            allocate(cts_act(nts_act))
+            rewind(7)
+            do i=1,particles_number
+               read(7,*) 
+               do its=pedra_surf_comp(i,2),pedra_surf_comp(i,3)
+                   read(7,*) cts_act(its)%x,cts_act(its)%y,cts_act(its)%z, &
+                       cts_act(its)%area,cts_act(its)%rsfe, &
+                       cts_act(its)%n(:)
+                enddo
+            enddo
+            close(8)
+         endif
+
+         close(7)
+      endif
+
+#ifdef MPI
+
+           call mpi_bcast(nts_act, 1,MPI_INTEGER,0,MPI_COMM_WORLD,tp_ierr_mpi)
+           if (tp_myrank.ne.0) allocate(cts_act(nts_act))
+
+           allocate(tmp(nts_act))
+
+           call mpi_bcast(cts_act%x,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+           call mpi_bcast(cts_act%y,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+           call mpi_bcast(cts_act%z,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+           call mpi_bcast(cts_act%area, nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+           call mpi_bcast(cts_act%rsfe, nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+
+           if (tp_myrank.eq.0) tmp=cts_act%n(1)
+           call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+           if (tp_myrank.ne.0) cts_act%n(1)=tmp
+
+           if (tp_myrank.eq.0) tmp=cts_act%n(2)
+           call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+           if (tp_myrank.ne.0) cts_act%n(2)=tmp
+
+           if (tp_myrank.eq.0) tmp=cts_act%n(3)
+           call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+           if (tp_myrank.ne.0) cts_act%n(3)=tmp
+
+           deallocate(tmp)
+
+#endif
 
       return
       end subroutine
 !
+      subroutine read_cavity_file
+       integer(4) :: i,nts,nsphe
+       real(dbl)  :: x,y,z,s,r
+
+#ifndef MPI
+       tp_myrank=0
+#endif
+
+       if (tp_myrank.eq.0) then
+          open(7,file="cavity.inp",status="old")
+         !read(7,*)
+          read(7,*) nts,nsphe
+!         if(nts_act.eq.0.or.nts.eq.nts_act) then
+          nts_act=nts
+       endif
+!         else
+!           write(*,*) "Tesserae number conflict"
+!           stop
+!         endif
+#ifdef MPI
+         call mpi_bcast(nts_act, 1,MPI_INTEGER,0,MPI_COMM_WORLD,tp_ierr_mpi)
+         call mpi_bcast(nsphe,   1,MPI_INTEGER,0,MPI_COMM_WORLD,tp_ierr_mpi)
+#endif
+         if(.not.allocated(sfe_act).and.nsphe.gt.0) then 
+           nesf_act=nsphe
+           allocate (sfe_act(nesf_act))
+         endif
+         if(.not.allocated(cts_act)) allocate (cts_act(nts_act))
+         if (tp_myrank.eq.0) then
+            do i=1,nsphe
+              read(7,*)  sfe_act(i)%x,sfe_act(i)%y, &
+                               sfe_act(i)%z
+            enddo
+
+            do i=1,nts_act
+               read(7,*) x,y,z,s,r
+               cts_act(i)%x=x!*antoau
+               cts_act(i)%y=y!*antoau
+               cts_act(i)%z=z!*antoau
+               cts_act(i)%area=s!*antoau*antoau
+               cts_act(i)%rsfe=r
+           enddo
+           close(7)
+        endif
+#ifdef MPI
+        call mpi_bcast(sfe_act%x,    nsphe,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+        call mpi_bcast(sfe_act%y,    nsphe,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+        call mpi_bcast(sfe_act%z,    nsphe,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+        call mpi_bcast(cts_act%x,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+        call mpi_bcast(cts_act%y,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+        call mpi_bcast(cts_act%z,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+        call mpi_bcast(cts_act%area, nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+        call mpi_bcast(cts_act%rsfe, nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+#endif
+
+       return
+      end subroutine
+!
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!FINE INTERFACCIA!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
+      Subroutine read_act(xr,yr,zr,rr,nspheres,nsmax)
+      integer(i4b) :: isfe,nspheres,nsmax
+      real(dbl)    :: xr(nsmax),yr(nsmax),zr(nsmax),rr(nsmax)
+      nesf_act=nspheres
+      allocate(sfe_act(nesf_act))
+      do isfe=1,nesf_act
+       sfe_act(isfe)%x=xr(isfe)
+       sfe_act(isfe)%y=yr(isfe)
+       sfe_act(isfe)%z=zr(isfe)
+       sfe_act(isfe)%r=rr(isfe)
+      enddo
+
+      return
+      end subroutine
+
+
       Subroutine read_pro
       integer(i4b) :: isfe
       read (5,*) nesf_pro
@@ -90,6 +300,8 @@
       return
       end subroutine
 !
+
+
       Subroutine new_sphere (i_count,nsfe,sfe,nsfe_new,sfe_new)
 ! Add new spheres to improve intersections
       integer(i4b), intent(in) :: i_count
@@ -108,9 +320,9 @@
        r_1=sfe(isfe)%r
        do jsfe=isfe+1,nsfe
         r_2=sfe(jsfe)%r
-        dir(1)=sfe(jsfe)%x-sfe(isfe)%x 
-        dir(2)=sfe(jsfe)%y-sfe(isfe)%y 
-        dir(3)=sfe(jsfe)%z-sfe(isfe)%z 
+        dir(1)=sfe(jsfe)%x-sfe(isfe)%x
+        dir(2)=sfe(jsfe)%y-sfe(isfe)%y
+        dir(3)=sfe(jsfe)%z-sfe(isfe)%z
         dist2=dot_product(dir,dir)
         dist=sqrt(dist2)
         if (dist.gt.(r_1+r_2)) cycle
@@ -134,7 +346,7 @@
         endif
        enddo
       enddo
-      nsfe_new=nsfe+n_add   
+      nsfe_new=nsfe+n_add
       return
       end subroutine
 !
@@ -143,85 +355,129 @@
       type(tess_pcm) :: dum2(1)
 
 #ifdef MPI
-      !real(8), allocatable  :: tmp(:)
-
-      call mpi_bcast(nesf_act,    1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+      call mpi_bcast(nesf_act,    1,MPI_INTEGER,0,MPI_COMM_WORLD,tp_ierr_mpi)
 
       !allocate(tmp(nesf_act))
-      if (myrank.ne.0) then 
+      if (tp_myrank.ne.0) then
          allocate(sfe_act(nesf_act))
       endif
 
-      call mpi_bcast(sfe_act%x,    nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-      call mpi_bcast(sfe_act%y,    nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-      call mpi_bcast(sfe_act%z,    nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-      call mpi_bcast(sfe_act%r,    nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-
-      !if (myrank.eq.0) tmp=sfe_act%x
-      !call mpi_bcast(tmp,         nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-      !if (myrank.ne.0) sfe_act%x=tmp
-      !if (myrank.eq.0) tmp=sfe_act%y
-      !call mpi_bcast(tmp,         nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-      !if (myrank.ne.0) sfe_act%y=tmp
-      !if (myrank.eq.0) tmp=sfe_act%z
-      !call mpi_bcast(tmp,        nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-      !if (myrank.ne.0) sfe_act%z=tmp
-      !if (myrank.eq.0) tmp=sfe_act%r
-      !call mpi_bcast(tmp,        nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-      !if (myrank.ne.0) sfe_act%r=tmp
-
-      !deallocate(tmp)
+      call mpi_bcast(sfe_act%x,    nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+      call mpi_bcast(sfe_act%y,    nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+      call mpi_bcast(sfe_act%z,    nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+      call mpi_bcast(sfe_act%r,    nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
 
 #endif
 
       if (what.eq.'act') then
-        call pedra(0,1,nesf_act,sfe_act,nts_act,dum2)      
-        write (6,*) "nts_act",nts_act
+        call pedra(0,1,nesf_act,sfe_act,nts_act,dum2)
+!        write (6,*) "nts_act",nts_act
         allocate(cts_act(nts_act))
         call pedra(1,1,nesf_act,sfe_act,nts_act,cts_act)
-        write (6,*) "nts_act",nts_act
+!        write (6,*) "nts_act",nts_act
       else if (what.eq.'pro') then
-        call pedra(0,4,nesf_pro,sfe_pro,nts_pro,dum2)      
-        write (6,*) "nts_pro",nts_pro
+        call pedra(0,4,nesf_pro,sfe_pro,nts_pro,dum2)
+!        write (6,*) "nts_pro",nts_pro
         allocate(cts_pro(nts_pro))
         call pedra(1,4,nesf_pro,sfe_pro,nts_pro,cts_pro)
-        write (6,*) "nts_pro",nts_pro
+!        write (6,*) "nts_pro",nts_pro
       else if (what.eq.'met') then
-        call pedra(0,4,nesf_act,sfe_act,nts_act,dum2)      
-        write (6,*) "nts_act",nts_act
+        call pedra(0,4,nesf_act,sfe_act,nts_act,dum2)
+!        write (6,*) "nts_act",nts_act
         allocate(cts_act(nts_act))
         call pedra(1,4,nesf_act,sfe_act,nts_act,cts_act)
-        write (6,*) "nts_act",nts_act
+!        write (6,*) "nts_act",nts_act
       endif
       return
       end subroutine
 !      
-      SUBROUTINE PEDRA(i_count,n_tes,nesf_in,sfe_in,nts,cts)
-!
-      IMPLICIT none
-      integer(i4b), intent(in) :: i_count,n_tes,nesf_in
-      type(sfera), intent(in) :: sfe_in(:)
-      integer(i4b), intent(out) :: nts
-      type(tess_pcm), intent(out) :: cts(:)
-      integer(i4b) :: nesf
-      type(sfera), allocatable :: sfe(:)
-      real(dbl) :: thev(24),fiv(24),fir,cv(122,3),th,fi,cth,sth
-      real(dbl) :: XCTST(240),YCTST(240),ZCTST(240),AST(240),nctst(3,240)
-      real(dbl) :: PTS(3,10),PP(3),PP1(3),CCC(3,10)
-      integer(i4b) :: idum(360),JVT1(6,60),isfet(240)
-      integer(i4b) :: i, ii, iii, j, k, nn, nsfe, its, n1,n2,n3,nv,i_tes
-      real(dbl) :: xen,yen,zen,ren,area,test,test2,rij,dnorm
-      real(dbl) :: xi,yi,zi,xj,yj,zj
-      real(dbl) :: vol,stot,prod
-!
-!
-      real(dbl), PARAMETER :: MXTS=2500
-!
-!
-!     Angoli che individuano i centri e i vertici di un poliedro
-!     inscritto in una sfera di raggio unitario centrata nell'origine
-!
-      DATA THEV/0.6523581398D+00,1.107148718D+00,1.382085796D+00, &
+!  It builds the solute cavity surface and calculates the vertices,
+!! representative points and areas of the tesserae by using the 
+!! Gauss-Bonnet theorem.
+  subroutine PEDRA(i_count, tess_sphere, nesf_in, sfe_in, nts, cts)
+
+    implicit none
+
+    integer(i4b), intent(in)    :: i_count
+    integer(i4b), intent(in)    :: tess_sphere
+    integer(i4b), intent(in)    :: nesf_in
+    type(sfera), intent(in)     :: sfe_in(:)
+    integer(i4b), intent(out)   :: nts
+    type(tess_pcm), intent(out) :: cts(:)
+
+    integer(i4b) :: nesf
+    type(sfera), allocatable :: sfe(:)
+
+    integer(i4b), parameter :: dim_angles = 24
+    integer(i4b), parameter :: dim_ten = 10
+    integer(i4b), parameter :: dim_vertices = 122
+    integer(i4b), parameter :: n_tess_sphere = 60
+    integer(i4b), parameter :: max_vertices = 6
+    integer(i4b), parameter :: mxts = 10000
+
+    real(dbl) :: thev(dim_angles)
+    real(dbl) :: fiv(dim_angles)
+    real(dbl) :: fir
+    real(dbl) :: cv(dim_vertices,3)
+    real(dbl) :: th
+    real(dbl) :: fi
+    real(dbl) :: cth
+    real(dbl) :: sth
+
+    real(dbl) :: xctst(tess_sphere*n_tess_sphere)
+    real(dbl) :: yctst(tess_sphere*n_tess_sphere)
+    real(dbl) :: zctst(tess_sphere*n_tess_sphere)
+    real(dbl) :: ast(tess_sphere*n_tess_sphere)
+    real(dbl) :: nctst(3,tess_sphere*n_tess_sphere)
+
+    real(dbl) :: pts(3,dim_ten)
+    real(dbl) :: pp(3)
+    real(dbl) :: pp1(3)
+    real(dbl) :: ccc(3,dim_ten)
+
+    integer(i4b) :: idum(n_tess_sphere*max_vertices)
+    integer(i4b) :: jvt1(max_vertices,n_tess_sphere)
+    integer(i4b) :: isfet(dim_ten*dim_angles)
+
+    integer(i4b) :: ii
+    integer(i4b) :: ia
+    integer(i4b) :: ja
+    integer(i4b) :: nn
+    integer(i4b) :: nsfe
+    integer(i4b) :: its
+    integer(i4b) :: n1
+    integer(i4b) :: n2
+    integer(i4b) :: n3
+    integer(i4b) :: nv
+    integer(i4b) :: i_tes
+
+    real(dbl) :: xen
+    real(dbl) :: yen
+    real(dbl) :: zen
+    real(dbl) :: ren
+    real(dbl) :: area
+    real(dbl) :: test
+    real(dbl) :: test2
+    real(dbl) :: rij
+    real(dbl) :: dnorm
+
+    real(dbl) :: xi
+    real(dbl) :: yi
+    real(dbl) :: zi
+    real(dbl) :: xj
+    real(dbl) :: yj
+    real(dbl) :: zj
+
+    real(dbl) :: vol
+    real(dbl) :: stot
+    real(dbl) :: prod
+    real(dbl) :: dr  
+
+    logical :: band_iter
+
+    !  Angles corresponding to the vertices and centres of a polyhedron
+    !! within a sphere of unitary radius and centered at the origin
+      DATA thev/0.6523581398D+00,1.107148718D+00,1.382085796D+00, &
                 &1.759506858D+00,2.034443936D+00,2.489234514D+00,   &
                 &               0.3261790699D+00,0.5535743589D+00,   &
                 &0.8559571251D+00,0.8559571251D+00,1.017221968D+00,   &
@@ -230,7 +486,7 @@
                 &1.912475937D+00,1.912475937D+00,2.124370686D+00,   &
                 &2.285635528D+00,2.285635528D+00,2.588018295D+00,   &
                 &2.815413584D+00/
-      DATA FIV/               0.6283185307D+00,0.0000000000D+00,   &
+      DATA fiv/               0.6283185307D+00,0.0000000000D+00,   &
                0.6283185307D+00,0.0000000000D+00,0.6283185307D+00,   &
                0.0000000000D+00,0.6283185307D+00,0.0000000000D+00,   &
                0.2520539002D+00,1.004583161D+00,0.6283185307D+00,   &
@@ -239,334 +495,313 @@
                0.2989556830D+00,0.9576813784D+00,0.0000000000D+00,   &
                0.3762646305D+00,0.8803724309D+00,0.6283188307D+00,   &
                0.0000000000D+00/
-      DATA FIR/1.256637061D+00/
-!
-!     Il vettore IDUM, ripreso nella matrice JVT1, indica quali sono
-!     i vertici delle varie tessere (using less than 19 continuations)
-!
-      DATA (IDUM(III),III=1,280)/ &
-         1, 6, 2, 32, 36, 37, 1, 2, 3, 33, 32, 38, 1, 3, 4, 34,&
-         33, 39, 1, 4, 5, 35, 34, 40, 1, 5, 6, 36, 35, 41, 7, 2, 6, 51,&
-         42, 37, 8, 3, 2, 47, 43, 38, 9, 4, 3, 48, 44, 39, 10, 5, 4,&
-         49, 45, 40, 11, 6, 5, 50, 46, 41, 8, 2, 12, 62, 47, 52, 9,&
-         3, 13, 63, 48, 53, 10, 4, 14, 64, 49, 54, 11, 5, 15, 65, 50,&
-         55, 7, 6, 16, 66, 51, 56, 7, 12, 2, 42, 57, 52, 8, 13, 3,&
-         43, 58, 53, 9, 14, 4, 44, 59, 54, 10, 15, 5, 45, 60, 55, 11,&
-         16, 6, 46, 61, 56, 8, 12, 18, 68, 62, 77, 9, 13, 19, 69, 63,&
-         78, 10, 14, 20, 70, 64, 79, 11, 15, 21, 71, 65, 80, 7, 16,&
-         17, 67, 66, 81, 7, 17, 12, 57, 67, 72, 8, 18, 13, 58, 68, 73,&
-         9, 19, 14, 59, 69, 74, 10, 20, 15, 60, 70, 75, 11, 21, 16,&
-         61, 71, 76, 22, 12, 17, 87, 82, 72, 23, 13, 18, 88, 83, 73,&
-         24, 14, 19, 89, 84, 74, 25, 15, 20, 90, 85, 75, 26, 16, 21,&
-         91, 86, 76, 22, 18, 12, 82, 92, 77, 23, 19, 13, 83, 93, 78,&
-         24, 20, 14, 84, 94, 79, 25, 21, 15, 85, 95, 80, 26, 17, 16,&
-         86, 96, 81, 22, 17, 27, 102, 87, 97, 23, 18, 28, 103, 88, 98,&
-         24, 19, 29, 104, 89, 99, 25, 20, 30, 105, 90, 100, 26, 21,&
-         31, 106, 91, 101, 22, 28, 18, 92, 107, 98, 23, 29, 19, 93/
-      DATA (IDUM(III),III=281,360)/&
-         108, 99, 24, 30, 20, 94, 109, 100, 25, 31, 21, 95, 110, 101,&
-         26, 27, 17, 96, 111, 97, 22, 27, 28, 107, 102, 112, 23, 28,&
-         29, 108, 103, 113, 24, 29, 30, 109, 104, 114, 25, 30, 31,&
-         110, 105, 115, 26, 31, 27, 111, 106, 116, 122, 28, 27, 117,&
-         118, 112, 122, 29, 28, 118, 119, 113, 122, 30, 29, 119, 120,&
-         114, 122, 31, 30, 120, 121, 115, 122, 27, 31, 121, 117, 116 /
-!
-!     It defines the solute's cavity and calculates vertices,
-!     representative points and areas of tesserae with the
-!     Gauss Bonnet Theorem.
-!
-!
+      DATA fir/1.256637061D+00/
+
+    !  the vector idum, contained in the matrix jvt1, indicates the vertices 
+    !! of the tesserae (using less than 19 continuations)
+    data (idum(ii),ii = 1, 280) /                                   &
+      1, 6, 2, 32, 36, 37, 1, 2, 3, 33, 32, 38, 1, 3, 4, 34,         &
+      33, 39, 1, 4, 5, 35, 34, 40, 1, 5, 6, 36, 35, 41, 7, 2, 6, 51, &
+      42, 37, 8, 3, 2, 47, 43, 38, 9, 4, 3, 48, 44, 39, 10, 5, 4,    &
+      49, 45, 40, 11, 6, 5, 50, 46, 41, 8, 2, 12, 62, 47, 52, 9,     &
+      3, 13, 63, 48, 53, 10, 4, 14, 64, 49, 54, 11, 5, 15, 65, 50,   &
+      55, 7, 6, 16, 66, 51, 56, 7, 12, 2, 42, 57, 52, 8, 13, 3,      &
+      43, 58, 53, 9, 14, 4, 44, 59, 54, 10, 15, 5, 45, 60, 55, 11,   &
+      16, 6, 46, 61, 56, 8, 12, 18, 68, 62, 77, 9, 13, 19, 69, 63,   &
+      78, 10, 14, 20, 70, 64, 79, 11, 15, 21, 71, 65, 80, 7, 16,     &
+      17, 67, 66, 81, 7, 17, 12, 57, 67, 72, 8, 18, 13, 58, 68, 73,  &
+      9, 19, 14, 59, 69, 74, 10, 20, 15, 60, 70, 75, 11, 21, 16,     &
+      61, 71, 76, 22, 12, 17, 87, 82, 72, 23, 13, 18, 88, 83, 73,    &
+      24, 14, 19, 89, 84, 74, 25, 15, 20, 90, 85, 75, 26, 16, 21,    &
+      91, 86, 76, 22, 18, 12, 82, 92, 77, 23, 19, 13, 83, 93, 78,    &
+      24, 20, 14, 84, 94, 79, 25, 21, 15, 85, 95, 80, 26, 17, 16,    &
+      86, 96, 81, 22, 17, 27, 102, 87, 97, 23, 18, 28, 103, 88, 98,  &
+      24, 19, 29, 104, 89, 99, 25, 20, 30, 105, 90, 100, 26, 21,     &
+      31, 106, 91, 101, 22, 28, 18, 92, 107, 98, 23, 29, 19, 93 /
+    data (idum(ii),ii = 281,360) / 				      &
+      108, 99, 24, 30, 20, 94, 109, 100, 25, 31, 21, 95, 110, 101,   &
+      26, 27, 17, 96, 111, 97, 22, 27, 28, 107, 102, 112, 23, 28,    &
+      29, 108, 103, 113, 24, 29, 30, 109, 104, 114, 25, 30, 31,      &
+      110, 105, 115, 26, 31, 27, 111, 106, 116, 122, 28, 27, 117,    &
+      118, 112, 122, 29, 28, 118, 119, 113, 122, 30, 29, 119, 120,   &
+      114, 122, 31, 30, 120, 121, 115, 122, 27, 31, 121, 117, 116 /
+
+#ifndef MPI
+       tp_myrank=0
+#endif
+
+    if (i_count == 0 .and.  tp_myrank.eq.0) then
+      if (tess_sphere == 1) then
+        write(6,'(A1)')  '#' 
+        write(6,'(A34)') '# Number of tesserae / sphere = 60'
+        write(6,'(A1)')  '#' 
+      else
+        write(6,'(A1)')  '#' 
+        write(6,'(A35)') '# Number of tesserae / sphere = 240' 
+        write(6,'(A1)')  '#' 
+      end if
+    end if
+
 !SC 19/8: Create New spheres, if necessary
       call new_sphere(0,nesf_in,sfe_in,nesf,sfe)
       allocate (sfe(nesf))
       call new_sphere(1,nesf_in,sfe_in,nesf,sfe)
 !SC 19/8 End
-!
-      DR = DR / ANTOAU
-!
-!  PEDRA prevede che i dati geometrici siano espressi in ANGSTROM :
-!  vengono trasformati, e solo alla fine i risultati tornano in bohr.
-!
-   90 CONTINUE
-      sfe(:)%X=sfe(:)%X/ANTOAU
-      sfe(:)%Y=sfe(:)%Y/ANTOAU
-      sfe(:)%Z=sfe(:)%Z/ANTOAU
-      sfe(:)%R=sfe(:)%R/ANTOAU
-!
-!     ----- Partition of the cavity surface into tesserae -----
-!
-      VOL=ZERO
-      STOT=ZERO
-      jvt1=reshape(idum,(/6,60/))
-!
-!*****COORDINATES OF VERTICES OF TESSERAE IN A SPHERE WITH UNIT RADIUS.
-!
-!     Vengono memorizzati i vertici (nella matrice CV) e i centri (nei
-!     vettori XC,YC,ZC) di 240 tessere (60 grandi divise in 4 piu'
-!     piccole) La matrice JVT1(i,j) indica quale e' il numero d'ordine
-!     del vertice i-esimo della j-esima tessera grande. In ogni tessera
-!     grande i 6 vertici sono cosi' disposti:
-!
-!                                    1
-!
-!                                 4     5
-!
-!                              3     6     2
-!
-      CV(1,1)=0.0D+00
-      CV(1,2)=0.0D+00
-      CV(1,3)=1.0D+00
-      CV(122,1)=0.0D+00
-      CV(122,2)=0.0D+00
-      CV(122,3)=-1.0D+00
-      II=1
-      DO 200 I=1,24
-      TH=THEV(I)
-      FI=FIV(I)
-      CTH=COS(TH)
-      STH=SIN(TH)
-      DO 210 J=1,5
-      FI=FI+FIR
-      IF(J.EQ.1) FI=FIV(I)
-      II=II+1
-      CV(II,1)=STH*COS(FI)
-      CV(II,2)=STH*SIN(FI)
-      CV(II,3)=CTH
-  210 CONTINUE
-  200 CONTINUE
-!
-!     Controlla se ciascuna tessera e' scoperta o va tagliata
-!
-      if (i_count.eq.0) then
-       WRITE(6,*)'GEPOL-GB: COUNTING TESSERAE'
-      else if (i_count.eq.1) then
-       WRITE(6,*)'GEPOL-GB: GENERATING TESSERAE'
-      endif
-!
-      NN = 0
-      DO 300 NSFE = 1, NESF
-      XEN = sfe(NSFE)%x
-      YEN = sfe(NSFE)%y
-      ZEN = sfe(NSFE)%z
-      REN = sfe(NSFE)%r
-      XCTST(:) = ZERO
-      YCTST(:) = ZERO
-      ZCTST(:) = ZERO
-      AST(:) = ZERO
-!
 
-      DO 310 ITS = 1, 60
-!
-!
-      do i_tes=1,n_tes
-      if (n_tes.eq.1) then
-      N1 = JVT1(1,ITS)
-      N2 = JVT1(2,ITS)
-      N3 = JVT1(3,ITS)
-      else
-        if (i_tes.eq.1) then
-          N1 = JVT1(1,ITS)
-          N2 = JVT1(5,ITS)
-          N3 = JVT1(4,ITS)
-        elseif (i_tes.eq.2) then 
-          N1 = JVT1(4,ITS)
-          N2 = JVT1(6,ITS)
-          N3 = JVT1(3,ITS)
-        elseif (i_tes.eq.3)  then
-          N1 = JVT1(4,ITS)
-          N2 = JVT1(5,ITS)
-          N3 = JVT1(6,ITS)
-        elseif (i_tes.eq.4)  then
-          N1 = JVT1(2,ITS)
-          N2 = JVT1(6,ITS)
-          N3 = JVT1(5,ITS)
-         endif
-      endif
-      PTS(1,1)=CV(N1,1)*REN+XEN
-      PTS(2,1)=CV(N1,3)*REN+YEN
-      PTS(3,1)=CV(N1,2)*REN+ZEN
-      PTS(1,2)=CV(N2,1)*REN+XEN
-      PTS(2,2)=CV(N2,3)*REN+YEN
-      PTS(3,2)=CV(N2,2)*REN+ZEN
-      PTS(1,3)=CV(N3,1)*REN+XEN
-      PTS(2,3)=CV(N3,3)*REN+YEN
-      PTS(3,3)=CV(N3,2)*REN+ZEN
-      PP(:) = ZERO
-      PP1(:) = ZERO
-      NV=3
-!
-!     Per ciascuna tessera, trova la porzione scoperta e ne
-!     calcola l'area con il teorema di Gauss-Bonnet; il punto
-!     rappresentativo e' definito come media dei vertici della
-!     porzione scoperta di tessera e passato in PP (mentre in PP1
-!     ci sono le coordinate del punto sulla normale interna).
-!
-!     I vertici di ciascuna tessera sono conservati in VERT(MXTS,10,3),
-!     il numero di vertici di ciascuna tessera e' in NVERT(MXTS), e i
-!     centri dei cerchi di ciascun lato sono in CENTR(MXTS,10,3).
-!     In INTSPH(numts,10) sono registrate le sfere a cui appartengono
-!     i lati delle tessere.
-!
-      CALL SUBTESSERA(sfe,nsfe,nesf,NV,PTS,CCC,PP,PP1,AREA)
-!
+    !  geometrical data are converted to Angstrom and back transformed
+    !! to Bohr at the end of the subroutine.
+    dr = 0.01D+00
+    dr = dr/ANTOAU
 
-      IF(AREA.EQ.ZERO) cycle
-      XCTST(n_tes*(ITS-1)+i_tes) = PP(1)
-      YCTST(n_tes*(ITS-1)+i_tes) = PP(2)
-      ZCTST(n_tes*(ITS-1)+i_tes) = PP(3)
-      nctst(:,n_tes*(its-1)+i_tes)=pp1(:)
-      AST(n_tes*(ITS-1)+i_tes) = AREA
-      isfet(n_tes*(its-1)+i_tes) = nsfe
-      enddo
- 310  CONTINUE
+    sfe(:)%x = sfe(:)%x/ANTOAU
+    sfe(:)%y = sfe(:)%y/ANTOAU
+    sfe(:)%z = sfe(:)%z/ANTOAU
+    sfe(:)%r = sfe(:)%r/ANTOAU
 
+    vol  = zero
+    stot = zero
+    jvt1 = reshape(idum,(/6,60/))
 
-!
-!
-!
-      DO 320 ITS=1,60*n_tes
-      IF(AST(ITS).EQ.0.0D+00) GO TO 320
-      NN = NN + 1
-!
-!     check on the total number of tessera
-!
-      IF(NN.GT.MXTS) THEN
-         WRITE(6,*) ' TOO MANY TESSERAE IN PEDRA'
-         STOP
-      END IF
-!
-      if (i_count.eq.1) then
-       CTS(NN)%x = XCTST(ITS)
-       CTS(NN)%y = YCTST(ITS)
-       CTS(NN)%z = ZCTST(ITS)
-       CTS(NN)%n(:)=nctst(:,its)
-       CTS(NN)%area = AST(ITS)
-       CTS(NN)%rsfe = sfe(isfet(ITS))%r
-      endif
- 320  CONTINUE
- 300  CONTINUE
-      NTS = NN
-!
-      if (i_count.eq.1) then
-!
-!
-!     Verifica se due tessere sono troppo vicine
-!
-      TEST = 0.10D+00
-      TEST2 = TEST*TEST
-450   Continue
-      DO 400 I = 1, NTS-1
-      IF(cts(I)%area.EQ.ZERO) GO TO 400
-      XI = CTS(I)%x
-      YI = CTS(I)%y
-      ZI = CTS(I)%z
-      II = I + 1
-      DO 410 J = II , NTS
-      IF(cts(J)%area.EQ.ZERO) GO TO 410
-      XJ = CTS(J)%x
-      YJ = CTS(J)%y
-      ZJ = CTS(J)%z
-      RIJ = (XI-XJ)**2 + (YI-YJ)**2 + (ZI-ZJ)**2
-      IF(RIJ.GT.TEST2) GO TO 410
-!
-!
-      WRITE(6,9010) I,J,SQRT(RIJ),TEST
-!SC 19/8
-      XI=(XI*CTS(I)%area+XJ*CTS(J)%area)/(CTS(I)%area+CTS(J)%area)
-      YI=(YI*CTS(I)%area+YJ*CTS(J)%area)/(CTS(I)%area+CTS(J)%area)
-      ZI=(ZI*CTS(I)%area+ZJ*CTS(J)%area)/(CTS(I)%area+CTS(J)%area)
-      CTS(I)%x=XI
-      CTS(I)%y=YI
-      CTS(I)%z=ZI
-      CTS(I)%n=(CTS(I)%n*CTS(I)%area+CTS(J)%n*CTS(J)%area)
-      DNORM=sqrt(dot_product(CTS(I)%n,CTS(I)%n))
-      CTS(I)%n=CTS(I)%n/DNORM
-      CTS(I)%rsfe=(CTS(I)%rsfe*CTS(I)%area+CTS(J)%rsfe*CTS(J)%area)/&
-                  (CTS(I)%area+CTS(J)%area)
-      CTS(I)%area=CTS(I)%area+CTS(J)%area
-! Delete Tessera J
-      Do K=J+1,NTS
-       CTS(K-1)=CTS(K)
-      Enddo
-      NTS=NTS-1
-      GoTo 450
-      
-      
- 410  CONTINUE
- 400  CONTINUE
-!
-!     Calcola il volume della cavita' con la formula (t. di Gauss):
-!                V=SOMMAsulleTESSERE{A r*n}/3
-!     dove r e' la distanza del punto rappresentativo dall'origine,
-!     n e' il versore normale alla tessera, A l'area della tessera,
-!     e * indica il prodotto scalare.
-!
-      VOL = ZERO
+    !  Coordinates of vertices of tesserae in a sphere with unit radius.
+    !! the matrix 'cv' and 'xc', 'yc', 'zc' conatin the vertices and 
+    !! the centers of 240 tesserae. The matrix 'jvt1(i,j)' denotes the index
+    !! of the i-th vertex of the j-th big tessera. On each big tessera
+    !! the 6 vertices are ordered as follows:
+    !!  
+    !!                      1
+    !!
+    !!                   4     5
+    !!
+    !!                3     6     2
 
+    cv(1,1)   =  zero
+    cv(1,2)   =  zero
+    cv(1,3)   =  one
 
-      DO ITS = 1, NTS
-!
-!
-!     Trova il prodotto scalare
-!
-         PROD = CTS(ITS)%x*cts(its)%n(1) + CTS(ITS)%y*cts(its)%n(2) + &
-                CTS(ITS)%z*cts(its)%n(3)
-         VOL = VOL + cts(ITS)%area * PROD / 3.0D+00
-         stot = stot + cts(ITS)%area
-      ENDDO
+    cv(122,1) =  zero
+    cv(122,2) =  zero
+    cv(122,3) = -one
 
+    ii = 1
+    do ia = 1, dim_angles
+      th = thev(ia)
+      fi = fiv(ia)
+      cth = cos(th)
+      sth = sin(th)
+      do ja = 1, 5
+        fi = fi + fir
+        if (ja == 1) fi = fiv(ia)
+        ii = ii + 1
+        cv(ii,1) = sth*cos(fi)
+        cv(ii,2) = sth*sin(fi)
+        cv(ii,3) = cth
+      end do
+    end do
 
-!
-!     Stampa la geometria della cavita'
-!
-!
+    if (i_count.eq.0) then
+      write(6,*)'GEPOL-GB: COUNTING TESSERAE'
+    else if (i_count.eq.1) then
+      write(6,*)'GEPOL-GB: GENERATING TESSERAE'
+    endif
 
-#ifndef MPI
-       myrank=0
-#endif
+    ! Controls whether the tessera is covered or need to be reshaped it
+    nn = 0
+    do nsfe = 1, nesf
+      xen = sfe(nsfe)%x
+      yen = sfe(nsfe)%y
+      zen = sfe(nsfe)%z
+      ren = sfe(nsfe)%r
 
-       if (myrank.eq.0) then
-         WRITE(6,9020) NESF
-         do i=1,nesf
-          write(6,9030) i,sfe(i)%x,sfe(i)%y,sfe(i)%z,sfe(i)%r
-         enddo
-         WRITE(6,9040) NTS,STOT,VOL
-         
-!
-! Scrive su file le posizioni delle tessere
+      xctst(:) = zero
+      yctst(:) = zero
+      zctst(:) = zero
+      ast(:)   = zero
+
+      do its = 1, n_tess_sphere 
+        do i_tes = 1, tess_sphere
+          if (tess_sphere == 1) then
+            n1 = jvt1(1,its)
+            n2 = jvt1(2,its)
+            n3 = jvt1(3,its)
+          else
+            if (i_tes == 1)      then
+              n1 = jvt1(1,its)
+              n2 = jvt1(5,its)
+              n3 = jvt1(4,its)
+            elseif (i_tes == 2)  then 
+              n1 = jvt1(4,its)
+              n2 = jvt1(6,its)
+              n3 = jvt1(3,its)
+            elseif (i_tes == 3)  then
+              n1 = jvt1(4,its)
+              n2 = jvt1(5,its)
+              n3 = jvt1(6,its)
+            elseif (i_tes == 4)  then
+              n1 = jvt1(2,its)
+              n2 = jvt1(6,its)
+              n3 = jvt1(5,its)
+            end if
+          end if
+
+          pts(1,1) = cv(n1,1)*ren + xen
+          pts(2,1) = cv(n1,3)*ren + yen
+          pts(3,1) = cv(n1,2)*ren + zen
+
+          pts(1,2) = cv(n2,1)*ren + xen
+          pts(2,2) = cv(n2,3)*ren + yen
+          pts(3,2) = cv(n2,2)*ren + zen
+
+          pts(1,3) = cv(n3,1)*ren + xen
+          pts(2,3) = cv(n3,3)*ren + yen
+          pts(3,3) = cv(n3,2)*ren + zen
+
+          pp(:)  = zero
+          pp1(:) = zero
+          nv = 3
+
+          call subtessera(sfe, nsfe, nesf, nv, pts ,ccc, pp, pp1, area)
+
+          if (area == zero) cycle
+
+          xctst(tess_sphere*(its-1) + i_tes)   = pp(1)
+          yctst(tess_sphere*(its-1) + i_tes)   = pp(2)
+          zctst(tess_sphere*(its-1) + i_tes)   = pp(3)
+          nctst(:,tess_sphere*(its-1) + i_tes) = pp1(:)
+          ast(tess_sphere*(its-1) + i_tes)     = area
+          isfet(tess_sphere*(its-1) + i_tes)   = nsfe
+
+        end do
+      end do ! loop through the tesseare on the sphere 'nsfe'
+
+      do its = 1, n_tess_sphere*tess_sphere
+
+        if (ast(its) == zero) cycle
+        nn = nn + 1
+
+        if (nn > mxts) then ! check the total number of tessera
+         write(6,'(a,I5,a,I5)') "total number of tesserae", nn, ">",mxts
+         stop
+        end if
+
+        if (i_count ==  1) then
+          cts(nn)%x  = xctst(its)
+          cts(nn)%y  = yctst(its)
+          cts(nn)%z  = zctst(its)
+          cts(nn)%n(:) = nctst(:,its)
+          cts(nn)%area = ast(its)
+          cts(nn)%rsfe = sfe(isfet(its))%r
+        end if
+
+      end do
+    end do ! loop through the spheres
+
+    nts = nn
+
+    if (i_count == 1) then
+
+      ! checks if two tesseare are too close
+      test = 0.1D+00
+      test2 = test*test
+
+      band_iter = .false.
+      do while (.not.(band_iter))
+        band_iter = .true.
+
+        loop_ia: do ia = 1, nts-1
+          if (cts(ia)%area == zero) cycle
+          xi = cts(ia)%x
+          yi = cts(ia)%y
+          zi = cts(ia)%z
+
+          loop_ja: do ja = ia+1, nts
+            if (cts(ja)%area == zero) cycle
+            xj = cts(ja)%x
+            yj = cts(ja)%y
+            zj = cts(ja)%z
+
+            rij = (xi-xj)**2 + (yi-yj)**2 + (zi-zj)**2
+
+            if (rij > test2) cycle
+
+            if ( tp_myrank.eq.0 ) &
+              write(6,9010) ia, ja, sqrt(rij), test
+
+            ! calculating the coordinates of the new tessera weighted by the areas
+            xi = (xi*cts(ia)%area + xj*cts(ja)%area) / (cts(ia)%area + cts(ja)%area)
+            yi = (yi*cts(ia)%area + yj*cts(ja)%area) / (cts(ia)%area + cts(ja)%area)
+            zi = (zi*cts(ia)%area + zj*cts(ja)%area) / (cts(ia)%area + cts(ja)%area)
+
+            cts(ia)%x = xi
+            cts(ia)%y = yi
+            cts(ia)%z = zi
+
+            ! calculating the normal vector of the new tessera weighted by the areas
+            cts(ia)%n = (cts(ia)%n*cts(ia)%area + cts(ja)%n*cts(ja)%area)
+            dnorm = sqrt( dot_product(cts(ia)%n, cts(ia)%n) )
+            cts(ia)%n = cts(ia)%n/dnorm
+
+            ! calculating the sphere radius of the new tessera weighted by the areas
+            cts(ia)%rsfe = ( cts(ia)%rsfe*cts(ia)%area + cts(ja)%rsfe*cts(ja)%area ) / &
+              ( cts(ia)%area + cts(ja)%area )
+
+            ! calculating the area of the new tessera
+            cts(ia)%area = cts(ia)%area + cts(ja)%area
+
+            ! deleting tessera ja
+            do ii = ja+1, nts
+              cts(ii-1) = cts(ii)
+            end do
+            nts = nts -1 
+            band_iter = .false.
+            exit loop_ia
+
+          end do loop_ja
+        end do loop_ia
+      end do ! while loop
+
+      ! Calculates the cavity volume: vol = \sum_{its=1}^nts A_{its} s*n/3.
+      vol = zero
+      do its = 1, nts
+        prod = cts(its)%x*cts(its)%n(1) + cts(its)%y*cts(its)%n(2) + cts(its)%z*cts(its)%n(3) 
+        vol  = vol + cts(its)%area * prod / three
+        stot = stot + cts(its)%area
+      end do
+
+      if ( tp_myrank.eq.0 ) then
+      ! writes the geometry of the cavity
+
+       write(6,9020) nesf
+       do ia=1,nesf
+        write(6,9030) ia,sfe(ia)%x,sfe(ia)%y,sfe(ia)%z,sfe(ia)%r
+       enddo
+       write(6,9040) nts,stot,vol
+
+      ! writes in file the tesserae positions
       if (i_count.eq.1) then
        open(3,file="tesseare.dat",status="unknown",position="append")
        write (3,*)
        write (3,*) nts
-       do i=1,nts
-        write (3,'(a,3f16.6)') 'TT',cts(i)%x,cts(i)%y,cts(i)%z
+       do ia=1,nts
+        write (3,'(a,3f16.6)') 'TT',cts(ia)%x,cts(ia)%y,cts(ia)%z
        enddo
        close(3)
       endif
       endif
-!
-!
-!     Trasform results in bohr
-!
-!
-!
-      cts(:)%area=cts(:)%area*ANTOAU*ANTOAU
-      CTS(:)%x=CTS(:)%x*ANTOAU
-      CTS(:)%y=CTS(:)%y*ANTOAU
-      CTS(:)%z=CTS(:)%z*ANTOAU
-      CTS(:)%rsfe=CTS(:)%rsfe*ANTOAU
-      endif
-!
-      sfe(:)%x=sfe(:)%x*ANTOAU
-      sfe(:)%y=sfe(:)%y*ANTOAU
-      sfe(:)%z=sfe(:)%z*ANTOAU
-      sfe(:)%r=sfe(:)%r*ANTOAU
-!
-      return
-!
-!
- 9000 FORMAT(10X,'-- CENTER OF CHARGE --'/ &
-              1X,'X =',F8.4,' A  Y =',F8.4,' A  Z =',F8.4,' A')
+
+      ! transforms results into Bohr.
+      cts(:)%area = cts(:)%area*ANTOAU*ANTOAU
+      cts(:)%x = cts(:)%x*ANTOAU
+      cts(:)%y = cts(:)%y*ANTOAU
+      cts(:)%z = cts(:)%z*ANTOAU
+      cts(:)%rsfe = cts(:)%rsfe*ANTOAU
+    end if
+
+    sfe(:)%x=sfe(:)%x*ANTOAU
+    sfe(:)%y=sfe(:)%y*ANTOAU
+    sfe(:)%z=sfe(:)%z*ANTOAU
+    sfe(:)%r=sfe(:)%r*ANTOAU
+
+
  9010 FORMAT(1X,'WARNING: THE DISTANCE BETWEEN TESSERAE ',I6, &
              ' AND ',I6,' IS ',F6.4,' A, LESS THAN ',F6.4,' A')
  9020 FORMAT(/1X,'TOTAL NUMBER OF SPHERES=',I5/ &
@@ -576,825 +811,476 @@
  9040 FORMAT(/1X,'TOTAL NUMBER OF TESSERAE=',I8/ &
               1X,'SURFACE AREA=',F20.8,'(A**2)',4X,'CAVITY VOLUME=', &
                   F20.8,' (A**3)')
- 9050 FORMAT(1X,'PEDRA: CONFUSION ABOUT SPHERE COUNTS. NESFP,NAT=',2I6)
- 9060 FORMAT(/1X,'ADDITIONAL MEMORY NEEDED TO SETUP GRADIENT RUN=',I10)
- 9061 FORMAT(/1X,'ADDITIONAL MEMORY NEEDED TO SETUP IEF RUN=',I10)
- 9070 FORMAT(1X,'***  SUDDIVISIONE DELLA SUPERFICIE  ***')
- 9080 FORMAT(' TESSERA  SFERA   AREA   X Y Z CENTRO TESSERA  ', &
-             'X Y Z PUNTO NORMALE')
- 9090 FORMAT(2I4,7F12.7)
-      END subroutine
+  end subroutine PEDRA
 !
-      SUBROUTINE SUBTESSERA(sfe,ns,nesf,NV,PTS,CCC,PP,PP1,AREA)
-!
-      IMPLICIT None
-!
-      type(sfera) :: sfe(:)
-      real(dbl) :: PTS(3,10),CCC(3,10),PP(3),PP1(3),area
-      integer(i4b) :: INTSPH(10),ns,nesf,nv,nsfe1,n,i,j,icop
-      integer(i4b) :: l,iv1,iv2,ii,icut,jj
-      real(dbl) :: P1(3),P2(3),P3(3),P4(3),POINT(3),  &
-                PSCR(3,10),CCCP(3,10),POINTL(3,10)
-      integer(i4b) :: IND(10),LTYP(10),INTSCR(10)
-      real(dbl) :: delr,delr2,rc,rc2,dnorm,dist,de2
-      real(dbl), parameter :: tol= -1.d-10
-!
-      integer(i4b), PARAMETER :: MXTS=2500
-!
-!
-!     Coord. del centro che sottende l`arco tra i vertici
-!     n e n+1 (per i primi tre vertici e' sicuramente il centro della
-!     sfera) e sfera alla cui intersezione con NS appartiene l'arco (se
-!     appartiene alla sfera originaria INTSPH(numts,N)=NS)
-!
-      AREA = 0.0D+00
-      DO J=1, 3
-        CCC(1,J) = sfe(NS)%x
-        CCC(2,J) = sfe(NS)%y
-        CCC(3,J) = sfe(NS)%z
-      ENDDO
-!
-!     INTSPH viene riferito alla tessera -numts-, e in seguito riceve il
-!     numero corretto.
-!
-      DO N = 1, 3
-        INTSPH(N) = NS
-      ENDDO
-!
-!     Loop sulle altre sfere
-!
+! Find the uncovered region for each tessera and computes the area,
+!! the representative point (pp) and the unitary normal vector (pp1).
+  subroutine subtessera(sfe, ns, nesf, nv, pts, ccc, pp, pp1, area)
 
-      DO 150 NSFE1=1,NESF
-      IF(NSFE1.EQ.NS) GO TO 150
-!
-!     Memorizza i vertici e i centri che sottendono gli archi
-!
-      DO J =1, NV
-        INTSCR(J) = INTSPH(J)
-      DO I = 1,3
-        PSCR(I,J) = PTS(I,J)
-        CCCP(I,J) = CCC(I,J)
-      ENDDO
-      ENDDO
-!
-      ICOP = 0
-      DO J =1, 10
-        IND(J) = 0
-        LTYP(J) = 0
-      ENDDO
-!
-!     Loop sui vertici della tessera considerata
-!
-      DO 100 I=1,NV
-        DELR2=(PTS(1,I)-sfe(NSFE1)%x)**2+(PTS(2,I)-sfe(NSFE1)%y)**2+&
-        (PTS(3,I)-sfe(NSFE1)%z)**2
-        DELR=SQRT(DELR2)
-        IF(DELR.LT.sfe(NSFE1)%r) THEN
-          IND(I) = 1
-          ICOP = ICOP+1
-        END IF
- 100  CONTINUE
-!     Se la tessera e' completamente coperta, la trascura
-      IF(ICOP.EQ.NV) RETURN
-!                    ******
-!
-!     Controlla e classifica i lati della tessera: LTYP = 0 (coperto),
-!     1 (tagliato con il II vertice coperto), 2 (tagliato con il I
-!     vertice coperto), 3 (bitagliato), 4 (libero)
-!     Loop sui lati
-!
-      DO L = 1, NV
-        IV1 = L
-        IV2 = L+1
-        IF(L.EQ.NV) IV2 = 1
-        IF(IND(IV1).EQ.1.AND.IND(IV2).EQ.1) THEN
-          LTYP(L) = 0
-        ELSE IF(IND(IV1).EQ.0.AND.IND(IV2).EQ.1) THEN
-          LTYP(L) = 1
-        ELSE IF(IND(IV1).EQ.1.AND.IND(IV2).EQ.0) THEN
-          LTYP(L) = 2
-        ELSE IF(IND(IV1).EQ.0.AND.IND(IV2).EQ.0) THEN
-          LTYP(L) = 4
-!
-          RC2 = (CCC(1,L)-PTS(1,L))**2 + (CCC(2,L)-PTS(2,L))**2 + &
-                (CCC(3,L)-PTS(3,L))**2
-          RC = SQRT(RC2)
-!
-!     Su ogni lato si definiscono 11 punti equispaziati, che vengono
-!     controllati
-!
-          DO II = 1, 11
-          POINT(1) = PTS(1,IV1) + II * (PTS(1,IV2)-PTS(1,IV1)) / 11
-          POINT(2) = PTS(2,IV1) + II * (PTS(2,IV2)-PTS(2,IV1)) / 11
-          POINT(3) = PTS(3,IV1) + II * (PTS(3,IV2)-PTS(3,IV1)) / 11
-          POINT(1) = POINT(1) - CCC(1,L)
-          POINT(2) = POINT(2) - CCC(2,L)
-          POINT(3) = POINT(3) - CCC(3,L)
-          DNORM = SQRT(POINT(1)**2 + POINT(2)**2 + POINT(3)**2)
-          POINT(1) = POINT(1) * RC / DNORM + CCC(1,L)
-          POINT(2) = POINT(2) * RC / DNORM + CCC(2,L)
-          POINT(3) = POINT(3) * RC / DNORM + CCC(3,L)
-          DIST = SQRT( (POINT(1)-sfe(NSFE1)%x)**2 + &
-          (POINT(2)-sfe(NSFE1)%y)**2 + (POINT(3)-sfe(NSFE1)%z)**2 )
-          IF((DIST - sfe(NSFE1)%r) .LT. TOL) THEN
-!         IF(DIST.LT.sfe(NSFE1)%r) then
-            LTYP(L) = 3
-            DO JJ = 1, 3
-              POINTL(JJ,L) = POINT(JJ)
-            ENDDO
-            GO TO 160
-          END IF
-          ENDDO
-        END IF
- 160    CONTINUE
-      ENDDO
-!
-!     Se la tessera e' spezzata in due o piu' tronconi, la trascura
-!
-      ICUT = 0
-      DO L = 1, NV
-        IF(LTYP(L).EQ.1.OR.LTYP(L).EQ.2) ICUT = ICUT + 1
-        IF(LTYP(L).EQ.3) ICUT = ICUT + 2
-      ENDDO
-      ICUT = ICUT / 2
-      IF(ICUT.GT.1) RETURN
-!
-!     Creazione dei nuovi vertici e lati della tessera
-!     Loop sui lati
-!
-      N = 1
-      DO 300 L = 1, NV
-!     Se il lato L e' coperto:
-        IF(LTYP(L).EQ.0) GO TO 300
-        IV1 = L
-        IV2 = L+1
-        IF(L.EQ.NV) IV2 = 1
-!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-!     Se il lato L e' tagliato (con il I vertice scoperto):
-        IF(LTYP(L).EQ.1) THEN
-        DO JJ = 1, 3
-          PTS(JJ,N) = PSCR(JJ,IV1)
-          CCC(JJ,N) = CCCP(JJ,IV1)
-        ENDDO
-        INTSPH(N) = INTSCR(IV1)
-        N = N+1
-!
-!     Trova l'intersezione tra i due vertici del lato L
-!
-!     P1 = coord. del primo vertice
-!     P2 = coord. del secondo vertice
-!     P3 = coord. del centro dell`arco sotteso
-!     P4 = coord. dell'intersezione
-!
-        DO JJ = 1, 3
-          P1(JJ) = PSCR(JJ,IV1)
-          P2(JJ) = PSCR(JJ,IV2)
-          P3(JJ) = CCCP(JJ,IV1)
-        ENDDO
-        CALL INTER(sfe,P1,P2,P3,P4,NSFE1,0)
-!     Aggiorna i vertici della tessera e il centro dell'arco
-        DO JJ = 1,3
-          PTS(JJ,N) = P4(JJ)
-        ENDDO
-!
-!     Il nuovo arco sara' sotteso tra questo e il prossimo punto
-!     di intersezione: il centro che lo sottende
-!     sara' il centro del cerchio di intersezione tra la sfera NS
-!     e la sfera NSFE1.
-!
-        DE2 = (sfe(NSFE1)%x-sfe(NS)%x)**2+(sfe(NSFE1)%y-sfe(NS)%y)**2+ &
-              (sfe(NSFE1)%z-sfe(NS)%z)**2
-        CCC(1,N)=sfe(NS)%x+(sfe(NSFE1)%x-sfe(NS)%x)* &
-                 (sfe(NS)%r**2-sfe(NSFE1)%r**2+DE2)/(2.0D+00*DE2)
-        CCC(2,N)=sfe(NS)%y+(sfe(NSFE1)%y-sfe(NS)%y)* &
-                 (sfe(NS)%r**2-sfe(NSFE1)%r**2+DE2)/(2.0D+00*DE2)
-        CCC(3,N)=sfe(NS)%z+(sfe(NSFE1)%z-sfe(NS)%z)* &
-                 (sfe(NS)%r**2-sfe(NSFE1)%r**2+DE2)/(2.0D+00*DE2)
-        INTSPH(N) = NSFE1
-        N = N+1
-        END IF
-!
-!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-!     Se il lato L e' tagliato (con il II vertice scoperto):
-        IF(LTYP(L).EQ.2) THEN
-!     Trova l'intersezione tra i due vertici del lato L
-!
-!     P1 = coord. del primo vertice
-!     P2 = coord. del secondo vertice
-!     P3 = coord. del centro dell`arco sotteso
-!     P4 = coord. dell'intersezione
-!
-        DO JJ = 1, 3
-          P1(JJ) = PSCR(JJ,IV1)
-          P2(JJ) = PSCR(JJ,IV2)
-          P3(JJ) = CCCP(JJ,IV1)
-        ENDDO
-        CALL INTER(sfe,P1,P2,P3,P4,NSFE1,1)
-!     Aggiorna i vertici della tessera e il centro dell'arco
-        DO JJ = 1,3
-          PTS(JJ,N) = P4(JJ)
-          CCC(JJ,N) = CCCP(JJ,IV1)
-        ENDDO
-        INTSPH(N) = INTSCR(IV1)
-        N = N+1
-        END IF
-!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-!     Se il lato e' intersecato due volte:
-        IF(LTYP(L).EQ.3) THEN
-        DO JJ = 1, 3
-          PTS(JJ,N) = PSCR(JJ,IV1)
-          CCC(JJ,N) = CCCP(JJ,IV1)
-        ENDDO
-        INTSPH(N) = INTSCR(IV1)
-        N = N+1
-!
-!     Trova l'intersezione tra il primo vertice e un punto intermedio
-!     coperto
-!
-!     P1 = coord. del primo vertice
-!     P2 = coord. del secondo vertice
-!     P3 = coord. del centro dell`arco sotteso
-!     P4 = coord. dell'intersezione
-!
-        DO JJ = 1, 3
-          P1(JJ) = PSCR(JJ,IV1)
-          P2(JJ) = POINTL(JJ,L)
-          P3(JJ) = CCCP(JJ,IV1)
-        ENDDO
-        CALL INTER(sfe,P1,P2,P3,P4,NSFE1,0)
-!     Aggiorna i vertici della tessera e il centro dell'arco
-        DO JJ = 1,3
-          PTS(JJ,N) = P4(JJ)
-        ENDDO
-!
-!     Il nuovo arco sara' sotteso tra questo e il prossimo punto
-!     di intersezione: il centro che lo sottende
-!     sara' il centro del cerchio di intersezione tra la sfera NS
-!     e la sfera NSFE1.
-!
-        DE2 = (sfe(NSFE1)%x-sfe(NS)%x)**2+(sfe(NSFE1)%y-sfe(NS)%y)**2+ &
-              (sfe(NSFE1)%z-sfe(NS)%z)**2
-        CCC(1,N)=sfe(NS)%x+(sfe(NSFE1)%x-sfe(NS)%x)* &
-                 (sfe(NS)%r**2-sfe(NSFE1)%r**2+DE2)/(2.0D+00*DE2)
-        CCC(2,N)=sfe(NS)%y+(sfe(NSFE1)%y-sfe(NS)%y)* &
-                 (sfe(NS)%r**2-sfe(NSFE1)%r**2+DE2)/(2.0D+00*DE2)
-        CCC(3,N)=sfe(NS)%z+(sfe(NSFE1)%z-sfe(NS)%z)* &
-                 (sfe(NS)%r**2-sfe(NSFE1)%r**2+DE2)/(2.0D+00*DE2)
-        INTSPH(N) = NSFE1
-        N = N+1
-!
-!     Trova l'intersezione tra un punto intermedio coperto e il
-!     secondo vertice
-!
-!     P1 = coord. del primo vertice
-!     P2 = coord. del secondo vertice
-!     P3 = coord. del centro dell`arco sotteso
-!     P4 = coord. dell'intersezione
-!
-        DO JJ = 1, 3
-          P1(JJ) = POINTL(JJ,L)
-          P2(JJ) = PSCR(JJ,IV2)
-          P3(JJ) = CCCP(JJ,IV1)
-        ENDDO
-        CALL INTER(sfe,P1,P2,P3,P4,NSFE1,1)
-!     Aggiorna il vertice e il centro dell'arco
-        DO JJ = 1,3
-          PTS(JJ,N) = P4(JJ)
-          CCC(JJ,N) = CCCP(JJ,IV1)
-        ENDDO
-        INTSPH(N) = INTSCR(IV1)
-        N = N + 1
-        END IF
-!
-!++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-!     Se il lato e' scoperto:
-        IF(LTYP(L).EQ.4) THEN
-        DO JJ = 1, 3
-          PTS(JJ,N) = PSCR(JJ,IV1)
-          CCC(JJ,N) = CCCP(JJ,IV1)
-        ENDDO
-        INTSPH(N) = INTSCR(IV1)
-        N = N+1
-        END IF
-!
- 300  CONTINUE
-!
-      NV = N - 1
-!     Controlla che il numero di vertici creati non sia eccessivo
-      IF(NV.GT.10) THEN
-         WRITE(6,*) 'TROPPI VERTICI CREATI IN TESSERA: BYE BYE...'
-         STOP
-      END IF
- 150  CONTINUE
-!
-!     Se la tessera non e' stata scartata, a questo punto ne troviamo
-!     l'area e il punto rappresentativo
-!
-      CALL GAUBON(sfe,NV,NS,PTS,CCC,PP,PP1,AREA,INTSPH)
-      RETURN
-      END subroutine
-!*MODULE PCMCAV  *DECK INTER
-      SUBROUTINE INTER(sfe,P1,P2,P3,P4,NS,I)
-!
-      IMPLICIT None
-!
-      type(sfera) :: sfe(:)
-      real(dbl) :: P1(:),P2(:),P3(:),P4(:)
-      real(dbl) :: r2,r,alpha,delta,dnorm,diff,diff2
-      real(dbl), parameter :: TOL = 1.0D-08
-      integer(i4b) :: i,ns,m,jj
-!
-      real(dbl), PARAMETER :: MXTS=2500
-!
-!
-!     Trova il punto P4, sull`arco P1-P2 sotteso dal centro P3, che
-!     si trova sulla superficie della sfera NS
-!     P4 e' definito come combinazioe lineare di P1 e P2, con
-!     il parametro ALPHA ottimizzato per tentativi.
-!
-      R2 = (P1(1)-P3(1))**2+(P1(2)-P3(2))**2+(P1(3)-P3(3))**2
-      R = SQRT(R2)
-      ALPHA = 0.5D+00
-      DELTA = 0.0D+00
-      M = 1
-  10  CONTINUE
-      IF (M.GT.1000) THEN
-         WRITE(6,*) 'TROPPE ITERAZIONI IN INTER! BYE BYE ....'
-         STOP
-      END IF
-      ALPHA = ALPHA + DELTA
-      DNORM = 0.0D+00
-      DO JJ = 1,3
-       P4(JJ)=P1(JJ)+ALPHA*(P2(JJ)-P1(JJ))-P3(JJ)
-       DNORM = DNORM + P4(JJ)**2
-      ENDDO
-      DNORM = SQRT(DNORM)
-      DO JJ = 1,3
-       P4(JJ)= P4(JJ)*R/DNORM + P3(JJ)
-      ENDDO
-      DIFF2=(P4(1)-sfe(NS)%x)**2 + (P4(2)-sfe(NS)%y)**2 + (P4(3)-sfe(NS)%z)**2
-      DIFF = SQRT(DIFF2) - sfe(NS)%r
-!
-      IF(ABS(DIFF).LT.TOL) RETURN
-!                          ******
-      IF(I.EQ.0) THEN
-       IF(DIFF.GT.0.0D+00) DELTA =  1.0D+00/(2.0D+00**(M+1))
-       IF(DIFF.LT.0.0D+00) DELTA = -1.0D+00/(2.0D+00**(M+1))
-       M = M + 1
-       GO TO 10
-      END IF
-      IF(I.EQ.1) THEN
-       IF(DIFF.GT.0.0D+00) DELTA = -1.0D+00/(2.0D+00**(M+1))
-       IF(DIFF.LT.0.0D+00) DELTA =  1.0D+00/(2.0D+00**(M+1))
-       M = M + 1
-       GO TO 10
-      END IF
-!          the code probably never reaches this return
-      RETURN
-      END subroutine
-!*MODULE PCMCAV  *DECK GAUBON
-      SUBROUTINE GAUBON(sfe,NV,NS,PTS,CCC,PP,PP1,AREA,INTSPH)
-!
-      IMPLICIT None
-!
-      real(dbl), PARAMETER :: MXTS=2500
-!
-      type(sfera) :: sfe(:)
-      real(dbl) :: PTS(3,10),CCC(3,10),PP(3),PP1(3),area
-      integer(i4b) :: INTSPH(:),nv,ns
-      real(dbl) ::  P1(3),P2(3),P3(3),U1(3),U2(3)
-      real(dbl) :: tpi,sum1,x1,y1,z1,x2,y2,z2,dnorm,dnorm1,dnorm2, &
-                   dnorm3,scal
-      real(dbl) :: cosphin,phin,costn,sum2,betan
-      integer(i4b) :: nsfe1,i,jj,n,n0,n1,n2
-!
-!     Sfrutta il teorema di Gauss-Bonnet per calcolare l'area
-!     della tessera con vertici PTS(3,NV). Consideriamo sempre
-!     che il lato N della tessera e' quello compreso tra i vertici
-!     N e N+1 (oppure NV e 1). In CCC(3,NV) sono le posizioni dei
-!     centri degli archi che sottendono i vari lati della tessera.
-!     La formula di Gauss-Bonet per le sfere e':
-!            Area=R^2[2pi+S(Phi(N)cosT(N))-S(Beta(N))]
-!     dove Phi(N) e' la lunghezza d'arco (in radianti) del lato N,
-!     T(N) e' l'angolo polare del lato N, Beta(N) l'angolo esterno
-!     relativo al vertice N.
-!
-      TPI=2*PI
-!
-!     Calcola la prima sommatoria
-      SUM1 = ZERO
-      DO 100 N = 1, NV
-      X1 = PTS(1,N) - CCC(1,N)
-      Y1 = PTS(2,N) - CCC(2,N)
-      Z1 = PTS(3,N) - CCC(3,N)
-      IF(N.LT.NV) THEN
-        X2 = PTS(1,N+1) - CCC(1,N)
-        Y2 = PTS(2,N+1) - CCC(2,N)
-        Z2 = PTS(3,N+1) - CCC(3,N)
-      ELSE
-        X2 = PTS(1,1) - CCC(1,N)
-        Y2 = PTS(2,1) - CCC(2,N)
-        Z2 = PTS(3,1) - CCC(3,N)
-      END IF
-      DNORM1 = X1*X1 + Y1*Y1 + Z1*Z1
-      DNORM2 = X2*X2 + Y2*Y2 + Z2*Z2
-      SCAL = X1*X2 + Y1*Y2 + Z1*Z2
-      COSPHIN = SCAL / (SQRT(DNORM1*DNORM2))
-      IF(COSPHIN.GT.1.0D+00) COSPHIN = 1.0D+00
-      IF(COSPHIN.LT.-1.0D+00) COSPHIN = -1.0D+00
-      PHIN = ACOS(COSPHIN)
-!
-!     NSFE1 e' la sfera con cui la sfera NS si interseca (eventualmente)
-        NSFE1 = INTSPH(N)
-        X1 = sfe(NSFE1)%x - sfe(NS)%x
-        Y1 = sfe(NSFE1)%y - sfe(NS)%y
-        Z1 = sfe(NSFE1)%z - sfe(NS)%z
-      DNORM1 = SQRT(X1*X1 + Y1*Y1 + Z1*Z1)
-      IF(DNORM1.EQ.ZERO) DNORM1 = 1.0D+00
-        X2 = PTS(1,N) - sfe(NS)%x
-        Y2 = PTS(2,N) - sfe(NS)%y
-        Z2 = PTS(3,N) - sfe(NS)%z
-      DNORM2 = SQRT(X2*X2 + Y2*Y2 + Z2*Z2)
-      COSTN = (X1*X2+Y1*Y2+Z1*Z2)/(DNORM1*DNORM2)
-      SUM1 = SUM1 + PHIN * COSTN
- 100  CONTINUE
-!
-!     Calcola la seconda sommatoria: l'angolo esterno Beta(N) e'
-!     definito usando i versori (u(N-1),u(N)) tangenti alla sfera
-!     nel vertice N lungo le direzioni dei lati N-1 e N:
-!                cos( Pi-Beta(N) )=u(N-1)*u(N)
-!            u(N-1) = [V(N) x (V(N) x V(N-1))]/NORM
-!            u(N) = [V(N) x (V(N) x V(N+1))]/NORM
-!     dove V(I) e' il vettore posizione del vertice I RISPETTO AL
-!     CENTRO DELL'ARCO CHE SI STA CONSIDERANDO.
-!
-      SUM2 = ZERO
-!     Loop sui vertici
-      DO 200 N = 1, NV
-      DO JJ = 1, 3
-      P1(JJ) = ZERO
-      P2(JJ) = ZERO
-      P3(JJ) = ZERO
-      ENDDO
-      N1 = N
-      IF(N.GT.1) N0 = N - 1
-      IF(N.EQ.1) N0 = NV
-      IF(N.LT.NV) N2 = N + 1
-      IF(N.EQ.NV) N2 = 1
-!     Trova i vettori posizione rispetto ai centri corrispondenti
-!     e i versori tangenti
-!
-!     Lato N0-N1:
-      DO JJ = 1, 3
-      P1(JJ) = PTS(JJ,N1) - CCC(JJ,N0)
-      P2(JJ) = PTS(JJ,N0) - CCC(JJ,N0)
-      ENDDO
-!
-      CALL VECP(P1,P2,P3,DNORM3)
-      DO JJ = 1, 3
-      P2(JJ) = P3(JJ)
-      ENDDO
-      CALL VECP(P1,P2,P3,DNORM3)
-      DO JJ = 1, 3
-      U1(JJ) = P3(JJ)/DNORM3
-      ENDDO
-!
-!     Lato N1-N2:
-      DO JJ = 1, 3
-      P1(JJ) = PTS(JJ,N1) - CCC(JJ,N1)
-      P2(JJ) = PTS(JJ,N2) - CCC(JJ,N1)
-      ENDDO
-!
-      CALL VECP(P1,P2,P3,DNORM3)
-      DO JJ = 1, 3
-      P2(JJ) = P3(JJ)
-      ENDDO
-      CALL VECP(P1,P2,P3,DNORM3)
-      DO JJ = 1, 3
-      U2(JJ) = P3(JJ)/DNORM3
-      ENDDO
-!
-      BETAN = ACOS(U1(1)*U2(1)+U1(2)*U2(2)+U1(3)*U2(3))
-      SUM2 = SUM2 + (PI - BETAN)
- 200  CONTINUE
-!     Calcola l'area della tessera
-        AREA = sfe(NS)%r*sfe(NS)%r*(TPI + SUM1 - SUM2)
-!     Trova il punto rappresentativo (come media dei vertici)
-      DO JJ = 1, 3
-      PP(JJ) = ZERO
-      ENDDO
-      DO I = 1, NV
-      PP(1) = PP(1) + (PTS(1,I)-sfe(NS)%x)
-      PP(2) = PP(2) + (PTS(2,I)-sfe(NS)%y)
-      PP(3) = PP(3) + (PTS(3,I)-sfe(NS)%z)
-      ENDDO
-      DNORM = ZERO
-      DO JJ = 1, 3
-      DNORM = DNORM + PP(JJ)*PP(JJ)
-      ENDDO
-      PP(1) = sfe(NS)%x + PP(1) * sfe(NS)%r / SQRT(DNORM)
-      PP(2) = sfe(NS)%y + PP(2) * sfe(NS)%r / SQRT(DNORM)
-      PP(3) = sfe(NS)%z + PP(3) * sfe(NS)%r / SQRT(DNORM)
-!     Trova la normale (interna!) nel punto rappresentativo
-      PP1(1) = (PP(1) - sfe(NS)%x) / sfe(NS)%r
-      PP1(2) = (PP(2) - sfe(NS)%y) / sfe(NS)%r
-      PP1(3) = (PP(3) - sfe(NS)%z) / sfe(NS)%r
-!
-!     A causa delle approssimazioni numeriche, l'area di alcune piccole
-!     tessere puo' risultare negativa, e viene in questo caso trascurata
-      IF(AREA.LT.ZERO)THEN
-        WRITE(6,1000) NS,AREA
- 1000   FORMAT(1X,'WARNING: THE AREA OF A TESSERA ON SPHERE ',I6, &
-        ' IS NEGATIVE (',E10.3,' A^2 ), THUS DISCARDED')
-        AREA = ZERO
-      END IF
-      RETURN
-      END subroutine
-!*MODULE PCMCAV  *DECK VECP
-      SUBROUTINE VECP(P1,P2,P3,DNORM3)
-!
-      IMPLICIT None
-!
-      real(dbl) :: P1(3),P2(3),P3(3)
-      real(dbl) :: dnorm3
-!
-!     Esegue il prodotto vettoriale P3 = P1 x P2
-!
-      P3(1) = P1(2)*P2(3) - P1(3)*P2(2)
-      P3(2) = P1(3)*P2(1) - P1(1)*P2(3)
-      P3(3) = P1(1)*P2(2) - P1(2)*P2(1)
-      DNORM3 = SQRT(P3(1)*P3(1) + P3(2)*P3(2) + P3(3)*P3(3))
-      RETURN
-      END subroutine
-!
-!      subroutine raffina(icount)
-!      integer(4) :: nagg,its,iaddtes,
-!C
-!C Verifica per tutti gli atomi la differenza tra 1/(centrotes-catm)**2
-!C  e la media di tale grandezza su nuove tessere. Se e' maggiore di
-!C una soglia crea le nuove tessere
-!       nagg=0
-!       its=1
-!10        iaddtes=0
-!         if (as(its).lt.4.d+00) then
-!          its=its+1
-!           goto 20
-!         endif
-!C Mette in PTS le coordinate dei tre nuovi vertici
-!         do icor=1,3
-!          do iver=1,3
-!           PTS(icor,iver)=0.D+00
-!          enddo
-!         enddo
-!         ism=isfem(xcts(its+nts),ycts(its+nts),zcts(its+nts))
-!         csfe(1)=xs(ism)
-!         csfe(2)=ys(ism)
-!         csfe(3)=zs(ism)
-!         rsfe=rs(ism)
-!C         write (6,*) (vert(i,1,its),i=1,3)
-!C         write (6,*) (vert(i,2,its),i=1,3)
-!CC         write (6,*) (vert(i,3,its),i=1,3)
-!         call newv(vert(1,1,its),vert(1,2,its),
-!     *     csfe(1),csfe(2),csfe(3),pts(1,1))
-!         call newv(vert(1,2,its),vert(1,3,its),
-!     *     csfe(1),csfe(2),csfe(3),pts(1,2))
-!         call newv(vert(1,1,its),vert(1,3,its),
-!     *     csfe(1),csfe(2),csfe(3),pts(1,3))
-!C      write (6,*) 'PTS'
-!C      write (6,*) (pts(i,1),i=1,3)
-!C      write (6,*) (pts(i,2),i=1,3)
-!C      write (6,*) (pts(i,3),i=1,3)
-!C Calcola le coord. dei tre nuovi punti rappresentativi e le mette
-!C   in CCC(icor,iver)
-!           do icor=1,3
-!            ccc(icor,1)=(pts(icor,1)+pts(icor,3)+vert(icor,1,its))/3
-!            ccc(icor,2)=(pts(icor,1)+pts(icor,2)+vert(icor,2,its))/3
-!            ccc(icor,3)=(pts(icor,2)+pts(icor,3)+vert(icor,3,its))/3
-!           enddo
-!           do iver=1,3
-!            dnorm=(ccc(1,iver)-csfe(1))**2+(ccc(2,iver)-csfe(2))**2+
-!     *           (ccc(3,iver)-csfe(3))**2
-!            dnorm=sqrt(dnorm)
-!            do icor=1,3
-!             ccc(icor,iver)=(ccc(icor,iver)-csfe(icor))*rsfe/dnorm+
-!     *          csfe(icor)
-!           enddo
-!           enddo
-!
-!        do iatm=1,natm
-!         x=xcts(its+nts)-c(1,iatm)
-!         y=ycts(its+nts)-c(2,iatm)
-!         z=zcts(its+nts)-c(3,iatm)
-!         dtes=1/sqrt(x**2+y**2+z**2)
-!         dtesp=dtes
-!         do i=1,3
-!           x=ccc(1,i)-c(1,iatm)
-!           y=ccc(2,i)-c(2,iatm)
-!           z=ccc(3,i)-c(3,iatm)
-!           dtesp=dtesp+1/sqrt(x**2+y**2+z**2)
-!         enddo
-!         diff=dabs(dtes-dtesp/4)
-!C         write (6,*) its,diff
-!         if (diff.gt.tols) iaddtes=1
-!        enddo
-!40       if (iaddtes.eq.1) then
-!         if ((2*nts+ntss+nagg+3).gt.mxts) then
-!           write (IW,*) 'TASSFE: troppe tessere'
-!          stop
-!         endif
-!C Scala le tessere successive a its di 3 posizioni
-!          do its1=nagg+nts+ntss,its+1,-1
-!         xcts(its1+3+nts)=xcts(its1+nts)
-!          ycts(its1+3+nts)=ycts(its1+nts)
-!          zcts(its1+3+nts)=zcts(its1+nts)
-!          as (its1+3)=as(its1)
-!          isphe(its1+3)=-3
-!           do iver=1,nvert(its1)
-!            do icor=1,3
-!             vert (icor,iver,its1+3)= vert (icor,iver,its1)
-!             centr (icor,iver,its1+3)= centr (icor,iver,its1)
-!            enddo
-!           intsph(its1+3,iver)=intsph(its1,iver)
-!           enddo
-!           nvert(its1+3)=nvert(its1)
-!         enddo
-!C Inserisce le nuove tessere nelle posizioni liberate
-!         area=as(its)
-!         do i=1,3
-!            k=its+i
-!           xcts(k+nts)=ccc(1,i)
-!           ycts(k+nts)=ccc(2,i)
-!           zcts(k+nts)=ccc(3,i)
-!           as(k)=area/4.D+00
-!           isphe(k)=-3
-!            nvert(k)=3
-!            do iver=1,3
-!             intsph(k,iver)=nesfp-nsfem+isfm
-!            do icor=1,3
-!              centr(icor,iver,k)=csfe(icor)
-!             enddo
-!            enddo
-!          enddo
-!           as(its)=area/4.D+00
-!           do icor=1,3
-!            vert(icor,1,its+1)=vert(icor,1,its)
-!            vert(icor,2,its+1)=pts(icor,1)
-!            vert(icor,3,its+1)=pts(icor,3)
-!            vert(icor,1,its+2)=vert(icor,2,its)
-!            vert(icor,2,its+2)=pts(icor,1)
-!            vert(icor,3,its+2)=pts(icor,2)
-!            vert(icor,1,its+3)=vert(icor,3,its)
-!            vert(icor,2,its+3)=pts(icor,2)
-!            vert(icor,3,its+3)=pts(icor,3)
-!            vert(icor,1,its)=pts(icor,1)
-!            vert(icor,2,its)=pts(icor,2)
-!            vert(icor,3,its)=pts(icor,3)
-!          enddo
-!         nagg=nagg+3
-!         its=its-1
-!        endif
-!        its=its+1
-!20        if (its.le.(nts+ntss+nagg)) goto 10
-!        ntss=ntss+nagg
-!C
-!C     Ha concluso il raffinamento
-!
-      subroutine read_cavity_full_file
+    implicit none
 
-      integer(4) :: i,j,its
-      real(dbl), allocatable :: tmp(:) 
+    type(sfera), intent(in)     :: sfe(:)
+    integer(i4b), intent(in)    :: ns
+    integer(i4b), intent(in)    :: nesf
+    integer(i4b), intent(inout) :: nv
+    real(dbl), intent(inout)    :: pts(:,:)
+    real(dbl), intent(out)      :: ccc(:,:)
+    real(dbl), intent(out)      :: pp(:)
+    real(dbl), intent(out)      :: pp1(:)
+    real(dbl), intent(out)      :: area
 
-#ifndef MPI
-       myrank=0
-#endif
+    real(dbl), parameter    :: tol= -1.d-10
 
-      if (myrank.eq.0) then
-         open(7,file="cavity_full.inp",status="old")
-         read(7,*) nts_act
-         allocate(cts_act(nts_act))
-         do its=1,nts_act
-            read(7,*) cts_act(its)%x,cts_act(its)%y,cts_act(its)%z, &
-                   cts_act(its)%area,cts_act(its)%rsfe, &
-                   cts_act(its)%n(:) 
-         enddo
-         close(7)
+    integer(i4b) :: intsph(10)
+    integer(i4b) :: nsfe1
+    integer(i4b) :: na
+    integer(i4b) :: icop
+    integer(i4b) :: ll
+    integer(i4b) :: iv1
+    integer(i4b) :: iv2
+    integer(i4b) :: ii
+    integer(i4b) :: icut
+    integer(i4b) :: jj
+
+    real(dbl) :: p1(3)
+    real(dbl) :: p2(3)
+    real(dbl) :: p3(3)
+    real(dbl) :: p4(3)
+    real(dbl) :: point(3)
+    real(dbl) :: pscr(3,10)
+    real(dbl) :: cccp(3,10)
+    real(dbl) :: pointl(3,10)
+    real(dbl) :: diff(3)
+
+    integer(i4b) :: ind(10)
+    integer(i4b) :: ltyp(10)
+    integer(i4b) :: intscr(10)
+
+    real(dbl)  :: delr
+    real(dbl)  :: delr2
+    real(dbl)  :: rc
+    real(dbl)  :: rc2
+    real(dbl)  :: dnorm
+    real(dbl)  :: dist
+    real(dbl)  :: de2
+
+    p1     = zero
+    p2     = zero
+    p3     = zero
+    p4     = zero
+    point  = zero
+    pscr   = zero
+    cccp   = zero
+    pointl = zero
+    diff   = zero
+    area   = zero
+
+    do jj=1, 3
+      ccc(1,jj) = sfe(ns)%x
+      ccc(2,jj) = sfe(ns)%y
+      ccc(3,jj) = sfe(ns)%z
+    end do
+
+    intsph = ns
+    do nsfe1 = 1, nesf 
+      if (nsfe1 == ns) cycle
+      do jj =1, nv
+        intscr(jj) = intsph(jj)
+        pscr(:,jj) = pts(:,jj)
+        cccp(:,jj) = ccc(:,jj)
+      end do
+
+      icop = 0
+      ind = 0
+      ltyp = 0
+
+      do ii = 1, nv
+        delr2 = ( pts(1,ii) - sfe(nsfe1)%x )**2 + ( pts(2,ii) - sfe(nsfe1)%y )**2 + &
+          ( pts(3,ii) - sfe(nsfe1)%z )**2
+        delr = sqrt(delr2)
+        if (delr < sfe(nsfe1)%r) then
+          ind(ii) = 1
+          icop = icop + 1
+        end if
+      end do
+
+      if (icop == nv) then 
+        return
+      end if
+
+      do ll = 1, nv
+        iv1 = ll
+        iv2 = ll+1
+        if (ll == nv) iv2 = 1
+        IF ( (ind(iv1) == 1) .and. (ind(iv2) == 1) ) then
+          ltyp(ll) = 0
+        else if ( (ind(iv1) == 0) .and. (ind(iv2) == 1) ) then
+          ltyp(ll) = 1
+        else if ( (ind(iv1) == 1) .and. (ind(iv2) == 0) ) then
+          ltyp(ll) = 2
+        else if ( (ind(iv1) == 0) .and. (ind(iv2) == 0) ) then
+          ltyp(ll) = 4
+          diff = ccc(:,ll) - pts(:,ll)
+          rc2 = dot_product(diff,diff)
+          rc = sqrt(rc2)
+
+          do ii = 1, 11
+            point = pts(:,iv1) + ii * (pts(:,iv2) - pts(:,iv1)) / 11
+            point = point - CCC(:,ll)
+            dnorm = sqrt( dot_product(point, point) )
+            point = point * rc / dnorm + CCC(:,ll)
+
+            dist = sqrt(  (point(1) - sfe(nsfe1)%x)**2 + ( point(2) - sfe(nsfe1)%y)**2 &
+              + ( point(3) - sfe(nsfe1)%z)**2  )
+
+            if ( (dist - sfe(nsfe1)%r) < tol) then
+              ltyp(ll) = 3
+              pointl(:,ll) = point
+              exit
+            end if
+
+          end do
+        end if
+      end do
+
+      icut = 0
+      do ll = 1, nv
+        if ( (ltyp(ll) == 1) .or. (ltyp(ll) == 2) ) icut = icut + 1
+        if (ltyp(ll) == 3) icut = icut + 2
+      end do
+      icut = icut / 2
+      if (icut > 1) then 
+        return
+      end if
+
+      na = 1
+      do ll = 1, nv
+
+        if (ltyp(ll) == 0) cycle
+        iv1 = ll
+        iv2 = ll + 1
+        if (ll == nv) iv2 = 1
+
+        if (ltyp(ll) == 1) then
+          pts(:,na) = pscr(:,iv1)
+          ccc(:,na) = cccp(:,iv1)
+          intsph(na) = intscr(iv1)
+          na = na + 1
+          p1 = pscr(:,iv1)
+          p2 = pscr(:,iv2)
+          p3 = cccp(:,iv1)
+
+          call inter(sfe, p1, p2, p3, p4, nsfe1, 0)
+          pts(:,na) = p4
+
+          de2 = ( sfe(nsfe1)%x - sfe(ns)%x )**2 + ( sfe(nsfe1)%y - sfe(ns)%y )**2 + &
+            ( sfe(nsfe1)%z - sfe(ns)%z )**2
+
+          ccc(1,na) = sfe(ns)%x + ( sfe(nsfe1)%x - sfe(ns)%x)* &
+            ( sfe(ns)%r**2 - sfe(nsfe1)%r**2 + de2 ) / (two*de2)
+
+          ccc(2,na) = sfe(ns)%y + ( sfe(nsfe1)%y - sfe(ns)%y)* &
+            ( sfe(ns)%r**2 - sfe(nsfe1)%r**2 + de2 ) / (two*de2)
+
+          ccc(3,na) = sfe(ns)%z + ( sfe(nsfe1)%z - sfe(ns)%z)* &
+            ( sfe(ns)%r**2 - sfe(nsfe1)%r**2 + de2 ) / (two*de2)
+
+          intsph(na) = nsfe1
+          na = na + 1
+        end if
+
+        if (ltyp(ll) == 2) then
+          p1 = pscr(:,iv1)
+          p2 = pscr(:,iv2)
+          p3 = cccp(:,iv1)
+
+          call inter( sfe, p1, p2, p3, p4, nsfe1, 1 )
+          pts(:,na) = p4
+          ccc(:,na) = cccp(:,iv1)
+          intsph(na) = intscr(iv1)
+          na = na + 1
+        end if
+
+        if (ltyp(ll) == 3) then
+          pts(:,na) = pscr(:,iv1)
+          ccc(:,na) = cccp(:,iv1)
+          intsph(na) = intscr(iv1)
+          na = na + 1
+          p1 = pscr(:,iv1)
+          p2 = pointl(:,ll)
+          p3 = cccp(:,iv1)
+
+          call inter( sfe, p1, p2, p3, p4, nsfe1, 0 )
+          pts(:,na) = p4
+
+          de2 = ( sfe(nsfe1)%x - sfe(ns)%x )**2 + ( sfe(nsfe1)%y - sfe(ns)%y )**2 + &
+            ( sfe(nsfe1)%z - sfe(ns)%z )**2
+
+          ccc(1,na) = sfe(ns)%x + ( sfe(nsfe1)%x - sfe(ns)%x )* &
+            ( sfe(ns)%r**2 - sfe(nsfe1)%r**2 + de2 ) / (two*de2)
+
+          ccc(2,na) = sfe(ns)%y + ( sfe(nsfe1)%y - sfe(ns)%y )* &
+            ( sfe(ns)%r**2 - sfe(nsfe1)%r**2 + de2 ) / (two*de2)
+
+          ccc(3,na) = sfe(ns)%z + ( sfe(nsfe1)%z - sfe(ns)%z )* &
+            ( sfe(ns)%r**2 - sfe(nsfe1)%r**2 + de2 ) / (two*de2)
+
+          intsph(na) = nsfe1
+          na = na + 1
+          p1 = pointl(:,ll)
+          p2 = pscr(:,iv2)
+          p3 = cccp(:,iv1)
+
+          call inter( sfe, p1, p2, p3, p4, nsfe1, 1 )
+          pts(:,na) = p4
+          ccc(:,na) = cccp(:,iv1)
+          intsph(na) = intscr(iv1)
+          na = na + 1
+        end if
+
+        if (ltyp(ll) == 4) then
+          pts(:,na) = pscr(:,iv1)
+          ccc(:,na) = cccp(:,iv1)
+          intsph(na) = intscr(iv1)
+          na = na + 1
+        end if
+      end do
+
+      nv = na - 1
+      if (nv > 10) then
+        write(6,*) "Too many vertices on the tessera"
+        stop     
+      end if
+    end do
+
+    call gaubon( sfe, nv, ns, pts, ccc, pp, pp1, area, intsph)
+    
+  end subroutine subtessera
+!
+! Finds the point 'p4', on the arc 'p1'-'p2' developed from 'p3', which is on the surface of sphere 'ns'. 
+!! p4 is a linear combination of p1 and p2 with the 'alpha' parameter optimized iteratively.
+  subroutine inter( sfe, p1, p2, p3, p4, ns, ia)
+
+    implicit none
+
+    type(sfera), intent(in)  :: sfe(:)
+    real(dbl), intent(in)    :: p1(:)
+    real(dbl), intent(in)    :: p2(:)
+    real(dbl), intent(in)    :: p3(:)
+    real(dbl), intent(out)    :: p4(:)
+    integer(i4b), intent(in) :: ns
+    integer(i4b), intent(in) :: ia
+
+    real(dbl), parameter     :: tol = 1.0D-08
+
+    integer(i4b) :: m_iter
+    real(dbl)    :: r
+    real(dbl)    :: alpha
+    real(dbl)    :: delta
+    real(dbl)    :: dnorm
+    real(dbl)    :: diff
+    real(dbl)    :: diff_vec(3)
+    logical      :: band_iter
+
+    diff_vec = zero
+
+    diff_vec = p1 - p3
+    r = sqrt( dot_product(diff_vec, diff_vec) )
+
+    alpha = pt5
+    delta = zero
+    m_iter = 1
+
+    band_iter = .false.
+    do while(.not.(band_iter))
+      if (m_iter > 1000) then
+        write(6,*) "Too many iterations inside subroutine inter"
+        stop 
+      end if
+
+      band_iter = .true.
+
+      alpha = alpha + delta
+      dnorm = zero
+
+      p4 = p1 + alpha*(p2-p1)-p3
+      dnorm = sqrt( dot_product(p4,p4) )
+      p4 = p4*r/dnorm + p3
+      diff =( p4(1) - sfe(ns)%x )**2 + ( p4(2) - sfe(ns)%y )**2 + ( p4(3) - sfe(ns)%z )**2
+      diff = sqrt(diff) - sfe(ns)%r
+
+      if ( abs(diff) < tol ) then
+       return
       endif
 
-#ifdef MPI
+      if (ia == 0) then
+        if (diff > zero) delta =  one/(two**(m_iter+1))
+        if (diff < zero) delta = -one/(two**(m_iter+1))
+        m_iter = m_iter + 1
+        band_iter = .false.
+      end if
 
-           call mpi_bcast(nts_act, 1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
-           if (myrank.ne.0) allocate(cts_act(nts_act))
+      if (ia == 1) then
+        if (diff > zero) delta = -one/(two**(m_iter+1))
+        if (diff < zero) delta =  one/(two**(m_iter+1))
+        m_iter = m_iter + 1
+        band_iter = .false.
+      end if
+    end do
 
-           allocate(tmp(nts_act))
+  end subroutine inter
+!
+! Use the Gauss-Bonnet theorem to calculate the area of the tessera with vertices 'pts(3,nv)'. 
+!! Area = R^2 [ 2pi + S(Phi(N)cosT(N)) - S(Beta(N)) ]
+!! Phi(n): length of the arc in radians of the side 'n'. 
+!! T(n): azimuthal angle for the side 'n'
+!! Beta(n): external angle respect to vertex 'n'.
+  subroutine gaubon( sfe, nv, ns, pts, ccc, pp, pp1, area, intsph )
 
-           call mpi_bcast(cts_act%x,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
-           call mpi_bcast(cts_act%y,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           call mpi_bcast(cts_act%z,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           call mpi_bcast(cts_act%area, nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           call mpi_bcast(cts_act%rsfe, nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+    implicit none
 
-           !if (myrank.eq.0) tmp=cts_act%x
-           !call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           !if (myrank.ne.0) cts_act%x=tmp
+    type(sfera), intent(in)  :: sfe(:)
+    real(dbl), intent(in)    :: pts(3,10)
+    real(dbl), intent(in)    :: ccc(3,10)
+    real(dbl), intent(inout) :: pp(3)
+    real(dbl), intent(inout) :: pp1(3)
+    integer(i4b), intent(in) :: intsph(:)
+    real(dbl), intent(out)   :: area
+    integer(i4b), intent(in) :: nv
+    integer(i4b), intent(in) :: ns
 
-           !if (myrank.eq.0) tmp=cts_act%y
-           !call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           !if (myrank.ne.0) cts_act%y=tmp
+    real(dbl)    :: p1(3), p2(3), p3(3)
+    real(dbl)    :: u1(3), u2(3)
+    real(dbl)    :: point_1(3), point_2(3)
+    real(dbl)    :: tpi, sum1, dnorm, dnorm1, dnorm2
+    real(dbl)    :: cosphin, phin, costn, sum2, betan
+    integer(i4b) :: nsfe1, ia, nn, n0, n1, n2
 
-           !if (myrank.eq.0) tmp=cts_act%z
-           !call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           !if (myrank.ne.0) cts_act%z=tmp
+    point_1 = zero
+    point_2 = zero
+    p1      = zero
+    p2      = zero
+    p3      = zero
+    u1      = zero
+    u2      = zero
 
-           !if (myrank.eq.0) tmp=cts_act%area
-           !call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           !if (myrank.ne.0) cts_act%area=tmp
+    tpi = twp
+    sum1 = zero
+    do nn = 1, nv
+      point_1 = pts(:,nn) - ccc(:,nn)
+      if (nn < nv) then
+        point_2 = pts(:,nn+1) - ccc(:,nn)
+      else
+        point_2 = pts(:,1) - ccc(:,nn)
+      end if
 
-           !if (myrank.eq.0) tmp=cts_act%rsfe
-           !call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           !if (myrank.ne.0) cts_act%rsfe=tmp
+      dnorm1 = sqrt( dot_product(point_1, point_1) )
+      dnorm2 = sqrt( dot_product(point_2, point_2) )
+      cosphin = dot_product(point_1, point_2) / (dnorm1*dnorm2)
 
-           if (myrank.eq.0) tmp=cts_act%n(1)
-           call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           if (myrank.ne.0) cts_act%n(1)=tmp
+      if (cosphin >  one) cosphin =  one
+      if (cosphin < -one) cosphin = -one
 
-           if (myrank.eq.0) tmp=cts_act%n(2)
-           call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           if (myrank.ne.0) cts_act%n(2)=tmp
+      phin = acos(cosphin)
+      nsfe1 = intsph(nn)
 
-           if (myrank.eq.0) tmp=cts_act%n(3)
-           call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           if (myrank.ne.0) cts_act%n(3)=tmp
+      point_1(1) = sfe(nsfe1)%x - sfe(ns)%x
+      point_1(2) = sfe(nsfe1)%y - sfe(ns)%y
+      point_1(3) = sfe(nsfe1)%z - sfe(ns)%z
 
-           deallocate(tmp)
+      dnorm1 = sqrt( dot_product(point_1, point_1) )
 
-#endif
+      if (abs(dnorm1) == zero) dnorm1 = one
 
+      point_2(1) = pts(1,nn) - sfe(ns)%x
+      point_2(2) = pts(2,nn) - sfe(ns)%y
+      point_2(3) = pts(3,nn) - sfe(ns)%z
+
+      dnorm2 = sqrt( dot_product(point_2, point_2) )
+
+      costn  = dot_product(point_1, point_2)/(dnorm1*dnorm2)
+      sum1 = sum1 + phin * costn
+    end do
+
+    sum2 = zero
+    !> Loop over the vertices
+    do nn = 1, nv
+      p1 = zero
+      p2 = zero    
+      p3 = zero  
+
+      n1 = nn
+      if (nn > 1)   n0 = nn - 1
+      if (nn == 1)  n0 = nv
+      if (nn < nv)  n2 = nn + 1
+      if (nn == nv) n2 = 1
+
+      p1 = pts(:,n1) - ccc(:,n0)
+      p2 = pts(:,n0) - ccc(:,n0)
+      call vecp(p1, p2, p3, dnorm)
+      p2 = p3    
+
+      call vecp(p1, p2, p3, dnorm)
+      u1 = p3/dnorm
+
+      p1 = pts(:,n1) - ccc(:,n1)
+      p2 = pts(:,n2) - ccc(:,n1)
+      call vecp(p1, p2, p3, dnorm)
+      p2 = p3
+
+      call vecp(p1, p2, p3, dnorm)
+      u2 = p3/dnorm
+
+      betan = acos( dot_product(u1, u2) )
+      sum2 = sum2 + (pi - betan)
+    end do
+
+    !> computes the area of the tessera
+    area = sfe(ns)%r*sfe(ns)%r*(tpi + sum1 - sum2)
+
+    !> computes the representative point
+    pp = zero
+
+    do ia = 1, nv
+      pp(1) = pp(1) + ( pts(1,ia) - sfe(ns)%x )
+      pp(2) = pp(2) + ( pts(2,ia) - sfe(ns)%y )
+      pp(3) = pp(3) + ( pts(3,ia) - sfe(ns)%z )
+    end do
+
+    dnorm = zero
+    dnorm = sqrt( dot_product(pp,pp) )
+
+    pp(1) = sfe(ns)%x + pp(1) * sfe(ns)%r / dnorm
+    pp(2) = sfe(ns)%y + pp(2) * sfe(ns)%r / dnorm
+    pp(3) = sfe(ns)%z + pp(3) * sfe(ns)%r / dnorm
+
+    !> finds the internal normal at the representative point
+    pp1(1) = (pp(1) - sfe(ns)%x) / sfe(ns)%r
+    pp1(2) = (pp(2) - sfe(ns)%y) / sfe(ns)%r
+    pp1(3) = (pp(3) - sfe(ns)%z) / sfe(ns)%r
+
+    !> If the area of the tessera is negative (0^-), due to numerical errors, is discarded
+    if (area < zero) area = zero
+
+  end subroutine gaubon
+!
+!     calculates the vectorial product p3 = p1 x p2
+      subroutine vecp(p1,p2,p3,norm3)
+!
+      implicit none
+!
+      real(dbl) :: p1(3),p2(3),p3(3)
+      real(dbl) :: norm3
+!
+      p3(1) = p1(2)*p2(3) - p1(3)*p2(2)
+      p3(2) = p1(3)*p2(1) - p1(1)*p2(3)
+      p3(3) = p1(1)*p2(2) - p1(2)*p2(1)
+      norm3 = SQRT(p3(1)*p3(1) + p3(2)*p3(2) + p3(3)*p3(3))
       return
       end subroutine
-!
-      subroutine read_cavity_file
-       integer(4) :: i,nts,nsphe
-       real(dbl)  :: x,y,z,s,r      
 
-#ifndef MPI
-       myrank=0
-#endif
+      subroutine read_gmsh_file(inv,Ffind)
 
-       if (myrank.eq.0) then
-          open(7,file="cavity.inp",status="old")
-         !read(7,*)  
-          read(7,*) nts,nsphe
-!         if(nts_act.eq.0.or.nts.eq.nts_act) then
-          nts_act=nts
-       endif
-!         else
-!           write(*,*) "Tesserae number conflict"
-!           stop
-!         endif
-#ifdef MPI
-         call mpi_bcast(nts_act, 1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
-         call mpi_bcast(nsphe,   1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
-#endif
-         if(.not.allocated(sfe_act).and.nsphe.gt.0) &
-           allocate (sfe_act(nsphe))
-         if(.not.allocated(cts_act)) allocate (cts_act(nts_act))
-         if (myrank.eq.0) then
-            do i=1,nsphe
-              read(7,*)  sfe_act(i)%x,sfe_act(i)%y, &
-                               sfe_act(i)%z
-            enddo
-         
-            do i=1,nts_act 
-               read(7,*) x,y,z,s,r
-               cts_act(i)%x=x!*antoau 
-               cts_act(i)%y=y!*antoau
-               cts_act(i)%z=z!*antoau 
-               cts_act(i)%area=s!*antoau*antoau 
-               cts_act(i)%rsfe=r 
-           ! SP: this is only for a sphere: test purposes
-           !cts_act(i)%rsfe=sqrt(x*x+y*y+z*z)
-           !cts_act(i)%n(1)=cts_act(i)%x/cts_act(i)%rsfe 
-           !cts_act(i)%n(2)=cts_act(i)%y/cts_act(i)%rsfe
-           !cts_act(i)%n(3)=cts_act(i)%z/cts_act(i)%rsfe 
-           enddo
-
-           close(7)
-        endif 
-#ifdef MPI
-        call mpi_bcast(sfe_act%x,    nsphe,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-        call mpi_bcast(sfe_act%y,    nsphe,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-        call mpi_bcast(sfe_act%z,    nsphe,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
-        call mpi_bcast(cts_act%x,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-        call mpi_bcast(cts_act%y,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-        call mpi_bcast(cts_act%z,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
-        call mpi_bcast(cts_act%area, nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-        call mpi_bcast(cts_act%rsfe, nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
-#endif
-
-       return
-      end subroutine
-!
-      subroutine read_gmsh_file(inv)
 ! this routine read in gmsh mesh files
 !  AFTER they have been massaged by a proper
 !  gawk script. To be revised with better coding
@@ -1403,43 +1289,49 @@
       integer(4),allocatable :: el_nodes(:,:),isphere(:)
       logical,allocatable :: is_centre(:)
       character(6) :: line, junk
-      character(3) :: inv
-      real(8),allocatable :: c_nodes(:,:) 
+      character(3) :: inv,Ffind
+      real(8),allocatable :: c_nodes(:,:)
       real(8) :: vert(3,3),normal(3),area,dist,diff(3), &
-        dist_max,area_tot 
+        dist_max,area_tot
 
 #ifndef MPI
-       myrank=0
+       tp_myrank=0
 #endif
 
       nesf_act=0
-      if (myrank.eq.0) then
+      if (tp_myrank.eq.0) then
          open(7,file="surface_msh.inp",status="old")
          read(7,*) n_nodes
       endif
 #ifdef MPI
-     call mpi_bcast(n_nodes,  1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
-#endif 
+     call mpi_bcast(n_nodes,  1,MPI_INTEGER,0,MPI_COMM_WORLD,tp_ierr_mpi)
+#endif
       allocate(c_nodes(3,n_nodes))
       allocate(is_centre(n_nodes))
-      is_centre(:)=.true.
-      if (myrank.eq.0) then
+      if (Ffind.eq.'yes') then
+            is_centre(:)=.true.
+      else
+            is_centre(:)=.false.   !change to avoid creation of sphereswhen usign different shapes       
+      endif
+      if (tp_myrank.eq.0) then
          do i_nodes=1,n_nodes
             read(7,*) c_nodes(:,i_nodes)
+            !If input mesh is reported in nm uncomment the following line
+            !c_nodes(:,i_nodes)=c_nodes(:,i_nodes)*10*ANTOAU
          enddo
          read(7,*) nts_act
          nts_eff=nts_act
          if (inv.eq.'inv') nts_act=2*nts_act
       endif
 #ifdef MPI
-     call mpi_bcast(c_nodes, 3*n_nodes,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-     call mpi_bcast(nts_act, 1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
-     call mpi_bcast(nts_eff, 1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
-#endif 
+     call mpi_bcast(c_nodes, 3*n_nodes,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+     call mpi_bcast(nts_act, 1,MPI_INTEGER,0,MPI_COMM_WORLD,tp_ierr_mpi)
+     call mpi_bcast(nts_eff, 1,MPI_INTEGER,0,MPI_COMM_WORLD,tp_ierr_mpi)
+#endif
       allocate(isphere(nts_act))
       allocate(cts_act(nts_act))
       allocate(el_nodes(3,nts_eff))
-      if (myrank.eq.0) then
+      if (tp_myrank.eq.0) then
          do its=1,nts_eff
             read(7,*) el_nodes(:,its),isphere(its)
             ! if the node is part of a tessera cannot be a centre
@@ -1456,7 +1348,7 @@
       endif
       ! Find centres
       do i_nodes=1,n_nodes
-        if(is_centre(i_nodes)) nesf_act=nesf_act+1
+        !if(is_centre(i_nodes)) nesf_act=nesf_act+1
       enddo
       ! If center points found set sphere center positions and radii
       if (nesf_act.gt.0) then
@@ -1464,28 +1356,27 @@
         isfe=0
         ! Set sphere centers
         do i_nodes=1,n_nodes
-          if(is_centre(i_nodes)) then               
+          if(is_centre(i_nodes)) then
             isfe=isfe+1
             sfe_act(isfe)%x=c_nodes(1,i_nodes)
             sfe_act(isfe)%y=c_nodes(2,i_nodes)
             sfe_act(isfe)%z=c_nodes(3,i_nodes)
           endif
         enddo
-        ! Set sphere radii  
+        ! Set sphere radii
         do its=1,nts_eff
-          diff(1)=c_nodes(1,el_nodes(1,its))-sfe_act(isphere(its))%x 
-          diff(2)=c_nodes(2,el_nodes(1,its))-sfe_act(isphere(its))%y  
-          diff(3)=c_nodes(3,el_nodes(1,its))-sfe_act(isphere(its))%z 
+          diff(1)=c_nodes(1,el_nodes(1,its))-sfe_act(isphere(its))%x
+          diff(2)=c_nodes(2,el_nodes(1,its))-sfe_act(isphere(its))%y
+          diff(3)=c_nodes(3,el_nodes(1,its))-sfe_act(isphere(its))%z
           sfe_act(isphere(its))%r=sqrt(dot_product(diff,diff))
           cts_act(its)%rsfe=sqrt(dot_product(diff,diff))
         enddo
       endif
       deallocate(isphere,is_centre)
 #ifdef MPI
-     call mpi_bcast(el_nodes, 3*nts_eff,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+     call mpi_bcast(el_nodes, 3*nts_eff,MPI_INTEGER,0,MPI_COMM_WORLD,tp_ierr_mpi)
 #endif
 !  And now do representative points, areas and normals
-
       do its_a=1,nts_eff
         vert(:,1)=c_nodes(:,el_nodes(1,its_a))
         vert(:,2)=c_nodes(:,el_nodes(2,its_a))
@@ -1502,7 +1393,6 @@
 
       its_a=1
       area_tot=0.d0
-
       do its=1,nts_eff
         vert(:,1)=c_nodes(:,el_nodes(1,its))
         vert(:,2)=c_nodes(:,el_nodes(2,its))
@@ -1522,7 +1412,7 @@
 ! very big as the tessera is planar, can be improved
 ! by using info from nearby normals to estimate a local
 ! curvature, TO BE DONE
-        !cts_act(its_a)%rsfe=1.d20   
+        !cts_act(its_a)%rsfe=1.d20
 ! Silvio 06/10/19: Why is rsfe set so high here? I need to comment this
 ! for QM_coupling tests.
         if (inv.eq.'inv') then
@@ -1535,13 +1425,12 @@
 10    enddo
       if (inv.eq.'inv') its_a=2*its_a-1
 
-      if (myrank.eq.0) then
-         write(6,*) "nts,nts after eliminating replica",nts_act,its_a-1
-         write(6,*) "Tot. area",area_tot
+      if (tp_myrank.eq.0) then
+!         write(6,*) "nts,nts after eliminating replica",nts_act,its_a-1
+!         write(6,*) "Tot. area",area_tot
       endif
       nts_act=its_a-1
 ! choose the outward normal, with an euristic procedure tha may not always work!!
-
       do its=1,nts_act
         dist_max=0.d0
         j_max=its
@@ -1560,14 +1449,14 @@
         cts_act(its)%n=cts_act(its)%n*sign(1.d0,dot_product(cts_act(its)%n,diff))
       enddo
 
-      if (myrank.eq.0) then
+      if (tp_myrank.eq.0) then
 ! Save in files for subsequent calculations or checks
          open(7,file="cavity_full.inp",status="unknown")
          write(7,*) nts_act
          do its=1,nts_act
          write(7,'(8D14.5)') cts_act(its)%x,cts_act(its)%y,cts_act(its)%z, &
                  cts_act(its)%area,cts_act(its)%rsfe, &
-                 cts_act(its)%n(:) 
+                 cts_act(its)%n(:)
          enddo
          close(7)
 !
@@ -1575,11 +1464,11 @@
          write(7,*) 2*nts_act
          write(7,*)
          do its=1,nts_act
-            write(7,'("C ",8E14.5)') cts_act(its)%x,cts_act(its)%y, &
-                                cts_act(its)%z
-            write(7,'("H ",8E14.5)') cts_act(its)%x+cts_act(its)%n(1), &
-                           cts_act(its)%y+cts_act(its)%n(2), &
-                           cts_act(its)%z+cts_act(its)%n(3)
+            write(7,'("C ",8E14.5)') cts_act(its)%x*TOANGS,cts_act(its)%y*TOANGS, &
+                                cts_act(its)%z*TOANGS
+            write(7,'("H ",8E14.5)') cts_act(its)%x*TOANGS+cts_act(its)%n(1)*TOANGS, &
+                           cts_act(its)%y*TOANGS+cts_act(its)%n(2)*TOANGS, &
+                           cts_act(its)%z*TOANGS+cts_act(its)%n(3)*TOANGS
          enddo
          close(7)
       endif
@@ -1608,5 +1497,18 @@
       if (allocated(cts_pro)) deallocate(cts_pro)
       return
       end subroutine
-!
+
+      subroutine read_composite_file(particles_number)
+              integer(i4b) :: i, particles_number
+              
+              allocate(pedra_surf_comp(particles_number,3))
+              open(8,file="composite_system.inp",status='old')
+              read(8,*) pedra_surf_n_particles
+              read(8,*)
+              do i=1,particles_number              
+                   read(8,*) pedra_surf_comp(i,1), pedra_surf_comp(i,2), pedra_surf_comp(i,3)
+              enddo
+              close(8)
+
+      end subroutine 
       end module
