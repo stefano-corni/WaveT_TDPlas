@@ -1,0 +1,38 @@
+&SYSTEM
+test_type='s-l' 
+/
+&OUT_MATRIX
+/
+&MEDIUM
+medium_type='sol'
+medium_init0='vacuum'
+bem_type='diagonal'
+bem_read_write='read'
+local_field='local'
+/
+&SURFACE
+surface_type='object'
+object_shape = 'sphere'
+spheres_number=1
+sphere_position_x=0.
+sphere_position_y= 0.
+sphere_position_z= 0.
+sphere_radius= 10.
+/
+
+&EPS_FUNCTION
+epsilon_omega='debye'
+eps_0=35.688
+eps_d=1.18
+tau_deb=500.
+!tau_deb=139320.
+/
+&PROPAGATE  
+propagation_type='dipole'
+interaction_type='onsager'
+interaction_stride=1
+interaction_init='nsc'
+/
+&QUANTUM_COUPLING
+/
+

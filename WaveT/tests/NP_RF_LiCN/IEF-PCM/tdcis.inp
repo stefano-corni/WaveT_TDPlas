@@ -1,0 +1,33 @@
+&general 
+n_ci=10 
+n_ci_read=10  
+mol_cc= 0. 0. 0.
+medium='nan'
+n_f=1
+dt=0.20
+n_step=5000 
+n_out=1
+/ 
+
+&field 
+Ffld='snd'
+omega(1)=0.26
+sigma(1)=10,
+t_mid=5000
+radiative='non'
+npulse=1
+fmax(1,1) = 0. 
+fmax(2,1) = 0.00001 
+fmax(3,1) = 0.      
+/
+
+&sse
+dissipative='non'
+/
+
+&spectra 
+start=80 
+tau= 2000. 2000.
+dir_ft= 1. 1. 1. 
+/
+

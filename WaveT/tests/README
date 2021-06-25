@@ -1,0 +1,40 @@
+Welcome to the WaveT Test Suite!
+In what follows lines starting with $ are bash commands.
+
+RUNNING TESTS:
+-set the environment variable defining the executable name with FULL path, e.g.:
+ $ export WAVET_PROGRAM_NAME=$(cd ../bin && pwd)/WaveT-serial.x
+-run the make command:
+ $ make
+
+ADDING A NEW TEST:
+- create a new directory inside one of the parent test directory herein, e.g.:
+  $ mkdir SOL_LF_LiCN/NEW_TEST_DIR
+- enter the new directory:
+  $ cd SOL_LF_LiCN/NEW_TEST_DIR
+- copy here all input files needed to run the test
+- create a directory for the reference output files named out/:
+  $ mkdir out
+- copy in out/ all the reference output files
+- create a Makefile pointing to the file ../../scripts/test.make:
+  $ printf "include ../../scripts/test.make" > Makefile
+- create a file named test_info where you specify the test type and possible arguments of the WaveT binary, e.g.:
+  $ printf "type=tdplas \n arg= \n" > test_info
+  available test types can be found in the script ../../scripts/run
+- create one or more script named compare*.sh (* means any character, including no characters), to test the results.
+  each compare*.sh should write to standard output an integer value according to the correspondence:
+  - positive integer: TEST PASSED
+  - zero: no comparison (for any reason) 
+  - negative integer: TEST FAILED
+  note that compare*.sh can produce output files with more information on the test, e.g. (gnu)plots. 
+  Check SOL_LF_LiCN/PCM/compare.sh for inspiration.
+
+ADDING A NEW TEST DIRECTORY:
+- create a new directory herein, e.g.:
+  $ mkdir NEW_PARENT_DIR
+- enter the new directory e.g.:
+  $ cd NEW_PARENT_DIR
+- create a Makefile pointing to the file ../scripts/module.make:
+  $ printf "include ../scripts/module.make" > Makefile
+- follow the section "ADDING A NEW TEST" above to add new tests in this new test directory
+ 

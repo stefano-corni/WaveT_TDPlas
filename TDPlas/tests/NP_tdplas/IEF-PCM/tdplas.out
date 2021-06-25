@@ -1,0 +1,20 @@
+ GEPOL-GB: COUNTING TESSERAE
+ GEPOL-GB: GENERATING TESSERAE
+ WARNING: You asked to print 0 plasmon modes. Number of plasmon modes to printchanged to          480
+ Essential output written.
+ tdplas calculation: FREQ and PROPAGATION namelist are n used
+ Quantum Nanoparticle as external medium
+ Local field effects are NOT included
+ Medium polarization described by apparent charges
+ This is a Quantum BEM run
+ This run just writes matrices and boundary
+ Medium polarization frozen to molecule in its GS
+ Building surface from spheres.
+ Cavity tessere number         480
+ Drude-Lorentz model for dielectric function is used
+ Used keyword: eps_A:   0.11022400000000000      , eps_gm:    7.5757600000000000E-003 , eps_w0:    0.0000000000000000      , f_vel:    0.0000000000000000     
+ all modes diagonalized and printed 
+ charges for MOPAC2002 interface PRINTED
+Done reading input, took     0.004s
+ Created output file with surface points
+ Matrixes S D have been written out

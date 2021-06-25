@@ -1,0 +1,4 @@
+Reproducing the analytical formula for the time-dependent reaction field of a debye continuum medium after the sudden switching on of a non-polarizable dipole in the center of a vacuum spherical cavity (eq. 50 Corni et al. JCPA 119 (2015) 5405).
+NOTE: Eq. 50 has an error, factor 6 instad of 3 and "times dipole" at the end.
+
+comparing 5th (value) and 6th (reference) values of medium_t_1.dat

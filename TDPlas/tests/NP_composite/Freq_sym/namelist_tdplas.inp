@@ -1,0 +1,36 @@
+&SYSTEM
+/
+
+&OUT_MATRIX
+/
+
+&MEDIUM
+medium_type='nanop'
+medium_pol='charge'
+bem_type='diagonal'
+bem_read_write='read'
+bem_symmetric='non'
+normalization='separate'
+/
+
+&SURFACE
+surface_type='mesh'
+input_mesh='read_file'
+particles_number=2
+/
+
+&EPS_FUNCTION
+epsilon_omega='general'
+/
+
+&do_eps
+n_omega = 500 
+omega_ini = 0.0003674984 
+omega_end = 0.1837492190
+/
+
+&EXT_PERT
+pert_type="field"
+direction(1)=1.0,0.0,0.0
+/
+

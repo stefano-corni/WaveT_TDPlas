@@ -1,0 +1,96 @@
+ 
+ ****************************************************
+ ****************************************************
+ **                                                **
+ **                    WaveT                       **
+ **     Evolution of molecular wavefunctions       **
+ **   under external electromagnetic perturbations **
+ **                                                **
+ **                     by                         **
+ **                Stefano Corni                   **
+ **                Silvio Pipolo                   **
+ **               Emanuele Coccia                  **
+ **                 Gabriel Gil                    **
+ **                Jacopo Fregoni                  **
+ **                                                **
+ ****************************************************
+ ****************************************************
+ 
+ Number to append to dat file           1
+ Number of CIS states to be read          10
+ Number of CIS states to be used          10
+ Molecular center of charge
+   0.0000000000000000        0.0000000000000000        0.0000000000000000     
+ 
+ Time step (in au), number of steps, stride  0.10000000000000001             1000          10
+ 
+ Nanoparticle as external medium
+ No restart
+ Only |k> -> |0> relaxation
+ Energy term is propagated analytically
+ Matmul is used in the propagation.
+ 
+ Time shape of the perturbing fieldgau       
+ time at the center of the pulse (au):   50.000000000000000     
+ Width of the pulse (time au):   4.0000000000000000     
+ Frequency (au):   0.0000000000000000     
+ Maximum E field (au)   1.0000000000000001E-005   0.0000000000000000        0.0000000000000000     
+ Maximum E field (V/m)   5142206.7070000004        0.0000000000000000        0.0000000000000000     
+ Maximum intensity (W/cm^2)   3510000.0000000005        0.0000000000000000        0.0000000000000000     
+ 
+ No dissipation
+ SSE quantum jumps not written
+ 
+ Excitation energies read from input, in Hartree
+           1  0.23910196808911863     
+           2  0.24226975771598519     
+           3  0.24226975771598519     
+           4  0.24804674761556089     
+           5  0.24804674761556089     
+           6  0.26341162978485227     
+           7  0.28938970968313515     
+           8  0.28939338461309672     
+           9  0.30310454829968508     
+          10  0.33047910158336163     
+
+ Starting point for FT calculation   0.0000000000000000     
+ Artificial damping   20000.000000000000        20000.000000000000     
+ Direction along which the field is oriented   1.0000000000000000        0.0000000000000000        0.0000000000000000     
+ 
+ *************OMP*****************
+
+ OMP parallelization on
+The number of processors available =        2
+The number of threads available    =        2
+
+ *************OMP*****************
+ Essential output written.
+ WARNING: Tests are performed. Checks are missing on some keywordsconsistency. You should know what you are doing
+ TEST: Nanoparticle local field
+ Nanoparticle as external medium
+ Local field effects are included
+ Medium polarization described by apparent charges
+ This is full run reading matrix and boundary
+ This is a Classical BEM run
+ This is full run reading matrix and boundary
+ Medium polarization frozen to molecule in its GS
+ Surface read from file cavity.inp
+ Dielectric function is read from file 
+ No namelist keyword are used. 
+ Apparent charges are propagated
+ Medium charges do not follow the quantum jump
+ Frequency of updating the interaction potential:            1
+ Use GS RF as coded in the ci_energy.inp values
+ The coupling is of PCM type: pot \cdot chr
+Done reading input & setting up the field, took     0.190s
+ System initialised as in input files
+ Hilbert Space with           11  states.
+ BEM surface and Matrixes S D have been read in
+ Pole file has been read
+ BEM correctly initialized
+ Done BEM general
+ Standard BEM is experimental
+ Medium contribution to ground state free energy:  -1.5307869054568556E-004
+ G_neq at t=0:   0.0000000000000000     
+ Initiated VV propagator
+Done , total elapsed time    21.436s

@@ -1,0 +1,6 @@
+Reaction field test as in Pipolo,Corni JPCC 2017, eq. 30 with t->0. 
+
+Only IEF-PCM has been corrected and runs properly.
+To correct the others copy mat_SD.inp, cavity.inp, ci_pot.inp from IEF-PCM and should work
+
+SPipolo 20/09/2020

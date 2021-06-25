@@ -1,0 +1,110 @@
+#!/bin/bash
+
+#### this is to test a specific executable (WAVET_PREPEND_PATH specified at compilation time)
+if test -n "$WAVET_PREPEND_PATH" ; then
+  PATH="$WAVET_PREPEND_PATH:$PATH"
+fi
+
+#### From here on the output is written in file "report.txt"
+{
+date
+echo "Running test in $(pwd)"
+
+
+#### create a temporary directory for running the tests
+rm -fr tmp
+mkdir tmp
+cp -rf * tmp 2>/dev/null
+cd tmp
+rm -r tmp
+
+#### check if an out/ directory containing reference output is present  
+test -f out/out.dat || {
+  echo "FAILURE: out/out.dat file reference not found"
+  exit 1
+}
+
+
+#### set variables type and arg to run the test
+
+test -f test_info || {
+  echo "FAILURE: config not found"
+  exit 1
+}
+source ./test_info
+echo "++ Test type: $type"
+echo "++ Arguments: $arg"
+
+
+######## test wavet executable name, to be added in a future
+#### WAVET_PROGRAM_NAME set at compilation time
+#wavet="${WAVET_PROGRAM_NAME:-WaveT.x}"
+wavet="${WAVET_PROGRAM_NAME}"
+echo "using binary " $wavet 
+
+
+#### set this to skip specific tests 
+if type -t wavet_custom_skip 1>/dev/null ; then
+  if wavet_custom_skip ; then
+    echo "NOT_APPLIABLE (wavet_custom_skip)"
+    exit 0;
+  fi
+fi
+if type -t wavet_test_before 1>/dev/null ; then
+  wavet_test_before
+fi
+
+
+#### check that the input file is present
+test -f tdcis.inp || {
+  echo "FAILURE: in file not present"
+  exit 1
+}
+
+
+#### run the test depending on test type 
+case "$type" in
+(standard)
+  $mpi $wavet < tdcis.inp > out.dat 2> err
+  ;;
+(tdplas)
+  $mpi $wavet < tdcis.inp > out.dat 2> err
+  ;;
+(*) echo "FAILURE: unknown test type" ; exit 1 ;;
+esac
+exitcode="$?"
+if test $exitcode -ne 0 ; then
+  echo "FAILURE: exit code $exitcode"
+fi
+
+
+#### ? 
+if type -t wavet_regtest_after 1>/dev/null ; then
+  wavet_regtest_after
+fi
+cat err
+
+#sleep 10
+
+#### test the results
+if ls compare*.sh > /dev/null
+then
+for file in compare*.sh ; do
+  echo running $file 
+  result="$(source ./$file)"
+  if   [ $result -lt 0 ] ; then
+    echo "  ERROR: TEST FAILED!"  
+  elif [ $result -gt 0 ] ; then
+    echo "  DONE: TEST PASSED!"   
+  else
+    echo "  WARNING: could NOT compare results, check tests in $(pwd)"
+  fi
+done
+else
+    echo "MISSING: no compare file script found in $(pwd)"
+fi
+
+
+#### redirect output in test_report.txt
+cd ../
+} | tee test_report.txt

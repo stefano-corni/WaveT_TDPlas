@@ -1,0 +1,127 @@
+#!/bin/bash
+
+#### this is to test a specific executable (TDPLAS_PREPEND_PATH specified at compilation time)
+if test -n "$TDPLAS_PREPEND_PATH" ; then
+  PATH="$TDPLAS_PREPEND_PATH:$PATH"
+fi
+
+#### From here on the output is written in file "report.txt"
+{
+date
+echo "Running test in $(pwd)"
+
+
+#### create a temporary directory for running the tests
+rm -fr tmp
+mkdir tmp
+cp -rf * tmp 2>/dev/null
+cd tmp
+rm -r tmp
+
+
+
+
+#### set variables type and arg to run the test
+
+test -f test_info || {
+  echo "FAILURE: config not found"
+  exit 1
+}
+source ./test_info
+echo "++ Test type: $type"
+echo "++ Arguments: $arg"
+
+
+######## test tdplas executable name, to be added in a future
+#### TDPLAS_PROGRAM_PATH set at compilation time
+tdplas="${TDPLAS_PROGRAM_PATH}"
+echo "using binary " $tdplas 
+
+
+#### set this to skip specific tests 
+if type -t tdplas_custom_skip 1>/dev/null ; then
+  if tdplas_custom_skip ; then
+    echo "NOT_APPLIABLE (tdplas_custom_skip)"
+    exit 0;
+  fi
+fi
+if type -t tdplas_test_before 1>/dev/null ; then
+  tdplas_test_before
+fi
+
+
+#### check that the input file is present
+#test -f tdcis.inp || {
+#  echo "FAILURE: in file not present"
+#  exit 1
+#}
+
+
+#### run the test depending on test type 
+case "$type" in
+(time)
+  $mpi $tdplas/tdplas.x > tdplas.dat 2> err;
+  #### check if an out/ directory containing reference output is present  
+  test -f out/tdplas.dat || {
+  echo "FAILURE: out/tdplas.dat file reference not found"
+  exit 1
+  }
+  ;;
+(freq)
+  $mpi $tdplas/freq_bem.x > freq.dat 2> err;
+  #### check if an out/ directory containing reference output is present  
+  test -f out/freq.dat || {
+  echo "FAILURE: out/freq.dat file reference not found"
+  exit 1
+  }
+  ;;
+(main)
+  $mpi $tdplas/main_eps.x < main.inp > main.dat 2> err;
+  test -f main.inp || {
+  echo "FAILURE: in file not present"
+  exit 1
+  };
+  #### check if an out/ directory containing reference output is present  
+  test -f out/main.dat || {
+  echo "FAILURE: out/main.dat file reference not found"
+  exit 1
+  }
+  ;;
+(*) echo "FAILURE: unknown test type" ; exit 1 ;;
+esac
+exitcode="$?"
+if test $exitcode -ne 0 ; then
+  echo "FAILURE: exit code $exitcode"
+fi
+
+
+#### ? 
+if type -t tdplas_regtest_after 1>/dev/null ; then
+  tdplas_regtest_after
+fi
+cat err
+
+#sleep 10
+
+#### test the results
+if ls compare*.sh > /dev/null
+then
+for file in compare*.sh ; do
+  echo running $file 
+  result="$(source ./$file)"
+  if   [ $result -lt 0 ] ; then
+    echo "  ERROR: TEST FAILED!"  
+  elif [ $result -gt 0 ] ; then
+    echo "  DONE: TEST PASSED!"   
+  else
+    echo "  WARNING: could NOT compare results, check tests in $(pwd)"
+  fi
+done
+else
+    echo "MISSING: no compare file script found in $(pwd)"
+fi
+
+
+#### redirect output in test_report.txt
+cd ../
+} | tee test_report.txt

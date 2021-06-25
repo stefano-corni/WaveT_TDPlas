@@ -1,0 +1,6 @@
+Local field test as in Pipolo,Corni JPCC 2017 
+Only IEF-PCM and DIP-Sphere are up to date.
+Nanoparticle discretization is less fine wrt the paper, this is why the accord between numerical and analytical results for the IEF-PCM test is not as good as in the paper.
+
+S.Pipolo 20/09/2020
+

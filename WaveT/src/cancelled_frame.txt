@@ -1,0 +1,7 @@
+
+!> Array:
+!           \f{array}{{ccc c ccc}
+!             \ddots && \f$\mathbf{H}_{\text{MF}}\f$&\hspace{0.3cm}&\ddots && \f$\mathbf{H}_{\text{MP}}\f$\\
+!        &\mathbf{H}^0_{\text{M}}+\mathbf{H}^0_{\text{P}}&&\hspace{0.3cm}&& ~~~~\mathbf{H}_{\text{PF}}~~~~&\\
+!             \mathbf{H}_{\text{MF}}&&\ddots &\hspace{0.3cm}& \mathbf{H}_{\text{MP}}&&\ddots\\                   
+!           \f} 

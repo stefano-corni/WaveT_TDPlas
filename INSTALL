@@ -1,0 +1,9 @@
+Fortran90 source codes are provided. To compile them, we provide Makefile using standard gfortran with minimal optimization options. The codes depend on blas and lapack libraries plus on the fftw3 library. In the provided Makefiles, it is assumed they are in standard locations (/usr/lib or /usr/local/lib)
+
+If you are fine with these options, from the main directory of the repository type:
+./makeall
+and this should do the trick. Executables are placed in ./TDPlas/bin and in ./WaveT/bin
+
+Otherwise, the Makefiles are in the directories ./TDPlas/src and ./WaveT/src. Please note that TDPlas should be compiled BEFORE WaveT as compilation of TDPlas i is creating a library needed to compile WaveT. 
+
+Tests are provided in the directories ./TDPlas/tests and ./WaveT/tests . Info on how to run them are provided in the README files inside those directories. Tests input should serve also as examples of possible calculations.

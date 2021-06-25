@@ -1,0 +1,94 @@
+#!/bin/bash
+
+nwarni=0
+nerror=0
+nmissi=0
+nok=0
+fail=
+
+for arg
+do
+case $arg in
+  (--fail) fail=1 ;;
+esac
+done
+
+echo
+echo
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo "+ Test session ended at $(date)"
+
+
+#### Find directories containing a Makefile
+dirs=$(
+  ll=$(ls */Makefile)
+  ll=${ll///Makefile/ }
+  for d in $ll ; do
+    for file in $d/*/Makefile
+    do
+      echo ${file%Makefile}
+    done
+  done
+)
+
+#### Create temporary files
+file1=$(mktemp)
+file2=$(mktemp)
+file3=$(mktemp)
+
+
+#### Check in test_report.txt for errors and warnings
+for dir in $dirs
+do
+  file=${dir}test_report.txt
+  fullname="$file"
+  if grep -q WARNING $file ; then
+    ((nwarni++))
+    echo + could not compare results of test $dir >> $file1
+    echo + check file $fullname for more information >> $file1
+  elif grep -q ERROR $file ; then
+    ((nerror++))
+    echo + ERROR in test $dir >> $file2
+    echo + check file $fullname for more information >> $file2
+  elif grep -q MISSING $file ; then
+    ((nmissi++))
+    echo + no compare script in test $dir >> $file3
+    echo + check file $fullname for more information >> $file3
+  else
+    ((nok++))
+  fi
+done
+cat $file1
+cat $file2
+cat $file3
+
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo "+ Final report:"
+echo "+ $((nok+nerror+nwarni)) tests were performed"
+echo "+ $nmissi tests could not be performed"
+echo "+ $nok tests gave CORRECT results"
+echo "+ $nwarni tests could not be checked or gave WARNING messages"
+echo "+ $nerror tests gave ERROR messages"
+if ((nerror==0)) ; then
+echo "+ Well done!!"
+else
+echo "+ Find the bug!"
+if [ -n "$fail" ] ; then
+  exit 1
+fi
+fi
+
+if [ "$WAVET_ALL_TESTS" = yes ] ; then
+  if (($nmissi>0)) ; then
+    echo "+ You are running with WAVET_ALL_TESTS=yes and some tests are not applicable"
+    echo "+ This is likely happening on the first job under TRAVIS-CI"
+    echo "+ Please check that all modules have been properly enabled!"
+    if [ -n "$fail" ] ; then
+      exit 1
+    fi
+  fi
+fi
+echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo
+echo
+

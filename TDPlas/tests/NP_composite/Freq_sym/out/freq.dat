@@ -1,0 +1,19 @@
+ Essential output written.
+ Nanoparticle as external medium
+ Local field effects are NOT included
+ Medium polarization described by apparent charges
+ This is a Classical BEM run
+ This is full run reading matrix and boundary
+ Medium polarization frozen to molecule in its GS
+ Normalization of charges on different sets of tesserae
+ Diagonalization of non-symmetric matrix DA
+ Surface read from file cavity.inp
+ Dielectric function is read from file 
+ No namelist keyword are used. 
+ The applied perturbation is an external field directed as
+   1.0000000000000000        0.0000000000000000        0.0000000000000000     
+Done reading input, took     0.024s
+ BEM surface and Matrixes S D have been read in
+ BEM correctly initialized
+ Done BEM diagonal
+Done , total elapsed time    38.589s

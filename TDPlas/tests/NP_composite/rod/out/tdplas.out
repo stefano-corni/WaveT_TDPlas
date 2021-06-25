@@ -1,0 +1,19 @@
+ Essential output written.
+ tdplas calculation: FREQ and PROPAGATION namelist are n used
+ Nanoparticle as external medium
+ Local field effects are NOT included
+ Medium polarization described by apparent charges
+ This is a Classical BEM run
+ This run just writes matrices and boundary
+ Medium polarization frozen to molecule in its GS
+ Charges are not normalized
+ Diagonalization of symmetric matrix S^-1/2DAS^1/2+S^1/2AD*S^-1/2
+ Surface read from file surface_msh.inp
+ Spheres will be found from gmsh file
+ Dielectric function is read from file 
+ No namelist keyword are used. 
+Done reading input, took     0.122s
+ Created output file with surface points
+ Matrixes S D have been written out
+ BEM correctly initialized
+Done , total elapsed time     0.495s
