@@ -1,0 +1,6 @@
+*.[oa]
+*~
+*.mod
+*.x
+tmp/
+test_report.txt
