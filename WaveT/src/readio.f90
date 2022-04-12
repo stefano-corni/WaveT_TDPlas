@@ -81,7 +81,7 @@
       character(flg) :: Fwrt !< Flag for SSE output
 ! Flags read from input file
       character(flg) :: medium,radiative,dissipative,lsim,absorber,binary,out_sse
-      character(flg) :: dis_prop
+      character(flg) :: dis_prop,prop_type
       character(flg) :: restart 
       character(flg) :: propa
       character(flg) :: full ! full or only |e> -> |0> relaxation
@@ -124,7 +124,7 @@
              mpibcast_e_dip,mpibcast_sse,mpibcast_restart,  &
              nspectra,Fabs,ion_rate,mpibcast_ion_rate,Fbin, &
              ncit,Fopt,ik,Fwrt,tar,all_pop,all_coh,pop,coh, &
-             write_bin,Ip 
+             write_bin,Ip,prop_type 
              
 !
       contains
@@ -152,7 +152,7 @@
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
                         npulse,tdelay,pshift
        !Stochastic Schroedinger equation
-       namelist /sse/ dissipative,idep,dis_prop,nrnd,tdis,nr_typ,krnd,out_sse
+       namelist /sse/ dissipative,idep,dis_prop,prop_type,nrnd,tdis,nr_typ,krnd,out_sse
        !Namelist spectra
        namelist /spectra/ start,tau,dir_ft
        !Namelist for postprocessing
@@ -832,7 +832,7 @@
 !
 ! @date Created   : E. Coccia 11 May 2017
 ! Modified  :
-! @param dissipative,idep,dis_prop,nrnd,tdis,nr_typ,krnd 
+! @param dissipative,idep,dis_prop,prop_type,nrnd,tdis,nr_typ,krnd 
 !------------------------------------------------------------------------
       subroutine init_nml_sse()
 
@@ -842,6 +842,8 @@
        idep=1
        ! Type of propagator
        dis_prop='qjump'
+       ! Propagation scheme for dissipative part of H
+       prop_type='mix'
        ! If dis_prop='euler', steps for accumulating the Wiener process
        nrnd=1
        ! If dis_prop='euler', use the Euler-Maruyama algorithm
@@ -1073,7 +1075,7 @@
 !
 ! @date Created   : E. Coccia 11 May 2017
 ! Modified  :
-! @param dissipative,idep,dis_prop,nrnd,tdis,nr_typ,krnd 
+! @param dissipative,idep,dis_prop,prop_type,nrnd,tdis,nr_typ,krnd 
 !------------------------------------------------------------------------
       subroutine write_nml_sse()
 
@@ -1092,6 +1094,12 @@
            case ('qjump', 'Qjump', 'QJump')
              Fdis="mar-qjump"
              write(*,*) 'Quantum jump algorithm'
+             select case (prop_type)
+              case ('mix')
+                write(*,*) 'Dissipative part is propagated at 1st order'
+              case ('full')
+                write(*,*) 'Dissipative part is propagated at 2nd order'
+             end select
            case ('Euler', 'EUler', 'EULER', 'euler')
              write(*,*) 'Continuous stochastic propagator'
              write(*,*) 'Time step for the Brownian motion is:', dt/nrnd
