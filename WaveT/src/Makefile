@@ -1,23 +1,45 @@
 FC = gfortran
-#FC = ifort
-
-# open mp flags
-# comment first line and uncommment the second for ifort
-
+#FFLAGS_XEON= -O3 -ftz -align -arch pn4 -tune pn4 -xN -tpp7
+#FFLAGS_PAR= -parallel -par_threshold75 -par_report3
+#FFLAGS_HYD= -O3 -ftz -align -xHost
+#FFLAGS_HYD_PAR= -O3 -ftz -align -xHost -parallel -par_threshold75 -par_report3
+#FFLAGS_DEB= -debug -C -traceback
+#FFLAGS_P3= -O3 -ftz -align -arch pn3 -tune pn3 -tpp6
+#FFLAGS_P4= -O3 -ftz -align -arch pn4 -tune pn4 -tpp7 -xN
+#FFLAGS_MIO= -O3 -ftz -align -arch pn4 -tune pn4 -tpp7 -xB -ipo
+#FFLAGS_WS= -O3 -ftz -align -xP -no-prec-div -ipo
+#FFLAGS_LAP= -O3 -ftz -align -xAVX -no-prec-div 
+#FFLAGS_GF= -O3
+#MPI= -DPARALLEL
+LDLAGS= 
 OMP= -fopenmp -DOMP
-#OMP= -qopenmp -DOMP
+#FFLAGS= $(FFLAGS_GF_DEB)
+#LIBS =  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
+#INC = -I/usr/include/ -I/unimore/prod/fftw-3.3.4/include/
+
+#FC = ifort
+#FFLAGS_XEON= -O3 -ftz -align -arch pn4 -tune pn4 -xN -tpp7
+#FFLAGS_PAR= -parallel -par_threshold75 -par_report3
+#FFLAGS_DEB= -debug -C -g
+#FFLAGS_DEB= -debug -traceback -C -g -diag-disable  warn -parallel -par_threshold75 -par_report3
+#FFLAGS_DEB_PAR= -g -diag-disable  warn -parallel -par_threshold75 -par_report3
+#FFLAGS_P3= -O3 -ftz -align -arch pn3 -tune pn3 -tpp6
+#FFLAGS_P4= -O3 -ftz -align -arch pn4 -tune pn4 -tpp7 -xN
+#FFLAGS_MIO= -O3 -ftz -align -xAVX
+#FFLAGS_HYD= -O3 -ftz -align -xHost
+#FFLAGS_HYD_PAR= -O3 -ftz -align -xHost -parallel -par_threshold75 -par_report3 #-check bounds 
+#FFLAGS_WS= -O3 -ftz -align -xP -no-prec-div -ipo
+#FFLAGS_GF= -O3 
+#LDLAGS=
+#OMP= -openmp -DOMP
+#FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
 
 # mpi flags
-
-MPI=
-
-# other flags - to clean up?
-
-LDLAGS=
+MPI= 
 
 # actual flags used in the compilation
-FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
 #FFLAGS= -O3 ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+FFLAGS= -Og -g #${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
 
 # preprocessor flag
 # comment the first and uncomment the second if compiler is ifort
@@ -27,10 +49,10 @@ CPP= -cpp
 
 # libraries to be linked
 
-LIBS = -L/usr/lib -llapack -lblas -lfftw3
-INC = -I/usr/include/
+LIBS = -L/usr/lib -llapack -lblas -lfftw3 -L/usr/local/lib/
+INC = -I/usr/local/include/ -I.
 LIBSPAR= -L/opt/scali/lib64 -lfmpi -lmpi
-INCPAR= -I/opt/scali/include64 -I/local/home/corni/emanuele/fftw-3.3.4/include/
+INCPAR= -I/opt/scali/include64 -I/usr/local/lib
 
 # executable and tools directories
 
@@ -184,7 +206,7 @@ scf.o: constants.o readio.o interface_tdplas.o
 
 dissipation.o: random.o constants.o readio.o interface_tdplas.o
 
-propagate.o: spectra.o dissipation.o interface_tdplas.o
+propagate.o: spectra.o dissipation.o interface_tdplas.o scf.o
 
 main_spectra.o: readio.o spectra.o interface_tdplas.o
 

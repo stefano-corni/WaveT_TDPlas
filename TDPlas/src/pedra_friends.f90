@@ -39,14 +39,14 @@
       type(tess_pcm), target, allocatable :: cts_act(:), cts_pro(:)
       integer(i4b) :: nts_act, nts_pro
       type(sfera), allocatable :: sfe_act(:), sfe_pro(:)
-      integer(i4b) :: nesf_act, nesf_pro
+      integer(i4b) :: nesf_act, nesf_pro, nsphe, n_end_1
 
       save
       private
       public pedra_int, read_act, read_pro, dealloc_pedra, &
              nts_act, nts_pro,cts_act,cts_pro,nesf_pro,sfe_pro, &
              nesf_act,sfe_act,read_cavity_file,read_cavity_full_file,&
-             read_gmsh_file,tess_pcm,sfera
+             read_gmsh_file,tess_pcm,sfera,nsphe,n_end_1
 !
 
       contains
@@ -1272,7 +1272,7 @@
 
       if (myrank.eq.0) then
          open(7,file="cavity_full.inp",status="old")
-         read(7,*) nts_act
+         read(7,*) nts_act, n_end_1
          allocate(cts_act(nts_act))
          do its=1,nts_act
             read(7,*) cts_act(its)%x,cts_act(its)%y,cts_act(its)%z, &
@@ -1315,19 +1315,19 @@
            !call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
            !if (myrank.ne.0) cts_act%rsfe=tmp
 
-           if (myrank.eq.0) tmp=cts_act%n(1)
-           call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           if (myrank.ne.0) cts_act%n(1)=tmp
+           !if (myrank.eq.0) tmp=cts_act%n(1)
+           !call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           !if (myrank.ne.0) cts_act%n(1)=tmp
 
-           if (myrank.eq.0) tmp=cts_act%n(2)
-           call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           if (myrank.ne.0) cts_act%n(2)=tmp
+           !if (myrank.eq.0) tmp=cts_act%n(2)
+           !call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           !if (myrank.ne.0) cts_act%n(2)=tmp
 
-           if (myrank.eq.0) tmp=cts_act%n(3)
-           call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-           if (myrank.ne.0) cts_act%n(3)=tmp
+           !if (myrank.eq.0) tmp=cts_act%n(3)
+           !call mpi_bcast(tmp,     nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           !if (myrank.ne.0) cts_act%n(3)=tmp
 
-           deallocate(tmp)
+           !deallocate(tmp)
 
 #endif
 
@@ -1335,7 +1335,7 @@
       end subroutine
 !
       subroutine read_cavity_file
-       integer(4) :: i,nts,nsphe
+       integer(4) :: i,nts
        real(dbl)  :: x,y,z,s,r      
 
 #ifndef MPI
@@ -1346,17 +1346,13 @@
           open(7,file="cavity.inp",status="old")
          !read(7,*)  
           read(7,*) nts,nsphe
-!         if(nts_act.eq.0.or.nts.eq.nts_act) then
-          nts_act=nts
+         if(nts_act.eq.0.or.nts.eq.nts_act) then
+           nts_act=nts
+         else
+           write(*,*) "Tesserae number conflict"
+           stop
+         endif
        endif
-!         else
-!           write(*,*) "Tesserae number conflict"
-!           stop
-!         endif
-#ifdef MPI
-         call mpi_bcast(nts_act, 1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
-         call mpi_bcast(nsphe,   1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
-#endif
          if(.not.allocated(sfe_act).and.nsphe.gt.0) &
            allocate (sfe_act(nsphe))
          if(.not.allocated(cts_act)) allocate (cts_act(nts_act))
@@ -1382,36 +1378,28 @@
 
            close(7)
         endif 
-#ifdef MPI
-        call mpi_bcast(sfe_act%x,    nsphe,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-        call mpi_bcast(sfe_act%y,    nsphe,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-        call mpi_bcast(sfe_act%z,    nsphe,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
-        call mpi_bcast(cts_act%x,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-        call mpi_bcast(cts_act%y,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-        call mpi_bcast(cts_act%z,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
-        call mpi_bcast(cts_act%area, nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-        call mpi_bcast(cts_act%rsfe, nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
-#endif
 
        return
       end subroutine
 !
-      subroutine read_gmsh_file(inv)
+      subroutine read_gmsh_file(inv,Ffind)
 ! this routine read in gmsh mesh files
 !  AFTER they have been massaged by a proper
 !  gawk script. To be revised with better coding
-      integer(4) :: n_nodes,i_nodes,its,jts,j_max,its_a,iswap,tmp,nts_eff
-      integer(4),allocatable :: el_nodes(:,:)
+      integer(4) :: n_nodes,i_nodes,its,jts,j_max,its_a,tmp
+      integer(4) :: isfe,nts_eff,n_shapes,k
+      integer(4),allocatable :: el_nodes(:,:),isphere(:),shapes_tess(:)
+      logical,allocatable :: is_centre(:)
       character(6) :: line, junk
-      character(3) :: inv
-      real(8),allocatable :: c_nodes(:,:) 
-      real(8) :: vert(3,3),normal(3),area,dist,dist_v(3), &
+      character(3) :: inv,Ffind
+      real(8),allocatable :: c_nodes(:,:)
+      real(8) :: vert(3,3),normal(3),area,dist,diff(3), &
         dist_max,area_tot 
 
 #ifndef MPI
        myrank=0
 #endif
-
+      n_shapes=1
       nesf_act=0
       if (myrank.eq.0) then
          open(7,file="surface_msh.inp",status="old")
@@ -1421,6 +1409,12 @@
      call mpi_bcast(n_nodes,  1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 #endif 
       allocate(c_nodes(3,n_nodes))
+      allocate(is_centre(n_nodes))
+      if (Ffind.eq.'yes') then 
+            is_centre(:)=.true.
+      else
+            is_centre(:)=.false.   !!CHANGE TO AVOID CREATION OF SPHERES WHEN USING DIFFERENT NP SHAPES WITH GMSH 
+      endif
       if (myrank.eq.0) then
          do i_nodes=1,n_nodes
             read(7,*) c_nodes(:,i_nodes)
@@ -1434,12 +1428,20 @@
      call mpi_bcast(nts_act, 1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
      call mpi_bcast(nts_eff, 1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 #endif 
+      allocate(isphere(nts_act))
       allocate(cts_act(nts_act))
       allocate(el_nodes(3,nts_eff))
       if (myrank.eq.0) then
          do its=1,nts_eff
-            read(7,*) el_nodes(:,its),iswap
-            if(iswap.lt.0) then
+            read(7,*) el_nodes(:,its),isphere(its)
+            if (its.gt.1) then
+                   if (isphere(its).ne.isphere(its-1)) n_shapes=n_shapes+1
+            endif
+            ! if the node is part of a tessera cannot be a centre
+            is_centre(el_nodes(1,its))=.false.
+            is_centre(el_nodes(2,its))=.false.
+            is_centre(el_nodes(3,its))=.false.
+            if(isphere(its).lt.0) then
               tmp=el_nodes(3,its)
               el_nodes(3,its)=el_nodes(1,its)
               el_nodes(1,its)=tmp
@@ -1447,6 +1449,41 @@
          enddo
          close(7)
       endif
+      allocate(shapes_tess(n_shapes))
+      k=1
+      ! Find centres
+      do i_nodes=1,n_nodes
+        if(is_centre(i_nodes)) nesf_act=nesf_act+1
+      enddo
+      ! If center points found set sphere center positions and radii
+      if (nesf_act.gt.0) then
+        if(.not.allocated(sfe_act)) allocate(sfe_act(nesf_act))
+        isfe=0
+        ! Set sphere centers
+        do i_nodes=1,n_nodes
+          if(is_centre(i_nodes)) then               
+            isfe=isfe+1
+            sfe_act(isfe)%x=c_nodes(1,i_nodes)
+            sfe_act(isfe)%y=c_nodes(2,i_nodes)
+            sfe_act(isfe)%z=c_nodes(3,i_nodes)
+          endif
+        enddo
+        ! Set sphere radii  
+        do its=1,nts_eff
+          if (its.gt.1) then
+                   if (isphere(its).ne.isphere(its-1))then
+                          shapes_tess(k)=its-1 
+                          k=k+1
+                  endif
+          endif
+          diff(1)=c_nodes(1,el_nodes(1,its))-sfe_act(isphere(its))%x 
+          diff(2)=c_nodes(2,el_nodes(1,its))-sfe_act(isphere(its))%y  
+          diff(3)=c_nodes(3,el_nodes(1,its))-sfe_act(isphere(its))%z 
+          sfe_act(isphere(its))%r=sqrt(dot_product(diff,diff))
+          cts_act(its)%rsfe=sqrt(dot_product(diff,diff))
+        enddo
+      endif
+      deallocate(isphere,is_centre)
 #ifdef MPI
      call mpi_bcast(el_nodes, 3*nts_eff,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 #endif
@@ -1488,7 +1525,9 @@
 ! very big as the tessera is planar, can be improved
 ! by using info from nearby normals to estimate a local
 ! curvature, TO BE DONE
-        cts_act(its_a)%rsfe=1.d20   
+        !cts_act(its_a)%rsfe=1.d20   
+! Silvio 06/10/19: Why is rsfe set so high here? I need to comment this
+! for QM_coupling tests.
         if (inv.eq.'inv') then
            cts_act(its_a+nts_eff)%area=area/2.d0
            area_tot=area_tot+area/2.d0
@@ -1518,10 +1557,10 @@
            j_max=jts
          endif
         enddo
-        dist_v(1)=cts_act(its)%x-cts_act(j_max)%x
-        dist_v(2)=cts_act(its)%y-cts_act(j_max)%y
-        dist_v(3)=cts_act(its)%z-cts_act(j_max)%z
-        cts_act(its)%n=cts_act(its)%n*sign(1.d0,dot_product(cts_act(its)%n,dist_v))
+        diff(1)=cts_act(its)%x-cts_act(j_max)%x
+        diff(2)=cts_act(its)%y-cts_act(j_max)%y
+        diff(3)=cts_act(its)%z-cts_act(j_max)%z
+        cts_act(its)%n=cts_act(its)%n*sign(1.d0,dot_product(cts_act(its)%n,diff))
       enddo
 
       if (myrank.eq.0) then
@@ -1529,7 +1568,7 @@
          open(7,file="cavity_full.inp",status="unknown")
          write(7,*) nts_act
          do its=1,nts_act
-         write(7,'(8D14.5)') cts_act(its)%x,cts_act(its)%y,cts_act(its)%z, &
+         write(7,'(8E26.16)') cts_act(its)%x,cts_act(its)%y,cts_act(its)%z, &
                  cts_act(its)%area,cts_act(its)%rsfe, &
                  cts_act(its)%n(:) 
          enddo

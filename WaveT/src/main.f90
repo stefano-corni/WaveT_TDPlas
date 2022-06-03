@@ -6,19 +6,12 @@
        use dissipation 
        use propagate
        use QM_coupling    
-       use interface_tdplas, only: read_medium_input,mpibcast_read_medium,set_global_tdplas_in_wavet
+       use interface_tdplas,only:read_medium_input,mpibcast_read_medium,set_global_tdplas_in_wavet,transfer_matrix_tdplas_to_wavet
 #ifdef OMP
        use omp_lib
 #endif
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
-#endif
-#ifdef MPI
-#ifdef SCALI
-      include 'mpif.h'
-#endif
 #endif
        implicit none
 
@@ -57,10 +50,10 @@
        !Send input data to all the processes
        call mpibcast_readio()
        call mpibcast_e_dip()
-       if (Fdis(1:5).ne."nodis") call mpibcast_sse()
+       if (Fdis.ne."nodis") call mpibcast_sse()
        if (Fres.eq.'Yesr')       call mpibcast_restart()
        if (Fmdm.ne.'vac')        call mpi_bcast(nspectra,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
-       if (Fabs(1:3).eq.'abs')   call mpibcast_ion_rate()
+       if (Fabs.eq.'abs')   call mpibcast_ion_rate()
 #endif
 
 
@@ -77,7 +70,7 @@
 #endif
 
        ! Fmdm(1:3) means the first three letters of the char flag Fmdm 
-          if (Fmdm(1:3).ne."vac") then
+          if (Fmdm.ne."vac") then
              call set_global_tdplas_in_wavet(dt,Fmdm,mol_cc,n_ci,n_ci_read,c_i, &
                                              e_ci,mut,fmax,omega,Ffld,n_out,n_f, &
                                              tdelay,pshift,Fbin,Fopt,nthreads, &
@@ -89,6 +82,8 @@
       !Send input data to all the processes
       call mpibcast_read_medium()
 #endif
+       !call read_gau_out_medium_in_wavet
+            call transfer_matrix_tdplas_to_wavet
 
        call init_spectra
 
@@ -102,7 +97,7 @@
 #endif
 
 !      propagate or diagonalise matrix
-       if(Fmdm(1:1).eq.'Q') then
+       if(Fmdm.eq.'Qnan'.or.Fmdm.eq.'Qsol') then
          call do_QM_coupling
        else 
          call prop

@@ -5,9 +5,7 @@
       use pedra_friends
       use interface_qmcode
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
 #endif
 
       implicit none
@@ -24,7 +22,6 @@
       real(dbl), allocatable :: sph_min(:)       !< Secondary axis modulus (nsph) of spheroids (spheres: sph_maj=sph_min)
       real(dbl), allocatable :: sph_vrs(:,:,:)   !< versors of principal (:,1,:) and secondary axis of nsph spheroids (:,:,nsph)
       real(dbl) :: fr_0(3)                       !< Reaction field at time 0 defined with Finit_mdm, here because used in scf
-      ! Charges propagation
       real(dbl), allocatable :: vts(:,:,:)       !<transition potentials on tesserae from cis
       real(dbl), allocatable :: vtsn(:)          !<nuclear potential on tesserae
       real(dbl), allocatable :: q0(:)            !< Charges at time 0 defined with Finit_mdm, here because used in scf
@@ -35,6 +32,12 @@
       real(dbl) :: eps_0,eps_d                   !< $\omega \rightarrow 0$ and $\omega \rightarrow \infty$ limits of $\epsilon(\omega)$
       real(dbl) :: tau_deb                       !< Debye's $\tau_D$
       real(dbl) :: eps_A,eps_gm,eps_w0,f_vel     !< Drude lorentz $\omega^2_p$, $\gamma$, $\omega_$, and fermi velocity $v_f$
+! QM coupling
+! JF 011229:QM_coupling
+      integer(i4b) :: nmod !< number of modes to couple and print
+      integer(i4b),parameter :: nts_max=100
+      integer(i4b),allocatable,dimension(:) :: imod  !< which modes to couple and print
+      integer(i4b) :: max_mod_todiag                 !<maximum quantum plasmonic mode obtained by diagonalization
 ! SCF variables
       integer(i4b) :: ncycmax !< maximum number of SCF cycles
       real(dbl) :: thrshld    !< SCF threshold on (i) eigenvalues 10^-thrshld (ii) eigenvectors 10^-(thrshld+2)
@@ -66,12 +69,14 @@
                         Fdeb,      & !< Debug Flag: see below
                         Fopt_chr,  & !< Optimized loops with OMP
                         Fmdm_res,  & !< Medium restart
-                        Finv         !< Apply inversion symmetry when cavity is built using gmsh
-
-                                     !! 
+                        Finv,      & !< Apply inversion symmetry when cavity is built using gmsh
+                        Ffind,     & !< Spheres are not founf gmsh file
+                        Fmop         !< Prints charges for mopac2002 interface
       
 ! namelists user-friendly variables 
       real(dbl) :: interaction_stride
+      real(dbl) :: n_prnt_charges
+      real(dbl) :: prnt_charges(nts_max)
       real(dbl) :: spheres_number
       real(dbl) :: sphere_position_x(nsmax)            
       real(dbl) :: sphere_position_y(nsmax)            
@@ -91,7 +96,7 @@
                         debug_type,bem_type,local_field,medium_type,   &
                         out_level,interaction_init,epsilon_omega,      &
                         test_type,medium_relax,gamess,print_lf_matrix, &
-                        inversion 
+                        inversion,charge_mopac,find_spheres 
 
      ! variables read from eps.inp in the case of the general
      ! dielectric function case (i.e., eps_omega = 'gen')
@@ -100,47 +105,47 @@
       complex(cmp), allocatable :: eps_omegas(:)      !< complex dielectric function values for the sampling frequencies
       real(dbl), allocatable    :: re_deps_domegas(:) !< real part of the derivative of the dielectric function at the sampling frequencies
       real(dbl), allocatable    :: im_deps_domegas(:) !< imaginary part of the derivative of the dielectric function at the sampling frequencies
-      real(dbl), allocatable    :: func_eps(:), dfunc_eps(:) 
-
+      real(dbl), allocatable    :: func_eps(:)        !< first-order Taylor expansion for eps around frequency of the pole
+      real(dbl), allocatable    :: dfunc_eps(:)       !< first derivative of func_eps
       character(7) :: linked_to
 
       private
       public read_medium,deallocate_medium,Fint,Feps,Fprop,          &
              nsph,sph_maj,sph_min,sph_centre,sph_vrs,                &
              eps_0,eps_d,tau_deb,eps_A,eps_gm,eps_w0,f_vel,          &
-             npts,omegas,eps_omegas,re_deps_domegas,im_deps_domegas,func_eps, dfunc_eps,&
-             vts,n_q,Fmdm_pol,                                       &
+             npts,omegas,eps_omegas,re_deps_domegas,im_deps_domegas, &
+             func_eps, dfunc_eps,vts,n_q,Fmdm_pol,                   &
              MPL_ord,Fbem,Fshape,fr_0,q0,Floc,                       &
              Fdeb,vtsn,Finit_int,Fqbem,Ftest,                        &
              ncycmax,thrshld,mix_coef,                               &
              FinitBEM,Fsurf,Finit_mdm,read_medium_freq,              &
              read_medium_tdplas,n_omega,omega_ini,omega_end,         &
              Fwrite,Fmdm_relax,Fgamess,mpibcast_readio_mdm,Fopt_chr, &
-             ntst,Fmdm_res,Finv, read_medium_eps, linked_to
+             ntst,Fmdm_res,Finv, read_medium_eps,nmod,imod,Fmop,     &
+             max_mod_todiag,Ffind,linked_to
+
 !
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!  DRIVER  ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine read_medium(nts,cts)
 !------------------------------------------------------------------------
 ! @brief Driver routine for reading medium input 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine read_medium(nts,cts)
 
        integer                    , optional, intent(out) :: nts
        type(tess_pcm), allocatable, optional, intent(out) :: cts(:)
-
-       integer i
 
        namelist /propagate/interaction_stride,interaction_init,        &
                          interaction_type,propagation_type,            &
                          scf_mix_coeff,scf_max_cycles,scf_threshold,   &
                          local_field,debug_type,out_level,test_type,   &
-                         medium_relax,ntst,linked_to
+                         medium_relax,medium_res,ntst,linked_to
        namelist /medium/ medium_type,medium_init,medium_pol,bem_type,  &
                          bem_read_write                  
        namelist /surface/input_surface,spheres_number,spheroids_number,&
@@ -150,6 +155,8 @@
          sphere_radius,spheroid_radius                                
        namelist /eps_function/epsilon_omega,eps_0,eps_d,eps_A, &
                          eps_gm,eps_w0,f_vel,tau_deb       
+       namelist /print_charges/n_prnt_charges,prnt_charges, &
+                               charge_mopac
       
        open(1987,file='tdplas.inp')
        call init_nml_all() 
@@ -161,25 +168,46 @@
        call write_nml_medium()
        read(1987,nml=surface) 
        call write_nml_surface()
-       if (Fmdm(2:4).eq.'nan') then
+       if (Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') then
          call init_nml_nanoparticle() 
-       elseif (Fmdm(2:4).eq.'sol') then
+       elseif (Fmdm.eq.'Csol') then
          call init_nml_solvent()
        endif
        read(1987,nml=eps_function) 
        call write_nml_eps_function()
+       
+       if(FinitBEM.eq.'rea') then
+          if(Fprop.eq.'chr-ief'.or.Fprop.eq.'chr-ied' &
+                           & .or.Fprop.eq.'chr-ons') then
+             if( linked_to == 'wavet  ' ) then
+              call read_gau_out_medium
+             endif
+          endif
+       endif
+       if (Fsurf.eq.'fil') then
+          if (FinitBEM.eq.'wri') then
+              call read_cavity_full_file
+              write(98,*) cts_act
+          elseif (FinitBEM.eq.'rea') then
+              call read_cavity_file
+          endif
+       endif
+       
+       if (Fmdm.eq.'Qnan') then
+         read(*,nml=print_charges) 
+         call write_nml_print_charges()
+       endif
        call write_nml_all()
        close(1987)
-
        if (nts_act.gt.ntst.and.nthr.gt.1) then 
-          Fopt_chr(1:3)='omp'
+          Fopt_chr='omp'
           write(*,*) 'OMP-optimized loops for charges'
        else
-          Fopt_chr(1:3)='non'
+          Fopt_chr='non'
           write(*,*) 'Matmul is always used' 
        endif
 
-       if(present(cts)) then
+       if(present(cts).and.present(nts)) then
         nts = nts_act
         allocate(cts(nts))
         cts = cts_act
@@ -190,13 +218,13 @@
       end subroutine read_medium
 
 
-      subroutine read_medium_freq
 !------------------------------------------------------------------------
 ! @brief Driver routine for reading medium input form main_freq 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine read_medium_freq
 
        namelist /freq/ fmax,n_omega,omega_ini,omega_end,debug_type, &
                        out_level,test_type
@@ -229,14 +257,13 @@
       end subroutine read_medium_freq
 
 
-      subroutine read_medium_tdplas
 !------------------------------------------------------------------------
 ! @brief Driver routine for main_tdplas 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
-
+      subroutine read_medium_tdplas
 
        !namelist /tdplas/ debug
        namelist /medium/ medium_type,medium_init,medium_pol,bem_type,  &
@@ -245,22 +272,35 @@
          sphere_position_x,sphere_position_y,sphere_position_z,        &
          spheroid_axis_x,spheroid_axis_y,spheroid_axis_z,              &
          spheroid_position_x,spheroid_position_y,spheroid_position_z,  &
-         sphere_radius,spheroid_radius,inversion                                
+         sphere_radius,spheroid_radius,inversion,find_spheres           
        namelist /eps_function/ epsilon_omega,eps_0,eps_d,eps_A,&
                                eps_gm,eps_w0,f_vel,tau_deb
+       namelist /print_charges/n_prnt_charges,prnt_charges, &
+                               charge_mopac
        namelist /out_matrix/ gamess
+
+
        call init_nml_all() 
        call init_nml_tdplas() 
-       !read(*,nml=tdplas)
        read(*,nml=medium) 
        call write_nml_medium() 
        read(*,nml=surface) 
        call write_nml_surface() 
+       if (Fsurf.eq.'fil') then
+          if (FinitBEM.eq.'wri') then
+              call read_cavity_full_file
+          elseif (FinitBEM.eq.'rea') then
+              call read_cavity_file
+          endif
+       endif
        read(*,nml=eps_function) 
        call write_nml_eps_function()
+       if (Fmdm.eq.'Qnan') then
+         read(*,nml=print_charges) 
+         call write_nml_print_charges()
+       endif
        read(*,nml=out_matrix,end=10) 
 10     call write_nml_all()
-
        return
 
       end subroutine read_medium_tdplas
@@ -292,20 +332,24 @@
 !!!!!!!!!!!!!!!!!!!!!  INITIALIZATION  ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine init_nml_all 
 !------------------------------------------------------------------------
 ! @brief Initialize variables for all mains to safe values 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine init_nml_all
 
 
        ! Output and debug
        out_level="low"
        debug_type="non"
        test_type="non"
+       !Use only with gmsh
+       Finv='non'
+       Ffind='yes'
        ! Sphere and Spheroid
+       Fshape='none'
        spheres_number=0 
        sphere_radius=zero
        sphere_position_x=zero
@@ -319,6 +363,8 @@
        spheroid_position_y=zero
        spheroid_position_z=zero
        spheroid_radius=zero
+       n_prnt_charges=zero
+       charge_mopac='no'
        ! SCF
        scf_threshold=10
        scf_mix_coeff=0.2
@@ -330,39 +376,37 @@
        ! Threshold value for optimized loops
        ntst=150
        print_lf_matrix='non'
+       medium_init='fro'
+       medium_type='nan'
+       medium_pol='chr'
 
        return
 
-      end subroutine
+      end subroutine init_nml_all
 
-
-      subroutine init_nml_propagate()
 !------------------------------------------------------------------------
 ! @brief Initialize variables for propagation main (will be tdplas) 
 !
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine init_nml_propagate()
 
-       medium_init='fro'
-       medium_type='nan'
-       medium_pol='chr'
+       !medium_init='fro'
+       !medium_type='nan'
+       !medium_pol='chr'
        medium_relax="non"
        interaction_stride=1
        interaction_type='pcm'
        interaction_init='non-scf'
-       bem_type='diag'
-       bem_read_write='rea'
-       input_surface='fil'
        propagation_type='ief'
        local_field='loc'
+       medium_res='n'
 
        return
 
-      end subroutine 
+      end subroutine init_nml_propagate 
 
-
-      subroutine init_nml_nanoparticle()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist nanoparticle 
 !
@@ -370,6 +414,7 @@
 ! Modified  : SP 10/07/17
 ! @param epsilon_omega,eps_0,eps_d,eps_A,eps_gm,eps_w0,f_vel
 !------------------------------------------------------------------------
+      subroutine init_nml_nanoparticle()
 
        epsilon_omega='drl'
        tau_deb=1000.
@@ -385,7 +430,6 @@
       end subroutine init_nml_nanoparticle
 
 
-      subroutine init_nml_solvent()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist solvent 
 !
@@ -393,6 +437,7 @@
 ! Modified  : SP 10/07/17
 ! @param epsilon_omega,eps_0,eps_d,eps_A,eps_gm,eps_w0,f_vel
 !------------------------------------------------------------------------
+      subroutine init_nml_solvent()
 
        epsilon_omega='deb'
        tau_deb=1000.
@@ -408,13 +453,13 @@
       end subroutine init_nml_solvent
 
 
-      subroutine init_nml_freq()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist freq 
 !
 ! @date Created   : E. Coccia 11 May 2017
 ! Modified  : SP 10/07/17
 !------------------------------------------------------------------------
+      subroutine init_nml_freq() 
 
        ! SP: No propagation: Fprop set to other than "dip" or "chr" 
        Fprop="non"
@@ -443,13 +488,13 @@
       end subroutine init_nml_freq
 
 
-      subroutine init_nml_tdplas()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist tdplas 
 !
 ! @date Created   : E. Coccia 16 May 2017
 ! Modified  : SP 14/07/17
 !------------------------------------------------------------------------
+      subroutine init_nml_tdplas()
 
        ! SP: No propagation: Fprop set to other than "dip" or "chr" 
        Fprop="non"
@@ -479,13 +524,13 @@
 !!!!!!!!!!!!!!!!!!  VARIABLE DEFINITION ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine write_nml_all 
 !------------------------------------------------------------------------
 ! @brief Write variables for all mains 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine write_nml_all
 
        ! Output level
        select case (out_level)
@@ -501,6 +546,19 @@
          write(*,*) "- low"
          stop
        end select
+       select case (charge_mopac)
+          case("yes","Yes","YES")
+            Fmop='yes'
+            write(*,*) "charges for MOPAC2002 interface PRINTED"
+          case("no","NO","No")
+            Fmop='non'
+            write(*,*) "charges for MOPAC2002 interface NOT PRINTED"
+          case default
+            Fmop='non'
+            write(*,*) "charges for MOPAC2002 interface NOT PRINTED"
+            write(*,*) "If such charges should be print,"&
+                               &" specify charge_mopac='yes'" 
+       end select
        ! Test  
        select case(test_type)
        case ('n-r','N-r','n-R','N-R')
@@ -509,7 +567,7 @@
         write(6,*) "TEST: Nanoparticle reaction field"
        case ('n-l','N-l','n-L','N-L')
         Ftest='n-l'
-        Ffld='snd'
+        !Ffld='snd'
         Floc='loc'
         write(6,*) "TEST: Nanoparticle local field"
        case ('s-r','S-r','s-R','S-R')
@@ -518,7 +576,7 @@
         write(6,*) "TEST: Solvent reaction field"
        case ('s-l','S-l','s-L','S-L')
         Ftest='s-l'
-        Ffld='snd'
+        !Ffld='snd'
         Floc='loc'
         write(6,*) "TEST: Solvent local field"
        case ('QMT','Qmt','qmt')
@@ -549,16 +607,15 @@
        end select
        return
 
-      end subroutine
+      end subroutine write_nml_all
 
-
-      subroutine write_nml_propagate()
 !------------------------------------------------------------------------
 ! @brief Write solvent and nanoparticle shared variables 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine write_nml_propagate()
 
        ! propagation_type refers to which quantity is propagated by equations of motions
        !   dip: only the dipolar (i.e., Onsager) reaction/local field/dipole is propagated
@@ -591,6 +648,7 @@
         Floc='loc'
         write(6,*) "Local field effects are included"
        case default
+        Floc='non'
         write(6,*) "Local field effects are NOT included"
        end select
 ! SP 270917: added when merging to newer master 
@@ -618,31 +676,18 @@
 
        return
 
-      end subroutine
+      end subroutine write_nml_propagate
 
 
-      subroutine write_nml_tdplas()
-!------------------------------------------------------------------------
-! @brief Write variables in the namelist tdplas and put conditions 
-!
-! @date Created   : E. Coccia 16 May 2017
-! Modified  :
-! @param epsilon_omega,eps_0,eps_d,tau_deb,eps_A,eps_gm,
-!        eps_w0,f_vel,input_surface,xr,yr,zr,rr,nsph  
-!------------------------------------------------------------------------
-       return
-      end subroutine  write_nml_tdplas
-
-
-      subroutine write_nml_eps_function()
 !------------------------------------------------------------------------
 ! @brief Write solvent and nanoparticle shared variables 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine write_nml_eps_function()
 
-       real(dbl)::a,b,c
+       real(dbl)::a,b,c,eps_real,eps_imag
        integer(i4b)::i,j
 
        select case (epsilon_omega)
@@ -653,14 +698,19 @@
          case ('gen','Gen','GEN','gral','Gral','GRAL')
            write(*,*) 'Generic dielectric function is used'
            Feps='gen'
-           open(1,file='eps.inp')
+         if (Feps.eq.'gen'.and.Feps.eq.'diag') then  
+         open(1,file='eps.inp')
            read(1,*) npts
+
+           n_omega=npts
            allocate(omegas(npts),eps_omegas(npts),re_deps_domegas(npts),im_deps_domegas(npts),func_eps(npts),dfunc_eps(npts))
            do i=1, npts
-            read(1,*) omegas(i), eps_omegas(i)
+            !read(1,*) omegas(i), eps_omegas(i)
+            read(1,*) omegas(i), eps_real, eps_imag 
+            eps_omegas(i)=cmplx(eps_real,eps_imag)
            enddo
            call fivepts_stencil(real(eps_omegas(:),dbl),omegas(:),re_deps_domegas(:))
-           call fivepts_stencil(dimag(eps_omegas(:)),omegas(:),im_deps_domegas(:))
+           call fivepts_stencil(aimag(eps_omegas(:)),omegas(:),im_deps_domegas(:))
            ! assumption for the first derivative
            re_deps_domegas(1) = re_deps_domegas(2)
            im_deps_domegas(1) = im_deps_domegas(2)
@@ -670,7 +720,7 @@
            write(3,*) omegas(1), func_eps(1)
            write(4,*) omegas(1), re_deps_domegas(1)
            do i=2, npts
-            func_eps(i) = real(eps_omegas(i),dbl)+dimag(eps_omegas(i))*(im_deps_domegas(i)/re_deps_domegas(i))
+            func_eps(i) = real(eps_omegas(i),dbl)+aimag(eps_omegas(i))*(im_deps_domegas(i)/re_deps_domegas(i))
             write(3,*) omegas(i), func_eps(i)
             write(4,*) omegas(i), re_deps_domegas(i)
            enddo
@@ -680,6 +730,7 @@
            close(3)
            close(4)
            close(1)
+        endif
          case default
            write(*,*) "Error, specify eps(omega) type DEB or DRL"
 #ifdef MPI
@@ -690,16 +741,15 @@
 
        return
 
-      end subroutine
+      end subroutine  write_nml_eps_function
 
-
-      subroutine write_nml_interaction()
 !------------------------------------------------------------------------
 ! @brief Write solvent and nanoparticle shared variables 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine write_nml_interaction()
 
        n_q=interaction_stride
        write(*,*) 'Frequency of updating the interaction potential', n_q
@@ -752,16 +802,15 @@
 
        return
 
-      end subroutine
+      end subroutine write_nml_interaction
 
-
-      subroutine write_nml_medium()
 !------------------------------------------------------------------------
 ! @brief Write solvent and nanoparticle shared variables 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine write_nml_medium()
 
 ! PER STEFANO:
 ! SP 14/07/17: medium_type is the same of medium in maedium.f90 except for the vacuum case
@@ -814,10 +863,7 @@
            Fbem="diag"
           case ('stan','Stan','STAN')
            Fbem="stan"
-           write(6,*) 'Standard BEM formulation is experimental'
-#ifdef MPI
-           call mpi_finalize(ierr_mpi)
-#endif
+           write(6,*) 'Standard BEM formulation'
           case default
            write(*,*) "Error, specify a BEM type "
 #ifdef MPI
@@ -825,9 +871,9 @@
 #endif
            stop
          end select
-         if (Fmdm(1:1).eq.'C') then
+         if (Fmdm.eq.'Csol'.or.Fmdm.eq.'Cnan') then
            write (6,*) "This is a Classical BEM run"
-         elseif (Fmdm(1:1).eq.'Q') then
+         elseif (Fmdm.eq.'Qnan') then
 ! SP 220617: Adding quantum coupling                            
            write (6,*) "This is a Quantum BEM run"
            ! This is the only option by now
@@ -836,11 +882,6 @@
          select case(bem_read_write)
          case ('rea','Rea','REA')
           FinitBEM='rea'
-          if(Fprop(1:3).eq."chr") then
-            if( linked_to == 'wavet  ' ) then
-              call read_gau_out_medium
-            endif
-          endif
           write(6,*) "This is full run reading matrix and boundary"
          case ('wri','Wri', 'WRI')
           FinitBEM='wri'
@@ -853,22 +894,18 @@
 #endif
           stop
          end select
+!SC 16/7/2020: print_lf_matrix does nothing.
          select case(print_lf_matrix)
           case ('yes','Yes', 'YES')
-             Floc='loc'
-             write(6,*) "This run just writes matrices and boundary"
-          case ('non','Non', 'NON')
-             !Floc='non'
+!             Floc='loc'
+             write(6,*) "printing of local field matrix via",&
+                     " print_lf_matrix is not implemented."
           case default
-	     write(*,*) "Error, specify if local-field matrix", &
-	             "should be written or not. "
-#ifdef MPI
-	     call mpi_finalize(ierr_mpi)
-#endif
-             stop
+!          write(*,*) "Local-field matrix won't be written"
+!          write(*,*) "Specify print_lf_matrix 'yes' to print. "
          end select
        endif
-       if (Fprop(1:3).eq.'chr'.or.Fprop(1:3).eq.'dip') then
+       !if (Fprop(1:3).eq.'chr'.or.Fprop(1:3).eq.'dip') then
          ! Medium initialization for propagation: how to set q0 and fr_0
          select case(medium_init)
          case ('vac','VAC','Vac') ! q0=zero, fr_0=zero
@@ -888,29 +925,29 @@
 #endif
           stop
          end select
-       endif     
+       !endif     
 
        return
 
-      end subroutine 
+      end subroutine write_nml_medium 
 
 
 !------------------------------------------------------------------------
 ! SP 14/07/17 calculations should probably go in a different module. which one?
 !             Probably pedra_firends....
-      subroutine write_nml_surface()
 !------------------------------------------------------------------------
 ! @brief Write variables for surface/medium object 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine write_nml_surface()
 
        integer(i4b)::i,j
 
        if (spheres_number.gt.0) nsph=spheres_number
        if (spheroids_number.gt.0) nsph=spheroids_number
-       if (Fprop(1:3).eq.'dip') then
+       if (Fprop.eq.'dip') then
        ! fill sph_centre,sph_min,sph_maj,sph_vrs that define the medium object for calculations/propagation
          allocate(sph_maj(nsph))
          allocate(sph_min(nsph))
@@ -920,8 +957,10 @@
            write(6,*) 'This is a Spherical Onsager run in solution'
            ! sphere major axis = minor axis = radius           
            Fshape='sphe' ! Sphere
-           if(Fmdm(2:4).eq.'sol')write(*,*)'Spherical cavity'
-           if(Fmdm(2:4).eq.'nan')write(*,*)'Spherical nanoparticle'
+           if(Fmdm.eq.'Csol')write(*,*)'Spherical cavity'
+           if(Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') then
+                  write(*,*)'Spherical nanoparticle'
+          endif
            do i=1,nsph
              sph_centre(1,i)=sphere_position_x(i)
              sph_centre(2,i)=sphere_position_y(i)
@@ -954,8 +993,10 @@
                stop
              endif
              sph_vrs(:,1,i)=sph_vrs(:,1,i)/sph_maj(i)
-             if(Fmdm(2:4).eq.'sol')write(*,*)'Spheroidal cavity'
-             if(Fmdm(2:4).eq.'nan')write(*,*)'Spheroidal nanoparticle'
+             if(Fmdm.eq.'Csol')write(*,*)'Spheroidal cavity'
+             if(Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') then 
+                  write(*,*)'Spheroidal nanoparticle'
+             endif
              write(*,*) 'Principal axis (a.u)', sph_maj(i)
              write(*,'(a,3F10.5)') 'Principal direction (a.u.) ', &
                                         (sph_vrs(j,1,i),j=1,3)
@@ -969,11 +1010,6 @@
          case ('fil','FIL','Fil')
           Fsurf='fil'
           write(6,*) "Surface read from file cavity.inp"
-          if (FinitBEM.eq.'wri') then
-           call read_cavity_full_file
-          elseif (FinitBEM.eq.'rea') then
-           call read_cavity_file
-          endif
          case ('gms','GMS','Gms')
           Fsurf='gms'
           write(6,*) "Surface read from file surface_msh.inp"
@@ -984,7 +1020,14 @@
           case ('non')
            Finv='non'
           end select
-          call read_gmsh_file(Finv)
+          select case(find_spheres)
+          case ('non','Non', 'NON')
+           Ffind='non'
+           write(6,*) 'Spheres will not be found in gmsh file'
+          case ('yes','Yes','YES')
+           Ffind='yes'
+          end select
+          call read_gmsh_file(Finv,Ffind)
          case ('bui','Bui','BUI')
           Fsurf='bui'
           write(6,*) "Building surface from spheres."
@@ -1007,8 +1050,8 @@
                         sphere_position_y,&
                         sphere_position_z,&
                         sphere_radius,nsph,nsmax)
-          if(Fmdm(2:4).eq.'sol') call pedra_int('act')
-          if(Fmdm(2:4).eq.'nan') call pedra_int('met')
+          if(Fmdm.eq.'Csol') call pedra_int('act')
+          if(Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') call pedra_int('met')
          case default
           write(6,*) "Please choose: build or read surface?"
 #ifdef MPI
@@ -1020,20 +1063,20 @@
 
        return
 
-      end subroutine 
+      end subroutine write_nml_surface 
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!  READ/WRITE ROUTINES  !!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-      subroutine read_sph_fromfile
 !------------------------------------------------------------------------
 ! @brief Read spheres/oids parameters from file 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine read_sph_fromfile
 
        integer(i4b) :: i,j,its
        real(dbl)  :: scr       
@@ -1058,20 +1101,23 @@
 
        return
 
-      end subroutine
+      end subroutine read_sph_fromfile
 
-
-      subroutine read_gau_out_medium
 !------------------------------------------------------------------------
 ! @brief Read transition potentials on tesserae 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
+! Modified: S.Corni (27/06/2020): now the state pair is read from ci_pot,
+!           we do not assume upper or lower triangular. Should work
+!           for current gamess version as well
 !------------------------------------------------------------------------
+      subroutine read_gau_out_medium
 
        integer(i4b) :: i,j,its,nts
        real(dbl)  :: scr       
-
+       if(allocated(vts)) deallocate(vts)
+       if(allocated(vtsn)) deallocate(vtsn)
        open(7,file="ci_pot.inp",status="old")
        read(7,*) nts
        if(nts_act.eq.0.or.nts.eq.nts_act) then
@@ -1085,63 +1131,46 @@
        endif
        allocate (vts(nts_act,n_ci,n_ci))
        allocate (vtsn(nts_act))
+       vts=zero
+       vtsn=zero
        ! V00
        read(7,*) 
        do its=1,nts_act
         read(7,*) vts(its,1,1),scr,vtsn(its)
-        vts(its,1,1)=vts(its,1,1)+vtsn(its)
        enddo
-       !V0j
-       do j=2,n_ci_read
-         read(7,*) 
-         if (j.le.n_ci) then
-          do its=1,nts_act
-          read(7,*) vts(its,1,j)
-          enddo
-          vts(:,j,1)=vts(:,1,j)
-         else
-          do its=1,nts_act
-           read(7,*)
-          enddo
-         endif
-       enddo
-       !Vij
-       do i=2,n_ci_read
-        do j=2,i   
-         read(7,*) 
-         if (i.le.n_ci.and.j.le.n_ci) then
-          do its=1,nts_act
-           read(7,*) vts(its,i,j)             
-          enddo
-          vts(:,j,i)=vts(:,i,j)
-         else
-          do its=1,nts_act
-           read(7,*) 
-          enddo
-         endif
+       !all the others
+10     read(7,*,end=20) i,j
+       i=i+1
+       j=j+1
+       if (i.le.n_ci.and.j.le.n_ci) then
+        do its=1,nts_act
+         read(7,*) vts(its,i,j)
+         vts(its,j,i)=vts(its,i,j)
         enddo
-        ! add nuclear potential
-        if (i.le.n_ci) then
-         do its=1,nts_act
-          vts(its,i,i)=vts(its,i,i)+vtsn(its)
-         enddo
-        endif
+       else
+        do its=1,nts_act
+         read(7,*) 
+        enddo
+       endif 
+       goto 10
+20     close(7)
+       do i=1,n_ci
+        do its=1,nts_act
+         vts(its,i,i)=vts(its,i,i)+vtsn(its)
+        enddo
        enddo
-
-       close(7)
 
        return
 
-      end subroutine
+      end subroutine read_gau_out_medium
 
-
-      subroutine output_surf
 !------------------------------------------------------------------------
 ! @brief Output surface.xyz file 
 !      
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine output_surf
 
        integer :: i
 
@@ -1151,16 +1180,16 @@
           write (7,'(3F22.10)') cts_act(i)%x,cts_act(i)%y,cts_act(i)%z
         enddo
        close(unit=7)
-      end subroutine
 
+      end subroutine output_surf
 
-      subroutine deallocate_medium
 !------------------------------------------------------------------------
 ! @brief Deallocate medium arrays 
 !      
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia
 !------------------------------------------------------------------------
+      subroutine deallocate_medium
 
        if(allocated(q0)) deallocate(q0)
        if(allocated(vts)) deallocate(vts)
@@ -1169,65 +1198,57 @@
        if(allocated(sph_min)) deallocate(sph_min)
        if(allocated(sph_vrs)) deallocate(sph_vrs)
        if(allocated(sph_centre)) deallocate(sph_centre)
+       if(allocated(imod)) deallocate(imod)
 
        return
 
-      end subroutine
+      end subroutine deallocate_medium
 
-      subroutine mpibcast_readio_mdm()
 !------------------------------------------------------------------------
 ! @brief Broadcast input data
 !      
 ! @date Created: E. Coccia 24/4/18 
 ! Modified: 
 !------------------------------------------------------------------------
+      subroutine mpibcast_readio_mdm()
+
 #ifdef MPI
 
-       call mpi_bcast(interaction_init,     flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(interaction_type,     flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(propagation_type,     flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(local_field,          flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(debug_type,           flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(out_level,            flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(test_type,            flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(medium_relax,         flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(medium_type,          flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(medium_init,          flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
-       call mpi_bcast(medium_pol,           flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(bem_type,             flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(bem_read_write,       flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
-       call mpi_bcast(input_surface,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
-       call mpi_bcast(epsilon_omega,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)  
        call mpi_bcast(Fwrite,               flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Ftest,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Floc,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
-       call mpi_bcast(Ffld,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       !call mpi_bcast(Ffld,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fdeb,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fgamess,              flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fprop,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fmdm_relax,           flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Fmdm_res,             flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Feps,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
        call mpi_bcast(Finit_int,            flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fint,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fmdm_pol,             flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fmdm,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
        call mpi_bcast(Fbem,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) 
-       call mpi_bcast(Fqbem,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       !call mpi_bcast(Fqbem,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(FinitBEM,             flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Finit_mdm,            flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fshape,               flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fsurf,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fopt_chr,             flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Finv,                 flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Ffind,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
 
-       if (Fprop(1:3).eq.'chr') call mpi_bcast(nts_act,    1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) 
-       if (Fprop(1:3).eq.'dip') call mpi_bcast(nsph,       1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+
+       if(Fprop.eq.'chr-ief'.or.Fprop.eq.'chr-ied'.or.Fprop.eq.'chr-ons') then
+              call mpi_bcast(nts_act,    1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) 
+      endif
+       if (Fprop.eq.'dip') call mpi_bcast(nsph,       1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
        if (myrank.ne.0) then
-          if (Fprop(1:3).eq.'chr') then
+       if(Fprop.eq.'chr-ief'.or.Fprop.eq.'chr-ied'.or.Fprop.eq.'chr-ons') then
              allocate(vts(nts_act,n_ci,n_ci))
              allocate(vtsn(nts_act))
-          elseif (Fprop(1:3).eq.'dip') then
+          elseif (Fprop.eq.'dip') then
              allocate(sph_maj(nsph))
              allocate(sph_min(nsph))
              allocate(sph_vrs(3,3,nsph))
@@ -1240,10 +1261,6 @@
        call mpi_bcast(MPL_ord,              1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(ntst,                 1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
-       call mpi_bcast(interaction_stride,   1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(scf_mix_coeff,        1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(scf_max_cycles,       1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(scf_threshold,        1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(spheres_number,       1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(spheroids_number,     1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(eps_0,                1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
@@ -1256,7 +1273,7 @@
        call mpi_bcast(thrshld,              1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(ncycmax,              1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(mix_coef,             1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-       if (Fprop(1:3).eq.'dip') then
+       if (Fprop.eq.'dip') then
           call mpi_bcast(sph_min,           nsph,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
           call mpi_bcast(sph_maj,           nsph,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)  
           call mpi_bcast(sph_centre,        3*nsph,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
@@ -1273,11 +1290,27 @@
        call mpi_bcast(spheroid_position_z,  nsmax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(spheroid_radius,      nsmax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(sphere_radius,        nsmax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-       if (Fprop(1:3).eq.'chr') then
+       if(Fprop.eq.'chr-ief'.or.Fprop.eq.'chr-ied'.or.Fprop.eq.'chr-ons') then
           call mpi_bcast(vtsn,              nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
           call mpi_bcast(vts,               nts_act*n_ci*n_ci,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        endif
-
+       if (Fsurf.eq.'fil') then
+           if(FinitBEM.eq."rea") then
+                call mpi_bcast(nsphe,   1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)            
+                if(nsphe.gt.0) then
+                    if(.not.allocated(sfe_act))  allocate (sfe_act(nsphe))
+                    call mpi_bcast(sfe_act%x,    nsphe,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+                    call mpi_bcast(sfe_act%y,    nsphe,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+                    call mpi_bcast(sfe_act%z,    nsphe,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
+                endif
+                if(.not.allocated(cts_act)) allocate (cts_act(nts_act))
+                call mpi_bcast(cts_act%x,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+                call mpi_bcast(cts_act%y,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+                call mpi_bcast(cts_act%z,    nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
+                call mpi_bcast(cts_act%area, nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+                call mpi_bcast(cts_act%rsfe, nts_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
+           endif
+        endif
 #endif
 
        return
@@ -1358,4 +1391,39 @@
          dfunc(npts) = (func(npts)-func(npts-1))/(var(npts)-var(npts-1))
        end subroutine fivepts_stencil
 
- end module
+!------------------------------------------------------------------------
+! SP 14/07/17 calculations should probably go in a different module. which one?
+!             Probably pedra_firends....
+      subroutine write_nml_print_charges()
+!------------------------------------------------------------------------
+! @brief Write variables for QM_coupling 
+!      
+! @date Created: J. Fregoni
+!------------------------------------------------------------------------
+       integer(i4b)::i,j
+
+       if (n_prnt_charges.gt.0) then
+           nmod=int(n_prnt_charges)
+           allocate(imod(nmod))
+           do i=1,nmod
+              imod(i)=int(prnt_charges(i))
+           enddo
+           max_mod_todiag=maxval(imod)
+           write(*,*) max_mod_todiag,"quantum plasmonic mode will be",&
+                         &"diagonalized and printed"
+           if (max_mod_todiag.gt.nts_act) then
+             write(*,*) "Trying to print the ",max_mod_todiag," plasmon"
+     write(*,*)  "but it exceeds the number of computed plasmonic modes"
+     write(*,*) "Print another mode or increase the number of tesserae"
+           stop
+           endif
+       endif
+
+       if (n_prnt_charges.lt.0) then
+            nmod=nts_act
+            max_mod_todiag=nts_act
+            write(*,*) "all modes diagonalised and printed"
+       endif
+
+      end subroutine write_nml_print_charges
+      end module

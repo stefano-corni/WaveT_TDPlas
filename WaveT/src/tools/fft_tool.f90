@@ -438,7 +438,7 @@ SUBROUTINE fourn(data,nn,ndim,isign)
 use constants
 
 INTEGER(i4b)  isign,ndim,nn(ndim)
-REAL(cmp)     data(*)
+COMPLEX(cmp)     data(*)
 INTEGER(i4b)  i1,i2,i2rev,i3,i3rev,ibit,idim,ifp1,ifp2,ip1,ip2
 INTEGER(i4b)  ip3,k1,k2,n,nprev,nrem,ntot
 REAL(dbl)     tempi,tempr

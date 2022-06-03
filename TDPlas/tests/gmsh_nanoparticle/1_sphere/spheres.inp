@@ -1,0 +1,2 @@
+1                                    # Number of spheres, one integer
+0. 300. 0.  100.   50. 50. 50. 50. 50. 50. # spere position, (x,y,z - reals), sphere radius (real), number of discretisation points +z +y +x -x -y -z, same values for discretisation points imply homogeneous mesh

@@ -3,18 +3,11 @@
       use random
 
 #ifdef MPI
-#ifndef SCALI
       use mpi
-#endif
 #endif
 
       implicit none
 
-#ifdef MPI
-#ifdef SCALI
-      include 'mpif.h'
-#endif
-#endif
 
       save
 !
@@ -36,7 +29,8 @@
       integer(i4b)              :: diff_step ! effective number of steps for restart
       integer(i4b)              :: restart_seed  ! seed for restart
       !integer(i4b), allocatable :: pop(:) !Array for the postprocessing input
-      integer(i4b)              :: pop(nstmax) 
+      integer(i4b)              :: pop(nstmax)
+      integer(i4b), allocatable :: deg(:)
 
       real(dbl), allocatable    :: mut_np2(:,:) !squared dipole from NP
       real(dbl)                 :: tdelay(npulsemax), pshift(npulsemax)  ! time delay and phase shift with two pulses
@@ -45,6 +39,7 @@
       complex(cmp), allocatable :: c_i(:),c_i_prev(:),c_i_prev2(:) ! coefficients from cis
       real(dbl)                 :: mu_i_prev(3),mu_i_prev2(3),mu_i_prev3(3),mu_i_prev4(3),mu_i_prev5(3)
       real(dbl), allocatable    :: mut(:,:,:) !transition dipoles from cis
+      real(dbl), allocatable    :: h_int_i(:,:) !interaction hamiltonian for restart
       real(dbl), allocatable    :: nr_gam(:), de_gam(:) !decay rates for nonradiative and dephasing events
       real(dbl), allocatable    :: sp_gam(:) !decay rate for spontaneous emission  
       real(dbl), allocatable    :: sp_fact(:) !multiplicative factor for the decay rate for spontaneous emission
@@ -56,6 +51,7 @@
       real(dbl)                 :: restart_t  ! time for restart
       real(dbl)                 :: dt,tau(2),start,krnd
       real(dbl)                 :: Ip         !ionization energy
+      real(dbl)                 :: wmax       !frequency highest-energy normal mode with SSE and nr_typ=3 (egl)
 ! SP 17/07/17: Changed to char flags
       !logical :: dis !turns on the dissipation
       !logical :: qjump ! =.true. quantum jump, =.false. stochastic propagation
@@ -131,18 +127,19 @@
              mpibcast_e_dip,mpibcast_sse,mpibcast_restart,  &
              nspectra,Fabs,ion_rate,mpibcast_ion_rate,Fbin, &
              ncit,Fopt,ik,Fwrt,tar,all_pop,all_coh,pop,coh, &
-             write_bin,Ip 
+             write_bin,Ip,deg,wmax,h_int_i 
              
 !
       contains
 !
-      subroutine read_input
 !------------------------------------------------------------------------
 ! @brief Read input namelists 
 !
 ! @date Created   : 
 ! Modified  : E. Coccia 20/11/2017
 !------------------------------------------------------------------------
+      subroutine read_input
+
 
 
        !integer(i4b):: i,nspectra
@@ -153,12 +150,13 @@
        !Molecular parameters 
        namelist /general/n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,& 
                          dt,n_step,n_out,propa,n_restart,lsim,absorber,&
-                         binary,ncit,Ip,postprocessing
+                         binary,ncit,Ip
        !External field paramaters
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
                         npulse,tdelay,pshift
        !Stochastic Schroedinger equation
-       namelist /sse/ dissipative,idep,dis_prop,nrnd,tdis,nr_typ,krnd,out_sse
+       namelist /sse/ dissipative,idep,dis_prop,nrnd,tdis,nr_typ,krnd,out_sse,&
+                      wmax
        !Namelist spectra
        namelist /spectra/ start,tau,dir_ft
        !Namelist for postprocessing
@@ -213,36 +211,35 @@
        read(*,nml=spectra) 
        call write_nml_spectra() 
 
-       if (Fdis(1:5).ne."nodis") call read_dis_params
+       if (Fdis_rel.eq.'ene'.or.Fdis_rel.eq.'egl') full='f'
+
+       if (Fdis.ne."nodis") call read_dis_params
 
        if (Fres.eq.'Yesr') call read_restart()
 
-       if (Fdis(1:5).ne.'nodis'.or.Fexp.ne.'exp') then 
-           Fabs(1:3)='non'
+       !if (Fdis.ne.'nodis'.or.Fexp.ne.'exp') then 
+       if (Fexp.ne.'exp') then
+           Fabs='non'
            write(*,*) 'Absorber switched off with SSE or full Euler'
        endif
 
-       if (Fabs(1:3).eq.'abs') call read_ion_rate
-
-       if( postprocessing ) then
-        !Namelist for postprocessing
-        call init_nml_pop_coh()
-        read(*,nml=pop_coh) 
-        call write_nml_pop_coh()
+       if (Fabs.eq.'abs') call read_ion_rate
+       if (postprocessing) then
+       !Namelist for postprocessing
+       call init_nml_pop_coh()
+       read(*,nml=pop_coh) 
+       call write_nml_pop_coh()
        endif
-
        return
 
       end subroutine read_input
-!
-!
-      subroutine read_gau_out
 !------------------------------------------------------------------------
 ! @brief Read input files 
 !
 ! @date Created   : 
 ! Modified  : E. Coccia 20/11/2017
 !------------------------------------------------------------------------
+      subroutine read_gau_out
 
        implicit none
 
@@ -353,19 +350,20 @@
 
        return
 
-      end subroutine
+      end subroutine read_gau_out
 
-      subroutine read_restart()
+
 !------------------------------------------------------------------------
 ! @brief Read restart file
 !
 ! @date Created   : E. Coccia 18 Apr 2018
 ! Modified        :
 !------------------------------------------------------------------------
+      subroutine read_restart()
 
           implicit none
 
-          integer(i4b)  :: i,ii 
+          integer(i4b)  :: i,ii,j 
           character(4)  :: junk
           character(32) :: filename
 
@@ -391,6 +389,7 @@
           read(ii,*) junk
           read(ii,*) restart_t,restart_i,diff_step
           allocate(c_i_prev(n_ci),c_i_prev2(n_ci))
+          allocate(h_int_i(n_ci,n_ci))
           write(*,*) ''
           write(*,*) 'Restart from time', restart_t
           write(*,*) ''
@@ -406,7 +405,7 @@
           do i=1,n_ci
              read(ii,*) c_i_prev2(i)
           enddo
-          if (Fdis(1:5).ne.'nodis') then
+          if (Fdis.ne.'nodis') then
              read(ii,*) junk
              read(ii,*) restart_seed
              iseed=restart_seed
@@ -422,7 +421,10 @@
           read(ii,*) mu_i_prev3(1),mu_i_prev3(2),mu_i_prev3(3)
           read(ii,*) mu_i_prev4(1),mu_i_prev4(2),mu_i_prev4(3)
           read(ii,*) mu_i_prev5(1),mu_i_prev5(2),mu_i_prev5(3)
-
+          !read(ii,*) junk
+          !do i=1,n_ci
+          !   read(ii,*) (h_int_i(i,j), j=1,n_ci)
+          !enddo
          close(ii)
 
          return
@@ -430,7 +432,6 @@
       end subroutine read_restart
 
 !
-      subroutine read_dis_params()
 !------------------------------------------------------------------------
 ! @brief Read nonradiative and dephasing rates 
 ! Define spontaneous emission coefs from Einstein coefficients 
@@ -439,13 +440,15 @@
 ! @date Created   : E. Coccia 21 Dec 2016
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine read_dis_params()
      
        implicit none
-        integer     :: i,j,k,idum,ierr0,ierr1,ierr2,ierr3,ierr4,err,kk   
+        integer     :: i,ii,j,k,idum,ierr0,ierr1,ierr2,ierr3,ierr4,err,kk   
         real(dbl)   :: term   
         real(dbl)   :: rdum
         real(dbl)   :: rx,ry,rz
         real(dbl)   :: ix,iy,iz
+        real(dbl)   :: tmp
 
        open(8,file='nr_rate.inp',status="old",iostat=ierr0,err=100)
        open(9,file='de_rate.inp',status="old",iostat=ierr1,err=101)
@@ -479,8 +482,8 @@
           stop
        endif
 
-       if (nr_typ.ne.0.and.nr_typ.ne.1) then
-          write(*,*) 'Invalid value for nr_typ, must be 0 or 1'
+       if (nr_typ.ne.0.and.nr_typ.ne.1.and.nr_typ.ne.2.and.nr_typ.ne.3) then
+          write(*,*) 'Invalid value for nr_typ, must be 0, 1, 2 or 3'
 #ifdef MPI
           call mpi_finalize(ierr_mpi)
 #endif
@@ -524,6 +527,54 @@
           read(8,*) idum, nr_gam(i)
           read(11,*) idum, sp_fact(i)
        enddo
+       if (Fdis_rel.eq.'ene'.or.Fdis_rel.eq.'egl') then
+          !Identify degenerate states
+          allocate(deg(nexc+1))
+          deg=0
+          kk=0
+          do i=1,nexc
+             tmp=maxval(deg)
+             do j=i+1,nexc+1
+                if (abs(e_ci(j)-e_ci(i)).lt.1.d-10.and.deg(i).eq.0) then
+                   deg(i)=tmp+1
+                   deg(j)=tmp+1
+                elseif (abs(e_ci(j)-e_ci(i)).lt.1.d-10.and.deg(i).eq.tmp) then
+                   deg(j)=tmp
+                endif
+             enddo
+          enddo
+          !Gamma prop to (E_i+1-E_i)^-1
+          !or
+          !Gamma prop to exp[-(E_i+1-E_i)/wmax]  
+          !Degenerate states have the same decay to the first lower state
+          !with different energy 
+          i=1
+          ii=0
+          do
+             if (abs(e_ci(i+1)-e_ci(i)).lt.1.d-10) then
+                 nr_gam(i)=0.d0
+             else
+                 if (Fdis_rel.eq.'ene') then
+                    nr_gam(i)=nr_gam(i)/abs(e_ci(i+1)-e_ci(i))
+                 elseif (Fdis_rel.eq.'egl') then
+                    nr_gam(i)=nr_gam(i)*exp(-abs(e_ci(i+1)-e_ci(i))/wmax)
+                 endif
+             endif
+             if (deg(i+1).ne.0) then
+                kk=1
+                ii=1
+                do while (deg(i+1+kk).eq.deg(i+1))
+                   nr_gam(kk+i)=nr_gam(i)
+                   kk=kk+1
+                   ii=ii+1
+                enddo
+                i=i+ii-1
+             endif
+             i=i+1
+             if (i.ge.nexc) exit
+          enddo
+       endif
+
 
 ! The sigma_z operator for dephasing has an extra factor 2
 ! If idep.eq.1 S_alpha = \sum_beta M(alpha, beta) |beta><beta|
@@ -642,13 +693,13 @@
 
       end subroutine read_dis_params
 
-      subroutine map_nrel(nexc,nrel,irel)
 !------------------------------------------------------------------------
 ! @brief Map state pairs for intermediate relaxations 
 !
 ! @date Created   : E. Coccia 10 Oct 2017
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine map_nrel(nexc,nrel,irel)
      
        implicit none
 
@@ -671,13 +722,14 @@
 
       end subroutine map_nrel
 
-      subroutine deallocate_dis()
 !------------------------------------------------------------------------
 ! @brief Deallocate arrays for the dissipation 
 !
 ! @date Created   : E. Coccia 22 Dec 2016
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine deallocate_dis()
+
 
 #ifndef MPI
        myrank=0
@@ -698,13 +750,12 @@
           endif
        endif
        if (Fful.eq.'Yesf') deallocate(ik)
-       if (Fabs(1:3).eq.'abs') deallocate(ion_rate)
+       if (Fabs.eq.'abs') deallocate(ion_rate)
 
        return
 
       end subroutine deallocate_dis
 
-      subroutine define_gamma(de_gam,de_gam1,nci)
 !------------------------------------------------------------------------
 ! @brief Move from "physical" gammas to gammas 
 ! for keeping the population constant
@@ -714,6 +765,7 @@
 ! Modified  :
 ! @param de_gam(:), de_gam1(:)  
 !------------------------------------------------------------------------
+      subroutine define_gamma(de_gam,de_gam1,nci)
 
        implicit none
        integer                :: i
@@ -730,7 +782,6 @@
 
       end subroutine define_gamma
 
-      subroutine init_nml_general()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist general 
 !
@@ -739,6 +790,7 @@
 ! @param n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,propa,n_restart 
 !        lsim,absorber,binary,ncit 
 !------------------------------------------------------------------------
+      subroutine init_nml_general()
 
        ! Time step in the propagation (a.u.)
        dt=0.05
@@ -776,7 +828,6 @@
 
       end subroutine init_nml_general
 
-      subroutine init_nml_field()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist field 
 !
@@ -784,6 +835,7 @@
 ! Modified  :
 ! @param dt,n_step,n_out,Ffld,t_mid,sigma,omega,radiative,iseed,fmax 
 !------------------------------------------------------------------------
+      subroutine init_nml_field()
 
        ! Type of field
        Ffld='gau'
@@ -810,7 +862,6 @@
 
       end subroutine init_nml_field
 
-      subroutine init_nml_spectra()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist spectra 
 !
@@ -818,6 +869,7 @@
 ! Modified  :
 ! @param start,tau,dir_ft 
 !------------------------------------------------------------------------
+      subroutine init_nml_spectra()
 
        ! Parameter for computing spectra
        nspectra=1
@@ -830,7 +882,6 @@
 
       end subroutine init_nml_spectra
 
-      subroutine init_nml_sse()
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist sse 
 !
@@ -838,6 +889,7 @@
 ! Modified  :
 ! @param dissipative,idep,dis_prop,nrnd,tdis,nr_typ,krnd 
 !------------------------------------------------------------------------
+      subroutine init_nml_sse()
 
        ! Do dissipation 
        dissipative='non'
@@ -855,12 +907,13 @@
        krnd=1.d0
        ! Output level
        out_sse='n'
+       ! nr_typ=3, max frequency
+       wmax=0.0136690058
 
        return
 
       end subroutine init_nml_sse
 
-      subroutine init_nml_pop_coh()
 !------------------------------------------------------------------------
 ! @brief Read variables in the namelist pop_coh and put conditions 
 !
@@ -868,6 +921,7 @@
 ! Modified  :
 ! @param tar,all_pop,all_coh,pop,coh 
 !------------------------------------------------------------------------
+      subroutine init_nml_pop_coh()
 
       !allocate(pop(n_ci))
       !allocate(coh(n_ci*(n_ci)/2))
@@ -882,13 +936,12 @@
       !Initialize array for coherence
       coh=''
       !Initialize variable for formatted/unformatted output
-      write_bin(1:1)='n'
+      write_bin='n'
 
       return
 
       end subroutine init_nml_pop_coh
 
-      subroutine write_nml_general()
 !------------------------------------------------------------------------
 ! @brief Write variables in the namelist general and put conditions 
 !
@@ -896,6 +949,7 @@
 ! Modified  :
 ! @param n_ci_read,n_ci,mol_cc,n_f,medium 
 !------------------------------------------------------------------------
+      subroutine write_nml_general()
 
        if (n_ci.le.0) then
           write(*,*) 'ERROR: number of excited states is wrong', n_ci
@@ -974,24 +1028,24 @@
        select case (absorber)
         case ('y', 'Y')
          write(*,*) 'Absorber in dynamics'
-         Fabs(1:3)='abs'
+         Fabs='abs'
         case ('n', 'N')
-         Fabs(1:3)='non'
+         Fabs='non'
        end select
        select case (binary)
         case ('y','Y')
          write(*,*) 'Output files in binary format'
-         Fbin(1:3)='bin'
+         Fbin='bin'
         case ('n','N')
-         Fbin(1:3)='non'
+         Fbin='non'
        end select
        if (n_ci.gt.ncit.and.nthreads.gt.1) then
            write(*,*) 'Explicit loops are used for matrix/vector'
            write(*,*) 'for propagation, if OMP is switched on.'
-           Fopt(1:3)='omp'
+           Fopt='omp'
        else
           write(*,*) 'Matmul is used in the propagation.'
-          Fopt(1:3)='non'
+          Fopt='non'
        endif 
        write(*,*) ''
 
@@ -999,7 +1053,6 @@
 
       end subroutine write_nml_general
 
-      subroutine write_nml_field()
 !------------------------------------------------------------------------
 ! @brief Write variables in the namelist field and put conditions 
 !
@@ -1007,6 +1060,7 @@
 ! Modified  :
 ! @param dt,n_step,n_out,Ffld,t_mid,sigma,omega,radiative,iseed,fmax 
 !------------------------------------------------------------------------
+      subroutine write_nml_field()
 
        integer :: i
 
@@ -1049,7 +1103,6 @@
 
       end subroutine write_nml_field
 
-      subroutine write_nml_spectra()
 !------------------------------------------------------------------------
 ! @brief Write variables in the namelist spectra and put conditions 
 !
@@ -1057,6 +1110,7 @@
 ! Modified  :
 ! @param start,tau,dir_ft 
 !------------------------------------------------------------------------
+      subroutine write_nml_spectra()
  
        if (medium.ne.'vac') then 
           nspectra=2
@@ -1071,7 +1125,6 @@
 
       end subroutine write_nml_spectra
 
-      subroutine write_nml_sse()
 !------------------------------------------------------------------------
 ! @brief Write variables in the namelist sse and put conditions 
 !
@@ -1079,6 +1132,7 @@
 ! Modified  :
 ! @param dissipative,idep,dis_prop,nrnd,tdis,nr_typ,krnd 
 !------------------------------------------------------------------------
+      subroutine write_nml_sse()
 
        select case (dissipative)
         case ('mar', 'Mar', 'MAR')
@@ -1111,9 +1165,21 @@
            case (0)
             Fdis_rel="dip"
             write(*,*) 'Internal conversion relaxation via dipole'
+            write(*,*) 'Values in nr_rate.inp multiplicative factors'
            case (1)
             Fdis_rel="mat"
             write(*,*) 'Internal conversion relaxation via given matrix'
+           case (2)
+            Fdis_rel="ene"
+            write(*,*) 'Only |q+1> -> |q> relaxation'
+            write(*,*) 'Gamma_q prop to (E_q+1 - E_q)^-1'
+            write(*,*) 'Values in nr_rate.inp multiplicative factors'
+           case (3)
+            Fdis_rel="egl"
+            write(*,*) 'Only |q+1> -> |q> relaxation'
+            write(*,*) 'Gamma_q prop to exp[-(E_q+1 - E_q)/hbar w_max]'
+            write(*,*) 'Values in nr_rate.inp multiplicative factors'
+            write(*,*) 'w_max frequency of the highest-frequency normal mode'
           end select
         case ('nma', 'NMa', 'NMA', 'Nma')
           write(*,*) 'NonMarkovian dissipation'
@@ -1136,10 +1202,10 @@
        select case (out_sse)
         case ('y','Y')
           write(*,*) 'SSE quantum jumps written in output'
-          Fwrt(1:3)='yes'
+          Fwrt='yes'
         case ('n','N')
           write(*,*) 'SSE quantum jumps not written'
-          Fwrt(1:3)='non' 
+          Fwrt='non' 
        end select
        write(*,*) ''
 
@@ -1147,13 +1213,13 @@
 
       end subroutine write_nml_sse
 
-      subroutine write_nml_pop_coh()
 !------------------------------------------------------------------------
 ! @brief Write pop_coh namelist for postprocessing 
 !
 ! @date Created   : E. Coccia 22 Aug 2018
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine write_nml_pop_coh()
 
        implicit none
 
@@ -1169,17 +1235,17 @@
        write(50,*) 'nstates =',n_ci 
        write(50,*) 'n_f =',n_f
        write(50,*) 'nsteps =',inn
-       write(50,*) 'read_bin =','"',binary(1:1),'"'
-       write(50,*) 'write_bin =','"',write_bin(1:1),'"'
-       write(50,*) 'tar =', '"',tar(1:3),'"',  ' != pop, coh or all '
-       if (tar(1:3).eq.'all'.or.tar(1:3).eq.'pop') then
-         write(50,*) 'all_pop =','"',all_pop(1:3),'"',' != yes all pop '
+       write(50,*) 'read_bin =','"',binary,'"'
+       write(50,*) 'write_bin =','"',write_bin,'"'
+       write(50,*) 'tar =', '"',tar,'"',  ' != pop, coh or all '
+       if (tar.eq.'all'.or.tar.eq.'pop') then
+         write(50,*) 'all_pop =','"',all_pop,'"',' != yes all pop '
        endif
-       if (tar(1:3).eq.'all'.or.tar(1:3).eq.'coh') then
-         write(50,*) 'all_coh =','"',all_coh(1:3),'"',' != yes all coh ' 
+       if (tar.eq.'all'.or.tar.eq.'coh') then
+         write(50,*) 'all_coh =','"',all_coh,'"',' != yes all coh ' 
        endif
-       if (all_pop(1:3).ne.'yes') then  
-          if (tar(1:3).eq.'all'.or.tar(1:3).eq.'pop') then 
+       if (all_pop.ne.'yes') then  
+          if (tar.eq.'all'.or.tar.eq.'pop') then 
              write(50,*) 'pop = '
              do i=1,n_ci
                 if (pop(i).ne.-1) write(50,*)  pop(i)
@@ -1187,8 +1253,8 @@
           endif
        endif
 
-       if (all_coh(1:3).ne.'yes') then
-          if (tar(1:3).eq.'all'.or.tar(1:3).eq.'coh') then
+       if (all_coh.ne.'yes') then
+          if (tar.eq.'all'.or.tar.eq.'coh') then
              write(50,*) 'coh ='
              do i=1,n_ci*(n_ci-1)/2
                 tmp=coh(i)
@@ -1206,13 +1272,14 @@
 
       end subroutine write_nml_pop_coh
 
-      subroutine checkfile(filename,channel)
 !------------------------------------------------------------------------
 ! @brief Check file existence 
 !
 ! @date Created   : E. Coccia 20 Nov 2017
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine checkfile(filename,channel)
+
         implicit none
 
         character*12,   intent(in)  :: filename
@@ -1234,13 +1301,13 @@
 
       end subroutine checkfile 
 
-      subroutine mpibcast_readio()
 !------------------------------------------------------------------------
 ! @brief MPI broadcast of input variables 
 !
 ! @date Created   : E. Coccia 20 Apr 2018
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine mpibcast_readio()
 
 #ifdef MPI
        !n_f and iseed generated ad hoc for each process
@@ -1301,13 +1368,13 @@
 
       end subroutine mpibcast_readio 
 
-      subroutine mpibcast_e_dip()
 !------------------------------------------------------------------------
 ! @brief MPI broadcast of energies, dipoles and initial coefs 
 !
 ! @date Created   : E. Coccia 23 Apr 2018
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine mpibcast_e_dip()
 
 #ifdef MPI
        if (myrank.ne.0) then
@@ -1326,13 +1393,13 @@
 
       end subroutine mpibcast_e_dip
 
-      subroutine mpibcast_sse()
 !------------------------------------------------------------------------
 ! @brief MPI broadcast of SSE relaxation and dephasing rates 
 !
 ! @date Created   : E. Coccia 23 Apr 2018
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine mpibcast_sse()
 
 #ifdef MPI
        call mpi_bcast(nexc,       1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
@@ -1378,13 +1445,13 @@
       end subroutine mpibcast_sse
 
 
-      subroutine mpibcast_restart()
 !------------------------------------------------------------------------
 ! @brief MPI broadcast of restart variables 
 !
 ! @date Created   : E. Coccia 23 Apr 2018
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine mpibcast_restart()
 
 #ifdef MPI
 
@@ -1417,13 +1484,13 @@
 
       end subroutine mpibcast_restart 
    
-      subroutine mpibcast_ion_rate
 !------------------------------------------------------------------------
 ! @brief Broadcast ion_rate 
 !
 ! @date Created   : E. Coccia 31 May 2018
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine mpibcast_ion_rate
 
 #ifdef MPI
 
@@ -1438,13 +1505,13 @@
       end subroutine mpibcast_ion_rate
 
  
-      subroutine read_ion_rate()
 !------------------------------------------------------------------------
 ! @brief Read ionization rates 
 !
 ! @date Created   : E. Coccia 31 May 2018
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine read_ion_rate()
 
        implicit none
 
@@ -1484,7 +1551,7 @@
 
        return
 
-      end subroutine read_ion_rate
+       end subroutine read_ion_rate
 
 
-    end module readio
+      end module readio
