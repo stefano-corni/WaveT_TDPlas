@@ -1,7 +1,0 @@
-&coherence
-nsteps=3
-nrep=3
-nstates=3
-quant='le'
-ngs=1
-/

@@ -1,0 +1,27 @@
+ 
+ **********************************************
+ *                                            *
+ *        PostProcessing Tool for             *
+ *    computing populations and coherences    *
+ *                                            *
+ *                   by                       *
+ *              Stefano Corni                 *
+ *                  and                       *
+ *             Emanuele Coccia                *
+ *                                            *
+ **********************************************
+ 
+ Compute populations and coherences
+ Coefficient file in binary format
+ 
+ Compute populations selected by input
+           3 state populations requested
+ States:           0           4          10
+ 
+ Compute ALL the coherences
+ 
+<<<<<<< HEAD
+Done , total elapsed time     0.146s
+=======
+Done , total elapsed time     0.263s
+>>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822

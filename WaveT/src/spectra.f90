@@ -16,13 +16,13 @@
       contains
     
  
-      subroutine do_spectra      
 !------------------------------------------------------------------------
 ! @brief Driver routine for computing spectra from dipole(time) 
 !
 ! @date Created   : S. Corni
 ! Modified  :  S. Pipolo
 !------------------------------------------------------------------------
+      subroutine do_spectra
 
       implicit none
       real(dbl), allocatable :: Dinp(:),Finp(:)
@@ -56,9 +56,9 @@
         Deq_np(:)=Sdip(:,2,1+istart)
         do i=1,vdim
           Sdip(:,1,i+istart)=(Sdip(:,1,i+istart)-Deq(:))*    & 
-                                                exp(-i*dt/tau(1))
+                                                exp(-abs(i*dt-t_mid)/tau(1))
           Sdip(:,2,i+istart)=(Sdip(:,2,i+istart)-Deq_np(:))* & 
-                                                exp(-i*dt/tau(2))
+                                                exp(-abs(i*dt-t_mid)/tau(2))
           Sdip(:,3,i+istart)= Sdip(:,1,i+istart)+Sdip(:,2,i+istart)
         enddo
         ! SP 28/10/16: normalize the dir_ft
@@ -107,16 +107,17 @@
       endif
       call finalize_spectra
       return
-      end subroutine
+      end subroutine do_spectra
 
 
-      subroutine init_spectra
 !------------------------------------------------------------------------
 ! @brief Initialize spectra from dipole(time) 
 !
 ! @date Created   : S. Corni
 ! Modified  : E. Coccia 24/11/17
 !------------------------------------------------------------------------
+      subroutine init_spectra
+
 
        integer(i4b) :: sz
        integer(i4b) :: iend 
@@ -139,25 +140,22 @@
   
        return
    
-      end subroutine
+      end subroutine init_spectra
 
-
-      subroutine finalize_spectra
 !------------------------------------------------------------------------
 ! @brief Deallocate ararys for spectra  
 !
 ! @date Created   :
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine finalize_spectra
 
        deallocate (Sdip,Sfld)
 
        return
 
-      end subroutine
+      end subroutine finalize_spectra
     
- 
-      subroutine read_arrays  
 !------------------------------------------------------------------------
 ! @brief Read dipole(time) from WaveT.x output and prepares  
 !   for spectra, used in main_spectra.f90 
@@ -165,6 +163,7 @@
 ! @date Created   :
 ! Modified  :
 !------------------------------------------------------------------------
+      subroutine read_arrays
 
        integer(4) :: file_mol=10,file_fld=8,file_med=9,i,x
        real(8) :: t
@@ -194,8 +193,6 @@
 
        return
 
-      end subroutine
-
-
+      end subroutine read_arrays
 
       end module

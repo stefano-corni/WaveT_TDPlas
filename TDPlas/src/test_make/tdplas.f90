@@ -1,0 +1,24 @@
+      module tdplas       
+      use constants 
+      use auxiliary_functions 
+      use dictionary_entry 
+      use tdplas_readio_dictionary 
+      use input_keyword_type 
+      use lower_and_check_namelist 
+      use write_header_out_tdplas 
+      use readio_input_namelist 
+      use readio_medium 
+      use init 
+      use global_quantum 
+      use global_tdplas 
+      use debye_epsilon 
+      use drudel_epsilon 
+      use readfile_epsilon 
+      use do_epsilon 
+      use cavity_types 
+      use sphe_surface 
+      use pedra_friends 
+      use read_pot 
+      use quantum_coupling_modes
+      implicit none
+      end module tdplas

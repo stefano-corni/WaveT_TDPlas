@@ -34,7 +34,7 @@ ADDING A NEW TEST DIRECTORY:
   $ mkdir NEW_PARENT_DIR
 - enter the new directory e.g.:
   $ cd NEW_PARENT_DIR
-- create a Makefile pointing to the file ../../scripts/module.make:
-  $ printf "include ../../scripts/module.make" > Makefile
+- create a Makefile pointing to the file ../scripts/module.make:
+  $ printf "include ../scripts/module.make" > Makefile
 - follow the section "ADDING A NEW TEST" above to add new tests in this new test directory
  

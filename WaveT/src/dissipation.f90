@@ -413,7 +413,7 @@ module dissipation
    complex(cmp), intent(in)      :: c_prev(nci)
    integer(i4b), intent(in)      :: nci
    real(dbl),     intent(in)     :: pjump(2*nf+nexc+1)
-   integer(i4b)                  :: i,istate,ig,ie,ideg,ideg1
+   integer(i4b)                  :: i,istate,ig,ie
    real(dbl)                     :: eta, eta1, tmp1, tmp2, tmp3, modc, creal, ireal
    real(dbl)                     :: left, right 
    complex(cmp)                  :: cph 
@@ -493,48 +493,14 @@ module dissipation
          creal = real(c_prev(ie))*sqrt(nr_gam(istate)*tmom2(istate))
          ireal = aimag(c_prev(ie))*sqrt(nr_gam(istate)*tmom2(istate))
 !      elseif (nr_typ.eq.1) then
-      else
+      elseif (Fdis_rel.eq."mat") then
          creal = real(c_prev(ie))*sqrt(nr_gam(istate))
          ireal = aimag(c_prev(ie))*sqrt(nr_gam(istate))
       endif
-      if (Fdis_rel.eq."ene".or.Fdis_rel.eq."egl") then
-         if (deg(ie).ne.deg(istate)) then
-            c(istate) = cmplx(creal,ireal)
-            c(1:istate-1)=zeroc
-            c(istate+1:nci)=zeroc
-            c(istate)=c(istate)/sqrt(pjump(istate+nf)*dnr/dt)
-            ideg=0
-            do while (deg(istate).eq.deg(istate-ideg))
-               ideg=ideg+1
-               if (istate-ideg.eq.0) exit
-               c(istate-ideg)=c(istate)
-            enddo
-         else
-            ideg=0
-            do while (deg(ie).eq.deg(istate-ideg))
-               ideg=ideg+1
-               if (istate-ideg.eq.0) exit
-            enddo
-            if (istate-ideg.gt.0) then
-               c(istate-ideg) = cmplx(creal,ireal)
-               c(1:istate-ideg-1)=zeroc
-               c(istate-ideg+1:nci)=zeroc
-               c(istate-ideg)=c(istate-ideg)/sqrt(pjump(istate+nf)*dnr/dt)
-               ideg1=0
-               do while (deg(istate-ideg).eq.deg(istate-ideg-ideg1))
-                  ideg1=ideg1+1
-                  if (istate-ideg-ideg1.eq.0) exit
-                  c(istate-ideg-ideg1)=c(istate-ideg)
-               enddo
-            endif
-         endif
-      else
-         c(ig)  = cmplx(creal,ireal)
-         c(ig+1:nci) = zeroc
-         c(1:ig-1) = zeroc
-         c(ig)=c(ig)/sqrt(pjump(istate+nf)*dnr/dt)
-      endif
-
+      c(ig)  = cmplx(creal,ireal)
+      c(ig+1:nci) = zeroc
+      c(1:ig-1) = zeroc
+      c(ig)=c(ig)/sqrt(pjump(istate+nf)*dnr/dt) 
 
 !      if (nr_typ.eq.0) then
       !if (Fdis_rel.eq."dip") then

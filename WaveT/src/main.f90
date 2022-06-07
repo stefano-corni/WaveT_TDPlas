@@ -4,9 +4,9 @@
        use readio  
        use spectra
        use dissipation 
+       use initialise
        use propagate
-       use QM_coupling    
-       use interface_tdplas,only:read_medium_input,mpibcast_read_medium,set_global_tdplas_in_wavet,transfer_matrix_tdplas_to_wavet
+       use interface_tdplas, only: read_medium_input,mpibcast_read_medium,set_global_tdplas_in_wavet
 #ifdef OMP
        use omp_lib
 #endif
@@ -14,16 +14,12 @@
       use mpi
 #endif
        implicit none
-
        integer :: st,current,rate
-
 #ifndef MPI 
        myrank=0
 #endif
-
 #ifdef MPI 
        real(8) :: t0
-
        call mpi_init(ierr_mpi)
        call mpi_comm_rank(MPI_COMM_WORLD,myrank,ierr_mpi)
        call mpi_comm_size(MPI_COMM_WORLD,nproc,ierr_mpi)
@@ -33,7 +29,7 @@
 
 #ifndef MPI 
 !      read in the input parameter for the present evolution
-          call system_clock(st,rate)
+       call system_clock(st,rate)
 #endif
 
 #ifdef OMP
@@ -42,10 +38,7 @@
 #ifndef OMP
        nthreads=1
 #endif
-
        if (myrank.eq.0) call read_input
-
-
 #ifdef MPI 
        !Send input data to all the processes
        call mpibcast_readio()
@@ -55,8 +48,6 @@
        if (Fmdm.ne.'vac')        call mpi_bcast(nspectra,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
        if (Fabs.eq.'abs')   call mpibcast_ion_rate()
 #endif
-
-
 #ifdef OMP
        if (myrank.eq.0) then
           write(*,*) '*************OMP*****************'
@@ -68,43 +59,33 @@
           write(*,*) '*************OMP*****************'
        endif 
 #endif
-
        ! Fmdm(1:3) means the first three letters of the char flag Fmdm 
           if (Fmdm.ne."vac") then
              call set_global_tdplas_in_wavet(dt,Fmdm,mol_cc,n_ci,n_ci_read,c_i, &
                                              e_ci,mut,fmax,omega,Ffld,n_out,n_f, &
-                                             tdelay,pshift,Fbin,Fopt,nthreads, &
+                                             tdelay,pshift,Fbin,Fopt,&
                                              restart,n_restart)
-             if (myrank.eq.0) call read_medium_input
+             if (myrank.eq.0) call read_medium_input()
           endif
-
 #ifdef MPI 
-      !Send input data to all the processes
+      !> Send input data to all the processes
       call mpibcast_read_medium()
 #endif
-       !call read_gau_out_medium_in_wavet
-            call transfer_matrix_tdplas_to_wavet
-
+       !> Create the field 
        call init_spectra
-
-!      create the field 
+       !> Create the field 
        call create_field
-
 #ifndef MPI 
        call system_clock(current)
        write(6,'("Done reading input & setting up the field, took", &
              F10.3,"s")') real(current-st)/real(rate)
 #endif
-
-!      propagate or diagonalise matrix
-       if(Fmdm.eq.'Qnan'.or.Fmdm.eq.'Qsol') then
-         call do_QM_coupling
-       else 
-         call prop
-! SP 10/07/17: commented the following, do_spectra gives errors 
-         !call do_spectra
-       endif
-
+       !> Initialize system wavefunction and Hilbert space
+       call init_propagation
+       !> Propagate wavefunction 
+       call prop
+       ! SP 10/07/17: commented the following, do_spectra gives errors 
+       !call do_spectra
 #ifndef MPI 
        call system_clock(current)
        write(6,'("Done , total elapsed time", &
@@ -116,7 +97,5 @@
                              (h):  ',-t0,-t0/60.d0,-t0/3600.d0 
       call mpi_finalize(ierr_mpi)  
 #endif
-      
-       stop
-
+      stop
       end program tdcis

@@ -33,29 +33,3 @@ fmax(3,1) = 0.000001
 tau= 2000.0 2000.0
 dir_ft= 1. 1. 1. 
 /
-
-! Here starts the tdplas part
-!
-&PROPAGATE  
-propagation_type='ief'
-interaction_type='pcm'
-interaction_stride=1
-interaction_init='non-scf'
-test_type='s-l' 
-local_field='loc'
-/
-
-&MEDIUM
-medium_type='sol'
-medium_init='vac'
-bem_type='diag'
-bem_read_write='rea'
-/
-
-&SURFACE
-input_surface='fil'
-/
-
-&EPS_FUNCTION
-epsilon_omega='gen'
-/

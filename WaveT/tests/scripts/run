@@ -14,9 +14,9 @@ echo "Running test in $(pwd)"
 #### create a temporary directory for running the tests
 rm -fr tmp
 mkdir tmp
+cp -rf * tmp 2>/dev/null
 cd tmp
-cp -rf ../* . 2>/dev/null
-
+rm -r tmp
 
 #### check if an out/ directory containing reference output is present  
 test -f out/out.dat || {
@@ -84,6 +84,7 @@ if type -t wavet_regtest_after 1>/dev/null ; then
 fi
 cat err
 
+#sleep 10
 
 #### test the results
 if ls compare*.sh > /dev/null

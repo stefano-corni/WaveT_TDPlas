@@ -1,35 +1,42 @@
 program decoherence 
 
  use constants 
-#ifdef OMP
-      use omp_lib
-#endif
 
  implicit none
 
  integer(i4b)                 :: nrep,nstates,nsteps,npair,ngs
  real(dbl),    allocatable    :: rdum(:,:,:),pop(:,:),perr(:,:)
  real(dbl),    allocatable    :: cor(:,:),coi(:,:),co(:,:)
- real(dbl),    allocatable    :: rerr(:,:),ierr(:,:),rpop(:,:,:)
+ real(dbl),    allocatable    :: rerr(:,:),ierr(:,:)
+ real(dbl),    allocatable    :: rc(:), ic(:)
  integer(i4b), allocatable    :: i(:)
  real(dbl),    allocatable    :: t(:),l1(:),l1_err(:)
- real(dbl),    allocatable    :: idum(:,:,:),ferr(:,:)
+ real(dbl),    allocatable    :: ferr(:,:)
  real(dbl),    allocatable    :: trp2(:),trp2_err(:)
  real(dbl),    allocatable    :: rho(:,:,:)
  real(dbl),    allocatable    :: leps(:), l1_norm_eps(:) 
  real(dbl),    allocatable    :: leps_err(:),l1_norm_eps_err(:)
  real(dbl),    allocatable    :: rho_err(:,:,:)
  real(dbl),    allocatable    :: opop(:)
+ complex(cmp), allocatable    :: cc(:,:,:)
+ complex(cmp), allocatable    :: c(:,:,:)
 
 
  integer(i4b)       :: j,k,m,ijunk,l
+ integer            :: st,current,rate
  real(dbl)          :: rjunk,tmp,tmp1,tmp2,tmp3,tmp4,tmp5,tmperr  
  character(30)      :: filename, quant
+ character(4000)    :: dum,fmt_ci,fmt_ci2
+ character(1)       :: read_bin
 
 
- namelist /coherence/ nstates,nrep,nsteps,quant,ngs
+ namelist /coherence/ nstates,nrep,nsteps,quant,ngs,read_bin
+
+ call system_clock(st,rate)
 
  ngs=1
+ read_bin='n'
+
  read(*,nml=coherence)
 
  write(*,*) '**********************************************'
@@ -68,6 +75,11 @@ program decoherence
     write(*,*) 'ERROR: ngs must be large than zero'
     stop
  endif
+ if (read_bin.eq.'n') then
+    write(*,*) 'Use formatted coefficient files'
+ elseif (read_bin.eq.'y') then 
+    write(*,*) 'use unformatted coefficient files' 
+ endif
  write(*,*) '' 
 
  if (nsteps.lt.1) then
@@ -86,14 +98,14 @@ program decoherence
  npair=nstates*(nstates-1)/2 
 
 
-
  allocate(i(nsteps))
  allocate(t(nsteps))
  allocate(opop(nsteps))
  allocate(rho(nsteps,nstates,nstates))
- allocate(rpop(nsteps,nstates,nrep))
+ allocate(c(nsteps,nstates,nrep))
+ allocate(rc(nstates),ic(nstates))
  allocate(rdum(nsteps,npair,nrep))
- allocate(idum(nsteps,npair,nrep))
+ allocate(cc(nsteps,npair,nrep))
  allocate(pop(nsteps,nstates),perr(nsteps,nstates))
  allocate(rerr(nsteps,npair),ierr(nsteps,npair))
  allocate(ferr(nsteps,npair)) 
@@ -108,7 +120,7 @@ program decoherence
  allocate(l1_norm_eps(nsteps))
  allocate(l1_norm_eps_err(nsteps))
 
- ! Population files
+ ! Coefficient files
  do m=1,nrep
     if (m.lt.10) then
         WRITE(filename,'(a,i1.1,a)') "c_t_",m,".dat"
@@ -124,39 +136,52 @@ program decoherence
     open(20+m,file=filename)
  enddo
 
- !Read populations
- do m=1,nrep
-    do j=1,nsteps
-       read(20+m,*) i(j), t(j), (rpop(j,k,m), k=1,nstates)
+ if (read_bin(1:1).ne.'y') then
+    do m=1,nrep
+       open (20+m,file=filename,status="unknown")
+       read(20+m,*) dum
+       write (fmt_ci,'("(i8,f14.4,",I0,"e17.8E3)")') 2*nstates
+       do j=1,nsteps
+          read(20+m,fmt_ci) i(j), t(j), (rc(k), ic(k), k=1,nstates)
+          do k=1,nstates
+             c(j,k,m) = dcmplx(rc(k),ic(k))
+          enddo
+       enddo
     enddo
- enddo
-
+ else
+    do m=1,nrep
+       open (20+m,file=filename,status="unknown",form="unformatted")
+       do j=1,nsteps
+          read(20+m) i(j),t(j),(rc(k),ic(k),k=1,nstates)
+          do k=1,nstates
+             c(j,k,m) = dcmplx(rc(k),ic(k))
+          enddo   
+       enddo
+    enddo                                                                                       
+ endif   
 
  !Average population 
  pop=0.d0
  do m=1,nrep
     do k=1,nstates
        do j=1,nsteps
-          pop(j,k) = pop(j,k) + rpop(j,k,m)
+          pop(j,k) = pop(j,k) + conjg(c(j,k,m))*real(c(j,k,m))
        enddo
     enddo
  enddo
-
-
  pop=pop/dble(nrep)
 
  do j=1,nsteps
     opop(j) = pop(j,1)
  enddo
 
-
  pop(:,1)=0.d0
  do j=1,nsteps
     pop(j,1) = 1.d0 - sum(pop(j,2:nstates))
  enddo
 
-
  !Building density matrix
+ !Diagonal elements
  rho=0.d0
  do k=1,nstates
     do j=1,nsteps
@@ -166,17 +191,16 @@ program decoherence
 
  !Error on population 
  perr=0.d0
-
  do m=1,nrep
     do k=2,nstates
        do j=1,nsteps
-          perr(j,k) = perr(j,k) + (rpop(j,k,m) - pop(j,k))**2
+          perr(j,k) = perr(j,k) + (conjg(c(j,k,m))*real(c(j,k,m))  - pop(j,k))**2
        enddo
     enddo
  enddo
  do m=1,nrep
     do j=1,nsteps
-       perr(j,1) = perr(j,1) + (rpop(j,1,m) - opop(j))**2
+       perr(j,1) = perr(j,1) + (conjg(c(j,1,m))*real(c(j,1,m)) - opop(j))**2
     enddo
  enddo
  if (nrep.gt.1) then
@@ -188,32 +212,11 @@ program decoherence
  perr=perr/dsqrt(dble(nrep))
 
 
- !Coherences
- do m=1,nrep
-    close(20+m)
-    if (m.lt.10) then
-        WRITE(filename,'(a,i1.1,a)') "d_t_",m,".dat"
-    elseif (m.ge.10.and.m.lt.100) then
-        WRITE(filename,'(a,i2.2,a)') "d_t_",m,".dat"
-    elseif (m.ge.100.and.m.lt.1000) then
-        WRITE(filename,'(a,i3.3,a)') "d_t_",m,".dat"
-    elseif (m.ge.1000.and.m.lt.10000) then
-        WRITE(filename,'(a,i4.4,a)') "d_t_",m,".dat"
-    elseif (m.ge.10000.and.m.lt.100000) then
-        WRITE(filename,'(a,i5.5,a)') "d_t_",m,".dat"
-    endif
-    open(20+m,file=filename)
- enddo
-
- !Read coherences
+ !Define coherences 
  do m=1,nrep
     do j=1,nsteps
-       read(20+m,*) ijunk,rjunk, (rdum(j,k,m), idum(j,k,m), k=1,npair)
+       call compute_coherence(c(j,:,m),cc(j,:,m),nstates,npair)
     enddo
- enddo
-
- do m=1,nrep
-     close(20+m)
  enddo
 
  !Average coherence 
@@ -222,8 +225,8 @@ program decoherence
  do m=1,nrep
     do k=1,npair
        do j=1,nsteps
-          cor(j,k) = cor(j,k) + rdum(j,k,m)
-          coi(j,k) = coi(j,k) + idum(j,k,m)
+          cor(j,k) = cor(j,k) + real(cc(j,k,m))
+          coi(j,k) = coi(j,k) + aimag(cc(j,k,m))
        enddo
     enddo
  enddo
@@ -236,8 +239,8 @@ program decoherence
  do m=1,nrep
     do k=1,npair
        do j=1,nsteps
-          rerr(j,k) = rerr(j,k) + (rdum(j,k,m) - cor(j,k))**2
-          ierr(j,k) = ierr(j,k) + (idum(j,k,m) - coi(j,k))**2
+          rerr(j,k) = rerr(j,k) + (real(cc(j,k,m)) - cor(j,k))**2
+          ierr(j,k) = ierr(j,k) + (aimag(cc(j,k,m)) - coi(j,k))**2
        enddo
     enddo
  enddo
@@ -265,6 +268,7 @@ program decoherence
 
   !Coherence from WaveT: (1,i=2,n_ci) (j=2,n_ci,k=j+1,n_ci)
   !Buiding density matrix
+  !Off-diagonal elements
   k=0
   do m=1,nstates
      do l=m+1,nstates
@@ -322,7 +326,6 @@ program decoherence
        enddo
     enddo
 
-
     !Building Tr(rho^2)
     trp2=0.d0
     do k=1,nstates
@@ -330,7 +333,6 @@ program decoherence
           trp2(j) = trp2(j) + pop(j,k)**2
        enddo
     enddo    
- 
     do l=1,nstates
        do k=1,nstates
           do j=1,nsteps
@@ -340,7 +342,6 @@ program decoherence
           enddo
        enddo
     enddo
- 
     do j=1,nsteps
        if (trp2(j).gt.1.d0) trp2(j)=1.d0 
     enddo
@@ -458,8 +459,6 @@ program decoherence
   deallocate(t)
   deallocate(opop)
   deallocate(rdum)
-  deallocate(idum)
-  deallocate(rpop)
   deallocate(rho)
   deallocate(perr)
   deallocate(pop)
@@ -468,6 +467,7 @@ program decoherence
   deallocate(ferr)
   deallocate(cor)
   deallocate(coi)
+  deallocate(cc)
   deallocate(co)
   deallocate(leps)
   deallocate(leps_err)
@@ -481,8 +481,61 @@ program decoherence
 
   close(11)
 
-  write(*,*) 'Calculation ended'
+  call system_clock(current)
+  write(*,*) ''
+  write(6,'("Done , total elapsed time", &
+           F10.3,"s")') real(current-st)/real(rate)
 
   stop
 
 end program decoherence 
+
+
+!------------------------------------------------------------------------
+! @brief Compute C*_iC_j (i.ne.j)  
+! 
+! @date Created   : E. Coccia 22 Mar 2019
+! Modified  :
+!------------------------------------------------------------------------
+subroutine compute_coherence(c,cc,nci,npair)
+
+        use constants
+
+        implicit none
+
+        integer(i4b),    intent(in)    :: nci,npair
+        complex(cmp),    intent(in)    :: c(nci)
+        complex(cmp),    intent(out)   :: cc(npair)
+        integer(i4b)                   :: j,k,kk
+        complex(cmp)                   :: tmp
+
+        !tmp=dcmplx(0.d0,0.d0)
+
+        kk=0
+        do j=1,nci
+           do k=j+1,nci
+              kk=kk+1
+              cc(kk) = dconjg(c(k))*c(j)
+           enddo
+        enddo
+
+        !do k=2,nci
+        !   tmp = dconjg(c(k))*c(1)
+        !   cc(1,k) = tmp
+        !enddo
+
+        !if (nci.gt.2) then
+        !   kk=0
+        !   do j=2,nci
+        !      do k=j+1,nci
+        !         kk=kk+1
+        !         tmp = dconjg(c(k))*c(j)
+        !         cc(j,kk) = tmp
+        !      enddo
+        !   enddo
+        !endif
+
+        return
+
+end subroutine compute_coherence
+

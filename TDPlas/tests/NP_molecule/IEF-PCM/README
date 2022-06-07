@@ -1,0 +1,3 @@
+Calculated the response (i.e., polarizability) of a nanoparticle to a transition dipole for a molecule, for several frequencies
+./../../bin/freq_bem.x  > freq.out
+Here the transition potential is taken to be equal to the electric field in test NP_freq, so results are physically unrealistic

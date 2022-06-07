@@ -1,5 +1,3 @@
-program nuclear_wp
-
 !------------------------------------------------------------------------
 ! @brief Time evolution of the nuclear wave packet
 ! 
@@ -7,6 +5,7 @@ program nuclear_wp
 ! @date Created   : E. Coccia 26 Feb 2018
 ! Modified  :       E. Coccia 18 Dec 2018 
 !------------------------------------------------------------------------
+program nuclear_wp
 
   use constants
 
@@ -213,8 +212,6 @@ program nuclear_wp
 end program nuclear_wp
 
 
-
-subroutine hermite(nn,x,y)
 !------------------------------------------------------------------------
 !   @brief Computes the value of the Hermite polynomial of degree nn             
 !   at a given point               
@@ -225,6 +222,7 @@ subroutine hermite(nn,x,y)
 !   @date Created  :  E. Coccia 8 Sep 2017 
 !   Modified   :
 !------------------------------------------------------------------------
+subroutine hermite(nn,x,y)
   
         use constants
 
@@ -255,13 +253,13 @@ subroutine hermite(nn,x,y)
 
 end subroutine hermite
 
-real(dbl) function fact(n)
 !------------------------------------------------------------------------
 ! @brief Function computing the factorial n!
 ! 
 ! @date Created   : E. Coccia 11 Sep 2017
 ! Modified  :
 !------------------------------------------------------------------------
+real(dbl) function fact(n)
 
        use constants
 
@@ -283,6 +281,6 @@ real(dbl) function fact(n)
 
        return
 
-end function
+end function fact
 
 

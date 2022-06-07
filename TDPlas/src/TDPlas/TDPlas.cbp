@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="TDPlas" />
+		<Option pch_mode="2" />
+		<Option compiler="gfortran" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/TDPlas" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gfortran" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/TDPlas" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gfortran" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
+		<Unit filename="../BEM_medium.f90" />
+		<Unit filename="../MathTools.f90" />
+		<Unit filename="../auxiliary_functions.f90" />
+		<Unit filename="../cavity_types.f90" />
+		<Unit filename="../check_global.f90" />
+		<Unit filename="../constants.f90" />
+		<Unit filename="../debye_epsilon.f90" />
+		<Unit filename="../dictionary_entry.f90" />
+		<Unit filename="../dielectric_function.f90" />
+		<Unit filename="../drudel_epsilon.f90" />
+		<Unit filename="../eps_ref_parameters.f90" />
+		<Unit filename="../global_tdplas.f90" />
+		<Unit filename="../init.f90" />
+		<Unit filename="../interface_global_quantum_ocpy.f90" />
+		<Unit filename="../interface_global_quantum_wt.f90" />
+		<Unit filename="../lower_and_check_namelist.f90" />
+		<Unit filename="../pedra_friends.f90" />
+		<Unit filename="../read_pot.f90" />
+		<Unit filename="../read_tdplas.f90" />
+		<Unit filename="../readfile_epsilon.f90" />
+		<Unit filename="../readio.f90" />
+		<Unit filename="../readio_tdplas.f90" />
+		<Unit filename="../sphe_surface.f90" />
+		<Unit filename="../td_contmed.f90" />
+		<Unit filename="../tdplas.f90" />
+		<Unit filename="../user_input_and_flags_dictionary.f90" />
+		<Unit filename="../user_input_check.f90" />
+		<Unit filename="../user_input_read_namelist.f90" />
+		<Unit filename="../user_input_type.f90" />
+		<Unit filename="../write_header_out_tdplas.f90" />
+		<Extensions>
+			<envvars />
+			<code_completion />
+			<debugger />
+			<fortran_project />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

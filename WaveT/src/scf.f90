@@ -47,8 +47,8 @@
        real(dbl) :: thre,thrv                   !< thresholds
        real(dbl) :: e_scf, e_ini                !< GS energies
        real(dbl) :: fld(3)                      !  field from charges
-       integer(i4b):: max_p(1)    
-       integer(i4b):: its
+       integer(i4b):: max_p(1)   
+       integer(i4b):: its 
 
 #ifndef MPI
        myrank=0
@@ -65,15 +65,15 @@
        ! scf cycle
        do while (docycle.and.ncyc.le.this_ncycmax) 
          ! Build the Hamiltonian
-         if(this_Fint.eq."ons".and. &
-           (this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or. &
-           this_Fprop.eq."chr-ons")) then 
-           call do_field_from_charges_in_wavet(q_or_f,fld)
-           call do_htot(fld)
+         if(this_Fint.eq."ons") then
+           if(this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then 
+             call do_field_from_charges_in_wavet(q_or_f,fld)
+             call do_htot(fld)
+           endif
          else
            call do_htot(q_or_f)
          endif
-         ! Diagonalize Hamiltonian                          
+         ! Diagonalize Hamiltonian           
          eigt_c=Htot
          call diag_mat_in_wavet(eigt_c,eigv_c,n_ci)       
          ! Update charges or field with new coefficients 
@@ -256,7 +256,7 @@
 
        q=(1.-this_mix_coef)*q+this_mix_coef*matmul(this_BEM_Q0,pot)
 ! SC 12/8/2016: apparently for NP, charge compensation is needed
-       if (Fmdm.eq.'Cnan'.or.Fmdm.eq.'Qnan') q=q-sum(q)/this_nts_act
+       if (Fmdm.eq.'cnan'.or.Fmdm.eq.'qnan') q=q-sum(q)/this_nts_act
 
        return
 
@@ -271,21 +271,19 @@
       subroutine do_htot(q_or_f)
 
        real(dbl), intent(IN):: q_or_f(:)     
-       integer(4)::i,j,k     
-
-
+       integer(4)::i,j,k 
        if (this_Fint.eq."pcm") then
-        do j=1,n_ci
-         do k=j,n_ci
-           Htot(k,j)=dot_product(this_vts(:,k,j),q_or_f(:)-this_q0(:))
-           Htot(j,k)=Htot(k,j)
-         enddo
-         Htot(j,j)=Htot(j,j)+e_ci(j)
-         if(this_Fwrite.eq."high") write(6,*) j,Htot(j,j)
-        enddo
+          do j=1,n_ci
+             do k=j,n_ci   
+                 Htot(k,j)=dot_product(this_vts(:,k,j),q_or_f(:)-this_q0(:))
+                 Htot(j,k)=Htot(k,j)
+             enddo
+             Htot(j,j)=Htot(j,j)+e_ci(j)
+             if(this_Fwrite.eq."high") write(6,*) j,Htot(j,j)
+          enddo
        else
-        do j=1,n_ci
-         do k=j,n_ci   
+          do j=1,n_ci
+             do k=j,n_ci
            Htot(k,j)=dot_product(mut(:,k,j),q_or_f(:)-this_fr_0(:))
            Htot(j,k)=Htot(k,j)
          enddo
@@ -417,7 +415,7 @@
        write (7,*) this_nts_act
        write (7,*) "V0  check Vnuc"
        do its=1,this_nts_act
-        write (7,*) this_vts(its,1,1)-this_vtsn(its),0.d0,this_vtsn(its)
+        write (7,*) this_vts(its,1,1),0.d0,this_vtsn(its)
        enddo
        do j=2,n_ci
          write(7,*) 0,j-1
@@ -427,16 +425,12 @@
        enddo
        !Vij
        do i=2,n_ci
-        do j=2,i-1   
-         write(7,*) i-1,j-1
-         do its=1,this_nts_act
-          write(7,*) this_vts(its,i,j)             
-         enddo
-        enddo
-         write(7,*) i-1,i-1
-         do its=1,this_nts_act
-          write(7,*) this_vts(its,i,i)-this_vtsn(its)             
-         enddo
+          do j=i,n_ci   
+             write(7,*) i-1,j-1
+             do its=1,this_nts_act
+                write(7,*) this_vts(its,i,j)             
+             enddo
+          enddo
        enddo
        close(unit=7)
        if (myrank.eq.0) write(6,*) "Written out the SCF potentials"
@@ -469,11 +463,11 @@
        open(unit=7,file="ci_mut_scf.inp",status="unknown", &
            form="formatted")
        do i=1,n_ci
-        write(7,'(4i4,3f15.6)') 0,0,0,0,mut(1,1,i),mut(2,1,i),mut(3,1,i)
+        write(7,"(A,I6,X,A,I6,X,3(E15.8,X))") 'States', 0, 'and',i-1,mut(1,1,i),mut(2,1,i),mut(3,1,i)
        enddo
        do i=2,n_ci
          do j=2,i   
-           write(7,'(4i4,3f15.6)') 0,0,0,0,mut(1,i,j),mut(2,i,j),mut(3,i,j)
+           write(7,"(A,I6,X,A,I6,X,3(E15.8,X))") 'States', j-1, 'and',i-1,mut(1,i,j),mut(2,i,j),mut(3,i,j)
          enddo
        enddo
        close(unit=7)
@@ -503,8 +497,10 @@
        open(unit=7,file="ci_energy_scf.inp",status="unknown", &
            form="formatted")
        do i=2,n_ci
-        write(7,'(3i4,f15.8)') 0,0,0,(e_ci(i)-e_ci(1))/ev_to_au
+        e_ci(i)=e_ci(i)-e_ci(1)
+        write(7,'(A,I6,X,A,f15.8)') 'Root',i-1,':',e_ci(i)/ev_to_au
        enddo
+       e_ci(1)=0.d0
        close(unit=7)
        if (myrank.eq.0) then
        write(6,*) "Written out the SCF energies,", &

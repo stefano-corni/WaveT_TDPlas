@@ -1,3 +1,6 @@
-Reaction field test as in Pipolo,Corni JPCC 2017 
+Reaction field test as in Pipolo,Corni JPCC 2017, eq. 30 with t->0. 
 
-Compare 5th (value) and 6th (reference) column of medium_t_1.dat
+Only IEF-PCM has been corrected and runs properly.
+To correct the others copy mat_SD.inp, cavity.inp, ci_pot.inp from IEF-PCM and should work
+
+SPipolo 20/09/2020

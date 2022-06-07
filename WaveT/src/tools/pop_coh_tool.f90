@@ -1,4 +1,3 @@
-program post_processing
 !------------------------------------------------------------------------
 ! @brief Postprocessing for computing populations and/or coherences 
 !  
@@ -6,11 +5,9 @@ program post_processing
 ! @date Created   : E. Coccia 24 Aug 2018
 ! Modified  : 
 !------------------------------------------------------------------------
+program post_processing
 
  use constants
-#ifdef OMP
-   use omp_lib
-#endif
 
  implicit none
 
@@ -82,12 +79,9 @@ program post_processing
     else 
        write(*,*) 'Compute populations selected by input'
        npop=0
-!$OMP PARALLEL 
-!$OMP DO
        do i=1,nstmax
           if (pop(i).ne.-1) npop=npop+1
        enddo
-!$OMP END PARALLEL
        allocate(popef(npop))
        allocate(str(npop))
        do i=1,npop
@@ -105,13 +99,12 @@ program post_processing
     else 
        write(*,*) 'Compute coherences selected by input'
        ncoh=0
-!$OMP PARALLEL 
-!$OMP DO
-       do i=1,nstmax
+       do i=1,nstmax*(nstmax-1)/2
           tmp=coh(i)
-          if (tmp.ne." ") ncoh=ncoh+1
+          if (tmp.ne." ") then
+             ncoh=ncoh+1
+          endif
        enddo
-!$OMP END PARALLEL
        allocate(cohef(ncoh))
        allocate(icoh(2*ncoh))
        do i=1,ncoh
@@ -270,7 +263,6 @@ program post_processing
 end program post_processing
 
 
-subroutine wrt_coherence(i,t,int1,char2,c,nci,bin)
 !------------------------------------------------------------------------
 ! @brief Print the tridiagional C*_iC_j (i.ne.j) matrix 
 ! corresponding to the decoherence 
@@ -278,6 +270,7 @@ subroutine wrt_coherence(i,t,int1,char2,c,nci,bin)
 ! @date Created   : E. Coccia 3 Feb 2017
 ! Modified  :
 !------------------------------------------------------------------------
+subroutine wrt_coherence(i,t,int1,char2,c,nci,bin)
 
         use constants
 
@@ -328,13 +321,13 @@ subroutine wrt_coherence(i,t,int1,char2,c,nci,bin)
 end subroutine wrt_coherence
 
 
-subroutine extract_pairs(str,n,into)
 !------------------------------------------------------------------------
 ! @brief Extract state pairs for computing coherence 
 ! 
 ! @date Created   : E. Coccia 24 Aug 2018
 ! Modified  :
 !------------------------------------------------------------------------
+subroutine extract_pairs(str,n,into)
 
   use constants
 

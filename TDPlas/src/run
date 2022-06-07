@@ -1,5 +1,5 @@
-TDPLASDIR=/media/gabriel/Data/forked-wavet/WaveT/TDPlas/
-OCTOPUSDIR=/media/gabriel/Data/forked-octopus/octopus/
+TDPLASDIR=/home/gabriel/my-wavet/WaveT/TDPlas/
+OCTOPUSDIR=/home/gabriel/my-forked-octopus/octopus/
 cd $OCTOPUSDIR
 make clean
 cd ./src

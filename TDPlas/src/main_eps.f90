@@ -1,41 +1,39 @@
       program main_eps
       use tdplas
       implicit none
-      integer :: st,current,rate
-      integer :: i 
-      real(dbl),allocatable :: omega_list(:)
-
+      integer :: st,current,rate,i
+      complex(cmp) :: eps
+     
 !     read in the input parameters
-      call system_clock(st,rate)
-      call read_medium_eps
 
-!     printing eps function in file
-      open(1,file='eps.inp', status="new")
-      open(2,file='real_imag_eps.inp', status="new")
-      write(1,*) n_omega
-      write(2,*) n_omega
-      allocate(omega_list(n_omega))
-      do i=1,n_omega
-       omega_list(i)=(omega_end-omega_ini)/(n_omega-1)*(i-1)+omega_ini
-       omega(1) = omega_list(i)
-       select case( Feps )
-       case('deb')
-        ! debye eps
-        call do_eps_deb
-       case('drl')
-        ! drude-lorentz eps
-        call do_eps_drl
-       case('gen')
-        ! for now gold case 
-        ! extra case should be place here selecting possible material
-        eps = eps_gold(omega(1))
-       end select
-       write(1,*) omega(1), eps
-       write(2,*) omega(1), real(eps,dbl), dimag(eps)
+
+
+!      type(tdplas_user_input) user_input
+
+      character(flg) :: calculation = "epsilon"
+
+      call system_clock(st, rate)
+   
+!      call read_input_tdplas(calculation, user_input)
+!      call check_input(user_input) 
+!      call init_tdplas(calculation, user_input)
+!      call check_global_var
+!      call write_out(calculation) 
+      call readio_tdplas(calculation)
+
+      call system_clock(current)
+      open(1,file="eps.out", status="new")
+      open(2,file="real_imag_eps.out", status="new")
+      write(1,*) dielectric_func_n_omega
+      write(2,*) dielectric_func_n_omega
+
+      call dielectric_func_do_eps(global_eps_Feps)
+      do i=1,dielectric_func_n_omega
+          write(1,*) dielectric_func_omegas(i), dielectric_func_epsilons(i)
+          write(2,*) dielectric_func_omegas(i), real(dielectric_func_epsilons(i),dbl), dimag(dielectric_func_epsilons(i))
       enddo
       close(1)
       close(2)
-      call system_clock(current)
       write(6,'("Done reading input, took", &
             F10.3,"s")') real(current-st)/real(rate)
 
@@ -43,8 +41,7 @@
       call system_clock(current)
       write(6,'("Done , total elapsed time", &
             F10.3,"s")') real(current-st)/real(rate)
-!         
-      deallocate(omega_list)
+         
 
 
       end program main_eps
