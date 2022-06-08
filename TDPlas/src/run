@@ -4,6 +4,9 @@ cd $OCTOPUSDIR
 make clean
 cd ./src
 make clean
+rm libtdplas.a
+cd ./hamiltonian
+rm tdplas.*
 cd $TDPLASDIR
 make clean
 make
