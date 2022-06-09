@@ -364,13 +364,15 @@
 
             type(tdplas_user_input) :: user_input
 
-            character(flg) :: surface_type, input_mesh, object_shape, inversion, find_spheres
+            character(flg) :: surface_type, input_mesh, object_shape, inversion, find_spheres, dummy_surface
             real(dbl)      :: sphere_position_x(nsmax), sphere_position_y(nsmax), sphere_position_z(nsmax), &
                               sphere_radius(nsmax), &
                               spheroid_position_x(nsmax), spheroid_position_y(nsmax), spheroid_position_z(nsmax), &
                               spheroid_radius(nsmax), &
                               spheroid_axis_x(nsmax), spheroid_axis_y(nsmax), spheroid_axis_z(nsmax)
-            integer(i4b)   :: spheres_number, spheroids_number, particles_number
+            real(dbl)      :: dum_sphere_position_x(nsmax), dum_sphere_position_y(nsmax), dum_sphere_position_z(nsmax), &
+                              dum_sphere_radius(nsmax)
+            integer(i4b)   :: spheres_number, spheroids_number, particles_number, dum_spheres_number
 
 
             namelist /surface/surface_type,                &
@@ -391,7 +393,13 @@
                               sphere_radius,               &
                               spheroid_radius,             &
                               inversion,                   &
-                              find_spheres
+                              find_spheres,                &
+                              dummy_surface,               &
+                              dum_spheres_number,          &
+                              dum_sphere_position_x,       &
+                              dum_sphere_position_y,       &
+                              dum_sphere_position_z,       &
+                              dum_sphere_radius
 
 
             surface_type         =       user_input%surface_type
@@ -420,7 +428,8 @@
             open(888,file="namelist_tdplas.inp")
             rewind(888)
             read(888, nml=surface)
-            call lower_and_check_allowed_values_surface_nml(surface_type, input_mesh, object_shape, inversion, find_spheres)
+            call lower_and_check_allowed_values_surface_nml(surface_type, input_mesh, object_shape, &
+                                                            inversion, find_spheres, dummy_surface)
 
             user_input%surface_type             = surface_type
             user_input%input_mesh               = input_mesh
@@ -441,6 +450,14 @@
             user_input%spheroid_radius          = spheroid_radius
             user_input%inversion                = inversion
             user_input%find_spheres             = find_spheres
+            user_input%dummy_surface            = dummy_surface
+            user_input%dum_spheres_number       = dum_spheres_number
+            user_input%dum_sphere_position_x    = dum_sphere_position_x
+            user_input%dum_sphere_position_y    = dum_sphere_position_y
+            user_input%dum_sphere_position_z    = dum_sphere_position_z
+            user_input%dum_sphere_radius        = dum_sphere_radius
+
+
 
         end subroutine
 

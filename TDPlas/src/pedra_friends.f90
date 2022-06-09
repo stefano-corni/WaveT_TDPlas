@@ -14,12 +14,19 @@
             character(flg) :: pedra_surf_Fcav = "non"        !BEM                                  !
             character(flg) :: pedra_surf_Finv = "non"        !BEM
             character(flg) :: pedra_surf_Ffind = "yes"       !BEM
+            character(flg) :: pedra_surf_Fdum = "no"         !BEM
 
 
             integer(i4b) :: pedra_surf_n_tessere = 0                      !td_contmed, BEM, Mathtools
             type(tess_pcm), target, allocatable :: pedra_surf_tessere(:)  !td_contmed, BEM, Mathtools
             integer(i4b) :: pedra_surf_n_spheres = 0                      !BEM
             type(sfera), allocatable :: pedra_surf_spheres(:)             !td_contmed, BEM
+!
+            integer(i4b) :: pedra_dum_n_tessere = 0                      !td_contmed, BEM, Mathtools
+            type(tess_pcm), target, allocatable :: pedra_dum_tessere(:)  !td_contmed, BEM, Mathtools
+            integer(i4b) :: pedra_dum_n_spheres = 0                      !BEM
+            type(sfera), allocatable :: pedra_dum_spheres(:)             !td_contmed, BEM
+!
             integer(i4b), allocatable :: pedra_surf_comp(:,:)      
             integer(i4b) :: pedra_surf_n_particles = 1
 
@@ -51,7 +58,8 @@
                     pedra_surf_init,            &
                     pedra_surf_Ffind,           &
                     pedra_surf_comp,            &
-                    pedra_surf_n_particles
+                    pedra_surf_n_particles,     &
+                    pedra_surf_Fdum,            &
 
 
 
@@ -62,12 +70,18 @@
             subroutine pedra_surf_init(Fcav,          &
                                   Finv,               &
                                   Ffind,              &
+                                  Fdum,               &
                                   particles_number,   &
                                   spheres_number,     &
                                   sphere_position_x,  &
                                   sphere_position_y,  &
                                   sphere_position_z,  &
                                   sphere_radius,      &
+                                  dum_spheres_number,     &
+                                  dum_sphere_position_x,  &
+                                  dum_sphere_position_y,  &
+                                  dum_sphere_position_z,  &
+                                  dum_sphere_radius,      &
                                   medium_Fmdm)
 
 
@@ -81,11 +95,19 @@
             real(dbl)        :: sphere_position_y(spheres_number)
             real(dbl)        :: sphere_position_z(spheres_number)
             real(dbl)        :: sphere_radius(spheres_number)
+!
+            character(flg)   :: Fdum
+            integer(i4b)     :: dum_spheres_number
+            real(dbl)        :: dum_sphere_position_x(dum_spheres_number)
+            real(dbl)        :: dum_sphere_position_y(dum_spheres_number)
+            real(dbl)        :: dum_sphere_position_z(dum_spheres_number)
+            real(dbl)        :: dum_sphere_radius(dum_spheres_number)
 
 
             pedra_surf_Fcav = Fcav
             pedra_surf_Finv = Finv
             pedra_surf_Ffind = Ffind
+            pedra_surf_Fdum = Fdum
 
             select case(pedra_surf_Fcav)
                 case ('fil')
@@ -98,11 +120,11 @@
                 case ('gms')
                     call read_gmsh_file(pedra_surf_Finv,pedra_surf_Ffind)
                 case ('bui')
-          ! Build surface from spheres
+                    ! Build surface from spheres
                     call read_act(sphere_position_x,&
-                                sphere_position_y,&
-                                sphere_position_z,&
-                                sphere_radius,spheres_number,spheres_number)
+                                  sphere_position_y,&
+                                  sphere_position_z,&
+                                  sphere_radius,spheres_number,spheres_number)
                     if(medium_Fmdm.eq.'csol'.or.medium_Fmdm.eq.'qsol') call pedra_int('act')
                     if(medium_Fmdm.eq.'cnan'.or.medium_Fmdm.eq.'qnan') call pedra_int('met')
             end select
@@ -117,6 +139,26 @@
                 pedra_surf_spheres = sfe_act
             endif
 
+
+            !GG: 09/06/2022
+            if (pedra_surf_Fdum.eq.'yes'.and.medium_Fmdm.eq.'cnan') then
+             ! Build dummy surface from spheres
+             call read_pro(dum_sphere_position_x,&
+                           dum_sphere_position_y,&
+                           dum_sphere_position_z,&
+                           dum_sphere_radius,dum_spheres_number,dum_spheres_number)
+             call pedra_int('pro')
+             pedra_dum_n_spheres = nesf_pro
+             pedra_dum_n_tessere = nts_pro
+             if(pedra_dum_n_tessere.gt.0) then
+                 allocate(pedra_dum_tessere(pedra_dum_n_tessere))
+                 pedra_dum_tessere = cts_pro
+             endif
+             if(pedra_dum_n_spheres.gt.0) then
+                 allocate(pedra_dum_spheres(pedra_dum_n_spheres))
+                 pedra_dum_spheres = sfe_pro
+             endif
+            endif
 
             return
 
@@ -288,19 +330,20 @@
       return
       end subroutine
 
-
-      Subroutine read_pro
-      integer(i4b) :: isfe
-      read (5,*) nesf_pro
+      Subroutine read_pro(xr,yr,zr,rr,nspheres,nsmax)
+      integer(i4b) :: isfe,nspheres,nsmax
+      real(dbl)    :: xr(nsmax),yr(nsmax),zr(nsmax),rr(nsmax)
+      nesf_pro=nspheres
       allocate(sfe_pro(nesf_pro))
       do isfe=1,nesf_pro
-       read (5,*) sfe_pro(isfe)%x,sfe_pro(isfe)%y,sfe_pro(isfe)%z, &
-                  sfe_pro(isfe)%r
+       sfe_pro(isfe)%x=xr(isfe)
+       sfe_pro(isfe)%y=yr(isfe)
+       sfe_pro(isfe)%z=zr(isfe)
+       sfe_pro(isfe)%r=rr(isfe)
       enddo
+
       return
       end subroutine
-!
-
 
       Subroutine new_sphere (i_count,nsfe,sfe,nsfe_new,sfe_new)
 ! Add new spheres to improve intersections
@@ -355,17 +398,31 @@
       type(tess_pcm) :: dum2(1)
 
 #ifdef MPI
-      call mpi_bcast(nesf_act,    1,MPI_INTEGER,0,MPI_COMM_WORLD,tp_ierr_mpi)
+      call mpi_bcast(nesf_act,1,MPI_INTEGER,0,MPI_COMM_WORLD,tp_ierr_mpi)
 
       !allocate(tmp(nesf_act))
       if (tp_myrank.ne.0) then
          allocate(sfe_act(nesf_act))
       endif
 
-      call mpi_bcast(sfe_act%x,    nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
-      call mpi_bcast(sfe_act%y,    nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
-      call mpi_bcast(sfe_act%z,    nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
-      call mpi_bcast(sfe_act%r,    nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+      call mpi_bcast(sfe_act%x, nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+      call mpi_bcast(sfe_act%y, nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+      call mpi_bcast(sfe_act%z, nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+      call mpi_bcast(sfe_act%r, nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+
+      if (pedra_surf_Fdum.eq.'yes') then
+       call mpi_bcast(nesf_pro,1,MPI_INTEGER,0,MPI_COMM_WORLD,tp_ierr_mpi)
+
+       !allocate(tmp(nesf_pro))
+       if (tp_myrank.ne.0) then
+          allocate(sfe_pro(nesf_pro))
+       endif
+
+       call mpi_bcast(sfe_pro%x, nesf_pro,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+       call mpi_bcast(sfe_pro%y, nesf_pro,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+       call mpi_bcast(sfe_pro%z, nesf_pro,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+       call mpi_bcast(sfe_pro%r, nesf_pro,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+      endif
 
 #endif
 

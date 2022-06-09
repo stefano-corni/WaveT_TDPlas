@@ -49,12 +49,18 @@
                     call pedra_surf_init(d_entry_convert_to_internal(dict_Fcav, user_input%input_mesh),    &
                                     d_entry_convert_to_internal(dict_Finv, user_input%inversion),        &
                                     d_entry_convert_to_internal(dict_Ffind, user_input%find_spheres),        &
+                                    d_entry_convert_to_internal(dict_Fdum, user_input%dummy_surface),        &
                                     user_input%particles_number,  &
                                     user_input%spheres_number,    &
                                     user_input%sphere_position_x, &
                                     user_input%sphere_position_y, &
                                     user_input%sphere_position_z, &
-                                    user_input%sphere_radius, &     
+                                    user_input%sphere_radius, & 
+                                    user_input%dum_spheres_number,    &
+                                    user_input%dum_sphere_position_x, &
+                                    user_input%dum_sphere_position_y, &
+                                    user_input%dum_sphere_position_z, &
+                                    user_input%dum_sphere_radius, &    
                                     global_medium_Fmdm)
 
 

@@ -110,7 +110,6 @@
                 call check_tdplas_input_for_octopus(user_input)
                 call init_tdplas(calculation_exe, nthr, user_input)
                 call check_global_var
-                call read_gau_out_medium(quantum_n_ci) !< run w octopus dont use it
                 call write_out(calculation_exe)
             end subroutine readio_and_init_tdplas_for_octopus
 
@@ -148,6 +147,12 @@
             user_input%spheroid_axis_z(nsmax)     = zero
             user_input%inversion                  = "non"
             user_input%find_spheres               = "yes"
+            user_input%dummy_surface              = "no"
+            user_input%dum_spheres_number         = 0
+            user_input%dum_sphere_position_x(nsmax)   = zero
+            user_input%dum_sphere_position_y(nsmax)   = zero
+            user_input%dum_sphere_position_z(nsmax)   = zero
+            user_input%dum_sphere_radius(nsmax)       = zero
 
             user_input%epsilon_omega     = "non"
             user_input%eps_A             = -1.0

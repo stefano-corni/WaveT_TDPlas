@@ -32,6 +32,14 @@
             real(dbl)        :: sphere_position_y(nsmax)
             real(dbl)        :: sphere_position_z(nsmax)
             real(dbl)        :: sphere_radius(nsmax)
+
+            character(flg)   :: dummy_surface                  !< dummy surface
+            integer(i4b)     :: dum_spheres_number             !< dummy surface related
+            real(dbl)        :: dum_sphere_position_x(nsmax)   !< dummy surface related
+            real(dbl)        :: dum_sphere_position_y(nsmax)   !< dummy surface related
+            real(dbl)        :: dum_sphere_position_z(nsmax)   !< dummy surface related
+            real(dbl)        :: dum_sphere_radius(nsmax)       !< dummy surface related
+
             real(dbl)        :: spheroid_position_x(nsmax)
             real(dbl)        :: spheroid_position_y(nsmax)
             real(dbl)        :: spheroid_position_z(nsmax)
@@ -143,6 +151,12 @@
            user_input%sphere_position_y(nsmax)   = zero
            user_input%sphere_position_z(nsmax)   = zero
            user_input%sphere_radius(nsmax)       = zero
+           user_input%dummy_surface               = "no"
+           user_input%dum_spheres_number             = 0
+           user_input%dum_sphere_position_x(nsmax)   = zero
+           user_input%dum_sphere_position_y(nsmax)   = zero
+           user_input%dum_sphere_position_z(nsmax)   = zero
+           user_input%dum_sphere_radius(nsmax)       = zero
            user_input%spheroid_position_x(nsmax) = zero
            user_input%spheroid_position_y(nsmax) = zero
            user_input%spheroid_position_z(nsmax) = zero

@@ -19,6 +19,7 @@
         type(dict_entry)  :: dict_Fshape
         type(dict_entry)  :: dict_Finv
         type(dict_entry)  :: dict_Ffind
+        type(dict_entry)  :: dict_Fdum
 
         !MEDIUM
         !namelist
@@ -64,7 +65,7 @@
 
 
         public   dict_Ftest, dict_Fdeb, dict_Fwrite,                                                            &
-                 dict_Fsurf, dict_Fcav, dict_Fshape, dict_Finv, dict_Ffind,                                     &
+                 dict_Fsurf, dict_Fcav, dict_Fshape, dict_Finv, dict_Ffind, dict_Fdum,                          &
                  dict_Fmdm,  dict_Finit, dict_Fpol, dict_Fbem, dict_read_write, dict_Fnorm, dict_bem_sym,       &
                  dict_Feps, dict_typ_prop,                                                                      &
                  dict_Fsoft, dict_Fprop, dict_Fint, dict_Finit_int, dict_Floc, dict_Fmdm_relax, dict_Fmdm_res,  &
@@ -169,7 +170,10 @@
                  [Character(flg) :: "sphere", "spheroid", "non"],                     &
                  [Character(flg) :: "sphe", "spho", "non"])
 
-
+      call  dict_entry_init(dict_Fdum, 2,                                              &
+                 [Character(flg) :: "dummy_surface", "pedra_surf_Fdum"],              &
+                 [Character(flg) :: "yes", "no"],                        &
+                 [Character(flg) :: "yes", "no"])
 
        !EPS
       call  dict_entry_init(dict_Feps, 5,                                                    &

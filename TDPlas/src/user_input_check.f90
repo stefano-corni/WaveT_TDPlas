@@ -33,6 +33,14 @@
                         call mpi_error('ERROR: surface created with cavity but spheres/spheroids shape asked', " ", " ")
                     endif
                 endif
+
+                if (user_input%dummy_surface.eq."yes") then
+                 if(user_input%dum_spheres_number.eq.0) &
+                  call mpi_error('ERROR: dummy surface needs to be built from spheres but no dummy spheres are detected', " ", " ")
+                elseif(user_input%dummy_surface.eq."no") then
+                 if(user_input%dum_spheres_number.ne.0) &
+                  call mpi_error('ERROR: there are dummy spheres detected but no dummy surface has to be built', " ", " ")
+                endif
             end subroutine
 
             !independent
