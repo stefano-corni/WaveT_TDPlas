@@ -59,7 +59,7 @@
                     pedra_surf_Ffind,           &
                     pedra_surf_comp,            &
                     pedra_surf_n_particles,     &
-                    pedra_surf_Fdum,            &
+                    pedra_surf_Fdum
 
 
 
@@ -67,22 +67,22 @@
 
 
 
-            subroutine pedra_surf_init(Fcav,          &
-                                  Finv,               &
-                                  Ffind,              &
-                                  Fdum,               &
-                                  particles_number,   &
-                                  spheres_number,     &
-                                  sphere_position_x,  &
-                                  sphere_position_y,  &
-                                  sphere_position_z,  &
-                                  sphere_radius,      &
-                                  dum_spheres_number,     &
-                                  dum_sphere_position_x,  &
-                                  dum_sphere_position_y,  &
-                                  dum_sphere_position_z,  &
-                                  dum_sphere_radius,      &
-                                  medium_Fmdm)
+            subroutine pedra_surf_init(Fcav,                   &
+                                       Finv,                   &
+                                       Ffind,                  &
+                                       Fdum,                   &
+                                       particles_number,       &
+                                       spheres_number,         &
+                                       sphere_position_x,      &
+                                       sphere_position_y,      &
+                                       sphere_position_z,      &
+                                       sphere_radius,          &
+                                       dum_spheres_number,     &
+                                       dum_sphere_position_x,  &
+                                       dum_sphere_position_y,  &
+                                       dum_sphere_position_z,  &
+                                       dum_sphere_radius,      &
+                                       medium_Fmdm             )
 
 
             character(flg)   :: Fcav
@@ -162,7 +162,7 @@
 
             return
 
-        end subroutine
+        end subroutine pedra_surf_init
 
 
 
@@ -248,7 +248,7 @@
 #endif
 
       return
-      end subroutine
+      end subroutine read_cavity_full_file
 !
       subroutine read_cavity_file
        integer(4) :: i,nts,nsphe
@@ -306,7 +306,7 @@
 #endif
 
        return
-      end subroutine
+      end subroutine read_cavity_file
 !
 
 
@@ -328,7 +328,7 @@
       enddo
 
       return
-      end subroutine
+      end subroutine read_act
 
       Subroutine read_pro(xr,yr,zr,rr,nspheres,nsmax)
       integer(i4b) :: isfe,nspheres,nsmax
@@ -343,7 +343,7 @@
       enddo
 
       return
-      end subroutine
+      end subroutine read_pro
 
       Subroutine new_sphere (i_count,nsfe,sfe,nsfe_new,sfe_new)
 ! Add new spheres to improve intersections
@@ -391,7 +391,7 @@
       enddo
       nsfe_new=nsfe+n_add
       return
-      end subroutine
+      end subroutine new_sphere
 !
       Subroutine pedra_int(what)
       character*3 :: what
@@ -446,7 +446,7 @@
 !        write (6,*) "nts_act",nts_act
       endif
       return
-      end subroutine
+      end subroutine pedra_int
 !      
 !  It builds the solute cavity surface and calculates the vertices,
 !! representative points and areas of the tesserae by using the 
@@ -1334,7 +1334,7 @@
       p3(3) = p1(1)*p2(2) - p1(2)*p2(1)
       norm3 = SQRT(p3(1)*p3(1) + p3(2)*p3(2) + p3(3)*p3(3))
       return
-      end subroutine
+      end subroutine vecp
 
       subroutine read_gmsh_file(inv,Ffind)
 
@@ -1542,7 +1542,7 @@
 !      enddo
 !      close(7)
       return
-      end subroutine
+      end subroutine read_gmsh_file
 !
       function vec(v1,v2)
       real(8) :: vec(3),v1(3),v2(3)
@@ -1550,7 +1550,7 @@
       vec(1)=v1(2)*v2(3)-v1(3)*v2(2)
       vec(2)=v1(3)*v2(1)-v1(1)*v2(3)
       return
-      end function
+      end function vec
 !
       subroutine dealloc_pedra
       if (allocated(sfe_act)) deallocate(sfe_act)
@@ -1558,7 +1558,7 @@
       if (allocated(cts_act)) deallocate(cts_act)
       if (allocated(cts_pro)) deallocate(cts_pro)
       return
-      end subroutine
+      end subroutine dealloc_pedra
 
       subroutine read_composite_file(particles_number)
               integer(i4b) :: i, particles_number
@@ -1572,5 +1572,5 @@
               enddo
               close(8)
 
-      end subroutine 
+      end subroutine read_composite_file
       end module
