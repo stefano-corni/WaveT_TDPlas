@@ -31,6 +31,14 @@
       complex(cmp), allocatable :: BEM_VLc(:,:), BEM_VRc(:,:), BEM_Lc(:)
       real(dbl), allocatable :: BEM_W2(:),BEM_Modes(:,:) !< BEM squared frequencies and Modes ($T*S^{1/2}$)
       real(dbl), allocatable :: BEM_ADtm1(:,:)           !< BEM inverse matrix for general eps-prop 3
+      real(dbl), allocatable :: BEM_Sdum(:,:)            !< Calderon S matrix for dummy surface
+      real(dbl), allocatable :: BEM_Ddum(:,:)            !< Calderon D matrix for dummy surface
+      real(dbl), allocatable :: BEM_Ddum_act(:,:)        !< Calderon D matrix bridging dummy and actual surface
+      real(dbl), allocatable :: BEM_Dact_dum(:,:)        !< Calderon D matrix bridging actual and dummy surface
+      real(dbl), allocatable :: BEM_Z1_mol(:,:)           !< BEM matrix to translate molecular to dummy charges
+      real(dbl), allocatable :: BEM_Z1_ext(:,:)           !< BEM matrix to translate molecular to dummy charges
+      real(dbl), allocatable :: BEM_Z2(:,:)              !< BEM matrix to translate dummy to dummy charges
+      real(dbl), allocatable :: BEM_Z3(:,:)              !< BEM matrix to translate actual to dummy charges
 ! SP 25/06/17: K0 and Kd are still common to 'deb' and 'drl' cases
       real(dbl), allocatable :: K0(:),Kd(:)              !< Diagonal $K_0$ and $K_d$ matrices
       real(dbl), allocatable :: K0x(:),Kdx(:)
@@ -93,7 +101,7 @@
              deallocate_BEM_public,deallocate_MPL_public,BEM_Qg,BEM_2G,&
              BEM_ADt,kf,w2,gg,kf_prime,BEM_Qdf,BEM_Qdfx,BEM_Qdf_2g,    &
              BEM_Qdfx_2g,kf0,deallocate_BEM_end_propagation,BEM_ADtm1, &
-             clean_all_ocpy_BEM
+             clean_all_ocpy_BEM,BEM_Z1_mol,BEM_Z1_ext,BEM_Z2,BEM_Z3
 
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -173,6 +181,7 @@
              BEM_Modes=TSm12
            endif
          endif
+         if(pedra_surf_Fdum.eq."yes".and.global_medium_Fmdm.eq.'cnan') call do_BEM_translator
        endif
          !Write out matrices for gamess
          if(global_sys_Fwrite.eq."high") call out_BEM_gamess
@@ -514,7 +523,10 @@
        if(allocated(fact3)) deallocate(fact3)
        if(allocated(fact1)) deallocate(fact1)
        if(allocated(fact2)) deallocate(fact2)
-
+       if(allocated(BEM_Z1_mol)) deallocate(BEM_Z1_mol)
+       if(allocated(BEM_Z1_ext)) deallocate(BEM_Z1_ext)
+       if(allocated(BEM_Z2)) deallocate(BEM_Z2)
+       if(allocated(BEM_Z3)) deallocate(BEM_Z3)
 
        endif
 
@@ -830,6 +842,74 @@ end subroutine
 
       end subroutine do_BEM_SD
 
+!------------------------------------------------------------------------
+! @brief Compute a Calderon's S and D matrices for dummy surface
+!
+! @date Created: G. Gil
+! Modified:
+!------------------------------------------------------------------------
+      subroutine do_BEM_dum
+
+       real(dbl) :: temp
+       integer(i4b) :: i,j
+
+       allocate(BEM_Ddum(pedra_dum_n_tessere,pedra_dum_n_tessere))
+       allocate(BEM_Sdum(pedra_dum_n_tessere,pedra_dum_n_tessere))
+
+!$OMP PARALLEL
+!$OMP DO
+       do i=1,pedra_dum_n_tessere
+        do j=1,pedra_dum_n_tessere
+          call green_s_dum(i,j,temp)
+          BEM_Sdum(i,j)=temp
+          call green_d_dum(i,j,temp)
+          BEM_Ddum(i,j)=temp
+        enddo
+       enddo
+!$OMP enddo
+!$OMP END PARALLEL
+
+       return
+
+      end subroutine do_BEM_dum
+
+!------------------------------------------------------------------------
+! @brief Compute a Calderon D rectangular matrix for dummy-actual surfaces
+!
+! @date Created: G. Gil
+! Modified:
+!------------------------------------------------------------------------
+      subroutine do_BEM_dum_act(outgoing_normal)
+
+       real(dbl) :: temp
+       integer(i4b) :: i,j
+       character(len=3) :: outgoing_normal
+
+       if (outgoing_normal.eq.'act') then
+        allocate(BEM_Dact_dum(pedra_dum_n_tessere,pedra_surf_n_tessere))
+       elseif (outgoing_normal.eq.'dum') then
+        allocate(BEM_Ddum_act(pedra_surf_n_tessere,pedra_dum_n_tessere))
+       endif
+
+!$OMP PARALLEL
+!$OMP DO
+       do i=1,pedra_surf_n_tessere
+        do j=1,pedra_dum_n_tessere
+          if (outgoing_normal.eq.'act') then
+           call green_d_act_dum(i,j,temp)
+           BEM_Dact_dum(i,j)=temp
+          elseif (outgoing_normal.eq.'dum') then
+           call green_d_dum_act(j,i,temp)
+           BEM_Ddum_act(j,i)=temp
+          endif
+        enddo
+       enddo
+!$OMP enddo
+!$OMP END PARALLEL
+
+       return
+
+      end subroutine do_BEM_dum_act
 
 !------------------------------------------------------------------------
 ! @brief Calderon D matrix with Purisima Dii elements
@@ -907,6 +987,178 @@ end subroutine
        return
 
       end subroutine green_s
+
+!------------------------------------------------------------------------
+! @brief 
+!
+! @date Created: G. Gil
+! Modified: 
+!------------------------------------------------------------------------
+      subroutine green_d_dum (i,j,value)
+
+       integer(i4b), intent(in):: i,j
+       real(dbl), intent(out) :: value
+       real(dbl):: dist,sum_d
+       integer(i4b) :: k
+
+       if (i.ne.j) then
+          scrd3(1)=(pedra_dum_tessere(i)%x-pedra_dum_tessere(j)%x)
+          scrd3(2)=(pedra_dum_tessere(i)%y-pedra_dum_tessere(j)%y)
+          scrd3(3)=(pedra_dum_tessere(i)%z-pedra_dum_tessere(j)%z)
+          dist=sqrt(dot_product(scrd3,scrd3))
+          value=dot_product(pedra_dum_tessere(j)%n,scrd3)/dist**3
+       else
+          sum_d=0.d0
+
+          do k=1,i-1
+             scrd3(1)=(pedra_dum_tessere(i)%x-pedra_dum_tessere(k)%x)
+             scrd3(2)=(pedra_dum_tessere(i)%y-pedra_dum_tessere(k)%y)
+             scrd3(3)=(pedra_dum_tessere(i)%z-pedra_dum_tessere(k)%z)
+             dist=sqrt(dot_product(scrd3,scrd3))
+             sum_d=sum_d+dot_product(pedra_dum_tessere(k)%n,scrd3)/dist**3*pedra_dum_tessere(k)%area
+          enddo
+
+          do k=i+1,pedra_surf_n_tessere
+             scrd3(1)=(pedra_dum_tessere(i)%x-pedra_dum_tessere(k)%x)
+             scrd3(2)=(pedra_dum_tessere(i)%y-pedra_dum_tessere(k)%y)
+             scrd3(3)=(pedra_dum_tessere(i)%z-pedra_dum_tessere(k)%z)
+             dist=sqrt(dot_product(scrd3,scrd3))
+             sum_d=sum_d+dot_product(pedra_dum_tessere(k)%n,scrd3)/dist**3*pedra_dum_tessere(k)%area
+          enddo
+
+          sum_d=-(2.0*pi+sum_d)/pedra_dum_tessere(i)%area
+          value=sum_d
+          !value=-1.0694*sqrt(4.d0*pi*pedra_dum_tessere(i)%area)/(2.d0* &
+          !       pedra_dum_tessere(i)%rsfe)/pedra_dum_tessere(i)%area
+       endif
+
+       return
+
+      end subroutine green_d_dum
+
+!------------------------------------------------------------------------
+! @brief Calderon S matrix
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+      subroutine green_s_dum(i,j,value)
+
+       integer(i4b), intent(in):: i,j
+       real(dbl), intent(out) :: value
+       real(dbl):: dist
+
+       if (i.ne.j) then
+         scrd3(1)=(pedra_dum_tessere(i)%x-pedra_dum_tessere(j)%x)
+         scrd3(2)=(pedra_dum_tessere(i)%y-pedra_dum_tessere(j)%y)
+         scrd3(3)=(pedra_dum_tessere(i)%z-pedra_dum_tessere(j)%z)
+         dist=sqrt(dot_product(scrd3,scrd3))
+         value=one/dist
+       else
+         value=1.0694*sqrt(4.d0*pi/pedra_dum_tessere(i)%area)
+       endif
+
+       return
+
+      end subroutine green_s_dum
+
+
+!------------------------------------------------------------------------
+! @brief 
+!
+! @date Created: G. Gil
+! Modified: 
+!------------------------------------------------------------------------
+      subroutine green_d_act_dum (j,i,value)
+
+       integer(i4b), intent(in):: i,j
+       real(dbl), intent(out) :: value
+       real(dbl):: dist,sum_d
+       integer(i4b) :: k
+
+       if (i.ne.j) then
+          scrd3(1)=(pedra_dum_tessere(i)%x-pedra_surf_tessere(j)%x)
+          scrd3(2)=(pedra_dum_tessere(i)%y-pedra_surf_tessere(j)%y)
+          scrd3(3)=(pedra_dum_tessere(i)%z-pedra_surf_tessere(j)%z)
+          dist=sqrt(dot_product(scrd3,scrd3))
+          value=dot_product(pedra_surf_tessere(j)%n,scrd3)/dist**3
+       else
+          sum_d=0.d0
+
+          do k=1,i-1
+             scrd3(1)=(pedra_dum_tessere(i)%x-pedra_surf_tessere(k)%x)
+             scrd3(2)=(pedra_dum_tessere(i)%y-pedra_surf_tessere(k)%y)
+             scrd3(3)=(pedra_dum_tessere(i)%z-pedra_surf_tessere(k)%z)
+             dist=sqrt(dot_product(scrd3,scrd3))
+             sum_d=sum_d+dot_product(pedra_surf_tessere(k)%n,scrd3)/dist**3*pedra_surf_tessere(k)%area
+          enddo
+
+          do k=i+1,pedra_surf_n_tessere
+             scrd3(1)=(pedra_dum_tessere(i)%x-pedra_surf_tessere(k)%x)
+             scrd3(2)=(pedra_dum_tessere(i)%y-pedra_surf_tessere(k)%y)
+             scrd3(3)=(pedra_dum_tessere(i)%z-pedra_surf_tessere(k)%z)
+             dist=sqrt(dot_product(scrd3,scrd3))
+             sum_d=sum_d+dot_product(pedra_surf_tessere(k)%n,scrd3)/dist**3*pedra_surf_tessere(k)%area
+          enddo
+
+          sum_d=-(2.0*pi+sum_d)/pedra_surf_tessere(i)%area
+          value=sum_d
+          !value=-1.0694*sqrt(4.d0*pi*pedra_surf_tessere(i)%area)/(2.d0* &
+          !       pedra_surf_tessere(i)%rsfe)/pedra_surf_tessere(i)%area
+       endif
+
+       return
+
+      end subroutine green_d_act_dum
+
+!------------------------------------------------------------------------
+! @brief 
+!
+! @date Created: G. Gil
+! Modified: 
+!------------------------------------------------------------------------
+      subroutine green_d_dum_act (j,i,value)
+
+       integer(i4b), intent(in):: i,j
+       real(dbl), intent(out) :: value
+       real(dbl):: dist,sum_d
+       integer(i4b) :: k
+
+       if (i.ne.j) then
+          scrd3(1)=(pedra_surf_tessere(i)%x-pedra_dum_tessere(j)%x)
+          scrd3(2)=(pedra_surf_tessere(i)%y-pedra_dum_tessere(j)%y)
+          scrd3(3)=(pedra_surf_tessere(i)%z-pedra_dum_tessere(j)%z)
+          dist=sqrt(dot_product(scrd3,scrd3))
+          value=dot_product(pedra_dum_tessere(j)%n,scrd3)/dist**3
+       else
+          sum_d=0.d0
+
+          do k=1,i-1
+             scrd3(1)=(pedra_surf_tessere(i)%x-pedra_dum_tessere(k)%x)
+             scrd3(2)=(pedra_surf_tessere(i)%y-pedra_dum_tessere(k)%y)
+             scrd3(3)=(pedra_surf_tessere(i)%z-pedra_dum_tessere(k)%z)
+             dist=sqrt(dot_product(scrd3,scrd3))
+             sum_d=sum_d+dot_product(pedra_dum_tessere(k)%n,scrd3)/dist**3*pedra_dum_tessere(k)%area
+          enddo
+
+          do k=i+1,pedra_dum_n_tessere
+             scrd3(1)=(pedra_surf_tessere(i)%x-pedra_dum_tessere(k)%x)
+             scrd3(2)=(pedra_surf_tessere(i)%y-pedra_dum_tessere(k)%y)
+             scrd3(3)=(pedra_surf_tessere(i)%z-pedra_dum_tessere(k)%z)
+             dist=sqrt(dot_product(scrd3,scrd3))
+             sum_d=sum_d+dot_product(pedra_dum_tessere(k)%n,scrd3)/dist**3*pedra_dum_tessere(k)%area
+          enddo
+
+          sum_d=-(2.0*pi+sum_d)/pedra_dum_tessere(i)%area
+          value=sum_d
+          !value=-1.0694*sqrt(4.d0*pi*pedra_dum_tessere(i)%area)/(2.d0* &
+          !       pedra_dum_tessere(i)%rsfe)/pedra_dum_tessere(i)%area
+       endif
+
+       return
+
+      end subroutine green_d_dum_act
+
 
 !------------------------------------------------------------------------
 ! @brief Compute BEM matrices within diagonal approach
@@ -1385,6 +1637,197 @@ end subroutine
        return
 
       end subroutine
+
+      subroutine do_BEM_translator
+!------------------------------------------------------------------------
+! @brief Compute BEM matrix translating actual to dummy charges
+!
+! @date Created: G. Gil
+! Modified:
+!------------------------------------------------------------------------
+
+       integer(i4b) :: i
+       real(dbl), allocatable :: scr1(:,:),scr2(:,:),scr3(:,:)
+
+
+#ifndef MPI
+       tp_myrank=0
+#endif
+       if (pedra_surf_Fdum.eq."no") then
+           call mpi_error("ERROR: in input dummy_surface = no but you are trying to", &
+                          "calculate translator bem matrix. Something is wrong in your input", &
+                          " and there should be a check. Apologies! ")
+       endif
+
+       ! Build S'' and D''
+
+       call do_BEM_dum
+
+       ! I - Dummy charges that reproduce molecular potential outside dummy surface
+       !     Reaction field case
+
+       ! inverse of S'' for dummy surface
+
+       allocate(scr1(pedra_dum_n_tessere,pedra_dum_n_tessere))
+
+       scr1 = inv(BEM_Sdum)
+
+       deallocate(BEM_Sdum)
+
+       ! Form D''A'' for dummy surface
+
+       allocate(scr2(pedra_dum_n_tessere,pedra_dum_n_tessere))
+
+       scr2 = zero
+       do i=1,pedra_dum_n_tessere
+         scr2(:,i)= BEM_Ddum(:,i)*pedra_dum_tessere(i)%area
+       enddo
+
+       ! Form 2 pi - D''A'' for dummy surface
+
+       allocate(scr3(pedra_dum_n_tessere,pedra_dum_n_tessere))
+
+       do i=1,pedra_dum_n_tessere
+         scr3(i,i)= -scr2(i,i) + twp
+       enddo
+
+       ! Form -S''^-1 (2 pi - D''A'') for dummy surface
+
+       allocate(BEM_Z1_mol(pedra_dum_n_tessere,pedra_dum_n_tessere))
+
+       BEM_Z1_mol = -matmul(scr1,scr3)
+
+       deallocate(scr3)
+
+       if(global_medium_Floc=='loc') then
+       ! I - Dummy charges that reproduce external potential outside dummy surface
+       !     Local field case
+
+       ! Form 2 pi + D''A'' for dummy surface
+
+       allocate(scr3(pedra_dum_n_tessere,pedra_dum_n_tessere))
+
+       do i=1,pedra_dum_n_tessere
+         scr3(i,i)= scr2(i,i) + twp
+       enddo
+
+       deallocate(scr2)
+
+       ! Form S''^-1 (2 pi - D''A'') for dummy surface
+
+       allocate(BEM_Z1_ext(pedra_dum_n_tessere,pedra_dum_n_tessere))
+
+       BEM_Z1_ext = matmul(scr1,scr3)
+
+       endif
+
+       deallocate(scr1,scr3)
+
+       if(allocated(scr2)) deallocate(scr2)
+
+       ! II - Dummy charges at dummy surface to dummy charges at actual surface
+
+       ! Form DA for actual surface
+
+       allocate(scr1(pedra_surf_n_tessere,pedra_surf_n_tessere))
+
+       scr1 = zero
+       do i=1,pedra_surf_n_tessere
+         scr1(:,i)= BEM_D(:,i)*pedra_surf_tessere(i)%area
+       enddo
+
+       ! Form 2 pi + D A for actual surface
+
+       do i=1,pedra_surf_n_tessere
+         scr1(i,i)= scr1(i,i) + twp
+       enddo
+
+       allocate(scr2(pedra_surf_n_tessere,pedra_surf_n_tessere))
+
+       ! inverse of 2 pi + DA for actual surface
+
+       scr2 = inv(scr1)
+
+       deallocate(scr1)
+
+       allocate(scr3(pedra_surf_n_tessere,pedra_dum_n_tessere))
+
+       ! Build D' 
+
+       call do_BEM_dum_act('act')
+
+       ! Form D'A'' bridging dummy and actual surface
+
+       scr3 = zero
+       do i=1,pedra_dum_n_tessere
+         scr3(:,i)= BEM_Dact_dum(:,i)*pedra_dum_tessere(i)%area
+       enddo
+
+       deallocate(BEM_Dact_dum)
+
+       ! Form -(2 pi + DA)^-1 D'A'' bridging dummy and actual surface
+
+       allocate(BEM_Z2(pedra_surf_n_tessere,pedra_dum_n_tessere))
+
+       BEM_Z2 = -matmul(scr2,scr3)
+
+       deallocate(scr2,scr3)
+
+       ! III - Actual polarization charges at actual surface to dummy charges at dummy surface
+
+       ! Form D''A'' for dummy surface
+
+       allocate(scr1(pedra_dum_n_tessere,pedra_dum_n_tessere))
+
+       scr1 = zero
+       do i=1,pedra_dum_n_tessere
+         scr1(:,i)= BEM_Ddum(:,i)*pedra_dum_tessere(i)%area
+       enddo
+
+       deallocate(BEM_Ddum)
+
+       ! Form 2 pi - D''A'' for dummy surface
+
+       do i=1,pedra_dum_n_tessere
+         scr1(i,i)= -scr1(i,i) + twp
+       enddo
+
+       allocate(scr2(pedra_dum_n_tessere,pedra_dum_n_tessere))
+
+       ! inverse of 2 pi - D''A'' for dummy surface
+
+       scr2 = inv(scr1)
+
+       deallocate(scr1)
+
+       allocate(scr3(pedra_dum_n_tessere,pedra_surf_n_tessere))
+
+       ! Build D' 
+
+       call do_BEM_dum_act('dum')
+
+       ! Form D'A bridging dummy and actual surface
+
+       scr3 = zero
+       do i=1,pedra_surf_n_tessere
+         scr3(:,i)= BEM_Ddum_act(:,i)*pedra_surf_tessere(i)%area
+       enddo
+
+       deallocate(BEM_Ddum_act)
+
+       ! Form (2 pi - D''A'')^-1 D'A bridging dummy and actual surface
+
+       allocate(BEM_Z3(pedra_dum_n_tessere,pedra_surf_n_tessere))
+
+       BEM_Z3 = matmul(scr2,scr3)
+
+       deallocate(scr2,scr3)
+
+       if (tp_myrank.eq.0) write(6,*) "Done BEM translator"
+
+       return
+
+      end subroutine do_BEM_translator
 
 !------------------------------------------------------------------------
 ! @brief Initialize diagonal BEM
