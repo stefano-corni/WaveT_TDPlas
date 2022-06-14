@@ -25,4 +25,4 @@ cp $TDPLASDIR/src/tdplas.mod $OCTOPUSDIR/src/hamiltonian/.
 cd $OCTOPUSDIR/src
 make
 cd $OCTOPUSDIR
-./install
+./octopus_install.sh

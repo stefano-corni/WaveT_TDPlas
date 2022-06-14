@@ -63,6 +63,10 @@
       real(dbl), allocatable :: qx_t(:),qx_tp(:)        !< charges induced by the Maxwell field ("external" charges - qx)
       real(dbl), allocatable :: dqx_t(:),dqx_tp(:)      !< external charge difference qx_t-qx_tp
       real(dbl), allocatable :: fqx_t(:),fqx_tp(:)      !< force on the external medium dipole (vv propagator)
+      real(dbl), allocatable :: qmol(:)                 !< dummy charges reproducing molecular potential in between act and dum
+      real(dbl), allocatable :: qmolp(:)                !< dummy charges reproducing molecular potential outside dummy surface 
+      real(dbl), allocatable :: qext(:)                 !< dummy charges reproducing external potential in between act and dum
+      real(dbl), allocatable :: qextp(:)                !< dummy charges reproducing external potential outside dummy surface
       ! charges per pole
       real(dbl), allocatable :: qr_t_p(:,:),qr_tp_p(:,:)        !< reaction BEM charges (qr)
       real(dbl), allocatable :: dqr_t_p(:,:),dqr_tp_p(:,:)      !< reaction charge difference qr_t-qr_tp
@@ -603,6 +607,10 @@
         if(allocated(std_f1))deallocate(std_f1)
         if(allocated(std_f3))deallocate(std_f3)
         if(allocated(std_f5))deallocate(std_f5)
+        if(allocated(qmol))deallocate(qmol)
+        if(allocated(qmolp))deallocate(qmolp)
+        if(allocated(qext))deallocate(qext)
+        if(allocated(qextp))deallocate(qextp)
       end subroutine deallocate_potential
 
       subroutine clean_all_ocpy_tdcont
@@ -701,7 +709,7 @@
 ! @brief Initialize charges for propagation
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
 
       subroutine init_charges(qr,qx)
@@ -725,6 +733,14 @@
        allocate(q_mdm(pedra_surf_n_tessere))
        allocate(qr_tp(pedra_surf_n_tessere))
        allocate(dqr_t(pedra_surf_n_tessere))
+       if(pedra_surf_Fdum.eq."yes".and.global_medium_Fmdm.eq."cnan".and.global_prop_Fprop.ne."chr-ons") then
+         allocate(qmolp(pedra_dum_n_tessere))
+         allocate(qmol(pedra_surf_n_tessere))
+         if(global_medium_Floc.eq."loc") then
+           allocate(qextp(pedra_dum_n_tessere))
+           allocate(qext(pedra_surf_n_tessere))
+         endif
+       endif
        if (.not.allocated(q0)) allocate (q0(pedra_surf_n_tessere))
        ! init the state and the RF before propagation
 !SP 29/05/16: pot_0 replaces quantum_vts(:,1,1) to allow treating global_prop_Fprop=ief and global_prop_Fint=ons
@@ -1255,7 +1271,7 @@
 ! @brief Potential and charges propagation
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
 
       subroutine prop_chr(pot,potf,qr,qx)
@@ -1268,12 +1284,25 @@
       real(dbl), intent(out) :: qr(:) !< (1:nts_act)
       real(dbl), intent(out) :: qx(:) !< (1:nts_act)
 
-       pot_tp = pot
-       potf_tp = potf
-
 #ifndef MPI
        tp_myrank=0
 #endif
+
+       if(pedra_surf_Fdum.eq."yes".and.global_medium_Fmdm.eq."cnan".and.global_prop_Fprop.ne."chr-ons") then
+         ! dummy charges in dummy surface reproducing molecular potential outside
+         qmolp=matmul(BEM_Z1_mol,pot)
+         ! dummy charges in actual surface reproducing molecular potential in between dummy and actual surface
+         qmol=matmul(BEM_Z2,qmolp)
+         if(global_medium_Floc.eq."loc") then
+           ! dummy charges in dummy surface reproducing external potential outside
+           qextp=matmul(BEM_Z1_ext,potf)
+           ! dummy charges in actual surface reproducing external potential in between dummy and actual surface
+           qext=matmul(BEM_Z2,qextp)
+         endif
+       else
+         pot_tp = pot
+         potf_tp = potf
+       endif
 
        ! Propagate
        if(allocated(quantum_vts)) then
@@ -1344,8 +1373,15 @@
          potf_tp2=potf_tp
        endif
 
-       qr = qr_tp
-       if(global_medium_Floc.eq."loc") qx = qx_tp
+       if(pedra_surf_Fdum.eq."yes".and.global_medium_Fmdm.eq."cnan".and.global_prop_Fprop.ne."chr-ons") then
+         ! dummy charges in dummy surface from polarization charges in actual surface
+         qr=matmul(BEM_Z3,qr_tp)
+         ! same for the local field
+         if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z3,qx_tp)
+       else
+         qr = qr_tp
+         if(global_medium_Floc.eq."loc") qx = qx_tp
+       endif
 
        return
 
