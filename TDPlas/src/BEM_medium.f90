@@ -1721,9 +1721,10 @@ end subroutine
 
        endif
 
-       deallocate(scr1,scr3)
-
+       deallocate(scr1)
        if(allocated(scr2)) deallocate(scr2)
+       if(allocated(scr3)) deallocate(scr3)
+
 
        ! II - Dummy charges at dummy surface to dummy charges at actual surface
 
