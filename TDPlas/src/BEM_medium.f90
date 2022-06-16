@@ -101,7 +101,7 @@
              deallocate_BEM_public,deallocate_MPL_public,BEM_Qg,BEM_2G,&
              BEM_ADt,kf,w2,gg,kf_prime,BEM_Qdf,BEM_Qdfx,BEM_Qdf_2g,    &
              BEM_Qdfx_2g,kf0,deallocate_BEM_end_propagation,BEM_ADtm1, &
-             clean_all_ocpy_BEM,BEM_Z1_mol,BEM_Z1_ext,BEM_Z2,BEM_Z3
+             clean_all_ocpy_BEM,BEM_Z1_mol,BEM_Z1_ext,BEM_Z2,BEM_Z3,BEM_S
 
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -886,9 +886,9 @@ end subroutine
        character(len=3) :: outgoing_normal
 
        if (outgoing_normal.eq.'act') then
-        allocate(BEM_Dact_dum(pedra_dum_n_tessere,pedra_surf_n_tessere))
+        allocate(BEM_Dact_dum(pedra_surf_n_tessere,pedra_dum_n_tessere))
        elseif (outgoing_normal.eq.'dum') then
-        allocate(BEM_Ddum_act(pedra_surf_n_tessere,pedra_dum_n_tessere))
+        allocate(BEM_Ddum_act(pedra_dum_n_tessere,pedra_surf_n_tessere))
        endif
 
 !$OMP PARALLEL
@@ -1724,7 +1724,6 @@ end subroutine
        deallocate(scr1)
        if(allocated(scr2)) deallocate(scr2)
        if(allocated(scr3)) deallocate(scr3)
-
 
        ! II - Dummy charges at dummy surface to dummy charges at actual surface
 

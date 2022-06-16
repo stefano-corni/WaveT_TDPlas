@@ -536,35 +536,56 @@
 ! @brief Initialize potentials for propaagation
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
       subroutine init_potential(pot_t,potf_t)
 
-       real(dbl), intent(IN) :: pot_t(:)
-       real(dbl), intent(IN) :: potf_t(:)
+       real(dbl), intent(in) :: pot_t(:)
+       real(dbl), intent(in) :: potf_t(:)
        complex(cmp) :: c_gs(quantum_n_ci)
        integer(i4b) :: its
 
-       allocate(pot_tp(pedra_surf_n_tessere))
-       pot_tp = pot_t
+       if(pedra_surf_Fdum.eq."yes".and.&
+          global_medium_Fmdm.eq."cnan".and.&
+          global_prop_Fprop.ne."chr-ons") then
+          allocate(qmolp(pedra_dum_n_tessere))
+          qmolp=matmul(BEM_Z1_mol,pot_t)
+          allocate(qmol(pedra_surf_n_tessere))
+          qmol=matmul(BEM_Z2,qmolp)
+          allocate(pot_tp(pedra_surf_n_tessere))
+          pot_tp=matmul(BEM_S,qmol)
+         if(global_medium_Floc.eq."loc") then
+           allocate(qextp(pedra_dum_n_tessere))
+           qextp=matmul(BEM_Z1_ext,potf_t)
+           allocate(qext(pedra_surf_n_tessere))
+           qext=matmul(BEM_Z2,qextp)
+           allocate(potf_tp(pedra_surf_n_tessere))
+           potf_tp=matmul(BEM_S,qext)
+           allocate(potf_tp2(pedra_surf_n_tessere))
+           potf_tp2=potf_tp
+         endif
+       else
+         allocate(pot_tp(pedra_surf_n_tessere))
+         pot_tp = pot_t
+         if(global_medium_Floc.eq."loc") then
+           allocate(potf_tp(pedra_surf_n_tessere))
+           potf_tp=potf_t
+           allocate(potf_tp2(pedra_surf_n_tessere))
+           potf_tp2=potf_tp
+         endif
+       endif
 
        allocate(pot_0(pedra_surf_n_tessere))
-       pot_0 = pot_t
+       pot_0 = pot_tp
 
        ! Test for a sudden switch-on of an unpolarizable molecular dipole
-       if(global_sys_Ftest.eq."s-r") pot_0=zero
-       if(global_sys_Ftest.eq."s-r") pot_tp=zero
+       if(global_sys_Ftest.eq."s-r") then
+         pot_0=zero
+         pot_tp=zero
+       endif
+
        allocate(pot_tp2(pedra_surf_n_tessere))
        pot_tp2=pot_tp
-       if(global_medium_Floc.eq."loc") then
-       allocate(potf_tp(pedra_surf_n_tessere))
-       allocate(potf_tp2(pedra_surf_n_tessere))
-         potf_tp=potf_t
-         potf_tp2=potf_tp
-
-! SP 09/07/16 commented the following
-         !fx_t(:)=zero
-       endif
 
        return
 
@@ -733,14 +754,6 @@
        allocate(q_mdm(pedra_surf_n_tessere))
        allocate(qr_tp(pedra_surf_n_tessere))
        allocate(dqr_t(pedra_surf_n_tessere))
-       if(pedra_surf_Fdum.eq."yes".and.global_medium_Fmdm.eq."cnan".and.global_prop_Fprop.ne."chr-ons") then
-         allocate(qmolp(pedra_dum_n_tessere))
-         allocate(qmol(pedra_surf_n_tessere))
-         if(global_medium_Floc.eq."loc") then
-           allocate(qextp(pedra_dum_n_tessere))
-           allocate(qext(pedra_surf_n_tessere))
-         endif
-       endif
        if (.not.allocated(q0)) allocate (q0(pedra_surf_n_tessere))
        ! init the state and the RF before propagation
 !SP 29/05/16: pot_0 replaces quantum_vts(:,1,1) to allow treating global_prop_Fprop=ief and global_prop_Fint=ons
@@ -878,8 +891,17 @@
           call read_medium_restart()
        endif
 
-       qr = qr_tp
-       if(global_medium_Floc.eq."loc") qx = qx_tp
+       if(pedra_surf_Fdum.eq."yes".and.&
+          global_medium_Fmdm.eq."cnan".and.&
+          global_prop_Fprop.ne."chr-ons") then
+         ! dummy charges in dummy surface from polarization charges in actual surface
+         qr=matmul(BEM_Z3,qr_tp)
+         ! same for the local field
+         if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z3,qx_tp)
+       else
+         qr = qr_tp
+         if(global_medium_Floc.eq."loc") qx = qx_tp
+       endif
 
        return
 
@@ -1288,16 +1310,20 @@
        tp_myrank=0
 #endif
 
-       if(pedra_surf_Fdum.eq."yes".and.global_medium_Fmdm.eq."cnan".and.global_prop_Fprop.ne."chr-ons") then
+       if(pedra_surf_Fdum.eq."yes".and.&
+          global_medium_Fmdm.eq."cnan".and.&
+          global_prop_Fprop.ne."chr-ons") then
          ! dummy charges in dummy surface reproducing molecular potential outside
          qmolp=matmul(BEM_Z1_mol,pot)
          ! dummy charges in actual surface reproducing molecular potential in between dummy and actual surface
          qmol=matmul(BEM_Z2,qmolp)
+         pot_tp=matmul(BEM_S,qmol)
          if(global_medium_Floc.eq."loc") then
            ! dummy charges in dummy surface reproducing external potential outside
            qextp=matmul(BEM_Z1_ext,potf)
            ! dummy charges in actual surface reproducing external potential in between dummy and actual surface
            qext=matmul(BEM_Z2,qextp)
+           potf_tp=matmul(BEM_S,qext)
          endif
        else
          pot_tp = pot
@@ -1373,7 +1399,9 @@
          potf_tp2=potf_tp
        endif
 
-       if(pedra_surf_Fdum.eq."yes".and.global_medium_Fmdm.eq."cnan".and.global_prop_Fprop.ne."chr-ons") then
+       if(pedra_surf_Fdum.eq."yes".and.&
+          global_medium_Fmdm.eq."cnan".and.&
+          global_prop_Fprop.ne."chr-ons") then
          ! dummy charges in dummy surface from polarization charges in actual surface
          qr=matmul(BEM_Z3,qr_tp)
          ! same for the local field
@@ -2767,7 +2795,20 @@
         real(dbl), intent(in) :: pot(:)
         real(dbl), intent(out) :: q(:) 
 
-        q = MATMUL(BEM_Q0,pot)
+        if(pedra_surf_Fdum.eq."yes".and.&
+           global_medium_Fmdm.eq."cnan".and.&
+           global_prop_Fprop.ne."chr-ons") then
+          qmolp=matmul(BEM_Z1_mol,pot)
+          qmol=matmul(BEM_Z2,qmolp)
+          q=matmul(BEM_Z3,matmul(BEM_Q0,matmul(BEM_S,qmol)))
+          if(global_medium_Floc.eq."loc") then
+            qextp=matmul(BEM_Z1_ext,pot)
+            qext=matmul(BEM_Z2,qextp)
+            q=matmul(BEM_Z3,matmul(BEM_Q0x,matmul(BEM_S,qext)))
+          endif
+        else
+          q=matmul(BEM_Q0,pot)
+        endif
 
         return
 

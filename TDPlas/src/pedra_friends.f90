@@ -59,7 +59,9 @@
                     pedra_surf_Ffind,           &
                     pedra_surf_comp,            &
                     pedra_surf_n_particles,     &
-                    pedra_surf_Fdum
+                    pedra_surf_Fdum,            &
+                    pedra_dum_n_tessere,        &
+                    pedra_dum_tessere
 
 
 
