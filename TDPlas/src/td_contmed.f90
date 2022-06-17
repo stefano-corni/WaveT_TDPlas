@@ -2790,24 +2790,27 @@
 
       end subroutine read_medium_restart
 
-      subroutine calc_charges(pot,q)
+      subroutine calc_charges(pot,potf,qr,qx)
 
         real(dbl), intent(in) :: pot(:)
-        real(dbl), intent(out) :: q(:) 
+        real(dbl), intent(in) :: potf(:)
+        real(dbl), intent(out) :: qr(:) 
+        real(dbl), intent(out) :: qx(:) 
 
         if(pedra_surf_Fdum.eq."yes".and.&
            global_medium_Fmdm.eq."cnan".and.&
            global_prop_Fprop.ne."chr-ons") then
           qmolp=matmul(BEM_Z1_mol,pot)
           qmol=matmul(BEM_Z2,qmolp)
-          q=matmul(BEM_Z3,matmul(BEM_Q0,matmul(BEM_S,qmol)))
+          qr=matmul(BEM_Z3,matmul(BEM_Q0,matmul(BEM_S,qmol)))
           if(global_medium_Floc.eq."loc") then
-            qextp=matmul(BEM_Z1_ext,pot)
+            qextp=matmul(BEM_Z1_ext,potf)
             qext=matmul(BEM_Z2,qextp)
-            q=matmul(BEM_Z3,matmul(BEM_Q0x,matmul(BEM_S,qext)))
+            qx=matmul(BEM_Z3,matmul(BEM_Q0x,matmul(BEM_S,qext)))
           endif
         else
-          q=matmul(BEM_Q0,pot)
+          qr=matmul(BEM_Q0,pot)
+          if(global_medium_Floc.eq."loc") qx=matmul(BEM_Q0x,potf)
         endif
 
         return

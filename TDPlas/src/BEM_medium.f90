@@ -456,7 +456,6 @@
       subroutine finalize_BEM
 
        if(allocated(scrd3))deallocate(scrd3)
-       if(allocated(BEM_S))deallocate(BEM_S)
        if(allocated(BEM_D)) deallocate(BEM_D)
        if(allocated(fact1)) deallocate(fact1)
        if(allocated(fact2)) deallocate(fact2)
@@ -527,6 +526,7 @@
        if(allocated(BEM_Z1_ext)) deallocate(BEM_Z1_ext)
        if(allocated(BEM_Z2)) deallocate(BEM_Z2)
        if(allocated(BEM_Z3)) deallocate(BEM_Z3)
+       if(allocated(BEM_S))deallocate(BEM_S)
 
        endif
 
@@ -1018,7 +1018,7 @@ end subroutine
              sum_d=sum_d+dot_product(pedra_dum_tessere(k)%n,scrd3)/dist**3*pedra_dum_tessere(k)%area
           enddo
 
-          do k=i+1,pedra_surf_n_tessere
+          do k=i+1,pedra_dum_n_tessere
              scrd3(1)=(pedra_dum_tessere(i)%x-pedra_dum_tessere(k)%x)
              scrd3(2)=(pedra_dum_tessere(i)%y-pedra_dum_tessere(k)%y)
              scrd3(3)=(pedra_dum_tessere(i)%z-pedra_dum_tessere(k)%z)
@@ -1646,7 +1646,7 @@ end subroutine
 ! Modified:
 !------------------------------------------------------------------------
 
-       integer(i4b) :: i
+       integer(i4b) :: i,j
        real(dbl), allocatable :: scr1(:,:),scr2(:,:),scr3(:,:)
 
 
@@ -1736,15 +1736,15 @@ end subroutine
          scr1(:,i)= BEM_D(:,i)*pedra_surf_tessere(i)%area
        enddo
 
-       ! Form 2 pi + D A for actual surface
+       ! Form 4 pi + DA for actual surface
 
        do i=1,pedra_surf_n_tessere
-         scr1(i,i)= scr1(i,i) + twp
+         scr1(i,i)= scr1(i,i) + 4.0d0*pi
        enddo
 
        allocate(scr2(pedra_surf_n_tessere,pedra_surf_n_tessere))
 
-       ! inverse of 2 pi + DA for actual surface
+       ! inverse of 4 pi + DA for actual surface
 
        scr2 = inv(scr1)
 
@@ -1756,16 +1756,16 @@ end subroutine
 
        call do_BEM_dum_act('act')
 
-       ! Form D'A'' bridging dummy and actual surface
+       ! Form AD' bridging dummy and actual surface
 
        scr3 = zero
-       do i=1,pedra_dum_n_tessere
-         scr3(:,i)= BEM_Dact_dum(:,i)*pedra_dum_tessere(i)%area
+       do i=1,pedra_surf_n_tessere
+         scr3(i,:)= BEM_Dact_dum(i,:)*pedra_surf_tessere(i)%area
        enddo
 
-       deallocate(BEM_Dact_dum)
+       !deallocate(BEM_Dact_dum)
 
-       ! Form -(2 pi + DA)^-1 D'A'' bridging dummy and actual surface
+       ! Form -(4 pi + DA)^-1 AD' bridging dummy and actual surface
 
        allocate(BEM_Z2(pedra_surf_n_tessere,pedra_dum_n_tessere))
 
@@ -1786,15 +1786,15 @@ end subroutine
 
        deallocate(BEM_Ddum)
 
-       ! Form 2 pi - D''A'' for dummy surface
+       ! Form 4 pi - D''A'' for dummy surface
 
        do i=1,pedra_dum_n_tessere
-         scr1(i,i)= -scr1(i,i) + twp
+         scr1(i,i)= -scr1(i,i) + 4.0d0*pi
        enddo
 
        allocate(scr2(pedra_dum_n_tessere,pedra_dum_n_tessere))
 
-       ! inverse of 2 pi - D''A'' for dummy surface
+       ! inverse of 4 pi - D''A'' for dummy surface
 
        scr2 = inv(scr1)
 
@@ -1806,16 +1806,16 @@ end subroutine
 
        call do_BEM_dum_act('dum')
 
-       ! Form D'A bridging dummy and actual surface
+       ! Form A''D' bridging dummy and actual surface
 
        scr3 = zero
-       do i=1,pedra_surf_n_tessere
-         scr3(:,i)= BEM_Ddum_act(:,i)*pedra_surf_tessere(i)%area
+       do i=1,pedra_dum_n_tessere
+         scr3(i,:)= BEM_Ddum_act(i,:)*pedra_dum_tessere(i)%area
        enddo
 
-       deallocate(BEM_Ddum_act)
+       !deallocate(BEM_Ddum_act)
 
-       ! Form (2 pi - D''A'')^-1 D'A bridging dummy and actual surface
+       ! Form (4 pi - D''A'')^-1 A''D' bridging dummy and actual surface
 
        allocate(BEM_Z3(pedra_dum_n_tessere,pedra_surf_n_tessere))
 
