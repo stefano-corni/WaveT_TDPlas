@@ -1,7 +1,7 @@
 CalculationMode = gs
 UnitsOutput = eV_Angstrom
 
-XYZCoordinates = 'LiCN.xyz'
+XYZCoordinates = 'H.xyz'
 
 radius = 10.0*angstrom
 spacing = 0.23*angstrom

@@ -1,7 +1,7 @@
 CalculationMode = td
 UnitsOutput = eV_Angstrom
 
-XYZCoordinates = 'LiCN.xyz'
+XYZCoordinates = 'H.xyz'
 
 TDPropagator = aetrs
 TDTimeStep = 0.0023/eV
