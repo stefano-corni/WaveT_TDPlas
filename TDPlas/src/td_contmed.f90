@@ -63,10 +63,6 @@
       real(dbl), allocatable :: qx_t(:),qx_tp(:)        !< charges induced by the Maxwell field ("external" charges - qx)
       real(dbl), allocatable :: dqx_t(:),dqx_tp(:)      !< external charge difference qx_t-qx_tp
       real(dbl), allocatable :: fqx_t(:),fqx_tp(:)      !< force on the external medium dipole (vv propagator)
-      real(dbl), allocatable :: qmol(:)                 !< dummy charges reproducing molecular potential in between act and dum
-      real(dbl), allocatable :: qmolp(:)                !< dummy charges reproducing molecular potential outside dummy surface 
-      real(dbl), allocatable :: qext(:)                 !< dummy charges reproducing external potential in between act and dum
-      real(dbl), allocatable :: qextp(:)                !< dummy charges reproducing external potential outside dummy surface
       ! charges per pole
       real(dbl), allocatable :: qr_t_p(:,:),qr_tp_p(:,:)        !< reaction BEM charges (qr)
       real(dbl), allocatable :: dqr_t_p(:,:),dqr_tp_p(:,:)      !< reaction charge difference qr_t-qr_tp
@@ -540,6 +536,8 @@
 !------------------------------------------------------------------------
       subroutine init_potential(pot_t,potf_t)
 
+       implicit none
+
        real(dbl), intent(in) :: pot_t(:)
        real(dbl), intent(in) :: potf_t(:)
        complex(cmp) :: c_gs(quantum_n_ci)
@@ -548,9 +546,7 @@
        if(pedra_surf_Fdum.eq."yes".and.&
           global_medium_Fmdm.eq."cnan".and.&
           global_prop_Fprop.ne."chr-ons") then
-          allocate(qmolp(pedra_dum_n_tessere))
           qmolp=matmul(BEM_Z1_mol,pot_t)
-          allocate(qmol(pedra_surf_n_tessere))
           qmol=matmul(BEM_Z2,qmolp)
           allocate(pot_tp(pedra_surf_n_tessere))
           pot_tp=matmul(BEM_S,qmol)
@@ -628,10 +624,6 @@
         if(allocated(std_f1))deallocate(std_f1)
         if(allocated(std_f3))deallocate(std_f3)
         if(allocated(std_f5))deallocate(std_f5)
-        if(allocated(qmol))deallocate(qmol)
-        if(allocated(qmolp))deallocate(qmolp)
-        if(allocated(qext))deallocate(qext)
-        if(allocated(qextp))deallocate(qextp)
       end subroutine deallocate_potential
 
       subroutine clean_all_ocpy_tdcont
@@ -2791,6 +2783,8 @@
       end subroutine read_medium_restart
 
       subroutine calc_charges(pot,potf,qr,qx)
+
+        implicit none
 
         real(dbl), intent(in) :: pot(:)
         real(dbl), intent(in) :: potf(:)

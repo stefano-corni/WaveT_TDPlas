@@ -40,6 +40,10 @@
       real(dbl), allocatable :: BEM_Z2(:,:)              !< BEM matrix to translate dummy to dummy charges
       real(dbl), allocatable :: BEM_Z3(:,:)              !< BEM matrix to translate actual to dummy charges
 ! SP 25/06/17: K0 and Kd are still common to 'deb' and 'drl' cases
+      real(dbl), allocatable :: qmol(:)                 !< dummy charges reproducing molecular potential in between act and dum
+      real(dbl), allocatable :: qmolp(:)                !< dummy charges reproducing molecular potential outside dummy surface 
+      real(dbl), allocatable :: qext(:)                 !< dummy charges reproducing external potential in between act and dum
+      real(dbl), allocatable :: qextp(:)                !< dummy charges reproducing external potential outside dummy surface
       real(dbl), allocatable :: K0(:),Kd(:)              !< Diagonal $K_0$ and $K_d$ matrices
       real(dbl), allocatable :: K0x(:),Kdx(:)
       real(dbl), allocatable :: fact1(:),fact2(:)        !< Diagonal vectors for propagation matrices
@@ -101,7 +105,8 @@
              deallocate_BEM_public,deallocate_MPL_public,BEM_Qg,BEM_2G,&
              BEM_ADt,kf,w2,gg,kf_prime,BEM_Qdf,BEM_Qdfx,BEM_Qdf_2g,    &
              BEM_Qdfx_2g,kf0,deallocate_BEM_end_propagation,BEM_ADtm1, &
-             clean_all_ocpy_BEM,BEM_Z1_mol,BEM_Z1_ext,BEM_Z2,BEM_Z3,BEM_S
+             clean_all_ocpy_BEM,BEM_Z1_mol,BEM_Z1_ext,BEM_Z2,BEM_Z3,BEM_S,&
+             qmol,qmolp,qext,qextp
 
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -181,7 +186,15 @@
              BEM_Modes=TSm12
            endif
          endif
-         if(pedra_surf_Fdum.eq."yes".and.global_medium_Fmdm.eq.'cnan') call do_BEM_translator
+         if(pedra_surf_Fdum.eq."yes".and.global_medium_Fmdm.eq.'cnan') then
+           call do_BEM_translator
+           allocate(qmolp(pedra_dum_n_tessere))
+           allocate(qmol(pedra_surf_n_tessere))
+           if(global_medium_Floc.eq."loc") then
+             allocate(qextp(pedra_dum_n_tessere))
+             allocate(qext(pedra_surf_n_tessere))
+           endif
+         endif
        endif
          !Write out matrices for gamess
          if(global_sys_Fwrite.eq."high") call out_BEM_gamess
@@ -522,11 +535,16 @@
        if(allocated(fact3)) deallocate(fact3)
        if(allocated(fact1)) deallocate(fact1)
        if(allocated(fact2)) deallocate(fact2)
+
        if(allocated(BEM_Z1_mol)) deallocate(BEM_Z1_mol)
        if(allocated(BEM_Z1_ext)) deallocate(BEM_Z1_ext)
        if(allocated(BEM_Z2)) deallocate(BEM_Z2)
        if(allocated(BEM_Z3)) deallocate(BEM_Z3)
        if(allocated(BEM_S))deallocate(BEM_S)
+       if(allocated(qmol))deallocate(qmol)
+       if(allocated(qmolp))deallocate(qmolp)
+       if(allocated(qext))deallocate(qext)
+       if(allocated(qextp))deallocate(qextp)
 
        endif
 
@@ -1691,11 +1709,11 @@ end subroutine
          scr3(i,i)= -scr2(i,i) + twp
        enddo
 
-       ! Form -S''^-1 (2 pi - D''A'') for dummy surface
+       ! Form S''^-1 (2 pi - D''A'') / 4 pi for dummy surface
 
        allocate(BEM_Z1_mol(pedra_dum_n_tessere,pedra_dum_n_tessere))
 
-       BEM_Z1_mol = -matmul(scr1,scr3)
+       BEM_Z1_mol = matmul(scr1,scr3)/4.0d0/pi
 
        deallocate(scr3)
 
@@ -1713,11 +1731,11 @@ end subroutine
 
        deallocate(scr2)
 
-       ! Form S''^-1 (2 pi - D''A'') for dummy surface
+       ! Form S''^-1 (2 pi + D''A'')/4 pi for dummy surface
 
        allocate(BEM_Z1_ext(pedra_dum_n_tessere,pedra_dum_n_tessere))
 
-       BEM_Z1_ext = matmul(scr1,scr3)
+       BEM_Z1_ext = -matmul(scr1,scr3)/4.0d0/pi
 
        endif
 
@@ -1813,7 +1831,7 @@ end subroutine
          scr3(i,:)= BEM_Ddum_act(i,:)*pedra_dum_tessere(i)%area
        enddo
 
-       !deallocate(BEM_Ddum_act)
+       deallocate(BEM_Ddum_act)
 
        ! Form (4 pi - D''A'')^-1 A''D' bridging dummy and actual surface
 
