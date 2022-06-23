@@ -1289,7 +1289,8 @@ end subroutine
                   K0x(:)=-(twp+BEM_L(:))/(twp*fac_eps0-BEM_L(:))
            endif
          else
-           K0(:)=zero
+           K0=zero
+           if((global_medium_Floc.eq.'loc').and.(global_medium_Fmdm.eq.'csol')) K0x=zero
          endif
          if(debye_eps_d.ne.one) then
            fac_epsd=(debye_eps_d+one)/(debye_eps_d-one)
@@ -1301,6 +1302,7 @@ end subroutine
            endif
          else
            Kd=zero
+           if((global_medium_Floc.eq.'loc').and.(global_medium_Fmdm.eq.'csol')) Kdx=zero
          endif
          ! SP: Need to check the signs of the second part for a debye medium localized in space
          fact1(:)=((twp-sgn*BEM_L(:))*debye_eps_0+twp+BEM_L(:))/ &
@@ -1757,7 +1759,8 @@ end subroutine
        ! Form 4 pi + DA for actual surface
 
        do i=1,pedra_surf_n_tessere
-         scr1(i,i)= scr1(i,i) + 4.0d0*pi
+         !scr1(i,i)= scr1(i,i) + 4.0d0*pi
+         scr1(i,i)= -scr1(i,i) + 4.0d0*pi
        enddo
 
        allocate(scr2(pedra_surf_n_tessere,pedra_surf_n_tessere))
@@ -1807,7 +1810,8 @@ end subroutine
        ! Form 4 pi - D''A'' for dummy surface
 
        do i=1,pedra_dum_n_tessere
-         scr1(i,i)= -scr1(i,i) + 4.0d0*pi
+         !scr1(i,i)= -scr1(i,i) + 4.0d0*pi
+         scr1(i,i)= scr1(i,i) + 4.0d0*pi
        enddo
 
        allocate(scr2(pedra_dum_n_tessere,pedra_dum_n_tessere))
