@@ -1911,17 +1911,19 @@
 !     according to the value of nts
 
       ! Reaction Field
-       qr_t=qr_tp-quantum_dt*mat_mult(BEM_R,qr_tp)+quantum_dt*mat_mult(BEM_Qt,pot_tp) &
+       qr_t=qr_tp-quantum_dt*mat_mult(BEM_R,qr_tp)+quantum_dt*mat_mult(BEM_Qt,pot_tp2) &
                                     +mat_mult(BEM_Qd,pot_tp-pot_tp2)
+
       ! Local Field eq.47 JPCA 2015
        if(global_medium_Floc.eq."loc") then
         if(global_medium_Fmdm.eq.'csol') then
          ! GG: BEM matrices (except R) are different in the case of local-field for solvent external medium
-         qx_t=qx_tp-quantum_dt*mat_mult(BEM_R,qx_tp)+quantum_dt*mat_mult(BEM_Qtx,potf_tp) &
+         qx_t=qx_tp-quantum_dt*mat_mult(BEM_R,qx_tp)+quantum_dt*mat_mult(BEM_Qtx,potf_tp2) &
                                      +mat_mult(BEM_Qdx,potf_tp-potf_tp2)
+
         else if((global_medium_Fmdm.eq.'cnan').or.&
                 (global_medium_Fmdm.eq.'qnan')) then
-         qx_t=qx_tp-quantum_dt*mat_mult(BEM_R,qx_tp)+quantum_dt*mat_mult(BEM_Qt,potf_tp) &
+         qx_t=qx_tp-quantum_dt*mat_mult(BEM_R,qx_tp)+quantum_dt*mat_mult(BEM_Qt,potf_tp2) &
                                      +mat_mult(BEM_Qd,potf_tp-potf_tp2)
         endif
        endif
@@ -1945,17 +1947,17 @@
 !     according to the value of nts
 
       ! Reaction Field
-       qr_t=qr_tp-quantum_dt*taum1*qr_tp+quantum_dt*taum1*mat_mult(BEM_Q0,pot_tp) &
+       qr_t=qr_tp-quantum_dt*taum1*qr_tp+quantum_dt*taum1*mat_mult(BEM_Q0,pot_tp2) &
                                   +mat_mult(BEM_Qd,pot_tp-pot_tp2)
       ! Local Field eq.47 JPCA 2015
        if(global_medium_Floc.eq."loc") then
         if(global_medium_Fmdm.eq.'csol') then
          ! GG: BEM matrices (except taum1) are different in the case of local-field for solvent external medium
-         qx_t=qx_tp-quantum_dt*taum1*qx_tp+quantum_dt*taum1*mat_mult(BEM_Q0x,potf_tp) &
+         qx_t=qx_tp-quantum_dt*taum1*qx_tp+quantum_dt*taum1*mat_mult(BEM_Q0x,potf_tp2) &
                                    +mat_mult(BEM_Qdx,potf_tp-potf_tp2)
         else if((global_medium_Fmdm.eq.'cnan').or.&
                 (global_medium_Fmdm.eq.'qnan')) then
-         qx_t=qx_tp-quantum_dt*taum1*qx_tp+quantum_dt*taum1*mat_mult(BEM_Q0,potf_tp) &
+         qx_t=qx_tp-quantum_dt*taum1*qx_tp+quantum_dt*taum1*mat_mult(BEM_Q0,potf_tp2) &
                                    +mat_mult(BEM_Qd,potf_tp-potf_tp2)
         endif
        endif
