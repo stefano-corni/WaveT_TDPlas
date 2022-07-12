@@ -23,7 +23,8 @@
             type(tdplas_user_input) :: user_input
 
             real(dbl) :: eps_0, eps_d, eps_A, eps_gm, eps_w0, f_vel, tau_deb
-            character(flg) :: epsilon_omega, propagation_pole
+            real(dbl) :: eps_0_dum, eps_d_dum, eps_A_dum, eps_gm_dum, eps_w0_dum, f_vel_dum, tau_deb_dum
+            character(flg) :: epsilon_omega, propagation_pole, epsilon_omega_dum
 
             namelist /eps_function/epsilon_omega,        &
                                    eps_0,                &
@@ -33,7 +34,15 @@
                                    eps_w0,               &
                                    f_vel,                &
                                    tau_deb,              &
-                                   propagation_pole
+                                   propagation_pole,     &
+                                   epsilon_omega_dum,    &
+                                   eps_0_dum,            &
+                                   eps_d_dum,            &
+                                   eps_A_dum,            &
+                                   eps_gm_dum,           &
+                                   eps_w0_dum,           &
+                                   f_vel_dum,            &
+                                   tau_deb_dum
 
 
 
@@ -46,12 +55,20 @@
             f_vel          =    user_input%f_vel
             tau_deb        =    user_input%tau_deb
             propagation_pole = user_input%propagation_pole
+            epsilon_omega_dum  =    user_input%epsilon_omega_dum
+            eps_0_dum          =    user_input%eps_0_dum
+            eps_d_dum          =    user_input%eps_d_dum
+            eps_A_dum          =    user_input%eps_A_dum
+            eps_gm_dum         =    user_input%eps_gm_dum
+            eps_w0_dum         =    user_input%eps_w0_dum
+            f_vel_dum          =    user_input%f_vel_dum
+            tau_deb_dum        =    user_input%tau_deb_dum
 
 
             open(888,file="namelist_tdplas.inp")
             rewind(888)
             read(888, nml=eps_function)
-            call lower_and_check_allowed_values_eps_nml(epsilon_omega,propagation_pole)
+            call lower_and_check_allowed_values_eps_nml(epsilon_omega,propagation_pole,epsilon_omega_dum)
 
 
              user_input%epsilon_omega        = epsilon_omega
@@ -63,6 +80,14 @@
              user_input%f_vel                = f_vel
              user_input%tau_deb              = tau_deb
              user_input%propagation_pole     = propagation_pole
+             user_input%epsilon_omega_dum         = epsilon_omega_dum
+             user_input%eps_0_dum                 = eps_0_dum
+             user_input%eps_d_dum                 = eps_d_dum
+             user_input%eps_A_dum                 = eps_A_dum
+             user_input%eps_gm_dum                = eps_gm_dum
+             user_input%eps_w0_dum                = eps_w0_dum
+             user_input%f_vel_dum                 = f_vel_dum
+             user_input%tau_deb_dum               = tau_deb_dum
 
 
         end subroutine

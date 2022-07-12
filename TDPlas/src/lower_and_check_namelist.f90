@@ -100,15 +100,17 @@ module lower_and_check_namelist
 
     end subroutine
 
-    subroutine lower_and_check_allowed_values_eps_nml(epsilon_omega,propagation_pole)
+    subroutine lower_and_check_allowed_values_eps_nml(epsilon_omega,propagation_pole,epsilon_omega_dum)
 
-        character(flg)    :: epsilon_omega,propagation_pole
+        character(flg)    :: epsilon_omega,propagation_pole,epsilon_omega_dum
 
         call To_lower(epsilon_omega)
         call To_lower(propagation_pole)
+        call To_lower(epsilon_omega_dum)
 
         call d_entry_check_allowed_val(dict_Feps, epsilon_omega)
         call d_entry_check_allowed_val(dict_typ_prop, propagation_pole)
+        call d_entry_check_allowed_val(dict_Feps_dum, epsilon_omega_dum)
     end subroutine
 
 

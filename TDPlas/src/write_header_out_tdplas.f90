@@ -114,6 +114,8 @@ module write_header_out_tdplas
                 write(6,*) "Nanoparticle as external medium"
             case ('qnan')
                 write(6,*) "Quantum Nanoparticle as external medium"
+            case ('cmix')
+                write(6,*) "Nanoparticle and solvent as external medium"
             end select
 
         select case(global_medium_Floc)
@@ -197,6 +199,18 @@ module write_header_out_tdplas
                 write(6,*) "No namelist keyword are used. "
             case("gold")
                 write(6,*) "Generic internal dielectric function model for gold is used"
+        end select
+        select case(global_eps_Feps_dum)
+            case("drl")
+                write(6,*) "Drude-Lorentz model for dielectric function is used"
+                write(6,*) "Used keyword: eps_A: ",drudel_eps_A_dum,", eps_gm: ",drudel_eps_gm_dum,&
+                           ", eps_w0: ", drudel_eps_w0_dum,", f_vel: ", drudel_eps_f_vel_dum
+            case("deb")
+                write(6,*) "Debye model for dielectric function is used"
+                write(6,*) "Used keyword: tau_deb: ",debye_eps_tau_dum,", eps_d: ",debye_eps_d_dum, ", eps_0: ", debye_eps_0_dum
+            case("gen")
+                write(6,*) "Dielectric function is read from file "
+                write(6,*) "No namelist keyword are used. "
         end select
     end subroutine    
 

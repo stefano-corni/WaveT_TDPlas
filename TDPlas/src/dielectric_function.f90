@@ -16,14 +16,16 @@
 
             real(dbl), allocatable    :: dielectric_func_omegas(:)     !< sampling frequencies for the complex dielectric function
             complex(cmp), allocatable :: dielectric_func_epsilons(:)        !< complex dielectric function values for the sampling frequencies
+            complex(cmp), allocatable :: dielectric_func_epsilons_dum(:)        !< complex dielectric function values for the sampling frequencies
 
 
 
       public dielectric_func_n_omega, dielectric_func_omega_ini, dielectric_func_omega_end,&
-             dielectric_func_omegas, dielectric_func_epsilons, &
+             dielectric_func_omegas, dielectric_func_epsilons, dielectric_func_epsilons_dum, &
              dielectric_func_init, dielectric_func_do_eps, &
              dielectric_func_eps_fromfile, dielectric_func_eps_drl, &
-             dielectric_func_eps_deb, dielectric_func_eps_gold
+             dielectric_func_eps_deb, dielectric_func_eps_gold, &
+             dielectric_func_eps_dum_drl, dielectric_func_eps_dum_deb
 
       contains
 
@@ -52,9 +54,9 @@
 
 
 
-            subroutine dielectric_func_do_eps(Feps)
+            subroutine dielectric_func_do_eps(Feps,Feps_dum)
                 integer :: i
-                character(flg)  :: Feps
+                character(flg)  :: Feps, Feps_dum
 
                 allocate(dielectric_func_epsilons(dielectric_func_n_omega))
                 select case(Feps)
@@ -75,6 +77,22 @@
                             dielectric_func_epsilons(i) = dielectric_func_eps_gold(dielectric_func_omegas(i))
                         enddo
                 end select
+
+                allocate(dielectric_func_epsilons_dum(dielectric_func_n_omega))
+                select case(Feps_dum)
+                    case('deb')
+                        do i=1,dielectric_func_n_omega
+                            dielectric_func_epsilons_dum(i) = dielectric_func_eps_dum_deb(dielectric_func_omegas(i))
+                        enddo
+                    case('drl')
+                        do i=1,dielectric_func_n_omega
+                            dielectric_func_epsilons_dum(i) = dielectric_func_eps_dum_drl(dielectric_func_omegas(i))
+                        enddo
+                    case('gen')
+                        do i=1,dielectric_func_n_omega
+                            dielectric_func_epsilons_dum(i) = dielectric_func_eps_dum_fromfile(dielectric_func_omegas(i))
+                        enddo
+                end select
             end subroutine dielectric_func_do_eps
 
 
@@ -92,6 +110,19 @@
                              dcmplx(one,-omega*debye_eps_tau)
             end function dielectric_func_eps_deb
 
+            complex(cmp) function dielectric_func_eps_dum_deb(omega)
+!------------------------------------------------------------------------
+! @brief Compute deb cmplx eps(\omega) and (3*eps(\omega))/(2*eps(\omega)+1)
+!
+! @date Created: G. Gil
+! Modified: 
+!------------------------------------------------------------------------
+                real(dbl), intent(in) :: omega
+
+                dielectric_func_eps_dum_deb = dcmplx(debye_eps_d_dum,zero)+dcmplx(debye_eps_0_dum-debye_eps_d_dum,zero)/ &
+                             dcmplx(one,-omega*debye_eps_tau_dum)
+            end function dielectric_func_eps_dum_deb
+
 
 
 
@@ -108,6 +139,21 @@
                 dielectric_func_eps_drl=dielectric_func_eps_drl+onec
 
             end function dielectric_func_eps_drl
+
+            complex(cmp) function dielectric_func_eps_dum_drl(omega)
+!------------------------------------------------------------------------
+! @brief Compute drl cmplx eps(\omega) and (eps(\omega)-1)/(eps(\omega)+2)
+!
+! @date Created: G. Gil
+! Modified: 
+!------------------------------------------------------------------------
+                real(dbl), intent(in) :: omega
+                !drudel_eps_gm=drudel_eps_gm+drudel_eps_f_vel/pedra_surf_spheres(1)%r
+                dielectric_func_eps_dum_drl=&
+                 dcmplx(drudel_eps_A_dum,zero)/dcmplx(drudel_eps_w0_dum**2-omega**2,-omega*drudel_eps_gm_dum)
+                dielectric_func_eps_dum_drl=dielectric_func_eps_dum_drl+onec
+
+            end function dielectric_func_eps_dum_drl
 
 
           complex(cmp) function dielectric_func_eps_fromfile(omega)
@@ -161,6 +207,56 @@
 
             end function dielectric_func_eps_fromfile
 
+          complex(cmp) function dielectric_func_eps_dum_fromfile(omega)
+!------------------------------------------------------------------------------
+! @brief Compute gen cmplx eps(\omega) from points through linear interpolation
+!
+! @date Created: G. Gil
+! Modified: M.Rosa
+!------------------------------------------------------------------------------
+                real(dbl), intent(in) :: omega
+                integer(i4b) :: min, max, half
+
+                !questo andrebbe da un'altra parte
+                if((omega.lt.readf_eps_omega_ini).or.(omega.gt.readf_eps_omega_end)) then
+                    call mpi_error("ERROR: you want to calculate the dielectric function value eps_i corresponding to ", &
+                                   " a frequency omega_i which is outside the frequency interval available", " ")
+                end if
+
+                ! bisection search of the right frequency interval
+                min = 1
+                max = readf_eps_n_omega
+                half = (min+max)/2
+                do while( min.le.half-1 )
+                    if (omega.gt.readf_eps_omegas(half)) then
+                        min=half
+                    else
+                        max=half
+                    endif
+                    half=(min+max)/2
+                enddo
+
+
+ !               min = 1
+ !               max = 1
+ !
+ !               do while(omega.ge.readf_eps_omegas(max))
+ !                   max = max+1
+ !               end do
+ !               min = max-1
+
+                if (omega.eq.readf_eps_omegas(min)) then
+                    dielectric_func_eps_dum_fromfile = readf_eps_epsilons_dum(min)
+                else
+                    dielectric_func_eps_dum_fromfile = (readf_eps_epsilons_dum(max)-readf_eps_epsilons_dum(min))&
+                                   /(readf_eps_omegas(max)-readf_eps_omegas(min))&
+                                   *(omega-readf_eps_omegas(min))+readf_eps_epsilons_dum(min)
+                endif
+
+
+
+
+            end function dielectric_func_eps_dum_fromfile
 
 
 

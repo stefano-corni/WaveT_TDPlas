@@ -16,6 +16,11 @@
             real(dbl), allocatable    :: readf_eps_omegas(:)     !< sampling frequencies for the complex dielectric function
             complex(cmp), allocatable :: readf_eps_epsilons(:)        !< complex dielectric function values for the sampling frequencies
 
+            real(dbl)                 :: readf_eps_0_dum  = 1000.
+            real(dbl)                 :: readf_eps_d_dum  = 1.
+
+            complex(cmp), allocatable :: readf_eps_epsilons_dum(:)        !< complex dielectric function values for the sampling frequencies
+
 
 
             real(dbl), allocatable    :: readf_eps_re_deps(:)    !< real part of the derivative of the dielectric function at the sampling frequencies
@@ -23,9 +28,15 @@
             real(dbl), allocatable    :: readf_eps_func(:)         !< first-order Taylor expansion for eps around frequency of the pole
             real(dbl), allocatable    :: readf_eps_dfunc(:)        !< first derivative of func_eps
 
+            real(dbl), allocatable    :: readf_eps_dum_re_deps(:)    !< real part of the derivative of the dielectric function at the sampling frequencies
+            real(dbl), allocatable    :: readf_eps_dum_im_deps(:)    !< imaginary part of the derivative of the dielectric function at the sampling frequencies
+            real(dbl), allocatable    :: readf_eps_dum_func(:)         !< first-order Taylor expansion for eps around frequency of the pole
+            real(dbl), allocatable    :: readf_eps_dum_dfunc(:)        !< first derivative of func_eps
+
 
       public readf_eps_n_omega, readf_eps_omega_ini, readf_eps_omega_end, readf_eps_omegas, readf_eps_epsilons, &
              readf_eps_re_deps, readf_eps_im_deps, readf_eps_func, readf_eps_dfunc, &
+             readf_eps_epsilons_dum, readf_eps_dum_re_deps, readf_eps_dum_im_deps, readf_eps_dum_func, readf_eps_dum_dfunc, &
              readf_eps_init
 
 
@@ -83,6 +94,64 @@
                     call fivepts_stencil(readf_eps_func(:),readf_eps_omegas(:),readf_eps_dfunc(:))
                     ! assumption for the first derivative
                     readf_eps_dfunc(1) = readf_eps_dfunc(2)
+                    close(3)
+                    close(4)
+                    close(1)
+
+
+            end subroutine
+
+            subroutine readf_eps_dum_init(eps_d, eps_0)
+
+                    real(dbl)       :: eps_d            !<  $\omega \rightarrow \infty$ limits of $\epsilon(\omega)$
+                    real(dbl)       :: eps_0
+
+
+                    real(dbl)::a,b,c,eps_dum_real,eps_dum_imag
+                    integer(i4b)::i,j
+
+
+
+                    readf_eps_d_dum   =  eps_d
+                    readf_eps_0_dum   =  eps_0
+
+                    open(1,file="eps_dum.inp")
+                    read(1,*) readf_eps_n_omega
+                    allocate(readf_eps_omegas(readf_eps_n_omega))
+                    allocate(readf_eps_epsilons_dum(readf_eps_n_omega))
+
+                    allocate(readf_eps_dum_re_deps(readf_eps_n_omega))
+                    allocate(readf_eps_dum_im_deps(readf_eps_n_omega))
+                    allocate(readf_eps_dum_func(readf_eps_n_omega))
+                    allocate(readf_eps_dum_dfunc(readf_eps_n_omega))
+                    do i=1, readf_eps_n_omega
+                        read(1,*) readf_eps_omegas(i), eps_dum_real, eps_dum_imag
+                        if (i.eq.1) then
+                            readf_eps_omega_ini = readf_eps_omegas(i)
+                        elseif (i.eq.readf_eps_n_omega) then
+                            readf_eps_omega_end = readf_eps_omegas(i)
+                        endif
+                        readf_eps_epsilons_dum(i)=cmplx(eps_dum_real,eps_dum_imag)
+                    enddo
+                    call fivepts_stencil(real(readf_eps_epsilons_dum(:),dbl),readf_eps_omegas(:),readf_eps_dum_re_deps(:))
+                    call fivepts_stencil(aimag(readf_eps_epsilons_dum(:)),readf_eps_omegas(:),readf_eps_dum_im_deps(:))
+                    ! assumption for the first derivative
+                    readf_eps_dum_re_deps(1) = readf_eps_dum_re_deps(2)
+                    readf_eps_dum_im_deps(1) = readf_eps_dum_im_deps(2)
+                    readf_eps_dum_func(1)=real(readf_eps_epsilons_dum(1),dbl)
+                    open(3,file='func_eps_dum.inp')
+                    open(4,file='re_deps_dum.inp')
+                    write(3,*) readf_eps_omegas(1), readf_eps_dum_func(1)
+                    write(4,*) readf_eps_omegas(1), readf_eps_dum_re_deps(1)
+                    do i=2, readf_eps_n_omega
+                        readf_eps_dum_func(i) = real(readf_eps_epsilons_dum(i),dbl)+&
+                                            aimag(readf_eps_epsilons_dum(i))*(readf_eps_dum_im_deps(i)/readf_eps_dum_re_deps(i))
+                        write(3,*) readf_eps_epsilons_dum(i), readf_eps_dum_func(i)
+                        write(4,*) readf_eps_epsilons_dum(i), readf_eps_dum_re_deps(i)
+                    enddo
+                    call fivepts_stencil(readf_eps_dum_func(:),readf_eps_omegas(:),readf_eps_dum_dfunc(:))
+                    ! assumption for the first derivative
+                    readf_eps_dum_dfunc(1) = readf_eps_dum_dfunc(2)
                     close(3)
                     close(4)
                     close(1)

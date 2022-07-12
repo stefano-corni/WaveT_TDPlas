@@ -141,6 +141,53 @@
                                            " ")
                         end if
                 end select
+
+                select case(user_input%epsilon_omega_dum)
+                    case("non")
+                        if((user_input%eps_d_dum.gt.zero).or.(user_input%tau_deb_dum.gt.zero).or.&
+                           (user_input%eps_A_dum.gt.zero).or.(user_input%eps_gm_dum.gt.zero).or.&
+                           (user_input%eps_w0_dum.gt.zero).or.(user_input%f_vel_dum.gt.zero).or.&
+                           (user_input%eps_0_dum.gt.zero)) then
+                            call mpi_error("ERROR: epsilon model was not chosen, epsilon coefficients should not be provided", &
+                                    "if you want use an epsilon model select an option between ", &
+                                    "drude-lorentz, debye or general ")
+                        endif
+                    case("drude-lorentz")
+                        if((user_input%eps_d_dum.gt.zero).or.(user_input%tau_deb_dum.gt.zero).or.&
+                           (user_input%eps_0_dum.gt.zero)) then
+                            call mpi_error("ERROR: epsilon model is Drude-Lorentz, only eps_A, eps_gm, eps_w0 and ", &
+                                           "f_vel parameters are needed. eps_d and eps_0 are internally assigned if needed.", &
+                                           " Be sure you chose the desired model and provide epsilon values accordingly ")
+                        endif
+                        if((user_input%eps_A_dum.lt.zero).or.(user_input%eps_gm_dum.lt.zero).or.&
+                           (user_input%eps_w0_dum.lt.zero).or.(user_input%f_vel_dum.lt.zero)) then
+                            call mpi_error("ERROR: epsilon model is Drude-Lorentz but epsilon coefficients were not provided", &
+                                           "Chose the desired model and provide epsilon values accordingly", " ")
+                        endif
+
+                    case("debye")
+                        if((user_input%eps_A_dum.gt.zero).or.(user_input%eps_gm_dum.gt.zero).or.&
+                           (user_input%eps_w0_dum.gt.zero).or.(user_input%f_vel_dum.gt.zero)) then
+                            call mpi_error("ERROR: epsilon model is Debye but epsilon coefficients for Drude-Lorents model", &
+                                           "were provided. Chose the desired model and provide epsilon values accordingly", " ")
+                        endif
+                        if((user_input%eps_d_dum.lt.zero).or.(user_input%tau_deb_dum.lt.zero).or.&
+                           (user_input%eps_0_dum.lt.zero)) then
+                            call mpi_error("ERROR: epsilon model is Debye, but epsilon coefficients were not provided.", &
+                                           "Be sure you chose the desired model and provide epsilon values accordingly", &
+                                           "  ")
+                        endif
+
+                    case("general")
+                        if((user_input%tau_deb_dum.gt.zero).or.&
+                           (user_input%eps_A_dum.gt.zero).or.(user_input%eps_gm_dum.gt.zero).or.&
+                           (user_input%eps_w0_dum.gt.zero).or.(user_input%f_vel_dum.gt.zero)) then
+                            call mpi_error("ERROR: epsilon read from 'eps.inp' and 'poles.inp' file,", &
+                                           "only eps_0 and eps_d parameters can be provided", &
+                                           " ")
+                        end if
+                end select
+
             end subroutine
 
 

@@ -143,7 +143,7 @@
 
 
             !GG: 09/06/2022
-            if (pedra_surf_Fdum.eq.'yes'.and.medium_Fmdm.eq.'cnan') then
+            if ( (pedra_surf_Fdum.eq.'yes'.and.medium_Fmdm.eq.'cnan') .or. medium_Fmdm.eq.'cmix' ) then
              ! Build dummy surface from spheres
              call read_pro(dum_sphere_position_x,&
                            dum_sphere_position_y,&
@@ -400,19 +400,20 @@
       type(tess_pcm) :: dum2(1)
 
 #ifdef MPI
-      call mpi_bcast(nesf_act,1,MPI_INTEGER,0,MPI_COMM_WORLD,tp_ierr_mpi)
+      if (pedra_surf_Fdum.eq.'no' .and. medium_Fmdm.ne.'cmix') then
+       call mpi_bcast(nesf_act,1,MPI_INTEGER,0,MPI_COMM_WORLD,tp_ierr_mpi)
 
-      !allocate(tmp(nesf_act))
-      if (tp_myrank.ne.0) then
-         allocate(sfe_act(nesf_act))
-      endif
+       !allocate(tmp(nesf_act))
+       if (tp_myrank.ne.0) then
+          allocate(sfe_act(nesf_act))
+       endif
 
-      call mpi_bcast(sfe_act%x, nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
-      call mpi_bcast(sfe_act%y, nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
-      call mpi_bcast(sfe_act%z, nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
-      call mpi_bcast(sfe_act%r, nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+       call mpi_bcast(sfe_act%x, nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+       call mpi_bcast(sfe_act%y, nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+       call mpi_bcast(sfe_act%z, nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+       call mpi_bcast(sfe_act%r, nesf_act,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
 
-      if (pedra_surf_Fdum.eq.'yes') then
+      else
        call mpi_bcast(nesf_pro,1,MPI_INTEGER,0,MPI_COMM_WORLD,tp_ierr_mpi)
 
        !allocate(tmp(nesf_pro))
@@ -424,6 +425,7 @@
        call mpi_bcast(sfe_pro%y, nesf_pro,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
        call mpi_bcast(sfe_pro%z, nesf_pro,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
        call mpi_bcast(sfe_pro%r, nesf_pro,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
+
       endif
 
 #endif

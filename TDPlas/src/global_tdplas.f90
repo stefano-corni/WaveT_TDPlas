@@ -69,6 +69,7 @@
              !EPS namelist
             character(flg)  :: global_eps_Feps             !<  Epsilon choice "deb" for Debye and "drl" for Drude-Lorentz                               !td_contmed, BEM
             character(flg)  :: typ_prop                    !< Propagation type of last pole with general dielectric function
+            character(flg)  :: global_eps_Feps_dum             !<  Epsilon choice "deb" for Debye and "drl" for Drude-Lorentz                               !td_contmed, BEM
 
         !SURFACE
             character(flg)  :: global_surf_Fsurf           !< "cav" o "sph"  Used only here in global to init pedra or spheres/oids cavities
@@ -167,10 +168,11 @@
                 end if
             end subroutine
 
-            subroutine global_eps_init(Feps,propagation_pole)
-                character(flg)  :: Feps, propagation_pole
+            subroutine global_eps_init(Feps,propagation_pole,Feps_dum)
+                character(flg)  :: Feps, propagation_pole, Feps_dum
                 global_eps_Feps = Feps
                 typ_prop=propagation_pole
+                global_eps_Feps_dum = Feps_dum
 
 
             end subroutine

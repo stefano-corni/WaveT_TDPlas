@@ -186,7 +186,7 @@
              BEM_Modes=TSm12
            endif
          endif
-         if(pedra_surf_Fdum.eq."yes".and.global_medium_Fmdm.eq.'cnan') then
+         if( (pedra_surf_Fdum.eq."yes".and.global_medium_Fmdm.eq.'cnan') .or. global_medium_Fmdm.eq.'cmix' ) then
            call do_BEM_translator
            allocate(qmolp(pedra_dum_n_tessere))
            allocate(qmol(pedra_surf_n_tessere))
@@ -1511,6 +1511,7 @@ end subroutine
        integer(i4b) :: i,j
        real(dbl), allocatable :: scr1(:,:),scr2(:,:),scr3(:,:),scr4(:,:)
        real(dbl) :: scrd3(3), dist
+       real(dbl) :: fact_eps
 
 
 #ifndef MPI
@@ -1608,18 +1609,16 @@ end subroutine
        endif
 
        if(global_eps_Feps.eq."deb") then
-         do i=1,pedra_surf_n_tessere
-           scr3(i,i)= scr3(i,i) + twp * (debye_eps_d+one) / (debye_eps_d-one)
-         enddo
+         fact_eps = (debye_eps_d+one) / (debye_eps_d-one)
        elseif(global_eps_Feps.eq."drl") then
-         do i=1,pedra_surf_n_tessere
-           scr3(i,i)= scr3(i,i) + twp * (drudel_eps_d+one) / (drudel_eps_d-one)
-         enddo
+         fact_eps = (drudel_eps_d+one) / (drudel_eps_d-one)
        elseif (global_eps_Feps.eq."gen") then
-          do i=1,pedra_surf_n_tessere
-           scr3(i,i)= scr3(i,i) + twp * (readf_eps_d+one) / (readf_eps_d-one)
-         enddo
+         fact_eps = (readf_eps_d+one) / (readf_eps_d-one)
        endif
+
+       do i=1,pedra_surf_n_tessere
+         scr3(i,i)= scr3(i,i) + twp * fact_eps
+       enddo
 
        ! inverse
 
