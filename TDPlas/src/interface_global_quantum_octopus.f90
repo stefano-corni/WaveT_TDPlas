@@ -163,14 +163,8 @@
             user_input%eps_d             = -1.0
             user_input%tau_deb           = -1.0
             user_input%propagation_pole  =  "velocity-verlet"
-            user_input%epsilon_omega_dum = "non"
-            user_input%eps_A_dum         = -1.0
-            user_input%eps_gm_dum        = -1.0
-            user_input%eps_w0_dum        = -1.0
-            user_input%f_vel_dum         = -1.0
             user_input%eps_0_dum         = -1.0
             user_input%eps_d_dum         = -1.0
-            user_input%tau_deb_dum       = -1.0
 
             user_input%n_omega           = -1
             user_input%omega_ini         = -1.0

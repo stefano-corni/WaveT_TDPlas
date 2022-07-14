@@ -12,25 +12,13 @@
             real(dbl)       :: drudel_eps_0
             real(dbl)       :: drudel_eps_d
 
-            real(dbl)       :: drudel_eps_A_dum            !<  Drude lorentz $\omega^2_p$                         !BEM
-            real(dbl)       :: drudel_eps_gm_dum           !<  Drude lorentz $\gamma$                             !BEM
-            real(dbl)       :: drudel_eps_w0_dum           !<  Drude lorentz $\omega_$                            !BEM, td_contmed
-            real(dbl)       :: drudel_eps_f_vel_dum        !<  Drude lorentz fermi velocity $v_f$                 !BEM
-
-            real(dbl)       :: drudel_eps_0_dum
-            real(dbl)       :: drudel_eps_d_dum
 
 
       public    drudel_eps_A,     &
                 drudel_eps_gm,    &
                 drudel_eps_w0,    &
                 drudel_eps_f_vel, &
-                drudel_eps_init,  &
-                drudel_eps_A_dum,     &
-                drudel_eps_gm_dum,    &
-                drudel_eps_w0_dum,    &
-                drudel_eps_f_vel_dum, &
-                drudel_eps_dum_init
+                drudel_eps_init
 
 
       contains
@@ -55,25 +43,6 @@
 
             end subroutine
 
-            subroutine drudel_eps_dum_init(eps_A,   &
-                                       eps_gm,  &
-                                       eps_w0,  &
-                                       f_vel)
-
-                real(dbl)       :: eps_A            !<  Drude lorentz $\omega^2_p$
-                real(dbl)       :: eps_gm           !<  Drude lorentz $\gamma$
-                real(dbl)       :: eps_w0           !<  Drude lorentz $\omega_$
-                real(dbl)       :: f_vel            !<  Drude lorentz fermi velocity $v_f$
-
-
-                drudel_eps_A_dum       =  eps_A
-                drudel_eps_gm_dum      =  eps_gm
-                drudel_eps_w0_dum      =  eps_w0
-                drudel_eps_f_vel_dum   =  f_vel
-                drudel_eps_d_dum       =  1.
-                drudel_eps_0_dum       =  1000. !1.+ drudel_eps_A/drudel_eps_w0**2
-
-            end subroutine
 
 
     end module drudel_epsilon

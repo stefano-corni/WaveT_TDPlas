@@ -68,6 +68,7 @@
 
            !epsilon
 
+                if(global_medium_Fmdm.ne.'cmix') then
                 select case(global_eps_Feps)
                    case("drl")
                        call drudel_eps_init(user_input%eps_A, user_input%eps_gm, user_input%eps_w0, user_input%f_vel)
@@ -79,17 +80,14 @@
                        call readf_eps_init(user_input%eps_d, user_input%eps_0)
                 end select
 
-                select case(global_eps_Feps_dum)
-                   case("drl")
-                       call drudel_eps_dum_init(user_input%eps_A_dum, user_input%eps_gm_dum, &
-                                            user_input%eps_w0_dum, user_input%f_vel_dum)
-                   case("deb")
-                       call debye_eps_dum_init(user_input%eps_d_dum, user_input%tau_deb_dum, user_input%eps_0_dum)
-                   case("gen")
-                       if(user_input%eps_d_dum.eq.-1.) user_input%eps_d_dum = 1.
-                       if(user_input%eps_0_dum.eq.-1) user_input%eps_0_dum = 1000.
-                       call readf_eps_dum_init(user_input%eps_d_dum, user_input%eps_0_dum)
-                end select
+                else
+                  if(user_input%eps_d.eq.-1.) user_input%eps_d = 1.
+                  if(user_input%eps_0.eq.-1) user_input%eps_0 = 1000.
+                  call readf_eps_init(user_input%eps_d, user_input%eps_0)
+                  if(user_input%eps_d_dum.eq.-1.) user_input%eps_d_dum = 1.
+                  if(user_input%eps_0_dum.eq.-1) user_input%eps_0_dum = 1000.
+                  call readf_eps_dum_init(user_input%eps_d_dum, user_input%eps_0_dum)
+                endif
 
 
                 if((calculation_exe.eq."frequency").or.(calculation_exe.eq."epsilon")) then
@@ -129,8 +127,7 @@
 
 
             call global_eps_init(d_entry_convert_to_internal(dict_Feps, user_input%epsilon_omega),       &
-                                 d_entry_convert_to_internal(dict_typ_prop, user_input%propagation_pole),&
-                                 d_entry_convert_to_internal(dict_Feps_dum, user_input%epsilon_omega_dum))
+                                 d_entry_convert_to_internal(dict_typ_prop, user_input%propagation_pole))
 
 
 

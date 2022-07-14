@@ -63,14 +63,8 @@
             real(dbl)         :: eps_d                   !<Debye<$\omega \rightarrow \infty$ limits of $\epsilon(\omega)$
             real(dbl)         :: tau_deb                 !<Debye's $\tau_D$
             character(flg)    :: propagation_pole        !<Algorithm employed for the propation of eps_general
-            character(flg)    :: epsilon_omega_dum       !<Epsilon choice "debye", "drude-lorentz" or "general" (solvent if mix)
-            real(dbl)         :: eps_A_dum               !<Drude lorentz $\omega^2_p$                           (solvent if mix)
-            real(dbl)         :: eps_gm_dum              !<Drude lorentz $\gamma$                               (solvent if mix)
-            real(dbl)         :: eps_w0_dum              !<Drude lorentz $\omega_$                              (solvent if mix)
-            real(dbl)         :: f_vel_dum               !<Drude lorentz fermi velocity $v_f$                   (solvent if mix)
             real(dbl)         :: eps_0_dum               !<Debye                                                (solvent if mix)
             real(dbl)         :: eps_d_dum               !<Debye<$\omega \rightarrow \infty$ limits of $\epsilon(\omega)$ (s i m)
-            real(dbl)         :: tau_deb_dum             !<Debye's $\tau_D$                                     (solvent if mix)
 
 
 

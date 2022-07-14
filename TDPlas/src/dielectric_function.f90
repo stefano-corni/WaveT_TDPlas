@@ -25,7 +25,7 @@
              dielectric_func_init, dielectric_func_do_eps, &
              dielectric_func_eps_fromfile, dielectric_func_eps_drl, &
              dielectric_func_eps_deb, dielectric_func_eps_gold, &
-             dielectric_func_eps_dum_drl, dielectric_func_eps_dum_deb
+             dielectric_func_eps_dum_fromfile
 
       contains
 
@@ -54,11 +54,13 @@
 
 
 
-            subroutine dielectric_func_do_eps(Feps,Feps_dum)
+            subroutine dielectric_func_do_eps(Feps, Fmdm)
                 integer :: i
-                character(flg)  :: Feps, Feps_dum
+                character(flg)  :: Feps, Fmdm
 
                 allocate(dielectric_func_epsilons(dielectric_func_n_omega))
+
+                if(Fmdm.ne.'cmix') then
                 select case(Feps)
                     case('deb')
                         do i=1,dielectric_func_n_omega
@@ -77,22 +79,15 @@
                             dielectric_func_epsilons(i) = dielectric_func_eps_gold(dielectric_func_omegas(i))
                         enddo
                 end select
-
-                allocate(dielectric_func_epsilons_dum(dielectric_func_n_omega))
-                select case(Feps_dum)
-                    case('deb')
-                        do i=1,dielectric_func_n_omega
-                            dielectric_func_epsilons_dum(i) = dielectric_func_eps_dum_deb(dielectric_func_omegas(i))
-                        enddo
-                    case('drl')
-                        do i=1,dielectric_func_n_omega
-                            dielectric_func_epsilons_dum(i) = dielectric_func_eps_dum_drl(dielectric_func_omegas(i))
-                        enddo
-                    case('gen')
-                        do i=1,dielectric_func_n_omega
-                            dielectric_func_epsilons_dum(i) = dielectric_func_eps_dum_fromfile(dielectric_func_omegas(i))
-                        enddo
-                end select
+                else
+                  do i=1,dielectric_func_n_omega
+                    dielectric_func_epsilons(i) = dielectric_func_eps_fromfile(dielectric_func_omegas(i))
+                  enddo
+                  allocate(dielectric_func_epsilons_dum(dielectric_func_n_omega))
+                  do i=1,dielectric_func_n_omega
+                    dielectric_func_epsilons_dum(i) = dielectric_func_eps_dum_fromfile(dielectric_func_omegas(i))
+                  enddo
+                endif
             end subroutine dielectric_func_do_eps
 
 
@@ -110,18 +105,6 @@
                              dcmplx(one,-omega*debye_eps_tau)
             end function dielectric_func_eps_deb
 
-            complex(cmp) function dielectric_func_eps_dum_deb(omega)
-!------------------------------------------------------------------------
-! @brief Compute deb cmplx eps(\omega) and (3*eps(\omega))/(2*eps(\omega)+1)
-!
-! @date Created: G. Gil
-! Modified: 
-!------------------------------------------------------------------------
-                real(dbl), intent(in) :: omega
-
-                dielectric_func_eps_dum_deb = dcmplx(debye_eps_d_dum,zero)+dcmplx(debye_eps_0_dum-debye_eps_d_dum,zero)/ &
-                             dcmplx(one,-omega*debye_eps_tau_dum)
-            end function dielectric_func_eps_dum_deb
 
 
 
@@ -140,20 +123,6 @@
 
             end function dielectric_func_eps_drl
 
-            complex(cmp) function dielectric_func_eps_dum_drl(omega)
-!------------------------------------------------------------------------
-! @brief Compute drl cmplx eps(\omega) and (eps(\omega)-1)/(eps(\omega)+2)
-!
-! @date Created: G. Gil
-! Modified: 
-!------------------------------------------------------------------------
-                real(dbl), intent(in) :: omega
-                !drudel_eps_gm=drudel_eps_gm+drudel_eps_f_vel/pedra_surf_spheres(1)%r
-                dielectric_func_eps_dum_drl=&
-                 dcmplx(drudel_eps_A_dum,zero)/dcmplx(drudel_eps_w0_dum**2-omega**2,-omega*drudel_eps_gm_dum)
-                dielectric_func_eps_dum_drl=dielectric_func_eps_dum_drl+onec
-
-            end function dielectric_func_eps_dum_drl
 
 
           complex(cmp) function dielectric_func_eps_fromfile(omega)

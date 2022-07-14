@@ -34,7 +34,6 @@
         !EPS namelist
         type(dict_entry)  :: dict_Feps
         type(dict_entry)  :: dict_typ_prop
-        type(dict_entry)  :: dict_Feps_dum
 
        !PROPAGATE
         !namelist
@@ -68,7 +67,7 @@
         public   dict_Ftest, dict_Fdeb, dict_Fwrite,                                                            &
                  dict_Fsurf, dict_Fcav, dict_Fshape, dict_Finv, dict_Ffind, dict_Fdum,                          &
                  dict_Fmdm,  dict_Finit, dict_Fpol, dict_Fbem, dict_read_write, dict_Fnorm, dict_bem_sym,       &
-                 dict_Feps, dict_typ_prop, dict_Feps_dum,                                                       &
+                 dict_Feps, dict_typ_prop,                                                                      &
                  dict_Fsoft, dict_Fprop, dict_Fint, dict_Finit_int, dict_Floc, dict_Fmdm_relax, dict_Fmdm_res,  &
                  dict_Fgamess, dict_Fprint_lf_matrix,                                                           &
                  dict_Fmop, dict_Fqcp,                                                                          &
@@ -188,10 +187,6 @@
                  [Character(flg) :: "velocity-verlet", "first-order", "inversion", "second-order"],  &
                  [Character(flg) :: "0", "1", "2", "3"])
 
-      call  dict_entry_init(dict_Feps_dum, 4,                                                    &
-                 [Character(flg) :: "epsilon_omega_dum", "global_eps_Feps_dum"],                     &
-                 [Character(flg) :: "drude-lorentz", "debye", "general", "non"],    &
-                 [Character(flg) :: "drl", "deb", "gen", "non"])
 
 
 

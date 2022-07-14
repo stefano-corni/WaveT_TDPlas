@@ -31,7 +31,7 @@
       write(3,*) dielectric_func_n_omega
       write(4,*) dielectric_func_n_omega
 
-      call dielectric_func_do_eps(global_eps_Feps, global_eps_Feps_dum)
+      call dielectric_func_do_eps(global_eps_Feps, global_medium_Fmdm)
       do i=1,dielectric_func_n_omega
           write(1,*) dielectric_func_omegas(i), dielectric_func_epsilons(i)
           write(2,*) dielectric_func_omegas(i), real(dielectric_func_epsilons(i),dbl), dimag(dielectric_func_epsilons(i))
