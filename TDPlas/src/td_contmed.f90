@@ -774,8 +774,8 @@
 
        integer(i4b) :: ipoles
 
-      integer(i4b) :: iter
-      real(dbl)    :: rmsq
+       real(dbl), allocatable :: qaux(:)
+       real(dbl), allocatable :: fullpotaux(:)
 
 #ifndef MPI
        tp_myrank=0
@@ -806,26 +806,17 @@
           if(global_medium_Fmdm.ne.'cmix') then
            q0(:)=matmul(BEM_Q0,pot_0)
           else
-           ! self-consistency between
-           iter=1
-           rmsq=one
-           q0=zero
-           q0_dum=zero
-           do while(rmsq.gt.1.0d-6.and.iter.le.100)
-             qr_dum_tp = q0_dum
-             q0_dum = matmul(BEM_Q0_dum,pot_dum_tp)
-             pot_tp=pot_0+matmul(transpose(BEM_Sdum_act),q0_dum)
-             qr_tp = q0
-             q0 = matmul(BEM_Q0,pot_tp)
-             pot_dum_tp=pot_dum_0+matmul(BEM_Sdum_act,q0)
-             q0=q0-qr_tp
-             q0_dum=q0_dum-qr_dum_tp
-             rmsq=sqrt((dot_product(q0,q0)+dot_product(q0_dum,q0_dum))/(pedra_surf_n_tessere+pedra_dum_n_tessere))
-           end do
+           allocate(fullpotaux(pedra_dum_n_tessere+pedra_surf_n_tessere))
+           fullpotaux(1:pedra_dum_n_tessere)=pot_dum_0
+           fullpotaux(pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere)=pot_0
+           allocate(qaux(pedra_dum_n_tessere+pedra_surf_n_tessere))
+           qaux=matmul(BEM_Q0_super,fullpotaux)
+           deallocate(fullpotaux)
+           qr_dum_tp=qaux(1:pedra_dum_n_tessere)
+           qr_tp=qaux(pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere)
+           deallocate(qaux)
            q0 = qr_tp
            q0_dum = qr_dum_tp
-           pot_0 = pot_tp
-           pot_dum_0 = pot_dum_tp
           endif
           qtot0=sum(q0)
         case ('rea')
@@ -3093,12 +3084,10 @@
         real(dbl), intent(out) :: qr(:) 
         real(dbl), intent(out) :: qx(:) 
 
-        integer(i4b)           :: iter
-        real(dbl)              :: rmsq
         real(dbl), allocatable :: pot_aux(:)
         real(dbl), allocatable :: potf_aux(:)
         real(dbl), allocatable :: qaux(:)
-        real(dbl), allocatable :: qaux_dum(:)
+        real(dbl), allocatable :: fullpotaux(:)
 
         if(pedra_surf_Fdum.eq."yes".and.&
            (global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq.'cmix').and.&
@@ -3117,49 +3106,25 @@
            qr=matmul(BEM_Z3,matmul(BEM_Q0,pot_aux))
            if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z3,matmul(BEM_Q0,potf_aux)) !< BEM_Q0x for nanoparticle is the same
           else
-           ! self-consistency between
-           iter=1
-           rmsq=one
-           allocate(qaux(pedra_surf_n_tessere))
-           qaux=zero
-           allocate(qaux_dum(pedra_dum_n_tessere))
-           qaux_dum=zero
-           do while(rmsq.gt.1.0d-6.and.iter.le.100)
-             qr_dum_tp = qaux_dum
-             qaux_dum = matmul(BEM_Q0_dum,pot+matmul(BEM_Sdum_act,qaux))
-             qr_tp = qaux
-             qaux = matmul(BEM_Q0,pot_aux+matmul(transpose(BEM_Sdum_act),qaux_dum))
-             qaux=qaux-qr_tp
-             qaux_dum=qaux_dum-qr_dum_tp
-             rmsq=sqrt((dot_product(qaux,qaux)+dot_product(qaux_dum,qaux_dum))/(pedra_surf_n_tessere+pedra_dum_n_tessere))
-           end do
-           deallocate(pot_aux)
-           qaux = qr_tp
+           allocate(fullpotaux(pedra_dum_n_tessere+pedra_surf_n_tessere))
+           fullpotaux(1:pedra_dum_n_tessere)=pot
+           fullpotaux(pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere)=pot_aux
+           allocate(qaux(pedra_dum_n_tessere+pedra_surf_n_tessere))
+           qaux=matmul(BEM_Q0_super,fullpotaux)
+           deallocate(fullpotaux)
+           qr_dum_tp=qaux(1:pedra_dum_n_tessere)
+           qr_tp=qaux(pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere)
            deallocate(qaux)
-           qaux_dum = qr_dum_tp
-           deallocate(qaux_dum)
            if(global_medium_Floc.eq."loc") then
-            ! self-consistency between
-            iter=1
-            rmsq=one
-            allocate(qaux(pedra_surf_n_tessere))
-            qaux=zero
-            allocate(qaux_dum(pedra_dum_n_tessere))
-            qaux_dum=zero
-            do while(rmsq.gt.1.0d-6.and.iter.le.100)
-              qx_dum_tp = qaux_dum
-              qaux_dum = matmul(BEM_Q0x_dum,potf+matmul(BEM_Sdum_act,qaux))
-              qx_tp = qaux
-              qaux = matmul(BEM_Q0,potf_aux+matmul(transpose(BEM_Sdum_act),qaux_dum)) !< BEM_Q0x for nanoparticle is the same
-              qaux=qaux-qx_tp
-              qaux_dum=qaux_dum-qx_dum_tp
-              rmsq=sqrt((dot_product(qaux,qaux)+dot_product(qaux_dum,qaux_dum))/(pedra_surf_n_tessere+pedra_dum_n_tessere))
-            end do
-            deallocate(potf_aux)
-            qaux = qx_tp
-            deallocate(qaux)
-            qaux_dum = qx_dum_tp
-            deallocate(qaux_dum)
+           allocate(fullpotaux(pedra_dum_n_tessere+pedra_surf_n_tessere))
+           fullpotaux(1:pedra_dum_n_tessere)=potf
+           fullpotaux(pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere)=potf_aux
+           allocate(qaux(pedra_dum_n_tessere+pedra_surf_n_tessere))
+           qaux=matmul(BEM_Q0x_super,fullpotaux)
+           deallocate(fullpotaux)
+           qx_dum_tp=qaux(1:pedra_dum_n_tessere)
+           qx_tp=qaux(pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere)
+           deallocate(qaux)
            endif
            qr=matmul(BEM_Z3,qr_tp)
            if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z3,qx_tp)

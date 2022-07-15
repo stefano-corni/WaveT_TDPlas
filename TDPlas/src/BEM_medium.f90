@@ -102,6 +102,7 @@
       real(dbl), allocatable :: gg_dum(:), w2_dum(:), kf_dum(:), kf0_dum(:)
       integer(i4b)           :: npoles_dum    !< number of poles when general dielectric function is used
       type(poles_t) :: poles_eps_dum
+      real(dbl), allocatable :: BEM_Q0_super(:,:),BEM_Q0x_super(:,:)
 
       save
       private
@@ -119,7 +120,8 @@
              clean_all_ocpy_BEM,BEM_Z1_mol,BEM_Z1_ext,BEM_Z2,BEM_Z3,BEM_S,&
              qmol,qmolp,qext,qextp,npoles_dum,&
              BEM_Sdum,BEM_Sdum_act,BEM_Qf_dum,BEM_ADt_dum,BEM_Qfx_dum,&
-             gg_dum,w2_dum,kf_dum,kf0_dum,BEM_ADtm1_dum,BEM_Q0_dum,BEM_Q0x_dum
+             gg_dum,w2_dum,kf_dum,kf0_dum,BEM_ADtm1_dum,BEM_Q0_dum,BEM_Q0x_dum,&
+             BEM_Q0_super,BEM_Q0x_super
 
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -209,6 +211,7 @@
          endif
          if( (pedra_surf_Fdum.eq."yes".and.global_medium_Fmdm.eq.'cnan') .or. global_medium_Fmdm.eq.'cmix' ) then
            call do_BEM_translator
+           if(global_medium_Fmdm.eq.'cmix') call do_BEM_supermatrix
            allocate(qmolp(pedra_dum_n_tessere))
            allocate(qmol(pedra_surf_n_tessere))
            if(global_medium_Floc.eq."loc") then
@@ -606,6 +609,8 @@
        if(allocated(poles_eps_dum%re_deps_domega_p))deallocate(poles_eps_dum%re_deps_domega_p)
        if(allocated(poles_eps_dum%im_deps_domega_p))deallocate(poles_eps_dum%im_deps_domega_p)
        if(allocated(poles_eps_dum%A_coeff_p))deallocate(poles_eps_dum%A_coeff_p)
+       if(allocated(BEM_Q0_super)) deallocate(BEM_Q0_super)
+       if(allocated(BEM_Q0x_super)) deallocate(BEM_Q0x_super)
 
        endif
 
@@ -2013,6 +2018,106 @@ end subroutine
        return
 
       end subroutine do_BEM_translator
+
+      subroutine do_BEM_supermatrix
+!------------------------------------------------------------------------
+! @brief Compute BEM supermatrix with both tesselations, dummy and actual
+!
+! @date Created: G. Gil
+! Modified:
+!------------------------------------------------------------------------
+
+       integer(i4b) :: i,j
+       real(dbl), allocatable :: scr1(:,:),scr2(:,:),scr3(:,:)
+
+
+#ifndef MPI
+       tp_myrank=0
+#endif
+
+       ! Form block matrix ( Q'' 0 )
+       !                   ( 0   Q )
+
+       allocate(BEM_Q0_super(pedra_dum_n_tessere+pedra_surf_n_tessere,pedra_dum_n_tessere+pedra_surf_n_tessere))
+       BEM_Q0_super = zero
+       BEM_Q0_super(1:pedra_dum_n_tessere,1:pedra_dum_n_tessere) = BEM_Q0_dum
+       BEM_Q0_super(pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere,&
+                    pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere) = BEM_Q0
+
+       ! Form block matrix ( I'' -Q''S^T')
+       !                   (-QS'  I      )
+
+       allocate(scr1(pedra_dum_n_tessere+pedra_surf_n_tessere,pedra_dum_n_tessere+pedra_surf_n_tessere))
+       scr1 = zero
+       do i=1,pedra_dum_n_tessere+pedra_surf_n_tessere
+         scr1(i,i)= one
+       enddo
+       scr1(1:pedra_dum_n_tessere,&
+            pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere) = -matmul(BEM_Q0_dum,BEM_Sdum_act)
+       scr1(pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere,&
+            1:pedra_dum_n_tessere) = -matmul(BEM_Q0,transpose(BEM_Sdum_act))
+
+       ! inverse of block matrix ( I'' -Q''S^T')
+       !                         (-QS'  I      )
+
+       allocate(scr2(pedra_dum_n_tessere+pedra_surf_n_tessere,pedra_dum_n_tessere+pedra_surf_n_tessere))
+       scr2 = inv(scr1)
+
+       deallocate(scr1)
+
+       ! Form block matrix ( I'' -Q''S^T')^-1 ( Q'' 0 )
+       !                   (-QS'  I      )    ( 0   Q )
+
+       BEM_Q0_super = matmul(scr2,BEM_Q0_super)
+
+       deallocate(scr2)
+
+       if(global_medium_Floc.eq."loc") then
+
+       ! Form block matrix ( Qx'' 0 )
+       !                   ( 0    Q )
+
+       allocate(BEM_Q0x_super(pedra_dum_n_tessere+pedra_surf_n_tessere,pedra_dum_n_tessere+pedra_surf_n_tessere))
+       BEM_Q0x_super = zero
+       BEM_Q0x_super(1:pedra_dum_n_tessere,1:pedra_dum_n_tessere) = BEM_Q0x_dum
+       BEM_Q0x_super(pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere,&
+                    pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere) = BEM_Q0
+
+       ! Form block matrix ( I'' -Qx''S^T')
+       !                   (-QS'  I       )
+
+       allocate(scr1(pedra_dum_n_tessere+pedra_surf_n_tessere,pedra_dum_n_tessere+pedra_surf_n_tessere))
+       scr1 = zero
+       do i=1,pedra_dum_n_tessere+pedra_surf_n_tessere
+         scr1(i,i)= one
+       enddo
+       scr1(1:pedra_dum_n_tessere,&
+            pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere) = -matmul(BEM_Q0x_dum,BEM_Sdum_act)
+       scr1(pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere,&
+            1:pedra_dum_n_tessere) = -matmul(BEM_Q0,transpose(BEM_Sdum_act))
+
+       ! inverse of block matrix ( I'' -Qx''S^T')
+       !                         (-QS'  I       )
+
+       allocate(scr2(pedra_dum_n_tessere+pedra_surf_n_tessere,pedra_dum_n_tessere+pedra_surf_n_tessere))
+       scr2 = inv(scr1)
+
+       deallocate(scr1)
+
+       ! Form block matrix ( I'' -Qx''S^T')^-1 ( Qx'' 0 )
+       !                   (-QS'  I       )    ( 0    Q )
+
+       BEM_Q0x_super = matmul(scr2,BEM_Q0x_super)
+
+       deallocate(scr2)
+
+       endif
+
+       if (tp_myrank.eq.0) write(6,*) "Done BEM supermatrix"
+
+       return
+
+      end subroutine do_BEM_supermatrix
 
 !------------------------------------------------------------------------
 ! @brief Initialize diagonal BEM
