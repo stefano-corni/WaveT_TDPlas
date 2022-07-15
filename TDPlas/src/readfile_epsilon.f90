@@ -116,8 +116,7 @@
                     readf_eps_0_dum   =  eps_0
 
                     open(1,file="eps_dum.inp")
-                    read(1,*) readf_eps_n_omega
-                    allocate(readf_eps_omegas(readf_eps_n_omega))
+                    read(1,*)
                     allocate(readf_eps_epsilons_dum(readf_eps_n_omega))
 
                     allocate(readf_eps_dum_re_deps(readf_eps_n_omega))

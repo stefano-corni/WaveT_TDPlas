@@ -74,7 +74,6 @@
       real(dbl), allocatable :: fqx_t_p(:,:),fqx_tp_p(:,:)      !< force on the external medium dipole (vv propagator)
       real(dbl), allocatable :: fqx_tp2_p(:),fqx_tp3_p(:)       !< force on the external medium dipole (vv propagator type 2)
       real(dbl), allocatable :: dfqx_t_p(:),dfqx_tp_p(:)        !< derivative of force on external medium dipole (vv propagator type 2)
-      real(dbl), allocatable :: sum_r(:),sum_x(:)               !< sum of external and reaction charges on poles and tesserae
       ! Fields and potentials
       real(dbl) :: fr_t(3),fr_tp(3)                     !< reaction field on the molecule centre of charge
       real(dbl) :: dfr_t(3)                             !< reaction field difference (fr_t-fr_tp)
@@ -94,6 +93,28 @@
       integer(i4b) :: file_med=11                       !< medium output file number
 
       real(dbl), allocatable :: qr_tp2(:),qx_tp2(:)     !< reaction and external BEM charges in the iteration before the last
+
+      real(dbl), allocatable :: q0_dum(:)            !< moved from readio, used only here. Charges at time 0 defined with Finit_mdm, here because used in scf
+      real(dbl), allocatable :: pot_dum_tp(:),pot_dum_tp2(:),pot_dum_0(:) !< molecular potential on BEM points
+      real(dbl), allocatable :: potf_dum_tp(:),potf_dum_tp2(:)        !< Maxwell potential on BEM points
+      real(dbl), allocatable :: qr_dum_t(:),qr_dum_tp(:)        !< reaction BEM charges (qr)
+      real(dbl), allocatable :: dqr_dum_t(:),dqr_dum_tp(:)      !< reaction charge difference qr_t-qr_tp
+      real(dbl), allocatable :: fqr_dum_t(:),fqr_dum_tp(:)      !< force on the reaction chares (vv propagator)
+      real(dbl), allocatable :: qx_dum_t(:),qx_dum_tp(:)        !< charges induced by the Maxwell field ("external" charges - qx)
+      real(dbl), allocatable :: dqx_dum_t(:),dqx_dum_tp(:)      !< external charge difference qx_t-qx_tp
+      real(dbl), allocatable :: fqx_dum_t(:),fqx_dum_tp(:)      !< force on the external medium dipole (vv propagator)
+      real(dbl), allocatable :: qr_dum_t_p(:,:),qr_dum_tp_p(:,:)        !< reaction BEM charges (qr)
+      real(dbl), allocatable :: dqr_dum_t_p(:,:),dqr_dum_tp_p(:,:)      !< reaction charge difference qr_t-qr_tp
+      real(dbl), allocatable :: fqr_dum_t_p(:,:),fqr_dum_tp_p(:,:)      !< force on the reaction chares (vv propagator)
+      real(dbl), allocatable :: fqr_dum_tp2_p(:),fqr_dum_tp3_p(:)       !< force on the reaction chares (vv propagator type 2)
+      real(dbl), allocatable :: dfqr_dum_t_p(:),dfqr_dum_tp_p(:)        !< derivative of force on reaction chares (vv propagator type 2)
+      real(dbl), allocatable :: qx_dum_t_p(:,:),qx_dum_tp_p(:,:)        !< charges induced by the Maxwell field ("external" charges - qx)
+      real(dbl), allocatable :: dqx_dum_t_p(:,:),dqx_dum_tp_p(:,:)      !< external charge difference qx_t-qx_tp
+      real(dbl), allocatable :: fqx_dum_t_p(:,:),fqx_dum_tp_p(:,:)      !< force on the external medium dipole (vv propagator)
+      real(dbl), allocatable :: fqx_dum_tp2_p(:),fqx_dum_tp3_p(:)       !< force on the external medium dipole (vv propagator type 2)
+      real(dbl), allocatable :: dfqx_dum_t_p(:),dfqx_dum_tp_p(:)        !< derivative of force on external medium dipole (vv propagator type 2)
+      real(dbl), allocatable :: qr_dum_tp2(:),qx_dum_tp2(:)     !< reaction and external BEM charges in the iteration before the last
+      real(dbl), allocatable :: std_f1_dum(:),std_f3_dum(:),std_f5_dum(:)
 
       save
       private
@@ -544,12 +565,12 @@
        integer(i4b) :: its
 
        if(pedra_surf_Fdum.eq."yes".and.&
-          global_medium_Fmdm.eq."cnan".and.&
+          (global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq.'cmix').and.&
           global_prop_Fprop.ne."chr-ons") then
-          qmolp=matmul(BEM_Z1_mol,pot_t)
-          qmol=matmul(BEM_Z2,qmolp)
-          allocate(pot_tp(pedra_surf_n_tessere))
-          pot_tp=matmul(BEM_S,qmol)
+         qmolp=matmul(BEM_Z1_mol,pot_t)
+         qmol=matmul(BEM_Z2,qmolp)
+         allocate(pot_tp(pedra_surf_n_tessere))
+         pot_tp=matmul(BEM_S,qmol)
          if(global_medium_Floc.eq."loc") then
            allocate(qextp(pedra_dum_n_tessere))
            qextp=matmul(BEM_Z1_ext,potf_t)
@@ -559,6 +580,20 @@
            potf_tp=matmul(BEM_S,qext)
            allocate(potf_tp2(pedra_surf_n_tessere))
            potf_tp2=potf_tp
+         endif
+         if(global_medium_Fmdm.eq.'cmix') then
+           allocate(pot_dum_tp(pedra_dum_n_tessere))
+           pot_dum_tp=pot_t
+           allocate(pot_dum_0(pedra_dum_n_tessere))
+           pot_dum_0 = pot_dum_tp
+           allocate(pot_dum_tp2(pedra_dum_n_tessere))
+           pot_dum_tp2=pot_dum_tp
+           if(global_medium_Floc.eq."loc") then
+             allocate(potf_dum_tp(pedra_dum_n_tessere))
+             potf_dum_tp=potf_t
+             allocate(potf_dum_tp2(pedra_dum_n_tessere))
+             potf_dum_tp2=potf_dum_tp
+           endif
          endif
        else
          allocate(pot_tp(pedra_surf_n_tessere))
@@ -611,8 +646,6 @@
         if(allocated(dqr_tp_p))deallocate(dqr_tp_p)
         if(allocated(fqr_tp_p))deallocate(fqr_tp_p)
         if(allocated(fqr_t_p))deallocate(fqr_t_p)
-        if(allocated(sum_r))deallocate(sum_r)
-        if(allocated(sum_x))deallocate(sum_x)
         if(allocated(dqr_tp))deallocate(dqr_tp)
         if(allocated(fqr_tp))deallocate(fqr_tp)
         if(allocated(fqr_t))deallocate(fqr_t)
@@ -624,6 +657,9 @@
         if(allocated(std_f1))deallocate(std_f1)
         if(allocated(std_f3))deallocate(std_f3)
         if(allocated(std_f5))deallocate(std_f5)
+        if(allocated(std_f1_dum))deallocate(std_f1_dum)
+        if(allocated(std_f3_dum))deallocate(std_f3_dum)
+        if(allocated(std_f5_dum))deallocate(std_f5_dum)
       end subroutine deallocate_potential
 
       subroutine clean_all_ocpy_tdcont
@@ -674,14 +710,15 @@
        if(allocated(dqx_tp_p))deallocate(dqx_tp_p)
        if(allocated(fqx_t_p))deallocate(fqx_t_p)
        if(allocated(fqx_tp_p))deallocate(fqx_tp_p)
-       if(allocated(sum_r))deallocate(sum_r)
-       if(allocated(sum_x))deallocate(sum_x)
        if(allocated(BEM_f1))deallocate(BEM_f1)
        if(allocated(BEM_f3))deallocate(BEM_f3)
        if(allocated(BEM_f5))deallocate(BEM_f5)
        if(allocated(std_f1))deallocate(std_f1)
        if(allocated(std_f3))deallocate(std_f3)
        if(allocated(std_f5))deallocate(std_f5)
+       if(allocated(std_f1_dum))deallocate(std_f1_dum)
+       if(allocated(std_f3_dum))deallocate(std_f3_dum)
+       if(allocated(std_f5_dum))deallocate(std_f5_dum)
        if(allocated(qr_tp2))deallocate(qr_tp2)
        if(allocated(qx_tp2))deallocate(qx_tp2)
        fr_t = 0
@@ -737,6 +774,9 @@
 
        integer(i4b) :: ipoles
 
+      integer(i4b) :: iter
+      real(dbl)    :: rmsq
+
 #ifndef MPI
        tp_myrank=0
 #endif
@@ -746,7 +786,16 @@
        allocate(q_mdm(pedra_surf_n_tessere))
        allocate(qr_tp(pedra_surf_n_tessere))
        allocate(dqr_t(pedra_surf_n_tessere))
+
        if (.not.allocated(q0)) allocate (q0(pedra_surf_n_tessere))
+
+       if(global_medium_Fmdm.eq.'cmix') then
+         allocate(q0_dum(pedra_dum_n_tessere))
+         allocate(qr_dum_t(pedra_dum_n_tessere))
+         allocate(qr_dum_tp(pedra_dum_n_tessere))
+         allocate(dqr_dum_t(pedra_dum_n_tessere))
+       endif
+
        ! init the state and the RF before propagation
 !SP 29/05/16: pot_0 replaces quantum_vts(:,1,1) to allow treating global_prop_Fprop=ief and global_prop_Fint=ons
        select case(global_medium_Finit)
@@ -754,13 +803,36 @@
           q0(:)=zero
           qtot0=zero
         case ('fro')
-          q0(:)=matmul(BEM_Q0,pot_0)
+          if(global_medium_Fmdm.ne.'cmix') then
+           q0(:)=matmul(BEM_Q0,pot_0)
+          else
+           ! self-consistency between
+           iter=1
+           rmsq=one
+           q0=zero
+           q0_dum=zero
+           do while(rmsq.gt.1.0d-6.and.iter.le.100)
+             qr_dum_tp = q0_dum
+             q0_dum = matmul(BEM_Q0_dum,pot_dum_tp)
+             pot_tp=pot_0+matmul(transpose(BEM_Sdum_act),q0_dum)
+             qr_tp = q0
+             q0 = matmul(BEM_Q0,pot_tp)
+             pot_dum_tp=pot_dum_0+matmul(BEM_Sdum_act,q0)
+             q0=q0-qr_tp
+             q0_dum=q0_dum-qr_dum_tp
+             rmsq=sqrt((dot_product(q0,q0)+dot_product(q0_dum,q0_dum))/(pedra_surf_n_tessere+pedra_dum_n_tessere))
+           end do
+           q0 = qr_tp
+           q0_dum = qr_dum_tp
+           pot_0 = pot_tp
+           pot_dum_0 = pot_dum_tp
+          endif
           qtot0=sum(q0)
         case ('rea')
           call read_charges_gau
        end select
 ! SC 31/10/2016: in case of nanoparticle, normalize initial charges to zero
-       if(global_medium_Fmdm.eq.'cnan'.or.global_medium_Fmdm.eq.'qnan') then
+       if(global_medium_Fmdm.eq.'cnan'.or.global_medium_Fmdm.eq.'qnan'.or.global_medium_Fmdm.eq.'cmix') then
          !q0=q0-qtot0/pedra_surf_n_tessere
          qtot0=zero
        endif
@@ -798,12 +870,22 @@
          allocate(qx_t(pedra_surf_n_tessere))
          allocate(qx_tp(pedra_surf_n_tessere))
          allocate(dqx_t(pedra_surf_n_tessere))
+         allocate(qx_tp2(pedra_surf_n_tessere))
          ! SP 09/07/17 changed the following for coherence
          qx_t(:)=zero
          qx_tp(:)=zero
-         allocate(qx_tp2(pedra_surf_n_tessere))
          qx_tp2(:)=zero
          dqx_t(:)=zero
+         if(global_medium_Fmdm.eq.'cmix') then
+           allocate(qx_dum_t(pedra_dum_n_tessere))
+           allocate(qx_dum_tp(pedra_dum_n_tessere))
+           allocate(dqx_dum_t(pedra_dum_n_tessere))
+           allocate(qx_dum_tp2(pedra_dum_n_tessere))
+           qx_dum_t(:)=zero
+           qx_dum_tp(:)=zero
+           qx_dum_tp2(:)=zero
+           dqx_dum_t(:)=zero
+         endif
        endif
        if(global_eps_Feps.eq."drl") then
          allocate(dqr_tp(pedra_surf_n_tessere))
@@ -830,8 +912,7 @@
           allocate(fqr_tp3_p(pedra_surf_n_tessere))
           allocate(dfqr_t_p(pedra_surf_n_tessere))
           allocate(dfqr_tp_p(pedra_surf_n_tessere))
-          allocate(sum_r(npoles))
-          allocate(sum_x(npoles))
+
           qr_tp(:)=zero
           do ipoles=1,npoles
              qr_tp_p(:,ipoles)=kf0(ipoles)*(matmul(BEM_Qf,pot_0)+matmul(BEM_ADt,q0) )
@@ -856,6 +937,48 @@
           fqr_tp2_p(:)=zero
           fqr_tp3_p(:)=zero
           dqr_tp_p(:,:)=zero
+
+          if(global_medium_Fmdm.eq.'cmix') then
+          allocate(qr_dum_t_p(pedra_dum_n_tessere,npoles_dum))
+          allocate(qr_dum_tp_p(pedra_dum_n_tessere,npoles_dum))
+          allocate(dqr_dum_t_p(pedra_dum_n_tessere,npoles_dum))
+          allocate(dqr_dum_tp_p(pedra_dum_n_tessere,npoles_dum))
+          allocate(fqr_dum_tp_p(pedra_dum_n_tessere,npoles_dum))
+          allocate(fqr_dum_t_p(pedra_dum_n_tessere,npoles_dum))
+          allocate(fqr_dum_tp2_p(pedra_dum_n_tessere))
+          allocate(fqr_dum_tp3_p(pedra_dum_n_tessere))
+          allocate(dfqr_dum_t_p(pedra_dum_n_tessere))
+          allocate(dfqr_dum_tp_p(pedra_dum_n_tessere))
+
+          qr_dum_tp(:)=zero
+          do ipoles=1,npoles_dum
+             qr_dum_tp_p(:,ipoles)=kf0_dum(ipoles)*(matmul(BEM_Qf_dum,pot_0)+matmul(BEM_ADt_dum,q0) )
+             qr_dum_tp(:)=qr_dum_tp(:)+qr_dum_tp_p(:,ipoles)
+          enddo
+          if (npoles_dum.ne.1) then
+                  do ipoles=1,npoles_dum-1
+                      fqr_dum_tp_p(:,ipoles)=-w2_dum(ipoles)*qr_dum_tp_p(:,ipoles)+&
+                                              kf_dum(ipoles)*(matmul(BEM_Qf_dum,pot_tp)+matmul(BEM_ADt,qr_tp))
+                      fqr_dum_tp_p(:,ipoles)=fqr_dum_tp_p(:,ipoles)-sum(fqr_dum_tp_p(:,ipoles))/pedra_dum_n_tessere
+                  enddo
+                  if (typ_prop.eq."0") then
+                          fqr_dum_tp_p(:,npoles_dum)=-w2_dum(npoles_dum)*qr_dum_tp_p(:,npoles_dum)+&
+                                                  kf_dum(npoles_dum)*(matmul(BEM_Qf_dum,pot_tp)+matmul(BEM_ADt_dum,qr_dum_tp))
+                          fqr_dum_tp_p(:,npoles_dum)=fqr_dum_tp_p(:,npoles_dum)-sum(fqr_dum_tp_p(:,npoles_dum))/pedra_dum_n_tessere
+                  else
+                          fqr_dum_tp_p(:,npoles_dum)=matmul(BEM_Qf_dum,pot_tp)+matmul(BEM_ADt_dum,qr_dum_tp)
+                  endif
+          else
+                  ipoles=1
+                  fqr_dum_tp_p(:,ipoles)=-w2_dum(ipoles)*qr_dum_tp_p(:,ipoles)+&
+                                          kf_dum(ipoles)*(matmul(BEM_Qf_dum,pot_tp)+matmul(BEM_ADt,qr_tp))
+                  fqr_dum_tp_p(:,ipoles)=fqr_dum_tp_p(:,ipoles)-sum(fqr_dum_tp_p(:,ipoles))/pedra_dum_n_tessere
+          endif
+          fqr_dum_tp2_p(:)=zero
+          fqr_dum_tp3_p(:)=zero
+          dqr_dum_tp_p(:,:)=zero
+          endif
+
           if(global_medium_Floc.eq."loc") then
             allocate(qx_t_p(pedra_surf_n_tessere,npoles))
             allocate(qx_tp_p(pedra_surf_n_tessere,npoles))
@@ -875,6 +998,27 @@
             fqx_tp3_p(:)=zero
             dfqx_t_p(:)=zero
             dfqx_tp_p(:)=zero
+
+            if(global_medium_Fmdm.eq.'cmix') then
+            allocate(qx_dum_t_p(pedra_dum_n_tessere,npoles_dum))
+            allocate(qx_dum_tp_p(pedra_dum_n_tessere,npoles_dum))
+            allocate(dqx_dum_t_p(pedra_dum_n_tessere,npoles_dum))
+            allocate(dqx_dum_tp_p(pedra_dum_n_tessere,npoles_dum))
+            allocate(fqx_dum_tp_p(pedra_dum_n_tessere,npoles_dum))
+            allocate(fqx_dum_t_p(pedra_dum_n_tessere,npoles_dum))
+            allocate(fqx_dum_tp2_p(pedra_dum_n_tessere))
+            allocate(fqx_dum_tp3_p(pedra_dum_n_tessere))
+            allocate(dfqx_dum_t_p(pedra_dum_n_tessere))
+            allocate(dfqx_dum_tp_p(pedra_dum_n_tessere))
+            qx_dum_tp_p(:,:)=zero
+            dqx_dum_tp_p(:,:)=zero
+            fqx_dum_tp_p(:,:)=zero
+            fqx_dum_t_p(:,:)=zero
+            fqx_dum_tp2_p(:)=zero
+            fqx_dum_tp3_p(:)=zero
+            dfqx_dum_t_p(:)=zero
+            dfqx_dum_tp_p(:)=zero
+            endif
           endif
        endif
        deallocate(qd)
@@ -884,12 +1028,16 @@
        endif
 
        if(pedra_surf_Fdum.eq."yes".and.&
-          global_medium_Fmdm.eq."cnan".and.&
+          (global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq.'cmix').and.&
           global_prop_Fprop.ne."chr-ons") then
          ! dummy charges in dummy surface from polarization charges in actual surface
          qr=matmul(BEM_Z3,qr_tp)
          ! same for the local field
          if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z3,qx_tp)
+         if(global_medium_Fmdm.eq.'cmix') then
+           qr=qr+qr_dum_tp
+           if(global_medium_Floc.eq."loc") qx=qx+qx_dum_tp
+         endif
        else
          qr = qr_tp
          if(global_medium_Floc.eq."loc") qx = qx_tp
@@ -1303,7 +1451,7 @@
 #endif
 
        if(pedra_surf_Fdum.eq."yes".and.&
-          global_medium_Fmdm.eq."cnan".and.&
+          (global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq.'cmix').and.&
           global_prop_Fprop.ne."chr-ons") then
          ! dummy charges in dummy surface reproducing molecular potential outside
          qmolp=matmul(BEM_Z1_mol,pot)
@@ -1316,6 +1464,10 @@
            ! dummy charges in actual surface reproducing external potential in between dummy and actual surface
            qext=matmul(BEM_Z2,qextp)
            potf_tp=matmul(BEM_S,qext)
+         endif
+         if(global_medium_Fmdm.eq.'cmix') then
+           pot_dum_tp=pot
+           if(global_medium_Floc.eq."loc") potf_dum_tp=potf
          endif
        else
          pot_tp = pot
@@ -1358,7 +1510,12 @@
        elseif(global_eps_Feps.eq."gen") then
          if(global_prop_Fprop.eq."chr-ief") then
            if(global_medium_Fbem.eq."stan") then
+            if(global_medium_Fmdm.ne.'cmix') then
             call prop_vv_ief_gen_std
+            else
+            call prop_vv_ief_gen_std
+            call prop_vv_ief_gen_std_mix
+            endif
            else
             write(*,*) "Wrong propagation method"
            stop
@@ -1392,12 +1549,16 @@
        endif
 
        if(pedra_surf_Fdum.eq."yes".and.&
-          global_medium_Fmdm.eq."cnan".and.&
+          (global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq.'cmix').and.&
           global_prop_Fprop.ne."chr-ons") then
          ! dummy charges in dummy surface from polarization charges in actual surface
          qr=matmul(BEM_Z3,qr_tp)
          ! same for the local field
          if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z3,qx_tp)
+         if(global_medium_Fmdm.eq.'cmix') then
+           qr=qr+qr_dum_t
+           if(global_medium_Floc.eq."loc") qx=qx+qx_dum_t
+         endif
        else
          qr = qr_tp
          if(global_medium_Floc.eq."loc") qx = qx_tp
@@ -1538,9 +1699,35 @@
        std_f5(:)=gg(:)*f2
        if (tp_myrank.eq.0) write(6,*) "Initiated VV propagator"
 
+       if(global_medium_Fmdm.eq.'cmix') call init_vv_propagator_gen_std_mix
+
        return
 
-      end subroutine
+      end subroutine init_vv_propagator_gen_std
+
+      subroutine init_vv_propagator_gen_std_mix
+!------------------------------------------------------------------------
+! @brief Initialization for velocity Verlet propagation (vv)
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+
+
+#ifndef MPI
+       tp_myrank=0
+#endif
+
+       allocate(std_f1_dum(npoles_dum),std_f3_dum(npoles_dum),std_f5_dum(npoles_dum))
+
+       std_f1_dum(:)=quantum_dt*(1.d0-quantum_dt*0.5d0*gg_dum(:))
+       std_f3_dum(:)=1.d0-gg_dum(:)*std_f1_dum(:)
+       std_f5_dum(:)=gg_dum(:)*f2
+       if (tp_myrank.eq.0) write(6,*) "Initiated VV propagator mix"
+
+       return
+
+      end subroutine init_vv_propagator_gen_std_mix
 
 
 !------------------------------------------------------------------------
@@ -1806,7 +1993,8 @@
         if(global_medium_Fmdm.eq.'csol') then
          fqx_t_p(:,pidx)=-w2(pidx)*qx_tp_p(:,pidx)+kf(pidx)*(matmul(BEM_Qfx,potf_tp)+matmul(BEM_ADt,qx_tp))
         else if((global_medium_Fmdm.eq.'cnan').or.&
-                (global_medium_Fmdm.eq.'qnan')) then
+                (global_medium_Fmdm.eq.'qnan').or.&
+                (global_medium_Fmdm.eq.'cmix')    ) then
          fqx_t_p(:,pidx)=-w2(pidx)*qx_tp_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,potf_tp)+kf(pidx)*matmul(BEM_ADt,qx_tp)
         endif
         dqx_t_p(:,pidx)=std_f3(pidx)*dqx_tp_p(:,pidx)+f4*(fqx_t_p(:,pidx)+fqx_tp_p(:,pidx))-std_f5(pidx)*fqx_tp_p(:,pidx)
@@ -1857,19 +2045,19 @@
            if(global_medium_Floc.eq."loc") then
                if (typ_prop.eq."1") then
                    !derivative method
-                    if(global_medium_Fmdm.eq.'csol') then
-                         fqx_t_p(:,pidx)=matmul(BEM_Qfx,potf_tp)+matmul(BEM_ADt,qx_tp)
-                    else if(global_medium_Fmdm.eq.'cnan'.or.global_medium_Fmdm.eq.'qnan') then
-                         fqx_t_p(:,pidx)=matmul(BEM_Qf,potf_tp)+matmul(BEM_ADt,qx_tp)
-                    endif
-                    qx_t_p(:,pidx)=qx_tp_p(:,pidx)+kf0(pidx)*(fqx_t_p(:,pidx)-fqx_tp_p(:,pidx))
+                   if(global_medium_Fmdm.eq.'csol') then
+                        fqx_t_p(:,pidx)=matmul(BEM_Qfx,potf_tp)+matmul(BEM_ADt,qx_tp)
+                   else if(global_medium_Fmdm.eq.'cnan'.or.global_medium_Fmdm.eq.'qnan'.or.global_medium_Fmdm.eq.'cmix') then
+                        fqx_t_p(:,pidx)=matmul(BEM_Qf,potf_tp)+matmul(BEM_ADt,qx_tp)
+                   endif
+                   qx_t_p(:,pidx)=qx_tp_p(:,pidx)+kf0(pidx)*(fqx_t_p(:,pidx)-fqx_tp_p(:,pidx))
                elseif (typ_prop.eq."2") then
                    !second order method
-                    if(global_medium_Fmdm.eq.'csol') then
-                         fqx_t_p(:,pidx)=matmul(BEM_Qfx,potf_tp)+matmul(BEM_ADt,qx_tp)
-                    else if(global_medium_Fmdm.eq.'cnan'.or.global_medium_Fmdm.eq.'qnan') then
-                         fqx_t_p(:,pidx)=matmul(BEM_Qf,potf_tp)+matmul(BEM_ADt,qx_tp)
-                    endif
+                   if(global_medium_Fmdm.eq.'csol') then
+                        fqx_t_p(:,pidx)=matmul(BEM_Qfx,potf_tp)+matmul(BEM_ADt,qx_tp)
+                   else if(global_medium_Fmdm.eq.'cnan'.or.global_medium_Fmdm.eq.'qnan'.or.global_medium_Fmdm.eq.'cmix') then
+                        fqx_t_p(:,pidx)=matmul(BEM_Qf,potf_tp)+matmul(BEM_ADt,qx_tp)
+                   endif
                    dfqx_t_p(:)=3*fqx_t_p(:,pidx)-8*fqx_tp_p(:,pidx)+7*fqx_tp2_p(:)-2*fqx_tp3_p(:)
                    qx_t_p(:,pidx)=qx_tp_p(:,pidx)+quantum_dt*dqx_tp_p(:,pidx)+kf(pidx)/(2*w2(pidx))*dfqx_t_p(:)
                    dqx_t_p(:,pidx)=dqx_tp_p(:,pidx)+kf(pidx)/(2*quantum_dt*w2(pidx))*(dfqx_t_p(:)+dfqx_tp_p(:))
@@ -1879,12 +2067,12 @@
                    dfqx_tp_p(:)=dfqx_t_p(:)
                elseif (typ_prop.eq."3") then
                    if(global_medium_Fmdm.eq.'csol') then
-                         fqx_t_p(:,pidx)= matmul(BEM_Qfx,potf_tp)+matmul(BEM_ADt,qx_t)
-                         qx_t_p(:,pidx)=kf0(pidx)*matmul(BEM_ADtm1,fqx_tp_p(:,pidx))
-                    else if(global_medium_Fmdm.eq.'cnan'.or.global_medium_Fmdm.eq.'qnan') then
-                         fqx_t_p(:,pidx)=matmul(BEM_ADt,qx_t)+matmul(BEM_Qf,potf_tp)
-                         qx_t_p(:,pidx)=kf0(pidx)*matmul(BEM_ADtm1,fqx_tp_p(:,pidx))
-                    endif
+                        fqx_t_p(:,pidx)= matmul(BEM_Qfx,potf_tp)+matmul(BEM_ADt,qx_t)
+                        qx_t_p(:,pidx)=kf0(pidx)*matmul(BEM_ADtm1,fqx_tp_p(:,pidx))
+                   else if(global_medium_Fmdm.eq.'cnan'.or.global_medium_Fmdm.eq.'qnan'.or.global_medium_Fmdm.eq.'cmix') then
+                        fqx_t_p(:,pidx)=matmul(BEM_ADt,qx_t)+matmul(BEM_Qf,potf_tp)
+                        qx_t_p(:,pidx)=kf0(pidx)*matmul(BEM_ADtm1,fqx_tp_p(:,pidx))
+                   endif
                endif
                qx_t_p(:,pidx)=qx_t_p(:,pidx)-sum(qx_t_p(:,pidx))/pedra_surf_n_tessere
                fqx_tp_p(:,pidx)=fqx_t_p(:,pidx)
@@ -1894,7 +2082,119 @@
        endif
        return
 
-      end subroutine
+      end subroutine prop_vv_ief_gen_std
+
+      subroutine prop_vv_ief_gen_std_mix
+!------------------------------------------------------------------------
+! @brief General dielectric function propagation global_prop_Fprop=chr-ief
+! velocity-verlet
+! algorithm
+!
+! @date Created: G. Gil
+! Modified:
+!------------------------------------------------------------------------
+
+      ! Charge propagation with general dielectric function and IEF
+      ! equations
+       integer(i4b) :: pidx,ncycle
+       integer(i4b) :: i,j,its
+       real(dbl) :: threshold, q_tot
+
+       threshold = .5d-8
+       if(global_medium_Fnorm.eq."non") global_medium_Fnorm = "tot"
+       if (typ_prop.eq."0") then
+          ncycle=npoles_dum
+       else
+            if(npoles_dum.eq.1) then
+               ncycle=npoles_dum
+            else
+               ncycle=npoles_dum-1
+            endif
+       endif
+
+       qr_dum_tp(:)=qr_dum_t(:)
+       qr_dum_t(:) = zero
+       if(global_medium_Floc.eq."loc") qx_dum_t(:) = zero
+       do pidx = 1, ncycle
+        fqr_dum_t_p(:,pidx)=-w2_dum(pidx)*qr_dum_tp_p(:,pidx)+&
+                            kf_dum(pidx)*(matmul(BEM_Qf_dum,pot_dum_tp)+matmul(BEM_ADt_dum,qr_dum_tp))
+        fqr_dum_t_p(:,pidx)=fqr_dum_t_p(:,pidx)-sum(fqr_dum_t_p(:,pidx))/pedra_dum_n_tessere
+        dqr_dum_t_p(:,pidx)=std_f3_dum(pidx)*dqr_dum_tp_p(:,pidx)+f4*(fqr_dum_t_p(:,pidx)+&
+                            fqr_dum_tp_p(:,pidx))-std_f5_dum(pidx)*fqr_dum_tp_p(:,pidx)
+        qr_dum_t_p(:,pidx)=qr_dum_tp_p(:,pidx)+std_f1_dum(pidx)*dqr_dum_t_p(:,pidx)+f2*fqr_dum_t_p(:,pidx)
+        fqr_dum_tp_p(:,pidx)=fqr_dum_t_p(:,pidx)
+        dqr_dum_tp_p(:,pidx)=dqr_dum_t_p(:,pidx)
+        qr_dum_tp_p(:,pidx)=qr_dum_t_p(:,pidx)
+        qr_dum_t(:) = qr_dum_t(:) + qr_dum_t_p(:,pidx)
+      ! Local Field
+       if(global_medium_Floc.eq."loc") then
+        fqx_dum_t_p(:,pidx)=-w2_dum(pidx)*qx_dum_tp_p(:,pidx)+&
+                             kf_dum(pidx)*(matmul(BEM_Qfx_dum,potf_dum_tp)+matmul(BEM_ADt_dum,qx_dum_tp))
+        dqx_dum_t_p(:,pidx)=std_f3_dum(pidx)*dqx_dum_tp_p(:,pidx)+f4*(fqx_dum_t_p(:,pidx)+&
+                            fqx_dum_tp_p(:,pidx))-std_f5_dum(pidx)*fqx_dum_tp_p(:,pidx)
+        qx_dum_t_p(:,pidx)=qx_dum_tp_p(:,pidx)+std_f1_dum(pidx)*dqx_dum_t_p(:,pidx)+f2*fqx_dum_t_p(:,pidx)
+        qx_dum_t_p(:,pidx)=qx_dum_t_p(:,pidx)-sum(qx_dum_t_p(:,pidx))/pedra_dum_n_tessere
+        fqx_dum_tp_p(:,pidx)=fqx_dum_t_p(:,pidx)
+        dqx_dum_tp_p(:,pidx)=dqx_dum_t_p(:,pidx)
+        qx_dum_tp_p(:,pidx)=qx_dum_t_p(:,pidx)
+        qx_dum_t(:) = qx_dum_t(:) + qx_dum_t_p(:,pidx)
+       endif
+       enddo
+
+       if (typ_prop.ne."0".and.npoles_dum.ne.1) then
+           pidx=npoles_dum
+           if (typ_prop.eq."1") then
+                !derivative method
+                fqr_dum_t_p(:,pidx)=matmul(BEM_Qf_dum,pot_dum_tp)+matmul(BEM_ADt_dum,qr_dum_tp)
+                qr_dum_t_p(:,pidx)=qr_dum_tp_p(:,pidx)+kf0_dum(pidx)*(fqr_dum_t_p(:,pidx)-fqr_dum_tp_p(:,pidx))
+                fqr_dum_tp_p(:,pidx)=fqr_dum_t_p(:,pidx)
+           elseif (typ_prop.eq."2") then
+                !second order method
+                fqr_dum_t_p(:,pidx)=matmul(BEM_Qf_dum,pot_dum_tp)+matmul(BEM_ADt_dum,qr_dum_tp)
+                dfqr_dum_t_p(:)=3*fqr_dum_t_p(:,pidx)-8*fqr_dum_tp_p(:,pidx)+7*fqr_dum_tp2_p(:)-2*fqr_dum_tp3_p(:)
+                qr_dum_t_p(:,pidx)=qr_dum_tp_p(:,pidx)+quantum_dt*dqr_dum_tp_p(:,pidx)+kf_dum(pidx)/(w2_dum(pidx))*dfqr_dum_t_p(:)
+                dqr_dum_t_p(:,pidx)=dqr_dum_tp_p(:,pidx)+kf_dum(pidx)/(quantum_dt*w2_dum(pidx))*(dfqr_dum_t_p(:))
+                fqr_dum_tp3_p(:)=fqr_dum_tp2_p(:)
+                fqr_dum_tp2_p(:)=fqr_dum_tp_p(:,pidx)
+                dqr_dum_tp_p(:,pidx)=dqr_dum_t_p(:,pidx)
+                dfqr_dum_tp_p(:)=dfqr_dum_t_p(:)
+                fqr_tp_p(:,pidx)=fqr_t_p(:,pidx)
+           elseif (typ_prop.eq."3") then
+                fqr_dum_t_p(:,pidx)=matmul(BEM_ADt_dum,qr_dum_t)+matmul(BEM_Qf_dum,pot_dum_tp)
+                qr_dum_t_p(:,pidx)=kf0_dum(pidx)*matmul(BEM_ADtm1_dum,fqr_dum_tp_p(:,pidx))
+           endif
+           qr_dum_tp_p(:,pidx)=qr_dum_t_p(:,pidx)
+           qr_dum_t(:) = qr_dum_t(:) + qr_dum_t_p(:,pidx)
+           if(global_medium_Floc.eq."loc") then
+               if (typ_prop.eq."1") then
+                   !derivative method
+                   fqx_dum_t_p(:,pidx)=matmul(BEM_Qfx_dum,potf_dum_tp)+matmul(BEM_ADt_dum,qx_dum_tp)
+                   qx_dum_t_p(:,pidx)=qx_dum_tp_p(:,pidx)+kf0_dum(pidx)*(fqx_dum_t_p(:,pidx)-fqx_dum_tp_p(:,pidx))
+               elseif (typ_prop.eq."2") then
+                   !second order method
+                   fqx_dum_t_p(:,pidx)=matmul(BEM_Qfx_dum,potf_dum_tp)+matmul(BEM_ADt_dum,qx_dum_tp)
+                   dfqx_dum_t_p(:)=3*fqx_dum_t_p(:,pidx)-8*fqx_dum_tp_p(:,pidx)+7*fqx_dum_tp2_p(:)-2*fqx_dum_tp3_p(:)
+                   qx_dum_t_p(:,pidx)=qx_dum_tp_p(:,pidx)+quantum_dt*dqx_dum_tp_p(:,pidx)+&
+                                      kf_dum(pidx)/(2*w2_dum(pidx))*dfqx_dum_t_p(:)
+                   dqx_dum_t_p(:,pidx)=dqx_dum_tp_p(:,pidx)+&
+                                       kf_dum(pidx)/(2*quantum_dt*w2_dum(pidx))*(dfqx_dum_t_p(:)+dfqx_dum_tp_p(:))
+                   fqx_dum_tp3_p(:)=fqx_dum_tp2_p(:)
+                   fqx_dum_tp2_p(:)=fqx_dum_tp_p(:,pidx)
+                   dqx_dum_tp_p(:,pidx)=dqx_dum_t_p(:,pidx)
+                   dfqx_dum_tp_p(:)=dfqx_dum_t_p(:)
+               elseif (typ_prop.eq."3") then
+                   fqx_dum_t_p(:,pidx)= matmul(BEM_Qfx_dum,potf_dum_tp)+matmul(BEM_ADt_dum,qx_dum_t)
+                   qx_dum_t_p(:,pidx)=kf0_dum(pidx)*matmul(BEM_ADtm1_dum,fqx_dum_tp_p(:,pidx))
+               endif
+               qx_dum_t_p(:,pidx)=qx_dum_t_p(:,pidx)-sum(qx_dum_t_p(:,pidx))/pedra_dum_n_tessere
+               fqx_dum_tp_p(:,pidx)=fqx_dum_t_p(:,pidx)
+               qx_dum_tp_p(:,pidx)=qx_dum_t_p(:,pidx)
+               qx_dum_t(:) = qx_dum_t(:) + qx_dum_t_p(:,pidx)
+           endif
+       endif
+       return
+
+      end subroutine prop_vv_ief_gen_std_mix
 
 !------------------------------------------------------------------------
 ! @brief Debye propagation global_prop_Fprop=chr-ief
@@ -2793,20 +3093,90 @@
         real(dbl), intent(out) :: qr(:) 
         real(dbl), intent(out) :: qx(:) 
 
+        integer(i4b)           :: iter
+        real(dbl)              :: rmsq
+        real(dbl), allocatable :: pot_aux(:)
+        real(dbl), allocatable :: potf_aux(:)
+        real(dbl), allocatable :: qaux(:)
+        real(dbl), allocatable :: qaux_dum(:)
+
         if(pedra_surf_Fdum.eq."yes".and.&
-           global_medium_Fmdm.eq."cnan".and.&
+           (global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq.'cmix').and.&
            global_prop_Fprop.ne."chr-ons") then
           qmolp=matmul(BEM_Z1_mol,pot)
           qmol=matmul(BEM_Z2,qmolp)
-          qr=matmul(BEM_Z3,matmul(BEM_Q0,matmul(BEM_S,qmol)))
+          allocate(pot_aux(pedra_surf_n_tessere))
+          pot_aux=matmul(BEM_S,qmol)
           if(global_medium_Floc.eq."loc") then
             qextp=matmul(BEM_Z1_ext,potf)
             qext=matmul(BEM_Z2,qextp)
-            qx=matmul(BEM_Z3,matmul(BEM_Q0x,matmul(BEM_S,qext)))
+            allocate(potf_aux(pedra_surf_n_tessere))
+            potf_aux=matmul(BEM_S,qext)
+          endif
+          if(global_medium_Fmdm.ne.'cmix') then
+           qr=matmul(BEM_Z3,matmul(BEM_Q0,pot_aux))
+           if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z3,matmul(BEM_Q0,potf_aux)) !< BEM_Q0x for nanoparticle is the same
+          else
+           ! self-consistency between
+           iter=1
+           rmsq=one
+           allocate(qaux(pedra_surf_n_tessere))
+           qaux=zero
+           allocate(qaux_dum(pedra_dum_n_tessere))
+           qaux_dum=zero
+           do while(rmsq.gt.1.0d-6.and.iter.le.100)
+             qr_dum_tp = qaux_dum
+             qaux_dum = matmul(BEM_Q0_dum,pot+matmul(BEM_Sdum_act,qaux))
+             qr_tp = qaux
+             qaux = matmul(BEM_Q0,pot_aux+matmul(transpose(BEM_Sdum_act),qaux_dum))
+             qaux=qaux-qr_tp
+             qaux_dum=qaux_dum-qr_dum_tp
+             rmsq=sqrt((dot_product(qaux,qaux)+dot_product(qaux_dum,qaux_dum))/(pedra_surf_n_tessere+pedra_dum_n_tessere))
+           end do
+           deallocate(pot_aux)
+           qaux = qr_tp
+           deallocate(qaux)
+           qaux_dum = qr_dum_tp
+           deallocate(qaux_dum)
+           if(global_medium_Floc.eq."loc") then
+            ! self-consistency between
+            iter=1
+            rmsq=one
+            allocate(qaux(pedra_surf_n_tessere))
+            qaux=zero
+            allocate(qaux_dum(pedra_dum_n_tessere))
+            qaux_dum=zero
+            do while(rmsq.gt.1.0d-6.and.iter.le.100)
+              qx_dum_tp = qaux_dum
+              qaux_dum = matmul(BEM_Q0x_dum,potf+matmul(BEM_Sdum_act,qaux))
+              qx_tp = qaux
+              qaux = matmul(BEM_Q0,potf_aux+matmul(transpose(BEM_Sdum_act),qaux_dum)) !< BEM_Q0x for nanoparticle is the same
+              qaux=qaux-qx_tp
+              qaux_dum=qaux_dum-qx_dum_tp
+              rmsq=sqrt((dot_product(qaux,qaux)+dot_product(qaux_dum,qaux_dum))/(pedra_surf_n_tessere+pedra_dum_n_tessere))
+            end do
+            deallocate(potf_aux)
+            qaux = qx_tp
+            deallocate(qaux)
+            qaux_dum = qx_dum_tp
+            deallocate(qaux_dum)
+           endif
+           qr=matmul(BEM_Z3,qr_tp)
+           if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z3,qx_tp)
+           if(global_medium_Fmdm.eq.'cmix') then
+             qr=qr+qr_dum_tp
+             if(global_medium_Floc.eq."loc") qx=qx+qx_dum_tp
+           endif
           endif
         else
           qr=matmul(BEM_Q0,pot)
-          if(global_medium_Floc.eq."loc") qx=matmul(BEM_Q0x,potf)
+          if(global_medium_Floc.eq."loc") then
+          if(global_medium_Fmdm.eq."csol") then
+            qx=matmul(BEM_Q0x,potf)
+          else if(global_medium_Fmdm.eq."cnan") then
+            qx=matmul(BEM_Q0,potf) !< BEM_Q0x for nanoparticle is the same
+          endif
+          endif
         endif
 
         return

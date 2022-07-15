@@ -100,6 +100,7 @@
       real(dbl), allocatable :: BEM_Sm1_dum(:,:)
       real(dbl), allocatable :: BEM_ADt_dum(:,:)
       real(dbl), allocatable :: gg_dum(:), w2_dum(:), kf_dum(:), kf0_dum(:)
+      integer(i4b)           :: npoles_dum    !< number of poles when general dielectric function is used
       type(poles_t) :: poles_eps_dum
 
       save
@@ -116,7 +117,7 @@
              BEM_ADt,kf,w2,gg,BEM_Qdf,BEM_Qdfx,BEM_Qdf_2g,    &
              BEM_Qdfx_2g,kf0,deallocate_BEM_end_propagation,BEM_ADtm1, &
              clean_all_ocpy_BEM,BEM_Z1_mol,BEM_Z1_ext,BEM_Z2,BEM_Z3,BEM_S,&
-             qmol,qmolp,qext,qextp,&
+             qmol,qmolp,qext,qextp,npoles_dum,&
              BEM_Sdum,BEM_Sdum_act,BEM_Qf_dum,BEM_ADt_dum,BEM_Qfx_dum,&
              gg_dum,w2_dum,kf_dum,kf0_dum,BEM_ADtm1_dum,BEM_Q0_dum,BEM_Q0x_dum
 
@@ -252,16 +253,14 @@
            allocate(BEM_Qdfx_2g(pedra_surf_n_tessere,pedra_surf_n_tessere))
            endif
            if(global_medium_Fmdm.eq.'cmix') then
-           allocate(BEM_Qf_dum(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           if((global_medium_Floc.eq.'loc').and.&
-              (global_medium_Fmdm.eq.'csol')) then
-            allocate(BEM_Qfx_dum(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           endif
+           allocate(BEM_Qf_dum(pedra_dum_n_tessere,pedra_dum_n_tessere))
+           if(global_medium_Floc.eq.'loc') allocate(BEM_Qfx_dum(pedra_dum_n_tessere,pedra_dum_n_tessere))
            endif
            if(global_medium_Fbem.eq.'stan') call do_propBEM_std_gen
            if(global_medium_Fbem.eq.'diag') call do_propBEM_dia_gen
          endif
        endif
+
        !Write out propagation matrices
          if(global_sys_Fwrite.eq."high") call out_BEM_propmat
          if(global_prop_Fprop.eq."chr-ons") then
@@ -517,6 +516,10 @@
        if(allocated(BEM_2ppDAx)) deallocate(BEM_2ppDAx)
        if(allocated(BEM_Sm1)) deallocate(BEM_Sm1)
 
+       if(allocated(BEM_Ddum)) deallocate(BEM_Ddum)
+       if(allocated(BEM_2ppDA_dum)) deallocate(BEM_2ppDA_dum)
+       if(allocated(BEM_2ppDAx_dum)) deallocate(BEM_2ppDAx_dum)
+       if(allocated(BEM_Sm1_dum)) deallocate(BEM_Sm1_dum)
        return
 
       end subroutine finalize_BEM
@@ -1562,7 +1565,7 @@ end subroutine
                           "calculate bem matrices. Something is wrong in your input", &
                           " and there should be a check. Apologies! ")
        endif
-       if (global_eps_Feps.eq."gen" .or. global_medium_Fmdm.ne.'cmix' ) then
+       if (global_eps_Feps.eq."gen") then
                allocate(kf(npoles),w2(npoles),gg(npoles),kf0(npoles))
                kf(:) = poles_eps%A_coeff_p(:)/twp
 
@@ -1729,7 +1732,7 @@ end subroutine
 #ifndef MPI
        tp_myrank=0
 #endif
-       allocate(kf_dum(npoles),w2_dum(npoles),gg_dum(npoles),kf0_dum(npoles))
+       allocate(kf_dum(npoles_dum),w2_dum(npoles_dum),gg_dum(npoles_dum),kf0_dum(npoles_dum))
        kf_dum(:) = poles_eps_dum%A_coeff_p(:)/twp
 
        w2_dum(:) = poles_eps_dum%omega_p(:)**2+poles_eps_dum%gamma_p(:)**2
@@ -1753,7 +1756,7 @@ end subroutine
 
        scr2=-BEM_ADt_dum
        allocate(scr4(pedra_dum_n_tessere,pedra_dum_n_tessere))
-       scr4=kf0_dum(npoles)*scr2
+       scr4=kf0_dum(npoles_dum)*scr2
        do i=1,pedra_dum_n_tessere
          scr4(i,i)=1-scr4(i,i)
        enddo
@@ -1763,7 +1766,7 @@ end subroutine
        ! Form 2 pi - DA
 
        BEM_2ppDA_dum = scr1
-       do i=1,pedra_surf_n_tessere
+       do i=1,pedra_dum_n_tessere
          BEM_2ppDA_dum(i,i)= BEM_2ppDA_dum(i,i) + twp
        enddo
 
@@ -1792,7 +1795,7 @@ end subroutine
 
        fact_eps = (readf_eps_d_dum+one) / (readf_eps_d_dum-one)
 
-       do i=1,pedra_surf_n_tessere
+       do i=1,pedra_dum_n_tessere
          scr3(i,i)= scr3(i,i) + twp * fact_eps
        enddo
 
@@ -2565,7 +2568,7 @@ end subroutine
 
        BEM_Qf_dum = -matmul(BEM_Sm1_dum,BEM_2ppDA_dum)
 
-       if(global_medium_Floc.eq.'loc'.and.global_medium_Fmdm.eq.'csol') BEM_Qfx_dum= matmul(BEM_Sm1_dum,BEM_2ppDAx_dum)
+       if(global_medium_Floc.eq.'loc') BEM_Qfx_dum= matmul(BEM_2ppDAx_dum,BEM_2ppDAx_dum)
 
        endif
 
@@ -3284,12 +3287,13 @@ end subroutine
 #endif
        if (tp_myrank.eq.0) then
         open(4,file="poles_dum.inp")
-        read(4,*) npoles
+        read(4,*) npoles_dum
 
-        allocate(poles_eps_dum%omega_p(npoles),poles_eps_dum%gamma_p(npoles),&
-                 poles_eps_dum%re_deps_domega_p(npoles),poles_eps_dum%im_deps_domega_p(npoles),poles_eps_dum%A_coeff_p(npoles))
+        allocate(poles_eps_dum%omega_p(npoles_dum),poles_eps_dum%gamma_p(npoles_dum),&
+                 poles_eps_dum%re_deps_domega_p(npoles_dum),poles_eps_dum%im_deps_domega_p(npoles_dum),&
+                 poles_eps_dum%A_coeff_p(npoles_dum))
 
-        do i=1,npoles
+        do i=1,npoles_dum
            read(4,*) poles_eps_dum%omega_p(i),poles_eps_dum%gamma_p(i),poles_eps_dum%A_coeff_p(i)
            !        poles_eps_dum%re_deps_domega_p(i),poles_eps_dum%im_deps_domega_p(i)
         enddo
@@ -3310,6 +3314,7 @@ end subroutine
 !------------------------------------------------------------------------
 
 #ifdef MPI
+           if( global_medium_Fmdm.ne.'cmix' ) then
            call mpi_bcast(npoles,  1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
            if(tp_myrank.ne.0) then
                allocate(poles_eps%omega_p(npoles),poles_eps%gamma_p(npoles),&
@@ -3318,6 +3323,17 @@ end subroutine
            call mpi_bcast(poles_eps%omega_p,    npoles,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
            call mpi_bcast(poles_eps%gamma_p,    npoles,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
            call mpi_bcast(poles_eps%A_coeff_p,    npoles,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           else
+           call mpi_bcast(npoles_dum,  1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+           if(tp_myrank.ne.0) then
+               allocate(poles_eps_dum%omega_p(npoles_dum),poles_eps_dum%gamma_p(npoles_dum),&
+                      poles_eps_dum%re_deps_domega_p(npoles_dum),poles_eps_dum%im_deps_domega_p(npoles_dum),&
+                      poles_eps_dum%A_coeff_p(npoles_dum))
+           endif
+           call mpi_bcast(poles_eps_dum%omega_p,    npoles_dum,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_bcast(poles_eps_dum%gamma_p,    npoles_dum,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_bcast(poles_eps_dum%A_coeff_p,    npoles_dum,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           endif
 #endif
 
       end subroutine
