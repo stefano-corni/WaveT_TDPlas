@@ -29,13 +29,15 @@
       !character(flg) :: FQBEM                        !< Flag driving the QM calculation mode
       real(dbl), allocatable :: energies(:)           !<Energies of the states     
       real(dbl), allocatable :: trans_dipoles(:,:,:)  !<Transition dipoles between states
+      real(dbl), allocatable :: trans_mag(:,:,:)      !<Mag. Trans. dipoles between states - MM - test
       complex(cmp), allocatable :: coeff0(:)          !<Initial coefficients 
       integer(i4b) :: nstates                         !<Dimension of Hilbert space
 
       save
       private
       public init_propagation, & ! subroutines
-             energies, trans_dipoles, nstates, coeff0   ! variables   
+             energies, trans_dipoles, nstates, coeff0, &   ! variables   
+             trans_mag ! MM
 !
 !
       contains
@@ -62,6 +64,9 @@
        else
          energies=e_ci
          trans_dipoles=mut
+         if (Fmag.eq.'mag') then
+            trans_mag=lt !MM
+         endif
          !> Input initialisation as in ci_*.inp 
        endif
        ! The following lines need to be moified in order to initialize
@@ -111,9 +116,15 @@
        allocate(energies(nstates))
        allocate(coeff0(nstates))
        allocate(trans_dipoles(3,nstates,nstates))
+       if (Fmag.eq.'mag') then
+          allocate(trans_mag(3,nstates,nstates)) !MM
+       endif
        coeff0=zeroc
        energies=zero
        trans_dipoles=zero
+       if (Fmag.eq.'mag') then !MM
+          trans_mag=zero
+       endif
       return
       end subroutine init_initialise
 !

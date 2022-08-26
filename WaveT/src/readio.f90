@@ -38,6 +38,8 @@
       complex(cmp), allocatable :: c_i(:),c_i_t(:),c_i_prev(:),c_i_prev2(:) ! coefficients from cis
       real(dbl)                 :: mu_i_prev(3),mu_i_prev2(3),mu_i_prev3(3),mu_i_prev4(3),mu_i_prev5(3)
       real(dbl), allocatable    :: mut(:,:,:) !transition dipoles from cis
+      real(dbl), allocatable    :: lt(:,:,:)  !mag transition dip from cis - MM - test
+      real(dbl)                 :: e_dir(3)   ! Electric field direction - MM
       real(dbl), allocatable    :: nr_gam(:), de_gam(:) !decay rates for nonradiative and dephasing events
       real(dbl), allocatable    :: sp_gam(:) !decay rate for spontaneous emission  
       real(dbl), allocatable    :: sp_fact(:) !multiplicative factor for the decay rate for spontaneous emission
@@ -89,6 +91,7 @@
       character(flg) :: all_pop ! flags for the postprocessing input
       character(flg) :: all_coh ! flags for the postprocessing input
       character(flg) :: write_bin ! flags for the postprocessing input
+      character(flg) :: Fmag
       integer(i4b) :: iseed  ! seed for random number generator
       integer(i4b) :: nexc   ! number of excited states
       integer(i4b) :: nrel   ! number of relaxation channels
@@ -124,7 +127,8 @@
              mpibcast_e_dip,mpibcast_sse,mpibcast_restart,  &
              nspectra,Fabs,ion_rate,mpibcast_ion_rate,Fbin, &
              ncit,Fopt,ik,Fwrt,tar,all_pop,all_coh,pop,coh, &
-             write_bin,Ip,prop_type 
+             write_bin,Ip,prop_type,                        &
+             Fmag,lt,e_dir !MM 
              
 !
       contains
@@ -151,7 +155,7 @@
                          binary,ncit,Ip
        !External field paramaters
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
-                        npulse,tdelay,pshift
+                        npulse,tdelay,pshift,Fmag,e_dir
        !Stochastic Schroedinger equation
        namelist /sse/ dissipative,idep,dis_prop,prop_type,nrnd,tdis,nr_typ,krnd,out_sse
        !Namelist spectra
@@ -283,6 +287,9 @@
           endif
          enddo
        enddo
+!        open(8,file='test_mut.dat',status='replace')
+!          write(8,*) mut(:,:,:)
+!        close(8)
 !       write(6,*) "mut"
 !       do i=1,n_ci
 !        do j=1,n_ci
@@ -290,8 +297,44 @@
 !        enddo
 !       enddo
        close(7)
+!test
+! MM 
+       if(Fmag.eq.'mag') then
+         open(7,file="ci_lt.inp",status="old")
+         allocate (lt(3,n_ci,n_ci))
+         do i=1,n_ci_read
+           if (i.le.n_ci) then
+              read(7,*)junk,junk,junk,junk,lt(1,1,i),lt(2,1,i),lt(3,1,i)
+              lt(:,i,1)=-lt(:,1,i)
+           else
+              read(7,*)
+           endif
+         enddo
+         do i=2,n_ci_read
+           do j =2,i
+             if (i.le.n_ci.and.j.le.n_ci) then
+                read(7,*)junk,junk,junk,junk,lt(1,i,j),lt(2,i,j),lt(3,i,j)
+                lt(:,j,i)=-lt(:,i,j)
+             else
+                read(7,*)
+             endif
+           enddo
+         enddo
+       endif
 
-
+       close(7)
+       open(8,file="test_lt.dat")
+!         do i = 1, n_ci
+           write(8,*) lt(:,:,:)
+!          enddo
+!          do i = 2, n_ci
+!             do j = 2, i
+!                write(8,*) lt(:,i,j)
+!             enddo
+!          enddo 
+       close(8)
+    
+      
 !    read initial coefficients for the dynamics using the Slater determinants instead of the CIS_0 states.
        allocate (c_i(n_ci))
        if (Fres.eq.'Nonr') then
@@ -803,6 +846,12 @@
        tdelay=0.d0
        ! Phase shift
        pshift=0.d0
+       ! Default: no CD calculation - MM
+       Fmag='dip'
+       ! E dir vector, default: along x - MM
+       e_dir(1)=1.d0
+       e_dir(2)=0.d0
+       e_dir(3)=0.d0
 
        return
 
@@ -1035,6 +1084,21 @@
         case default
          Frad='non'
        end select
+
+       !MM
+       select case (Fmag)
+        case ('mag','Mag','MAG')
+         Fmag='mag'
+         write(*,*) "CD calculation activated w/ Fmag = ", Fmag
+         write(*,*) "Direction along the field is oriented &
+                       - Fmag case: ", e_dir
+        case default
+         Fmag='dip'
+         e_dir(1)=1.d0
+         e_dir(2)=0.d0
+         e_dir(3)=0.d0
+       end select
+
        do i=2,npulse
           write(*,*) 'Pulse no.', i
           write(*,*) 'Frequency (au) =', omega(i)

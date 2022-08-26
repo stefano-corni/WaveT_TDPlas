@@ -1,6 +1,6 @@
 # compilers
-#FC = ifort
-FC = gfortran
+FC = ifort
+#FC = gfortran
 #FC = mpiifort
 # useful predefined compiler flags for different architectures and compilers
 # they are not necessarily used in the compiling unless you refer to them in FFLAGS
@@ -16,11 +16,11 @@ FC = gfortran
 #FFLAGS_LAP= -O3 -ftz -align -xAVX -no-prec-div
 #FFLAGS_GF= -O3
 
-OMP= -fopenmp -DOMP
+OMP= -qopenmp -DOMP
 #OMP= -qopenmp -DOMP
 
 # mpi flags (not used here)
-MPI= -DMPI
+#MPI= -DMPI
 
 LDLAGS=
 #LDLAGS= --static --disable-shared --enable-static
@@ -31,18 +31,23 @@ LDLAGS=
 #FFLAGS= -O -g ${OMP} #-heap-arrays 1024
 #FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds
 #FFLAGS= -Og -g -fcheck-array-temporaries ${OMP} -fbounds-check #debug flag list to check coherence of array dimension 
-FFLAGS= -Og -g ${OMP} -fPIC -m64 #-heap-arrays 1024  
+#FFLAGS= -Og -g ${OMP} -fPIC -m64 #-heap-arrays 1024  
+
+FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024
 
 # preprocessor flag
 # comment the first and uncomment the second if compiler is ifort
 CPP=-cpp
 #CPP= -fpp
 
+LIBS = -mkl
+INC = -I/home/coccia/Libs/fftw-3.3.8
+
 # libraries to be linked - paths to be set by the user
-LIBS = -L/usr/lib -llapack -lblas -lpthread #FOR PADOVA
+#LIBS = -L/usr/lib -llapack -lblas -lpthread #FOR PADOVA
 #LIBS = -L/usr/lib -llapack  -lblas -lfftw3 #MARTA PC
 #LIBS =  -Wl,--start-group -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -Wl,--end-group#FOR HYDRA
-INC =  -I/usr/local/include
+#INC =  -I/usr/local/include
 # executable directory
 BINPATH=../bin
 # tdplas library file
