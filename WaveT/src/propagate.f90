@@ -33,9 +33,9 @@
 ! SC mu_a is the dipole moment at current step,
 !    int_rad is the classical radiated power at current step
 !    int_rad_int is the integral of the classical radiated power at current step
-      real(dbl) :: int_rad,int_rad_int,mu_a(3)
+      real(dbl) :: int_rad,int_rad_int,mu_a(3),sm
       complex(cmp) :: m_a(3)
-      integer(i4b) :: file_c=10,file_e=8,file_mu=9,file_m=11 !MM 
+      integer(i4b) :: file_c=10,file_e=8,file_mu=9,file_m=11,file_m_mu=11 !MM 
       save
       private
       public create_field, prop
@@ -56,7 +56,7 @@
        integer(i4b)                :: i,j,k
        complex(cmp), allocatable   :: ccexp(:) !SC 31/10/17: added to store exp(-ui*e(:)*dt), used in propagation
        character(20)               :: name_e,name_c,name_d,name_mu, &
-                                      name_m ! MM
+                                      name_m, name_m_mu ! MM
 
        ! GG: 11/03/2019
        real(dbl), allocatable      :: q_or_f(:) !< reaction field or reaction-field polarization charges
@@ -69,7 +69,10 @@
        write(name_c,'(a4,i0,a4)') "c_t_",n_f,".dat"
        write(name_e,'(a4,i0,a4)') "e_t_",n_f,".dat"
        write(name_mu,'(a5,i0,a4)') "mu_t_",n_f,".dat"
-       write(name_m,'(a4,i0,a4)') "m_t_",n_f,".dat"
+       if (Fmag.eq.'mag') then
+          write(name_m,'(a5,i0,a4)') "m_t_",n_f,".dat"
+          write(name_m_mu,'(a7,i0,a4)') "m_mu_t_",n_f,".dat"
+       endif
        if (Fres.eq.'Yesr') then
           if (Fbin.ne.'bin') then
              open (file_c,file=name_c,status="unknown",access="append")
@@ -77,6 +80,7 @@
              open (file_mu,file=name_mu,status="unknown",access="append")
              if (Fmag.eq.'mag') then !MM
               open(file_m,file=name_m,status="unknown",access="append")
+          open(file_m_mu,file=name_m_mu,status="unknown",access="append")
              endif
           else
              open (file_c,file=name_c,status="unknown",access="append",form="unformatted")   
@@ -84,6 +88,7 @@
              open (file_mu,file=name_mu,status="unknown",access="append",form="unformatted")  
              if (Fmag.eq.'mag') then !MM
               open(file_m,file=name_m,status="unknown",access="append",form="unformatted")
+          open(file_m_mu,file=name_m_mu,status="unknown",access="append",form="unformatted")
              endif
           endif
        elseif (Fres.eq.'Nonr') then
@@ -93,6 +98,7 @@
              open (file_mu,file=name_mu,status="unknown")
              if (Fmag.eq.'mag') then !MM
               open(file_m,file=name_m,status="unknown")
+              open(file_m_mu,file=name_m_mu,status="unknown")
              endif
           else
              open(file_c,file=name_c,status="unknown",form="unformatted")
@@ -100,6 +106,7 @@
            open(file_mu,file=name_mu,status="unknown",form="unformatted")
              if (Fmag.eq.'mag') then !MM
              open(file_m,file=name_m,status="unknown",form="unformatted")
+       open(file_m_mu,file=name_m_mu,status="unknown",form="unformatted")
              endif
           endif
        endif
@@ -151,6 +158,13 @@
           mu_prev3=mu_i_prev3
           mu_prev4=mu_i_prev4
           mu_prev5=mu_i_prev5 
+          if (Fmag.eq.'mag') then
+             m_prev=m_i_prev
+             m_prev2=m_i_prev2
+             m_prev3=m_i_prev3
+             m_prev4=m_i_prev4
+             m_prev5=m_i_prev5
+          endif
        endif
        h_int=zero  
        int_rad_int=0.d0
@@ -623,6 +637,9 @@
        m_prev2=m_prev
        m_prev=m_a
 
+!EC: scalar product between electric and magnetic dipole
+       sm = dot_product(mu_a,m_a)
+
        return
 
       end subroutine do_m
@@ -696,13 +713,15 @@
           if (Fmag.eq.'mag') then
               write (file_m,'(i8,f14.4,6e22.10)') i,t,dble(m_a(1)),aimag(m_a(1)),&
                     dble(m_a(2)),aimag(m_a(2)),dble(m_a(3)),aimag(m_a(3))
+              write (file_m_mu,'(i8,f14.4,e22.10)') i,t,sm
           endif
        else
           write (file_c) i,t,c(:)
           write (file_mu) i,t,mu_a(:)
           if (Fmag.eq.'mag') then
-              write (file_m,'(i8,f14.4,6e22.10)') i,t,dble(m_a(1)),aimag(m_a(1)),&
+              write (file_m) i,t,dble(m_a(1)),aimag(m_a(1)),&
                     dble(m_a(2)),aimag(m_a(2)),dble(m_a(3)),aimag(m_a(3))
+              write (file_m_mu) i,t,sm 
           endif
        endif
 
@@ -734,7 +753,7 @@
        real(dbl)                :: vec_prod(3),half_alpha ! e_dir vector f_prev -> vec_prod
        integer(i4b)             :: i,j
 
-       half_alpha = 1.d0/(2.d0*137)
+       half_alpha = 1.d0/(2.d0*clight)
 
 ! SC 16/02/2016: changed to - sign, 
 
@@ -843,6 +862,7 @@
        if (Fmag.eq.'mag') then   
           write(file_m,'(5a)') '#   istep time (au)',' mag_dipole-x ', &
                 ' mag_dipole-y ',' mag_dipole-z ' ! MM
+      write(file_m_mu,'(a)') '#   istep time (au)',' dot_product(m,mu) ' 
        endif
 
        return
@@ -1414,7 +1434,14 @@
        write(ii,*) mu_prev3(1), mu_prev3(2), mu_prev3(3)
        write(ii,*) mu_prev4(1), mu_prev4(2), mu_prev4(3)
        write(ii,*) mu_prev5(1), mu_prev5(2), mu_prev5(3)
-
+       if (Fmag.eq.'mag') then
+          write(ii,*) 'Magnetic Dipoles'
+          write(ii,*) m_prev(1), m_prev(2), m_prev(3)
+          write(ii,*) m_prev2(1), m_prev2(2), m_prev2(3)
+          write(ii,*) m_prev3(1), m_prev3(2), m_prev3(3)
+          write(ii,*) m_prev4(1), m_prev4(2), m_prev4(3)
+          write(ii,*) m_prev5(1), m_prev5(2), m_prev5(3)
+       endif
 
        close(ii)
  

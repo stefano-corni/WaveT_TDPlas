@@ -37,6 +37,7 @@
       real(dbl), allocatable    :: e_ci(:)  ! energy from cis
       complex(cmp), allocatable :: c_i(:),c_i_t(:),c_i_prev(:),c_i_prev2(:) ! coefficients from cis
       real(dbl)                 :: mu_i_prev(3),mu_i_prev2(3),mu_i_prev3(3),mu_i_prev4(3),mu_i_prev5(3)
+      real(dbl)                 :: m_i_prev(3),m_i_prev2(3),m_i_prev3(3),m_i_prev4(3),m_i_prev5(3)
       real(dbl), allocatable    :: mut(:,:,:) !transition dipoles from cis
       real(dbl), allocatable    :: lt(:,:,:)  !mag transition dip from cis - MM - test
       real(dbl)                 :: e_dir(3)   ! Electric field direction - MM
@@ -128,7 +129,8 @@
              nspectra,Fabs,ion_rate,mpibcast_ion_rate,Fbin, &
              ncit,Fopt,ik,Fwrt,tar,all_pop,all_coh,pop,coh, &
              write_bin,Ip,prop_type,                        &
-             Fmag,lt,e_dir !MM 
+             Fmag,lt,e_dir,m_i_prev,m_i_prev2, &
+             m_i_prev3,m_i_prev4,m_i_prev5 !MM 
              
 !
       contains
@@ -323,16 +325,16 @@
        endif
 
        close(7)
-       open(8,file="test_lt.dat")
+!       open(8,file="test_lt.dat")
 !         do i = 1, n_ci
-           write(8,*) lt(:,:,:)
+!           write(8,*) lt(:,:,:)
 !          enddo
 !          do i = 2, n_ci
 !             do j = 2, i
 !                write(8,*) lt(:,i,j)
 !             enddo
 !          enddo 
-       close(8)
+!       close(8)
     
       
 !    read initial coefficients for the dynamics using the Slater determinants instead of the CIS_0 states.
@@ -459,6 +461,14 @@
           read(ii,*) mu_i_prev3(1),mu_i_prev3(2),mu_i_prev3(3)
           read(ii,*) mu_i_prev4(1),mu_i_prev4(2),mu_i_prev4(3)
           read(ii,*) mu_i_prev5(1),mu_i_prev5(2),mu_i_prev5(3)
+          if (Fmag.eq.'mag') then
+             read(ii,*) junk
+             read(ii,*) m_i_prev(1),m_i_prev(2),m_i_prev(3)
+             read(ii,*) m_i_prev2(1),m_i_prev2(2),m_i_prev2(3)
+             read(ii,*) m_i_prev3(1),m_i_prev3(2),m_i_prev3(3)
+             read(ii,*) m_i_prev4(1),m_i_prev4(2),m_i_prev4(3)
+             read(ii,*) m_i_prev5(1),m_i_prev5(2),m_i_prev5(3)
+          endif
 
          close(ii)
 
@@ -1090,7 +1100,7 @@
         case ('mag','Mag','MAG')
          Fmag='mag'
          write(*,*) "CD calculation activated w/ Fmag = ", Fmag
-         write(*,*) "Direction along the field is oriented &
+         write(*,*) "Field propagation along &
                        - Fmag case: ", e_dir
         case default
          Fmag='dip'
@@ -1366,6 +1376,7 @@
        call mpi_bcast(Fabs,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fbin,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fopt,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Fmag,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
 #endif
 
        return 
@@ -1389,7 +1400,8 @@
 
        call mpi_bcast(e_ci,      n_ci,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(mut,       3*n_ci*n_ci,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-
+       if (Fmag.eq.'mag' )call mpi_bcast(lt,       3*n_ci*n_ci,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+     
        call mpi_bcast(c_i,       2*n_ci,MPI_COMPLEX,0,MPI_COMM_WORLD,ierr_mpi)
 #endif
 
@@ -1477,6 +1489,13 @@
        call mpi_bcast(mu_i_prev3,   3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(mu_i_prev4,   3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(mu_i_prev5,   3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       if (Fmag.eq.'mag') then
+           call mpi_bcast(m_i_prev,3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_bcast(m_i_prev2,3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_bcast(m_i_prev3,3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_bcast(m_i_prev4,3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_bcast(m_i_prev5,3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       endif
 
        call mpi_bcast(c_i_t,        2*n_ci,MPI_COMPLEX,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(c_i_prev,     2*n_ci,MPI_COMPLEX,0,MPI_COMM_WORLD,ierr_mpi)
