@@ -35,7 +35,7 @@
 !    int_rad_int is the integral of the classical radiated power at current step
       real(dbl) :: int_rad,int_rad_int,mu_a(3),sm
       complex(cmp) :: m_a(3)
-      integer(i4b) :: file_c=10,file_e=8,file_mu=9,file_m=11,file_m_mu=11 !MM 
+      integer(i4b) :: file_c=10,file_e=8,file_mu=9,file_m=11,file_m_mu=12 !MM 
       save
       private
       public create_field, prop
@@ -343,6 +343,7 @@
 #endif
 
         f(:,:)=0.d0
+        if (Flig.eq.'lig') then
         select case (Ffld)
         case ("mdg")
         ! Gaussian modulated sinusoid: exp(-(t-t0)^2/s^2) * sin(wt) 
@@ -471,6 +472,9 @@
 #endif
          stop
         end select
+        elseif (Flig.eq.'cir') then
+
+        endif
         if (myrank.eq.0) then
         ! write out field 
            if (Fbin.ne.'bin') then
@@ -856,13 +860,13 @@
               ' DE_vac(t)',' DG_eq(t)',' DG_neq(t)',  '  Const', &
               '  Rad. Int', '  Rad. Ene'   
       
-       write(file_mu,'(5a)') '#   istep time (au)',' dipole-x ', &
+       write(file_mu,'(4a)') '#   istep time (au)',' dipole-x ', &
               ' dipole-y ',' dipole-z '
  
        if (Fmag.eq.'mag') then   
-          write(file_m,'(5a)') '#   istep time (au)',' mag_dipole-x ', &
+          write(file_m,'(4a)') '#   istep time (au)',' mag_dipole-x ', &
                 ' mag_dipole-y ',' mag_dipole-z ' ! MM
-      write(file_m_mu,'(a)') '#   istep time (au)',' dot_product(m,mu) ' 
+     write(file_m_mu,'(2a)') '#   istep time (au)',' dot_product(m,mu) ' 
        endif
 
        return
