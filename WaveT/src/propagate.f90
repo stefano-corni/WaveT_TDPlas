@@ -343,7 +343,7 @@
 #endif
 
         f(:,:)=0.d0
-        if (Flig.eq.'lig') then
+        if (Flig.eq.'lin') then
         select case (Ffld)
         case ("mdg")
         ! Gaussian modulated sinusoid: exp(-(t-t0)^2/s^2) * sin(wt) 
@@ -473,21 +473,21 @@
          stop
         end select
         elseif (Flig.eq.'cir') then
-           if (e_dir(1).eq.0) then
+           if (e_dir(1).ne.0) then
            ! Light in the yz plane
               do i=1,n_tot
                  t_a=dt*(i-1)
                  f(2,i)=f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*sin(omega(1)*t_a)
                  f(3,i)=f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*cos(omega(1)*t_a)
               enddo
-           elseif (e_dir(2).eq.0) then
+           elseif (e_dir(2).ne.0) then
            ! Light in the xz plane
               do i=1,n_tot
                  t_a=dt*(i-1)
                  f(1,i)=f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*sin(omega(1)*t_a)
                  f(3,i)=f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*cos(omega(1)*t_a)
               enddo
-           elseif (e_dir(3).eq.0) then
+           elseif (e_dir(3).ne.0) then
            ! Light in the xy plane
               do i=1,n_tot
                  t_a=dt*(i-1)
