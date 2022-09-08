@@ -1246,6 +1246,7 @@ end subroutine
        complex(cmp) :: vr_tot, vl_tot
        integer(i4b) :: init
        real(dbl) :: fac_eps0,fac_epsd,re,im
+       real(dbl), allocatable :: scr0(:,:),scrd(:,:)
 
 #ifndef MPI
        tp_myrank=0
@@ -1528,6 +1529,45 @@ end subroutine
 
        deallocate(scrc,scr2,scr3,BEM_WI)
     endif
+ 
+       !> the following if should be controlled by a further keyword in the namelist
+       if( global_eps_Feps.eq."deb" ) then
+
+               write(*,*) "Q0 is calculated outside the BEM diagonal framework!"
+
+               !> Conforming -(2*Pi - DA)
+
+               allocate(BEM_2ppDA(pedra_surf_n_tessere,pedra_surf_n_tessere))
+
+               BEM_2ppDA = zero
+               do i = 1, pedra_surf_n_tessere
+                 BEM_2ppDA(:,i) = BEM_D(:,i) * pedra_surf_tessere(i)%area
+                 BEM_2ppDA(i,i) = BEM_2ppDA(i,i) - twp
+               end do
+
+               !> Conforming (2*Pi (eps+1)/(eps-1) - DA) * S
+
+               allocate(scr0(pedra_surf_n_tessere,pedra_surf_n_tessere))
+
+               scr0 = zero
+               do i = 1, pedra_surf_n_tessere
+                 scr0(:,i) = -BEM_D(:,i) * pedra_surf_tessere(i)%area
+                 scr0(i,i) = scr0(i,i) + twp * fac_eps0
+               end do
+
+               scr0 = matmul(scr0,BEM_S)
+
+               !> Inverting (2*Pi (eps+1)/(eps-1) - DA) * S
+
+               scr0 = inv(scr0)
+
+               !> Conforming -S^-1 * (2*Pi (eps+1)/(eps-1) - DA)^-1 * (2*Pi - DA)
+
+               BEM_Q0=matmul(scr0,BEM_2ppDA)
+
+               deallocate(scr0,BEM_2ppDA)
+
+       endif
 
        deallocate(scr1)
        if (tp_myrank.eq.0) write(6,*) "Done BEM diagonal"
