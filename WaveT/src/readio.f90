@@ -327,17 +327,6 @@
        endif
 
        close(7)
-!       open(8,file="test_lt.dat")
-!         do i = 1, n_ci
-!           write(8,*) lt(:,:,:)
-!          enddo
-!          do i = 2, n_ci
-!             do j = 2, i
-!                write(8,*) lt(:,i,j)
-!             enddo
-!          enddo 
-!       close(8)
-    
       
 !    read initial coefficients for the dynamics using the Slater determinants instead of the CIS_0 states.
        allocate (c_i(n_ci))
@@ -1118,7 +1107,6 @@
           write(*,*) ''
        enddo
 
-       if (mag) Flig='cir'
        select case (Flig)
         case ('lin','Lin','LIN')
          write(*,*) 'Linear polarization'   

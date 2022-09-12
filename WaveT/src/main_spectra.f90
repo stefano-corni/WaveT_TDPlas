@@ -19,6 +19,8 @@ program make_spectra
       call read_arrays 
       call do_spectra
 
+      write(*,*) 'uella'
+
       stop
 
 end program make_spectra

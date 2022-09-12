@@ -477,22 +477,22 @@
            ! Light in the yz plane
               do i=1,n_tot
                  t_a=dt*(i-1)
-                 f(2,i)=f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*sin(omega(1)*t_a)
-                 f(3,i)=f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*cos(omega(1)*t_a)
+                 f(2,i)=f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*cos(omega(1)*t_a)
+                 f(3,i)=-f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*sin(omega(1)*t_a)
               enddo
            elseif (e_dir(2).ne.0) then
            ! Light in the xz plane
               do i=1,n_tot
                  t_a=dt*(i-1)
-                 f(1,i)=f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*sin(omega(1)*t_a)
-                 f(3,i)=f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*cos(omega(1)*t_a)
+                 f(1,i)=f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*cos(omega(1)*t_a)
+                 f(3,i)=-f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*sin(omega(1)*t_a)
               enddo
            elseif (e_dir(3).ne.0) then
            ! Light in the xy plane
               do i=1,n_tot
                  t_a=dt*(i-1)
-                 f(1,i)=f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*sin(omega(1)*t_a)
-                 f(2,i)=f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*cos(omega(1)*t_a)
+                 f(1,i)=f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*cos(omega(1)*t_a)
+                 f(2,i)=-f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*sin(omega(1)*t_a)
               enddo
            endif
         endif
@@ -753,6 +753,7 @@
        j=int(dble(i)/dble(n_out))
        if(j.lt.1) j=1
        Sdip(:,1,j)=mu_a(:)
+       if (Fmag.eq.'mag') Smag(:,1,j)=m_a(:)
 ! SP 270817: using get_* functions to communicate with TDPlas
        if(Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call get_medium_dip(Sdip(:,2,j))
        Sfld(:,j)=f(:,i)
@@ -784,12 +785,12 @@
 
        h_int(:,:)=h_int(:,:)-trans_dipoles(1,:,:)*f_prev(1)-             &
                  trans_dipoles(2,:,:)*f_prev(2)-trans_dipoles(3,:,:)*f_prev(3)
-        if (Fmag.eq.'mag') then
-           call cross(e_dir,f_prev,vec_prod)
-           h_int(:,:)=h_int(:,:)-half_alpha*trans_mag(1,:,:)*vec_prod(1)-  &
-                      half_alpha*trans_mag(2,:,:)*vec_prod(2)- &
-                      half_alpha*trans_mag(3,:,:)*vec_prod(3)
-        endif
+        !if (Fmag.eq.'mag') then
+        !   call cross(e_dir,f_prev,vec_prod)
+        !   h_int(:,:)=h_int(:,:)-half_alpha*trans_mag(1,:,:)*vec_prod(1)-  &
+        !              half_alpha*trans_mag(2,:,:)*vec_prod(2)- &
+        !              half_alpha*trans_mag(3,:,:)*vec_prod(3)
+        !endif
 
        return
  
