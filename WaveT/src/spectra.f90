@@ -56,7 +56,7 @@
         allocate (Foutp(int(dble(vdim)/two)+1)) 
         if (Fmag.eq.'mag') then
            allocate (Minp(vdim))
-           allocate (Moutp(int(dble(vdim)/two)+1))
+           allocate (Moutp(vdim))
         endif
         dw=2*pi/dble(vdim)/dt*au_to_ev
         do i=1,int(vdim/two)
@@ -75,19 +75,26 @@
            nsp=1
         endif
         do i=1,vdim
-          Sdip(:,1,i+istart)=(Sdip(:,1,i+istart)-Deq(:))*    & 
-                                                exp(-abs(i*dt-t_mid)/tau(1))
-          if (nsp.eq.3) then
-             Sdip(:,2,i+istart)=(Sdip(:,2,i+istart)-Deq_np(:))* & 
-                                                exp(-abs(i*dt-t_mid)/tau(2))
-             Sdip(:,3,i+istart)= Sdip(:,1,i+istart)+Sdip(:,2,i+istart)
+           if (i.gt.t_mid) then
+              Sdip(:,1,i+istart)=(Sdip(:,1,i+istart)-Deq(:))*    &
+                                  exp(-(i*dt)/tau(1))
+              if (nsp.eq.3) Sdip(:,2,i+istart)=(Sdip(:,2,i+istart)-Deq_np(:))* &
+                                  exp(-(i*dt)/tau(2))        
+          else
+              Sdip(:,1,i+istart)=(Sdip(:,1,i+istart)-Deq(:))
+              if (nsp.eq.3) Sdip(:,2,i+istart)=(Sdip(:,2,i+istart)-Deq_np(:))
           endif
+          Sdip(:,3,i+istart)= Sdip(:,1,i+istart)+Sdip(:,2,i+istart)
         enddo
         if (Fmag.eq.'mag') then
            Meq(:)=Smag(:,1,1+istart)
            do i=1,vdim
-              Smag(:,1,i+istart)=(Smag(:,1,i+istart)-Meq(:))*  &
-                                                exp(-abs(i*dt-t_mid)/tau(1))
+              if (i.gt.t_mid) then
+                 Smag(:,1,i+istart)=(Smag(:,1,i+istart)-Meq(:))*    &
+                                    exp(-(i*dt)/tau(1))
+              else
+                 Smag(:,1,i+istart)=Smag(:,1,i+istart)-Meq(:)
+              endif
            enddo
         endif
 
@@ -128,27 +135,26 @@
             phiF=atan2(aimag(Foutp(i)),real(Foutp(i)))
             absD=-(modD/modF)*sin(phiD-phiF)
             refD=(modD/modF)*cos(phiD-phiF)
-             write(15,'(3e20.10)') (i-1)*dw, absD, refD
             !src=1./Foutp(i)
             !absD=aimag(Doutp(i)*src)
             !refD=real(Doutp(i)*src)
-            write(33,*) (i-1)*dw, real(Doutp(i)), aimag(Doutp(i))
-            write(34,*) (i-1)*dw, real(Foutp(i)), aimag(Foutp(i)) 
+            write(15,'(3e20.10)') (i-1)*dw, absD, refD
           enddo 
           close(unit=15)
 
           if (Fmag.eq.'mag'.and.isp.eq.1) then
              im=dcmplx(0.d0,1.d0)
-             call dfftw_plan_dft_1d(plan,vdim,Minp,Moutp,FFTW_ESTIMATE)
-             call dfftw_execute_dft(plan, Minp, Moutp)
+             call dfftw_plan_dft_1d(plan,vdim,Minp,Moutp,FFTW_FORWARD,FFTW_ESTIMATE)
+             call dfftw_execute_dft(plan,Minp,Moutp)
              call dfftw_destroy_plan(plan)
+
              write(mname,'(a11,i0,a4)') "sp_mol_mag_",n_f,".dat"
              open(unit=15,file=mname,status="unknown",form="formatted")
              !do i=1,int(vdim/two)
              do i=1,imax
-                !modD=sqrt(real(Doutp(i))**2+aimag(Doutp(i))**2)
+                !modD=sqrt(real(Moutp(i))**2+aimag(Moutp(i))**2)
                 !modF=sqrt(real(Foutp(i))**2+aimag(Foutp(i))**2)
-                !phiD=atan2(aimag(Doutp(i)),real(Doutp(i)))
+                !phiD=atan2(aimag(Moutp(i)),real(Moutp(i)))
                 !phiF=atan2(aimag(Foutp(i)),real(Foutp(i)))
                 !absD=-(modD/modF)*sin(phiD-phiF)
                 !refD=(modD/modF)*cos(phiD-phiF)
@@ -168,9 +174,7 @@
       else
         write(6,*) "No points for computing FT "
       endif
-      write(*,*) 'ciao'
       call finalize_spectra
-      write(*,*) 'dopo'
       return
       end subroutine do_spectra
 
