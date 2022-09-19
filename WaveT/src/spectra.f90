@@ -108,7 +108,6 @@
             ! SP 28/10/16: FT in the dir_ft direction
             Dinp(i)=dot_product(Sdip(:,isp,i+istart),dir_ft(:)) 
             Finp(i)=dot_product(Sfld(:,i+istart),dir_ft(:))
-            !write(6,*) Dinp(i), Finp(i)
             if (Fmag.eq.'mag'.and.isp.eq.1) then
                Minp(i)=dot_product(Smag(:,isp,i+istart),dir_ft(:)) 
             endif
