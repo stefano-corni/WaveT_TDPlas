@@ -61,7 +61,7 @@
         dw=2*pi/dble(vdim)/dt*au_to_ev
         do i=1,int(vdim/two)
            wmax=(i-1)*dw
-           if (wmax.gt.50.d0) then
+           if (wmax.gt.30.d0) then
               imax=i
               exit 
            endif
@@ -128,7 +128,7 @@
               write(fname,'(a9,i0,a4)') "sp_molnp_",n_f,".dat"
           open(unit=15,file=fname,status="unknown",form="formatted")
           !do i=1,int(vdim/two)  
-          do i=1,imax  
+          do i=2,imax  
             modD=sqrt(real(Doutp(i))**2+aimag(Doutp(i))**2)
             modF=sqrt(real(Foutp(i))**2+aimag(Foutp(i))**2)
             phiD=atan2(aimag(Doutp(i)),real(Doutp(i)))
@@ -144,23 +144,23 @@
 
           if (Fmag.eq.'mag'.and.isp.eq.1) then
              im=dcmplx(0.d0,1.d0)
-             call dfftw_plan_dft_1d(plan,vdim,Minp,Moutp,FFTW_FORWARD,FFTW_ESTIMATE)
-             call dfftw_execute_dft(plan,Minp,Moutp)
+             call dfftw_plan_dft_1d(plan,vdim,-Minp,Moutp,FFTW_FORWARD,FFTW_ESTIMATE)
+             call dfftw_execute_dft(plan,-Minp,Moutp)
              call dfftw_destroy_plan(plan)
 
              write(mname,'(a11,i0,a4)') "sp_mol_mag_",n_f,".dat"
              open(unit=15,file=mname,status="unknown",form="formatted")
              !do i=1,int(vdim/two)
-             do i=1,imax
-                !modD=sqrt(real(Moutp(i))**2+aimag(Moutp(i))**2)
-                !modF=sqrt(real(Foutp(i))**2+aimag(Foutp(i))**2)
-                !phiD=atan2(aimag(Moutp(i)),real(Moutp(i)))
-                !phiF=atan2(aimag(Foutp(i)),real(Foutp(i)))
-                !absD=-(modD/modF)*sin(phiD-phiF)
-                !refD=(modD/modF)*cos(phiD-phiF)
-                src=-im/((i-1)*dw*Foutp(i))
-                absD=aimag(Moutp(i)*src)
-                refD=real(Moutp(i)*src)
+             do i=2,imax
+                modD=sqrt(real(Moutp(i))**2+aimag(Moutp(i))**2)
+                modF=sqrt(real(Foutp(i))**2+aimag(Foutp(i))**2)
+                phiD=atan2(aimag(Moutp(i)),real(Moutp(i))) + 0.5d0*pi
+                phiF=atan2(aimag(Foutp(i)),real(Foutp(i)))
+                absD=-(modD/modF)*sin(phiD-phiF)/((i-1)*dw*ev_to_au)
+                refD=(modD/modF)*cos(phiD-phiF)/((i-1)*dw*ev_to_au)
+                !src=im/((i-1)*dw*Foutp(i))
+                !absD=aimag(Moutp(i)*src)
+                !refD=real(Moutp(i)*src)
                 write(15,'(3e20.10)') (i-1)*dw, absD, refD
              enddo
              close(15)
