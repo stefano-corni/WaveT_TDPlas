@@ -155,7 +155,7 @@
                 modF=sqrt(real(Foutp(i))**2+aimag(Foutp(i))**2)
                 phiD=atan2(aimag(Moutp(i)),real(Moutp(i))) + 0.5d0*pi
                 phiF=atan2(aimag(Foutp(i)),real(Foutp(i)))
-                absD=-(modD/modF)*sin(phiD-phiF)/((i-1)*dw*ev_to_au)
+                absD=(modD/modF)*sin(phiD-phiF)/((i-1)*dw*ev_to_au)
                 refD=(modD/modF)*cos(phiD-phiF)/((i-1)*dw*ev_to_au)
                 !src=im/((i-1)*dw*Foutp(i))
                 !absD=aimag(Moutp(i)*src)
