@@ -30,7 +30,7 @@
       complex(cmp), allocatable :: Minp(:)
       real(dbl) :: dw,fac,absD,refD,phiF,phiD,modF,modD    
       real(dbl) :: Deq(3),Deq_np(3),wmax    
-      complex(cmp) :: Meq(3), im, src
+      complex(cmp) :: Meq(3) 
       integer(i4b) :: i,isp,vdim,istart,nsp,imax  
       integer*8 plan
       complex(cmp), allocatable :: Doutp(:),Foutp(:)!,src       
@@ -108,7 +108,6 @@
             ! SP 28/10/16: FT in the dir_ft direction
             Dinp(i)=dot_product(Sdip(:,isp,i+istart),dir_ft(:)) 
             Finp(i)=dot_product(Sfld(:,i+istart),dir_ft(:))
-            !write(6,*) Dinp(i), Finp(i)
             if (Fmag.eq.'mag'.and.isp.eq.1) then
                Minp(i)=dot_product(Smag(:,isp,i+istart),dir_ft(:)) 
             endif
@@ -143,7 +142,6 @@
           close(unit=15)
 
           if (Fmag.eq.'mag'.and.isp.eq.1) then
-             im=dcmplx(0.d0,1.d0)
              call dfftw_plan_dft_1d(plan,vdim,-Minp,Moutp,FFTW_FORWARD,FFTW_ESTIMATE)
              call dfftw_execute_dft(plan,-Minp,Moutp)
              call dfftw_destroy_plan(plan)
@@ -156,7 +154,7 @@
                 modF=sqrt(real(Foutp(i))**2+aimag(Foutp(i))**2)
                 phiD=atan2(aimag(Moutp(i)),real(Moutp(i))) + 0.5d0*pi
                 phiF=atan2(aimag(Foutp(i)),real(Foutp(i)))
-                absD=-(modD/modF)*sin(phiD-phiF)/((i-1)*dw*ev_to_au)
+                absD=(modD/modF)*sin(phiD-phiF)/((i-1)*dw*ev_to_au)
                 refD=(modD/modF)*cos(phiD-phiF)/((i-1)*dw*ev_to_au)
                 !src=im/((i-1)*dw*Foutp(i))
                 !absD=aimag(Moutp(i)*src)

@@ -344,39 +344,39 @@
 
         f(:,:)=0.d0
         if (Flig.eq.'lin') then
-        select case (Ffld)
-        case ("mdg")
+           select case (Ffld)
+           case ("mdg")
         ! Gaussian modulated sinusoid: exp(-(t-t0)^2/s^2) * sin(wt) 
-           do i=1,n_tot
-              t_a=dt*(i-1)
-              f(:,i) = fmax(:,1)*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))* & 
-                       sin(omega(1)*t_a)
-              do j=2,npulse
-                 f(:,i) = f(:,i) + fmax(:,j)*                   &
-                        exp(-pt5*(t_a-(t_mid+sum(tdelay(1:j-1))))**2/(sigma(j)**2))*   &
-                        sin(omega(j)*t_a+sum(pshift(1:j-1)))
-              enddo 
-           enddo
-        case ("mds")
+             do i=1,n_tot
+                t_a=dt*(i-1)
+                f(:,i) = fmax(:,1)*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))* & 
+                         sin(omega(1)*t_a)
+                do j=2,npulse
+                   f(:,i) = f(:,i) + fmax(:,j)*                   &
+                          exp(-pt5*(t_a-(t_mid+sum(tdelay(1:j-1))))**2/(sigma(j)**2))*   &
+                          sin(omega(j)*t_a+sum(pshift(1:j-1)))
+                enddo 
+             enddo
+           case ("mds")
         ! Cosine^2 modulated sinusoid: 1/2* cos^2(pi(t-t0)/(2t0)) * sin(wt) 
         !          f=0 for t>t0
-         i_max=int(t_mid/dt)
-         if (2*i_max.gt.n_tot) then
-            write(*,*) 'ERROR: 2*t_mid/dt must be smaller than', n_tot
+            i_max=int(t_mid/dt)
+            if (2*i_max.gt.n_tot) then
+              write(*,*) 'ERROR: 2*t_mid/dt must be smaller than', n_tot
 #ifdef MPI
-            call mpi_finalize(ierr_mpi)  
+              call mpi_finalize(ierr_mpi)  
 #endif
-            stop
-         endif
-         do i=1,2*i_max
-            t_a=dt*(dble(i)-1)
-            f(:,i)=fmax(:,1)*cos(pi*(t_a-t_mid)/(2*t_mid))**2* &
-                   sin(omega(1)*t_a)
-         enddo
-         do i=2*i_max+1,n_tot
-            t_a=dt*(i-1)
-            f(:,i)=0.
-         enddo
+              stop
+            endif
+            do i=1,2*i_max
+               t_a=dt*(dble(i)-1)
+               f(:,i)=fmax(:,1)*cos(pi*(t_a-t_mid)/(2*t_mid))**2* &
+                     sin(omega(1)*t_a)
+            enddo
+            do i=2*i_max+1,n_tot
+               t_a=dt*(i-1)
+               f(:,i)=0.
+            enddo
          !do j=2,npulse
          !   i_max=int((t_mid+sum(tdelay(1:j-1)))/dt)
          !   do i=1,2*i_max
@@ -390,38 +390,38 @@
          !      f(:,i)=0.
          !   enddo
          !enddo
-        case ("pip")
+         case ("pip")
         ! Pi pulse: cos^2(pi(t-t0)/(2s)) * cos(w(t-t0)) 
-         do i=1,n_tot
-            t_a=dt*(dble(i)-1)
-            f(:,i)=0.d0
-            if (abs(t_a-t_mid).lt.sigma(1)) then
-               f(:,i)=fmax(:,1)*(cos(pi*(t_a-t_mid)/(2*sigma(1))))**2* &
-               cos(omega(1)*(t_a-t_mid))
-            endif
-         enddo
-         do j=2,npulse
-            do i=1,n_tot
-               t_a=dt*(dble(i)-1)
-               if (abs(t_a-(t_mid+sum(tdelay(1:j-1)))).lt.sigma(j)) then
-                  f(:,i)=f(:,i)+fmax(:,j)*(cos(pi*(t_a-(t_mid+sum(tdelay(1:j-1))))/ &
-                  (2*sigma(j))))**2* &
-                  cos(omega(j)*(t_a-(t_mid+sum(tdelay(1:j-1))))+sum(pshift(1:j-1)))
+           do i=1,n_tot
+              t_a=dt*(dble(i)-1)
+              f(:,i)=0.d0
+               if (abs(t_a-t_mid).lt.sigma(1)) then
+                  f(:,i)=fmax(:,1)*(cos(pi*(t_a-t_mid)/(2*sigma(1))))**2* &
+                  cos(omega(1)*(t_a-t_mid))
                endif
-            enddo
-         enddo
-        case ("sin")
+           enddo
+           do j=2,npulse
+              do i=1,n_tot
+                 t_a=dt*(dble(i)-1)
+                 if (abs(t_a-(t_mid+sum(tdelay(1:j-1)))).lt.sigma(j)) then
+                    f(:,i)=f(:,i)+fmax(:,j)*(cos(pi*(t_a-(t_mid+sum(tdelay(1:j-1))))/ &
+                    (2*sigma(j))))**2* &
+                    cos(omega(j)*(t_a-(t_mid+sum(tdelay(1:j-1))))+sum(pshift(1:j-1)))
+                 endif
+              enddo
+           enddo
+           case ("sin")
         ! Sinusoid:  sin(wt) 
-         do i=1,n_tot
-            t_a=dt*(dble(i)-1)
-            f(:,i)=fmax(:,1)*sin(omega(1)*t_a)
-         enddo
+           do i=1,n_tot
+              t_a=dt*(dble(i)-1)
+              f(:,i)=fmax(:,1)*sin(omega(1)*t_a)
+           enddo
          
-        case ("snd")
+         case ("snd")
         ! Linearly modulated (up to t0) Sinusoid:
         !         0 < t < t0 : t/to* sin(wt) 
         !             t > t0 :       sin(wt) 
-         do i=1,n_tot
+           do i=1,n_tot
             t_a=dt*(dble(i)-1)
             if (t_a.gt.t_mid) then
                f(:,i)=fmax(:,1)*sin(omega(1)*t_a)
@@ -472,6 +472,7 @@
 #endif
          stop
         end select
+
         elseif (Flig.eq.'cir') then
            if (e_dir(1).ne.0) then
            ! Light in the yz plane
@@ -496,6 +497,8 @@
               enddo
            endif
         endif
+
+
         if (myrank.eq.0) then
         ! write out field 
            if (Fbin.ne.'bin') then

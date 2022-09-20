@@ -867,16 +867,17 @@
 !
 ! @date Created   : E. Coccia 11 May 2017
 ! Modified  :
-! @param start,tau,dir_ft 
+! @param start,tau,dir_ft
 !------------------------------------------------------------------------
       subroutine init_nml_spectra()
 
        ! Parameter for computing spectra
        nspectra=1
        ! Parameter for computing spectra
-       tau(:)=zero
-       ! Direction fo the field (no field)
+       tau(:)=10000000
+       ! Direction for the signal 
        dir_ft=0.d0
+       dir_ft(3)=1.d0
 
        return
 
@@ -1087,8 +1088,8 @@
         case ('mag','Mag','MAG')
          Fmag='mag'
          write(*,*) "CD calculation activated w/ Fmag = ", Fmag
-         write(*,*) "Field propagation along &
-                       - Fmag case: ", e_dir
+         !write(*,*) "Field propagation along &
+         !              - Fmag case: ", e_dir
          mag=.true.
         case default
          Fmag='dip'
@@ -1152,7 +1153,7 @@
 
        write(*,*) 'Starting point for FT calculation', start
        write(*,*) 'Artificial damping', (tau(i),i=1,nspectra)
-       write(*,*) 'Direction along which the field is oriented', dir_ft
+       !write(*,*) 'Direction along which the field is oriented', dir_ft
        write(*,*) ''
 
        return

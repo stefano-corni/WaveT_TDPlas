@@ -1,0 +1,40 @@
+&general n_ci=20,n_ci_read=20 !number of excited states
+mol_cc=
+0.0
+0.0
+0.0
+n_f=1,
+medium='vac' !gas phase
+dt=0.05      !time step in au
+n_step=20670 !no of steps
+n_out=1
+n_restart=1000000
+full='n'
+propa='e'
+absorber='n'
+binary='n'
+/
+
+&field Ffld='gau',omega(1)=0.371472912826992,sigma(1)=1.650,
+       t_mid=500.0,radiative='non',iseed=16843,npulse=1,Fmag='mag'
+fmax(3,1)=0.00000169
+fmax(2,1)=0.00000000
+fmax(1,1)=0.00000000
+/
+
+&sse dissipative='non',idep=1,dis_prop='qjump',nrnd=0,tdis=0,nr_typ=1,krnd=0.0 /
+
+&spectra start=0,
+
+tau=
+200.0
+0.0
+
+dir_ft=
+0.0
+0.0
+1.0
+/
+
+&pop_coh
+/
