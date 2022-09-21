@@ -58,7 +58,7 @@
            allocate (Minp(vdim))
            allocate (Moutp(vdim))
         endif
-        dw=2*pi/dble(vdim)/dt*au_to_ev
+        dw=2*pi/dble(vdim)/dt
         imax=int(vdim/two)
         do i=1,int(vdim/two)
            wmax=(i-1)*dw
