@@ -1092,10 +1092,7 @@
          !              - Fmag case: ", e_dir
          mag=.true.
         case default
-         Fmag='dip'
-         e_dir(1)=1.d0
-         e_dir(2)=0.d0
-         e_dir(3)=0.d0
+         write(*,*) 'Only electric dipole'
        end select
 
 
