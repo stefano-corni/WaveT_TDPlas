@@ -1,0 +1,11 @@
+ci_lt.inp contains the magnetic transition dipole.
+m_t_1.dat contains the time-dependent magnetic dipole.
+m_mu_t_1.dat contains the time evolution of the scalar product between electric and magnetic dipoles.
+
+sp_mol_mag_1.dat is the ECD specturm computed using make_spectra.x
+
+
+First run WaveT and then make_spectra
+
+
+Example with a delta pulse. Use Fmag='mag' in the input to turn off reading of ci_lt.inp, computing m(t) and ECD spectrum.

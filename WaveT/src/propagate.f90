@@ -24,6 +24,8 @@
       real(dbl)                   :: f_prev(3),f_prev2(3)
       real(dbl)                   :: mu_prev(3),mu_prev2(3),mu_prev3(3),&
                                     mu_prev4(3), mu_prev5(3)
+      complex(cmp)                :: m_prev(3),m_prev2(3),m_prev3(3),&
+                                     m_prev4(3), m_prev5(3) ! MM - test
       real(dbl),     allocatable  :: w(:), w_prev(:)
       real(dbl)                   :: eps
       logical                     :: first=.true.
@@ -31,8 +33,9 @@
 ! SC mu_a is the dipole moment at current step,
 !    int_rad is the classical radiated power at current step
 !    int_rad_int is the integral of the classical radiated power at current step
-      real(dbl) :: mu_a(3),int_rad,int_rad_int
-      integer(i4b) :: file_c=10,file_e=8,file_mu=9 
+      real(dbl) :: int_rad,int_rad_int,mu_a(3),sm
+      complex(cmp) :: m_a(3)
+      integer(i4b) :: file_c=10,file_e=8,file_mu=9,file_m=11,file_m_mu=12 !MM 
       save
       private
       public create_field, prop
@@ -52,7 +55,8 @@
        implicit none
        integer(i4b)                :: i,j,k
        complex(cmp), allocatable   :: ccexp(:) !SC 31/10/17: added to store exp(-ui*e(:)*dt), used in propagation
-       character(20)               :: name_e,name_c,name_d,name_mu
+       character(20)               :: name_e,name_c,name_d,name_mu, &
+                                      name_m, name_m_mu ! MM
 
        ! GG: 11/03/2019
        real(dbl), allocatable      :: q_or_f(:) !< reaction field or reaction-field polarization charges
@@ -65,25 +69,45 @@
        write(name_c,'(a4,i0,a4)') "c_t_",n_f,".dat"
        write(name_e,'(a4,i0,a4)') "e_t_",n_f,".dat"
        write(name_mu,'(a5,i0,a4)') "mu_t_",n_f,".dat"
+       if (Fmag.eq.'mag') then
+          write(name_m,'(a5,i0,a4)') "m_t_",n_f,".dat"
+          write(name_m_mu,'(a7,i0,a4)') "m_mu_t_",n_f,".dat"
+       endif
        if (Fres.eq.'Yesr') then
           if (Fbin.ne.'bin') then
              open (file_c,file=name_c,status="unknown",access="append")
              open (file_e,file=name_e,status="unknown",access="append")
              open (file_mu,file=name_mu,status="unknown",access="append")
+             if (Fmag.eq.'mag') then !MM
+              open(file_m,file=name_m,status="unknown",access="append")
+          open(file_m_mu,file=name_m_mu,status="unknown",access="append")
+             endif
           else
              open (file_c,file=name_c,status="unknown",access="append",form="unformatted")   
              open (file_e,file=name_e,status="unknown",access="append",form="unformatted")
              open (file_mu,file=name_mu,status="unknown",access="append",form="unformatted")  
+             if (Fmag.eq.'mag') then !MM
+              open(file_m,file=name_m,status="unknown",access="append",form="unformatted")
+          open(file_m_mu,file=name_m_mu,status="unknown",access="append",form="unformatted")
+             endif
           endif
        elseif (Fres.eq.'Nonr') then
           if (Fbin.ne.'bin') then
              open (file_c,file=name_c,status="unknown")
              open (file_e,file=name_e,status="unknown")
              open (file_mu,file=name_mu,status="unknown")
+             if (Fmag.eq.'mag') then !MM
+              open(file_m,file=name_m,status="unknown")
+              open(file_m_mu,file=name_m_mu,status="unknown")
+             endif
           else
              open(file_c,file=name_c,status="unknown",form="unformatted")
              open(file_e,file=name_e,status="unknown",form="unformatted")
            open(file_mu,file=name_mu,status="unknown",form="unformatted")
+             if (Fmag.eq.'mag') then !MM
+             open(file_m,file=name_m,status="unknown",form="unformatted")
+       open(file_m_mu,file=name_m_mu,status="unknown",form="unformatted")
+             endif
           endif
        endif
 ! ALLOCATING
@@ -134,6 +158,13 @@
           mu_prev3=mu_i_prev3
           mu_prev4=mu_i_prev4
           mu_prev5=mu_i_prev5 
+          if (Fmag.eq.'mag') then
+             m_prev=m_i_prev
+             m_prev2=m_i_prev2
+             m_prev3=m_i_prev3
+             m_prev4=m_i_prev4
+             m_prev5=m_i_prev5
+          endif
        endif
        h_int=zero  
        int_rad_int=0.d0
@@ -182,7 +213,10 @@
            endif
        endif
        if (Fres.eq.'Nonr') then
-          call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+          call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)          
+          if (Fmag.eq.'mag') then ! MM
+             call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
+          endif
           call add_int_vac(f_prev,h_int)
 ! SP 16/07/17: added call to output at step 0 to have full output in outfiles
           if (Fbin.ne.'bin') call out_header
@@ -254,6 +288,7 @@
        close (file_c)
        close (file_e)
        close (file_mu)
+       close (file_m)
 
        if(Fmdm.ne.'vac') call finalize_medium
 
@@ -308,39 +343,40 @@
 #endif
 
         f(:,:)=0.d0
-        select case (Ffld)
-        case ("mdg")
+        if (Flig.eq.'lin') then
+           select case (Ffld)
+           case ("mdg")
         ! Gaussian modulated sinusoid: exp(-(t-t0)^2/s^2) * sin(wt) 
-           do i=1,n_tot
-              t_a=dt*(i-1)
-              f(:,i) = fmax(:,1)*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))* & 
-                       sin(omega(1)*t_a)
-              do j=2,npulse
-                 f(:,i) = f(:,i) + fmax(:,j)*                   &
-                        exp(-pt5*(t_a-(t_mid+sum(tdelay(1:j-1))))**2/(sigma(j)**2))*   &
-                        sin(omega(j)*t_a+sum(pshift(1:j-1)))
-              enddo 
-           enddo
-        case ("mds")
+             do i=1,n_tot
+                t_a=dt*(i-1)
+                f(:,i) = fmax(:,1)*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))* & 
+                         sin(omega(1)*t_a)
+                do j=2,npulse
+                   f(:,i) = f(:,i) + fmax(:,j)*                   &
+                          exp(-pt5*(t_a-(t_mid+sum(tdelay(1:j-1))))**2/(sigma(j)**2))*   &
+                          sin(omega(j)*t_a+sum(pshift(1:j-1)))
+                enddo 
+             enddo
+           case ("mds")
         ! Cosine^2 modulated sinusoid: 1/2* cos^2(pi(t-t0)/(2t0)) * sin(wt) 
         !          f=0 for t>t0
-         i_max=int(t_mid/dt)
-         if (2*i_max.gt.n_tot) then
-            write(*,*) 'ERROR: 2*t_mid/dt must be smaller than', n_tot
+            i_max=int(t_mid/dt)
+            if (2*i_max.gt.n_tot) then
+              write(*,*) 'ERROR: 2*t_mid/dt must be smaller than', n_tot
 #ifdef MPI
-            call mpi_finalize(ierr_mpi)  
+              call mpi_finalize(ierr_mpi)  
 #endif
-            stop
-         endif
-         do i=1,2*i_max
-            t_a=dt*(dble(i)-1)
-            f(:,i)=fmax(:,1)*cos(pi*(t_a-t_mid)/(2*t_mid))**2* &
-                   sin(omega(1)*t_a)
-         enddo
-         do i=2*i_max+1,n_tot
-            t_a=dt*(i-1)
-            f(:,i)=0.
-         enddo
+              stop
+            endif
+            do i=1,2*i_max
+               t_a=dt*(dble(i)-1)
+               f(:,i)=fmax(:,1)*cos(pi*(t_a-t_mid)/(2*t_mid))**2* &
+                     sin(omega(1)*t_a)
+            enddo
+            do i=2*i_max+1,n_tot
+               t_a=dt*(i-1)
+               f(:,i)=0.
+            enddo
          !do j=2,npulse
          !   i_max=int((t_mid+sum(tdelay(1:j-1)))/dt)
          !   do i=1,2*i_max
@@ -354,38 +390,38 @@
          !      f(:,i)=0.
          !   enddo
          !enddo
-        case ("pip")
+         case ("pip")
         ! Pi pulse: cos^2(pi(t-t0)/(2s)) * cos(w(t-t0)) 
-         do i=1,n_tot
-            t_a=dt*(dble(i)-1)
-            f(:,i)=0.d0
-            if (abs(t_a-t_mid).lt.sigma(1)) then
-               f(:,i)=fmax(:,1)*(cos(pi*(t_a-t_mid)/(2*sigma(1))))**2* &
-               cos(omega(1)*(t_a-t_mid))
-            endif
-         enddo
-         do j=2,npulse
-            do i=1,n_tot
-               t_a=dt*(dble(i)-1)
-               if (abs(t_a-(t_mid+sum(tdelay(1:j-1)))).lt.sigma(j)) then
-                  f(:,i)=f(:,i)+fmax(:,j)*(cos(pi*(t_a-(t_mid+sum(tdelay(1:j-1))))/ &
-                  (2*sigma(j))))**2* &
-                  cos(omega(j)*(t_a-(t_mid+sum(tdelay(1:j-1))))+sum(pshift(1:j-1)))
+           do i=1,n_tot
+              t_a=dt*(dble(i)-1)
+              f(:,i)=0.d0
+               if (abs(t_a-t_mid).lt.sigma(1)) then
+                  f(:,i)=fmax(:,1)*(cos(pi*(t_a-t_mid)/(2*sigma(1))))**2* &
+                  cos(omega(1)*(t_a-t_mid))
                endif
-            enddo
-         enddo
-        case ("sin")
+           enddo
+           do j=2,npulse
+              do i=1,n_tot
+                 t_a=dt*(dble(i)-1)
+                 if (abs(t_a-(t_mid+sum(tdelay(1:j-1)))).lt.sigma(j)) then
+                    f(:,i)=f(:,i)+fmax(:,j)*(cos(pi*(t_a-(t_mid+sum(tdelay(1:j-1))))/ &
+                    (2*sigma(j))))**2* &
+                    cos(omega(j)*(t_a-(t_mid+sum(tdelay(1:j-1))))+sum(pshift(1:j-1)))
+                 endif
+              enddo
+           enddo
+           case ("sin")
         ! Sinusoid:  sin(wt) 
-         do i=1,n_tot
-            t_a=dt*(dble(i)-1)
-            f(:,i)=fmax(:,1)*sin(omega(1)*t_a)
-         enddo
+           do i=1,n_tot
+              t_a=dt*(dble(i)-1)
+              f(:,i)=fmax(:,1)*sin(omega(1)*t_a)
+           enddo
          
-        case ("snd")
+         case ("snd")
         ! Linearly modulated (up to t0) Sinusoid:
         !         0 < t < t0 : t/to* sin(wt) 
         !             t > t0 :       sin(wt) 
-         do i=1,n_tot
+           do i=1,n_tot
             t_a=dt*(dble(i)-1)
             if (t_a.gt.t_mid) then
                f(:,i)=fmax(:,1)*sin(omega(1)*t_a)
@@ -436,6 +472,33 @@
 #endif
          stop
         end select
+
+        elseif (Flig.eq.'cir') then
+           if (e_dir(1).ne.0) then
+           ! Light in the yz plane
+              do i=1,n_tot
+                 t_a=dt*(i-1)
+                 f(2,i)=f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*cos(omega(1)*t_a)
+                 f(3,i)=-f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*sin(omega(1)*t_a)
+              enddo
+           elseif (e_dir(2).ne.0) then
+           ! Light in the xz plane
+              do i=1,n_tot
+                 t_a=dt*(i-1)
+                 f(1,i)=f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*cos(omega(1)*t_a)
+                 f(3,i)=-f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*sin(omega(1)*t_a)
+              enddo
+           elseif (e_dir(3).ne.0) then
+           ! Light in the xy plane
+              do i=1,n_tot
+                 t_a=dt*(i-1)
+                 f(1,i)=f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*cos(omega(1)*t_a)
+                 f(2,i)=-f0*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))*sin(omega(1)*t_a)
+              enddo
+           endif
+        endif
+
+
         if (myrank.eq.0) then
         ! write out field 
            if (Fbin.ne.'bin') then
@@ -531,7 +594,83 @@
        return
  
       end subroutine do_mu
+!------------------------------------------------------------------------
+! @brief Compute C^T m C and save previous dipoles
+!
+! @date Created   : M. Monti 21/07/2022 MM
+! Modified  : 
+!------------------------------------------------------------------------
+      subroutine do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
 
+       implicit none
+
+       complex(cmp), intent(IN) :: c(nstates)
+       complex(cmp)             :: m_prev(3),m_prev2(3),m_prev3(3),m_prev4(3), &
+                                   m_prev5(3)
+       complex(cmp)             :: ctmp(nstates)
+       complex(cmp)             :: trans_mag_cmp(3,nstates,nstates)
+       integer(i4b)             :: j,k
+
+       trans_mag_cmp=cmplx(0.d0,trans_mag)
+#ifdef OMP
+       if (Fopt.eq.'omp') then
+          ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp)
+!$OMP DO
+          do k=1,nstates
+             do j=1,nstates
+                ctmp(k)=ctmp(k)+ trans_mag_cmp(1,k,j)*c(j)
+             enddo
+          enddo
+!$OMP END PARALLEL
+          m_a(1)=dot_product(c,ctmp)
+
+          ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp)
+!$OMP DO
+          do k=1,nstates
+             do j=1,nstates
+                ctmp(k)=ctmp(k)+ trans_mag_cmp(2,k,j)*c(j)
+             enddo
+          enddo
+!$OMP END PARALLEL
+          m_a(2)=dot_product(c,ctmp)
+
+          ctmp=0.d0
+!$OMP PARALLEL REDUCTION(+:ctmp)
+!$OMP DO
+          do k=1,nstates
+             do j=1,nstates
+                ctmp(k)=ctmp(k)+ trans_mag_cmp(3,k,j)*c(j)
+             enddo
+          enddo
+!$OMP END PARALLEL
+          m_a(3)=dot_product(c,ctmp)
+       else
+          m_a(1)=dot_product(c,matmul(trans_mag_cmp(1,:,:),c))
+          m_a(2)=dot_product(c,matmul(trans_mag_cmp(2,:,:),c))
+          m_a(3)=dot_product(c,matmul(trans_mag_cmp(3,:,:),c))
+       endif
+#endif
+#ifndef OMP
+       m_a(1)=dot_product(c,matmul(trans_mag_cmp(1,:,:),c))
+       m_a(2)=dot_product(c,matmul(trans_mag_cmp(2,:,:),c))
+       m_a(3)=dot_product(c,matmul(trans_mag_cmp(3,:,:),c))
+
+#endif
+! SC save previous mu for radiative damping
+       m_prev5=m_prev4
+       m_prev4=m_prev3
+       m_prev3=m_prev2
+       m_prev2=m_prev
+       m_prev=m_a
+
+!EC: scalar product between electric and magnetic dipole
+       sm = dot_product(mu_a,m_a)
+
+       return
+
+      end subroutine do_m
 !------------------------------------------------------------------------
 ! @brief Write output files 
 !
@@ -599,14 +738,25 @@
           write (fmt_ci,'("(i8,f14.4,",I0,"e17.8E3)")') 2*nstates
           write (file_c,fmt_ci) i,t,c(:)
           write (file_mu,'(i8,f14.4,3e22.10)') i,t,mu_a(:)
+          if (Fmag.eq.'mag') then
+              write (file_m,'(i8,f14.4,6e22.10)') i,t,dble(m_a(1)),aimag(m_a(1)),&
+                    dble(m_a(2)),aimag(m_a(2)),dble(m_a(3)),aimag(m_a(3))
+              write (file_m_mu,'(i8,f14.4,e22.10)') i,t,sm
+          endif
        else
           write (file_c) i,t,c(:)
           write (file_mu) i,t,mu_a(:)
+          if (Fmag.eq.'mag') then
+              write (file_m) i,t,dble(m_a(1)),aimag(m_a(1)),&
+                    dble(m_a(2)),aimag(m_a(2)),dble(m_a(3)),aimag(m_a(3))
+              write (file_m_mu) i,t,sm 
+          endif
        endif
 
        j=int(dble(i)/dble(n_out))
        if(j.lt.1) j=1
        Sdip(:,1,j)=mu_a(:)
+       if (Fmag.eq.'mag') Smag(:,1,j)=m_a(:)
 ! SP 270817: using get_* functions to communicate with TDPlas
        if(Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call get_medium_dip(Sdip(:,2,j))
        Sfld(:,j)=f(:,i)
@@ -621,6 +771,7 @@
 !
 ! @date Created   : 
 ! Modified  : E. Coccia 22/11/2017
+! Modified  : M. Monti 19/07/2022 MM
 !------------------------------------------------------------------------
       subroutine add_int_vac(f_prev,h_int)
 
@@ -628,18 +779,39 @@
 
        real(dbl), intent(IN)    :: f_prev(3)
        real(dbl), intent(INOUT) :: h_int(nstates,nstates)
-
+       real(dbl)                :: vec_prod(3),half_alpha ! e_dir vector f_prev -> vec_prod
        integer(i4b)             :: i,j
+
+       half_alpha = 1.d0/(2.d0*clight)
 
 ! SC 16/02/2016: changed to - sign, 
 
        h_int(:,:)=h_int(:,:)-trans_dipoles(1,:,:)*f_prev(1)-             &
                  trans_dipoles(2,:,:)*f_prev(2)-trans_dipoles(3,:,:)*f_prev(3)
+        !if (Fmag.eq.'mag') then
+        !   call cross(e_dir,f_prev,vec_prod)
+        !   h_int(:,:)=h_int(:,:)-half_alpha*trans_mag(1,:,:)*vec_prod(1)-  &
+        !              half_alpha*trans_mag(2,:,:)*vec_prod(2)- &
+        !              half_alpha*trans_mag(3,:,:)*vec_prod(3)
+        !endif
 
        return
  
       end subroutine add_int_vac
+!------------------------------------------------------------------------
+!------------------------------------------------------------------------
+      subroutine cross(e_dir,f_prev,vec_prod) !MM
+        implicit none
 
+        real(dbl), intent(IN)  :: f_prev(3), e_dir(3)
+        real(dbl), intent(OUT) :: vec_prod(3)
+
+        vec_prod(1)=e_dir(2)*f_prev(3)-e_dir(3)*f_prev(2)
+        vec_prod(2)=e_dir(3)*f_prev(1)-e_dir(1)*f_prev(3)
+        vec_prod(3)=e_dir(1)*f_prev(2)-e_dir(2)*f_prev(1)
+
+        return
+      end subroutine cross
 !------------------------------------------------------------------------
 ! @brief Calculate the Aharonov Lorentz radiative damping 
 !
@@ -713,8 +885,14 @@
               ' DE_vac(t)',' DG_eq(t)',' DG_neq(t)',  '  Const', &
               '  Rad. Int', '  Rad. Ene'   
       
-       write(file_mu,'(5a)') '#   istep time (au)',' dipole-x ', &
+       write(file_mu,'(4a)') '#   istep time (au)',' dipole-x ', &
               ' dipole-y ',' dipole-z '
+ 
+       if (Fmag.eq.'mag') then   
+          write(file_m,'(4a)') '#   istep time (au)',' mag_dipole-x ', &
+                ' mag_dipole-y ',' mag_dipole-z ' ! MM
+     write(file_m_mu,'(2a)') '#   istep time (au)',' dot_product(m,mu) ' 
+       endif
 
        return
     
@@ -772,6 +950,9 @@
           endif
           call add_int_vac(f_prev,h_int)
           call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+          if (Fmag.eq.'mag') then ! MM
+             call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
+          endif
           if (mod(2,n_out).eq.0) call output(2,c,f_prev,h_int)
        endif
 
@@ -860,6 +1041,9 @@
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, & 
                                                mu_prev4,mu_prev5,h_int)
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+            if (Fmag.eq.'mag') then ! MM
+               call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
+            endif
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
             if (mod(i,n_restart).eq.0) then
@@ -895,6 +1079,9 @@
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
                                                   mu_prev4,mu_prev5,h_int)
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+            if (Fmag.eq.'mag') then ! MM
+               call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
+            endif
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
             if (mod(i,n_restart).eq.0) then
@@ -943,6 +1130,9 @@
                                                mu_prev4,mu_prev5,h_int)
 
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+            if (Fmag.eq.'mag') then ! MM
+               call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
+            endif
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
             if (mod(i,n_restart).eq.0) then
@@ -1006,6 +1196,9 @@
           endif
           call add_int_vac(f_prev,h_int)
           call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+          if (Fmag.eq.'mag') then ! MM
+             call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
+          endif
           if (mod(2,n_out).eq.0) call output(2,c,f_prev,h_int)
        endif
 
@@ -1097,6 +1290,9 @@
                                                 mu_prev4,mu_prev5,h_int)
 
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+            if (Fmag.eq.'mag') then ! MM
+               call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
+            endif
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
             if (mod(i,n_restart).eq.0) then
@@ -1134,6 +1330,9 @@
                                                 mu_prev4,mu_prev5,h_int)
 
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+            if (Fmag.eq.'mag') then ! MM
+               call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
+            endif
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
             if (mod(i,n_restart).eq.0) then
@@ -1182,6 +1381,9 @@
                                                 mu_prev4,mu_prev5,h_int)
 
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
+            if (Fmag.eq.'mag') then ! MM
+               call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
+            endif
             if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
             if (mod(i,n_restart).eq.0) then
@@ -1261,7 +1463,14 @@
        write(ii,*) mu_prev3(1), mu_prev3(2), mu_prev3(3)
        write(ii,*) mu_prev4(1), mu_prev4(2), mu_prev4(3)
        write(ii,*) mu_prev5(1), mu_prev5(2), mu_prev5(3)
-
+       if (Fmag.eq.'mag') then
+          write(ii,*) 'Magnetic Dipoles'
+          write(ii,*) m_prev(1), m_prev(2), m_prev(3)
+          write(ii,*) m_prev2(1), m_prev2(2), m_prev2(3)
+          write(ii,*) m_prev3(1), m_prev3(2), m_prev3(3)
+          write(ii,*) m_prev4(1), m_prev4(2), m_prev4(3)
+          write(ii,*) m_prev5(1), m_prev5(2), m_prev5(3)
+       endif
 
        close(ii)
  

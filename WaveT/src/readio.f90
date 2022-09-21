@@ -37,7 +37,10 @@
       real(dbl), allocatable    :: e_ci(:)  ! energy from cis
       complex(cmp), allocatable :: c_i(:),c_i_t(:),c_i_prev(:),c_i_prev2(:) ! coefficients from cis
       real(dbl)                 :: mu_i_prev(3),mu_i_prev2(3),mu_i_prev3(3),mu_i_prev4(3),mu_i_prev5(3)
+      real(dbl)                 :: m_i_prev(3),m_i_prev2(3),m_i_prev3(3),m_i_prev4(3),m_i_prev5(3)
       real(dbl), allocatable    :: mut(:,:,:) !transition dipoles from cis
+      real(dbl), allocatable    :: lt(:,:,:)  !mag transition dip from cis - MM - test
+      real(dbl)                 :: e_dir(3)   ! Electric field direction - MM
       real(dbl), allocatable    :: nr_gam(:), de_gam(:) !decay rates for nonradiative and dephasing events
       real(dbl), allocatable    :: sp_gam(:) !decay rate for spontaneous emission  
       real(dbl), allocatable    :: sp_fact(:) !multiplicative factor for the decay rate for spontaneous emission
@@ -49,6 +52,7 @@
       real(dbl)                 :: restart_t  ! time for restart
       real(dbl)                 :: dt,tau(2),start,krnd
       real(dbl)                 :: Ip         !ionization energy
+      real(dbl)                 :: f0         !field amplitude for circular polarization
 ! SP 17/07/17: Changed to char flags
       !logical :: dis !turns on the dissipation
       !logical :: qjump ! =.true. quantum jump, =.false. stochastic propagation
@@ -79,6 +83,8 @@
       character(flg) :: Fbin !< Flag for writing output files with binary format
       character(flg) :: Fopt !< Flag for using OMP-optimized matrix/vector multiplication 
       character(flg) :: Fwrt !< Flag for SSE output
+      character(flg) :: Fmag !< Flag for magnetic interaction
+      character(flg) :: Flig !< Flag for linear or circular polarization
 ! Flags read from input file
       character(flg) :: medium,radiative,dissipative,lsim,absorber,binary,out_sse
       character(flg) :: dis_prop,prop_type
@@ -124,11 +130,14 @@
              mpibcast_e_dip,mpibcast_sse,mpibcast_restart,  &
              nspectra,Fabs,ion_rate,mpibcast_ion_rate,Fbin, &
              ncit,Fopt,ik,Fwrt,tar,all_pop,all_coh,pop,coh, &
-             write_bin,Ip,prop_type 
+             write_bin,Ip,prop_type,                        &
+             Fmag,lt,e_dir,m_i_prev,m_i_prev2, &
+             m_i_prev3,m_i_prev4,m_i_prev5,Flig,f0 !MM 
              
 !
       contains
 !
+!ciao
 !------------------------------------------------------------------------
 ! @brief Read input namelists 
 !
@@ -150,7 +159,7 @@
                          binary,ncit,Ip
        !External field paramaters
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
-                        npulse,tdelay,pshift
+                        npulse,tdelay,pshift,Fmag,e_dir,Flig,f0
        !Stochastic Schroedinger equation
        namelist /sse/ dissipative,idep,dis_prop,prop_type,nrnd,tdis,nr_typ,krnd,out_sse
        !Namelist spectra
@@ -282,6 +291,9 @@
           endif
          enddo
        enddo
+!        open(8,file='test_mut.dat',status='replace')
+!          write(8,*) mut(:,:,:)
+!        close(8)
 !       write(6,*) "mut"
 !       do i=1,n_ci
 !        do j=1,n_ci
@@ -289,8 +301,33 @@
 !        enddo
 !       enddo
        close(7)
+!test
+! MM 
+       if(Fmag.eq.'mag') then
+         open(7,file="ci_lt.inp",status="old")
+         allocate (lt(3,n_ci,n_ci))
+         do i=1,n_ci_read
+           if (i.le.n_ci) then
+              read(7,*)junk,junk,junk,junk,lt(1,1,i),lt(2,1,i),lt(3,1,i)
+              lt(:,i,1)=-lt(:,1,i)
+           else
+              read(7,*)
+           endif
+         enddo
+         do i=2,n_ci_read
+           do j =2,i
+             if (i.le.n_ci.and.j.le.n_ci) then
+                read(7,*)junk,junk,junk,junk,lt(1,i,j),lt(2,i,j),lt(3,i,j)
+                lt(:,j,i)=-lt(:,i,j)
+             else
+                read(7,*)
+             endif
+           enddo
+         enddo
+       endif
 
-
+       close(7)
+      
 !    read initial coefficients for the dynamics using the Slater determinants instead of the CIS_0 states.
        allocate (c_i(n_ci))
        if (Fres.eq.'Nonr') then
@@ -415,6 +452,14 @@
           read(ii,*) mu_i_prev3(1),mu_i_prev3(2),mu_i_prev3(3)
           read(ii,*) mu_i_prev4(1),mu_i_prev4(2),mu_i_prev4(3)
           read(ii,*) mu_i_prev5(1),mu_i_prev5(2),mu_i_prev5(3)
+          if (Fmag.eq.'mag') then
+             read(ii,*) junk
+             read(ii,*) m_i_prev(1),m_i_prev(2),m_i_prev(3)
+             read(ii,*) m_i_prev2(1),m_i_prev2(2),m_i_prev2(3)
+             read(ii,*) m_i_prev3(1),m_i_prev3(2),m_i_prev3(3)
+             read(ii,*) m_i_prev4(1),m_i_prev4(2),m_i_prev4(3)
+             read(ii,*) m_i_prev5(1),m_i_prev5(2),m_i_prev5(3)
+          endif
 
          close(ii)
 
@@ -802,6 +847,16 @@
        tdelay=0.d0
        ! Phase shift
        pshift=0.d0
+       ! Default: no CD calculation - MM
+       Fmag='dip'
+       ! E dir vector, default: along x - MM
+       e_dir(1)=1.d0
+       e_dir(2)=0.d0
+       e_dir(3)=0.d0
+       ! Linear polarization
+       Flig='lin'
+       ! Field amplitude for circular polarization
+       f0=0.d0
 
        return
 
@@ -812,16 +867,17 @@
 !
 ! @date Created   : E. Coccia 11 May 2017
 ! Modified  :
-! @param start,tau,dir_ft 
+! @param start,tau,dir_ft
 !------------------------------------------------------------------------
       subroutine init_nml_spectra()
 
        ! Parameter for computing spectra
        nspectra=1
        ! Parameter for computing spectra
-       tau(:)=zero
-       ! Direction fo the field (no field)
+       tau(:)=10000000
+       ! Direction for the signal 
        dir_ft=0.d0
+       dir_ft(3)=1.d0
 
        return
 
@@ -1008,6 +1064,7 @@
       subroutine write_nml_field()
 
        integer :: i
+       logical :: mag=.false.
 
        if (npulse.lt.1) then
            write(*,*) 'ERROR: number of pulses in input '
@@ -1018,15 +1075,6 @@
            stop
        endif
 
-       write (*,*) "Time shape of the perturbing field",Ffld
-       write (*,*) "time at the center of the pulse (au):",t_mid
-       write (*,*) "Width of the pulse (time au):",sigma(1)
-       write (*,*) "Frequency (au):",omega(1)
-       write (*,*) "Maximum E field (au)",fmax(:,1)
-       write (*,*) "Maximum E field (V/m)",fmax(:,1)*au_to_vm      
-       write (*,*) "Maximum intensity (W/cm^2)", fmax(:,1)**2*au_to_wcm2 
-
-
        !SC
        select case (radiative)
         case ('rad','Rad','RAD')
@@ -1034,6 +1082,20 @@
         case default
          Frad='non'
        end select
+
+       !MM
+       select case (Fmag)
+        case ('mag','Mag','MAG')
+         Fmag='mag'
+         write(*,*) "CD calculation activated w/ Fmag = ", Fmag
+         !write(*,*) "Field propagation along &
+         !              - Fmag case: ", e_dir
+         mag=.true.
+        case default
+         write(*,*) 'Only electric dipole'
+       end select
+
+
        do i=2,npulse
           write(*,*) 'Pulse no.', i
           write(*,*) 'Frequency (au) =', omega(i)
@@ -1042,7 +1104,32 @@
           write(*,*) 'Phase shift between pulse',i-1,'and pulse', i, '=', pshift(i-1)
           write(*,*) ''
        enddo
+
+       select case (Flig)
+        case ('lin','Lin','LIN')
+         write(*,*) 'Linear polarization'   
+        case ('cir','Cir','CIR')
+         write(*,*) 'Circular polarization'
+       end select
        write(*,*) ''
+
+       write (*,*) "Time shape of the perturbing field",Ffld
+       write (*,*) "time at the center of the pulse (au):",t_mid
+       write (*,*) "Width of the pulse (time au):",sigma(1)
+       write (*,*) "Frequency (au):",omega(1)
+       if (Flig.eq.'lin') then
+          write (*,*) "Maximum E field (au)",fmax(:,1)
+          write (*,*) "Maximum E field (V/m)",fmax(:,1)*au_to_vm
+          write (*,*) "Maximum intensity (W/cm^2)", fmax(:,1)**2*au_to_wcm2 
+       elseif (Flig.eq.'cir') then
+          write (*,*) "Maximum E field (au)",f0
+          write (*,*) "Maximum E field (V/m)",f0*au_to_vm
+          write (*,*) "Maximum intensity (W/cm^2)",f0**2*au_to_wcm2 
+          write (*,*) "Propagation direction", e_dir(:)          
+       endif
+       write(*,*) ''
+
+
 
        return
 
@@ -1063,7 +1150,7 @@
 
        write(*,*) 'Starting point for FT calculation', start
        write(*,*) 'Artificial damping', (tau(i),i=1,nspectra)
-       write(*,*) 'Direction along which the field is oriented', dir_ft
+       !write(*,*) 'Direction along which the field is oriented', dir_ft
        write(*,*) ''
 
        return
@@ -1279,6 +1366,7 @@
        call mpi_bcast(pshift,    npulsemax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(tdelay,    npulsemax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(fmax,      3*npulsemax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(f0,        1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
 
        call mpi_bcast(propa,       flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(lsim,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
@@ -1301,6 +1389,8 @@
        call mpi_bcast(Fabs,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fbin,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fopt,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Fmag,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(Flig,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
 #endif
 
        return 
@@ -1324,7 +1414,10 @@
 
        call mpi_bcast(e_ci,      n_ci,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(mut,       3*n_ci*n_ci,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-
+       if (Fmag.eq.'mag' ) then 
+          call mpi_bcast(lt,       3*n_ci*n_ci,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+          call mpi_bcast(e_dir,    3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       endif    
        call mpi_bcast(c_i,       2*n_ci,MPI_COMPLEX,0,MPI_COMM_WORLD,ierr_mpi)
 #endif
 
@@ -1412,6 +1505,13 @@
        call mpi_bcast(mu_i_prev3,   3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(mu_i_prev4,   3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(mu_i_prev5,   3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       if (Fmag.eq.'mag') then
+           call mpi_bcast(m_i_prev,3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_bcast(m_i_prev2,3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_bcast(m_i_prev3,3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_bcast(m_i_prev4,3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+           call mpi_bcast(m_i_prev5,3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       endif
 
        call mpi_bcast(c_i_t,        2*n_ci,MPI_COMPLEX,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(c_i_prev,     2*n_ci,MPI_COMPLEX,0,MPI_COMM_WORLD,ierr_mpi)
