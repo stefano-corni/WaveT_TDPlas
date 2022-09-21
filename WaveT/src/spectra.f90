@@ -59,6 +59,7 @@
            allocate (Moutp(vdim))
         endif
         dw=2*pi/dble(vdim)/dt*au_to_ev
+        imax=int(vdim/two)
         do i=1,int(vdim/two)
            wmax=(i-1)*dw
            if (wmax.gt.30.d0) then
