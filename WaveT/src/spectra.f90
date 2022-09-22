@@ -62,7 +62,7 @@
         imax=int(vdim/two)
         do i=1,int(vdim/two)
            wmax=(i-1)*dw
-           if (wmax.gt.30.d0) then
+           if (wmax.gt.30.d0/au_to_ev) then
               imax=i
               exit 
            endif
@@ -155,8 +155,8 @@
                 modF=sqrt(real(Foutp(i))**2+aimag(Foutp(i))**2)
                 phiD=atan2(aimag(Moutp(i)),real(Moutp(i))) + 0.5d0*pi
                 phiF=atan2(aimag(Foutp(i)),real(Foutp(i)))
-                absD=(modD/modF)*sin(phiD-phiF)/((i-1)*dw*ev_to_au)
-                refD=(modD/modF)*cos(phiD-phiF)/((i-1)*dw*ev_to_au)
+                absD=(modD/modF)*sin(phiD-phiF)/((i-1)*dw)
+                refD=(modD/modF)*cos(phiD-phiF)/((i-1)*dw)
                 !src=im/((i-1)*dw*Foutp(i))
                 !absD=aimag(Moutp(i)*src)
                 !refD=real(Moutp(i)*src)
@@ -237,7 +237,7 @@
       subroutine read_arrays
 
        integer(4) :: file_mol=10,file_fld=8,file_med=9,i,x,file_mag=11
-       real(8) :: t
+       real(8) :: t,rdum
        character(20) :: name_f
     
        write(name_f,'(a5,i0,a4)') "mu_t_",n_f,".dat"
@@ -270,7 +270,7 @@
        if (Fmag.eq.'mag') then
           Smag=0.d0
           do i=1,n_step
-             read (file_mag,'(i8,f14.4,6e22.10)') x,t,Smag(:,1,i)       
+             read (file_mag,'(i8,f14.4,7e22.10)') x,t,Smag(:,1,i),rdum       
           enddo
        endif
 
