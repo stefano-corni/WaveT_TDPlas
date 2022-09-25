@@ -444,7 +444,7 @@
 #endif
        allocate(scrd3(3))
        sgn=one
-       if(global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq."qnan") sgn=-one
+       if(global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq."qnan".or.global_medium_Fmdm.eq."cmix") sgn=-one
        if (global_medium_read_write.eq.'wri') then
        ! Write out geometric info and stop
          ! Build the cavity/nanoparticle surface
@@ -1439,7 +1439,6 @@ end subroutine
          scr1(:,i)=Sm12T(:,i)*K0x(i)
         enddo
         BEM_Q0x=-matmul(scr1,TSm12)
-        !BEM_Q0x=-mat_mat_mult(scr1,TSm12)
         do i=1,pedra_surf_n_tessere
           scr1(:,i)=Sm12T(:,i)*Kdx(i)
         enddo
@@ -1529,45 +1528,6 @@ end subroutine
 
        deallocate(scrc,scr2,scr3,BEM_WI)
     endif
- 
-       !> the following if should be controlled by a further keyword in the namelist
-       if( global_eps_Feps.eq."deb" ) then
-
-               write(*,*) "Q0 is calculated outside the BEM diagonal framework!"
-
-               !> Conforming -(2*Pi - DA)
-
-               allocate(BEM_2ppDA(pedra_surf_n_tessere,pedra_surf_n_tessere))
-
-               BEM_2ppDA = zero
-               do i = 1, pedra_surf_n_tessere
-                 BEM_2ppDA(:,i) = BEM_D(:,i) * pedra_surf_tessere(i)%area
-                 BEM_2ppDA(i,i) = BEM_2ppDA(i,i) - twp
-               end do
-
-               !> Conforming (2*Pi (eps+1)/(eps-1) - DA) * S
-
-               allocate(scr0(pedra_surf_n_tessere,pedra_surf_n_tessere))
-
-               scr0 = zero
-               do i = 1, pedra_surf_n_tessere
-                 scr0(:,i) = -BEM_D(:,i) * pedra_surf_tessere(i)%area
-                 scr0(i,i) = scr0(i,i) + twp * fac_eps0
-               end do
-
-               scr0 = matmul(scr0,BEM_S)
-
-               !> Inverting (2*Pi (eps+1)/(eps-1) - DA) * S
-
-               scr0 = inv(scr0)
-
-               !> Conforming -S^-1 * (2*Pi (eps+1)/(eps-1) - DA)^-1 * (2*Pi - DA)
-
-               BEM_Q0=matmul(scr0,BEM_2ppDA)
-
-               deallocate(scr0,BEM_2ppDA)
-
-       endif
 
        deallocate(scr1)
        if (tp_myrank.eq.0) write(6,*) "Done BEM diagonal"
@@ -1634,7 +1594,7 @@ end subroutine
        
        allocate(scr2(pedra_surf_n_tessere,pedra_surf_n_tessere))
 
-       if (global_eps_Feps.eq."gen" .or. global_medium_Fmdm.ne.'cmix' ) then
+       if (global_eps_Feps.eq."gen") then
             scr2=-BEM_ADt
             allocate(scr4(pedra_surf_n_tessere,pedra_surf_n_tessere))
             scr4=kf0(npoles)*scr2
@@ -1656,8 +1616,6 @@ end subroutine
        
        ! Form eps0 dependent matrix term
 
-
-       if( global_medium_Fmdm.ne.'cmix' ) then
        if( global_eps_Feps.eq."deb" .or. global_eps_Feps.eq."drl" ) then
            if(global_eps_Feps.eq."deb") then
              fact_eps = (debye_eps_0+one) / (debye_eps_0-one)
@@ -1672,11 +1630,6 @@ end subroutine
            scr2(i,i)= scr2(i,i) + one/sum(kf0)
          enddo
        endif
-       else
-         do i=1,pedra_surf_n_tessere
-           scr2(i,i)= scr2(i,i) + one/sum(kf0)
-         enddo
-       endif
 
        ! inverse
        scr2 = inv(scr2)
@@ -1687,7 +1640,7 @@ end subroutine
 
        ! Form Q0
 
-       if ( global_eps_Feps.eq."gen" .or. global_medium_Fmdm.ne.'cmix' ) then
+       if ( global_eps_Feps.eq."gen" ) then
                BEM_Q0=-matmul(scr2,matmul(BEM_Sm1,BEM_2ppDA))
        else
                BEM_Q0=-matmul(BEM_Sm1,matmul(scr2,BEM_2ppDA))
@@ -1697,22 +1650,18 @@ end subroutine
 
        allocate(scr3(pedra_surf_n_tessere,pedra_surf_n_tessere))
 
-       if (global_eps_Feps.eq."gen" .or. global_medium_Fmdm.ne.'cmix' ) then
+       if (global_eps_Feps.eq."gen") then
             scr3=-BEM_ADt
        else
             scr3 = scr1
        endif
 
-       if( global_medium_Fmdm.ne.'cmix' ) then
-         if(global_eps_Feps.eq."deb") then
-           fact_eps = (debye_eps_d+one) / (debye_eps_d-one)
-         elseif(global_eps_Feps.eq."drl") then
-           fact_eps = (drudel_eps_d+one) / (drudel_eps_d-one)
-         elseif (global_eps_Feps.eq."gen") then
-           fact_eps = (readf_eps_d+one) / (readf_eps_d-one)
-         endif
-       else
-           fact_eps = (readf_eps_d+readf_eps_d_dum) / (readf_eps_d-readf_eps_d_dum)
+       if(global_eps_Feps.eq."deb".and.global_medium_Fmdm.ne.'cmix') then
+         fact_eps = (debye_eps_d+one) / (debye_eps_d-one)
+       elseif(global_eps_Feps.eq."drl".and.global_medium_Fmdm.ne.'cmix') then
+         fact_eps = (drudel_eps_d+one) / (drudel_eps_d-one)
+       elseif (global_eps_Feps.eq."gen".and.global_medium_Fmdm.eq.'cmix') then
+         fact_eps = (readf_eps_d+one) / (readf_eps_d-one)
        endif
 
        do i=1,pedra_surf_n_tessere
@@ -1725,7 +1674,7 @@ end subroutine
 
        ! Form Qd
 
-       if(global_eps_Feps.eq."gen" .or. global_medium_Fmdm.ne.'cmix' ) then
+       if(global_eps_Feps.eq."gen") then
                BEM_Qd=-matmul(scr3,matmul(BEM_Sm1,BEM_2ppDA))
        else
                BEM_Qd=-matmul(BEM_Sm1,matmul(scr3,BEM_2ppDA))
@@ -1741,7 +1690,7 @@ end subroutine
 
         deallocate(scr1)
 
-        if (global_eps_Feps.eq."gen" .or. global_medium_Fmdm.ne.'cmix' ) then
+        if (global_eps_Feps.eq."gen") then
                 BEM_Q0x=matmul(scr2,matmul(BEM_Sm1,BEM_2ppDAx))
                 BEM_Qdx=matmul(scr3,matmul(BEM_Sm1,BEM_2ppDAx))
         else
@@ -1791,7 +1740,7 @@ end subroutine
        allocate(scr1(pedra_dum_n_tessere,pedra_dum_n_tessere))
        scr1=zero
        do i=1,pedra_dum_n_tessere
-         scr1(:,i)= -sgn * BEM_Ddum(:,i)*pedra_dum_tessere(i)%area
+         scr1(:,i)= -BEM_Ddum(:,i)*pedra_dum_tessere(i)%area
        enddo
 
        ! Form transpose DA
@@ -1818,7 +1767,7 @@ end subroutine
        ! Form eps0 dependent matrix term
 
        do i=1,pedra_dum_n_tessere
-         scr2(i,i)= scr2(i,i) + one/sum(kf0)
+         scr2(i,i)= scr2(i,i) + one/sum(kf0_dum)
        enddo
 
        ! inverse
@@ -1860,13 +1809,11 @@ end subroutine
           BEM_2ppDAx_dum(i,i)= -BEM_2ppDAx_dum(i,i) + twp
         enddo
 
-        deallocate(scr1)
-
         BEM_Q0x_dum=matmul(scr2,matmul(BEM_Sm1_dum,BEM_2ppDAx_dum))
         BEM_Qdx_dum=matmul(scr3,matmul(BEM_Sm1_dum,BEM_2ppDAx_dum))
        endif
 
-       deallocate(scr2,scr3)
+       deallocate(scr1,scr2,scr3)
 
        if (tp_myrank.eq.0) write(6,*) "Done BEM mix"
 
@@ -2194,6 +2141,10 @@ end subroutine
        if(global_eps_Feps.eq."gen") then
               allocate(poles(pedra_surf_n_tessere))
        endif
+
+       if( (pedra_surf_Fdum.eq."yes".and.global_medium_Fmdm.eq.'cnan').or.&
+            global_medium_Fmdm.eq.'cmix' ) call do_BEM_dum
+
        return
 
       end subroutine init_BEM_diagonal
@@ -2212,9 +2163,6 @@ end subroutine
        if(global_medium_Floc.eq.'loc'.and.global_medium_Fmdm.eq.'csol') &
         allocate(BEM_2ppDAx(pedra_surf_n_tessere,pedra_surf_n_tessere))
 
-       if( (pedra_surf_Fdum.eq."yes".and.global_medium_Fmdm.eq.'cnan').or.&
-            global_medium_Fmdm.eq.'cmix' ) call do_BEM_dum
-
        if( global_medium_Fmdm.eq.'cmix' ) then
          allocate(BEM_Sm1_dum(pedra_dum_n_tessere,pedra_dum_n_tessere),&
                   BEM_2ppDA_dum(pedra_dum_n_tessere,pedra_dum_n_tessere),&
@@ -2222,6 +2170,9 @@ end subroutine
          if(global_medium_Floc.eq.'loc'.and.global_medium_Fmdm.eq.'csol') &
            allocate(BEM_2ppDAx_dum(pedra_dum_n_tessere,pedra_dum_n_tessere))
        endif
+
+       if( (pedra_surf_Fdum.eq."yes".and.global_medium_Fmdm.eq.'cnan').or.&
+            global_medium_Fmdm.eq.'cmix' ) call do_BEM_dum
 
        return
 
@@ -2713,7 +2664,7 @@ end subroutine
 
        BEM_Qf_dum = -matmul(BEM_Sm1_dum,BEM_2ppDA_dum)
 
-       if(global_medium_Floc.eq.'loc') BEM_Qfx_dum= matmul(BEM_2ppDAx_dum,BEM_2ppDAx_dum)
+       if(global_medium_Floc.eq.'loc') BEM_Qfx_dum= matmul(BEM_Sm1_dum,BEM_2ppDAx_dum)
 
        endif
 

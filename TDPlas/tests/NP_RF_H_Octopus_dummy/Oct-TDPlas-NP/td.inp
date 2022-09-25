@@ -5,7 +5,7 @@ XYZCoordinates = 'H.xyz'
 
 TDPropagator = aetrs
 TDTimeStep = 0.0023/eV
-TDMaxSteps = 4350
+TDMaxSteps = 50
 
 TDDeltaStrength = 0.01/angstrom
 TDPolarizationDirection = 3

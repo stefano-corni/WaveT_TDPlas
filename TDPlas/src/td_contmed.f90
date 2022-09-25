@@ -856,6 +856,14 @@
        allocate(qr_tp2(pedra_surf_n_tessere))
        qr_tp2(:)=qr_tp(:)
        dqr_t(:)=zero
+
+       if(global_medium_Fmdm.eq.'cmix') then
+       qr_dum_t(:)=qr_dum_tp(:)
+       allocate(qr_dum_tp2(pedra_dum_n_tessere))
+       qr_dum_tp2(:)=qr_dum_tp(:)
+       dqr_dum_t(:)=zero
+       endif
+
        if(global_prop_Fint.eq."ons") call do_field_from_charges(qr_t,fr_0)
        if(global_medium_Floc.eq."loc") then
          allocate(qx_t(pedra_surf_n_tessere))
@@ -911,19 +919,25 @@
           enddo
           if (npoles.ne.1) then
                   do ipoles=1,npoles-1
-                      fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+kf(ipoles)*(matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp))
-                      fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/pedra_surf_n_tessere
+                      fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+&
+                                         kf(ipoles)*(matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp))
+                      fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-&
+                                         sum(fqr_tp_p(:,ipoles))/pedra_surf_n_tessere
                   enddo
                   if (typ_prop.eq."0") then
-                          fqr_tp_p(:,npoles)=-w2(npoles)*qr_tp_p(:,npoles)+kf(npoles)*(matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp))
-                          fqr_tp_p(:,npoles)=fqr_tp_p(:,npoles)-sum(fqr_tp_p(:,npoles))/pedra_surf_n_tessere
+                          fqr_tp_p(:,npoles)=-w2(npoles)*qr_tp_p(:,npoles)+&
+                                             kf(npoles)*(matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp))
+                          fqr_tp_p(:,npoles)=fqr_tp_p(:,npoles)-&
+                                             sum(fqr_tp_p(:,npoles))/pedra_surf_n_tessere
                   else
                           fqr_tp_p(:,npoles)=matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp)
                   endif
           else
                   ipoles=1
-                  fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+kf(ipoles)*(matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp))
-                  fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/pedra_surf_n_tessere
+                  fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+&
+                                     kf(ipoles)*(matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp))
+                  fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-&
+                                     sum(fqr_tp_p(:,ipoles))/pedra_surf_n_tessere
           endif
           fqr_tp2_p(:)=zero
           fqr_tp3_p(:)=zero
@@ -943,27 +957,30 @@
 
           qr_dum_tp(:)=zero
           do ipoles=1,npoles_dum
-             qr_dum_tp_p(:,ipoles)=kf0_dum(ipoles)*(matmul(BEM_Qf_dum,pot_0)+matmul(BEM_ADt_dum,q0) )
+             qr_dum_tp_p(:,ipoles)=kf0_dum(ipoles)*(matmul(BEM_Qf_dum,pot_dum_0)+matmul(BEM_ADt_dum,q0_dum) )
              qr_dum_tp(:)=qr_dum_tp(:)+qr_dum_tp_p(:,ipoles)
           enddo
           if (npoles_dum.ne.1) then
                   do ipoles=1,npoles_dum-1
                       fqr_dum_tp_p(:,ipoles)=-w2_dum(ipoles)*qr_dum_tp_p(:,ipoles)+&
-                                              kf_dum(ipoles)*(matmul(BEM_Qf_dum,pot_tp)+matmul(BEM_ADt,qr_tp))
-                      fqr_dum_tp_p(:,ipoles)=fqr_dum_tp_p(:,ipoles)-sum(fqr_dum_tp_p(:,ipoles))/pedra_dum_n_tessere
+                                             kf_dum(ipoles)*(matmul(BEM_Qf_dum,pot_dum_tp)+matmul(BEM_ADt_dum,qr_dum_tp))
+                      fqr_dum_tp_p(:,ipoles)=fqr_dum_tp_p(:,ipoles)-&
+                                             sum(fqr_dum_tp_p(:,ipoles))/pedra_dum_n_tessere
                   enddo
                   if (typ_prop.eq."0") then
                           fqr_dum_tp_p(:,npoles_dum)=-w2_dum(npoles_dum)*qr_dum_tp_p(:,npoles_dum)+&
-                                                  kf_dum(npoles_dum)*(matmul(BEM_Qf_dum,pot_tp)+matmul(BEM_ADt_dum,qr_dum_tp))
-                          fqr_dum_tp_p(:,npoles_dum)=fqr_dum_tp_p(:,npoles_dum)-sum(fqr_dum_tp_p(:,npoles_dum))/pedra_dum_n_tessere
+                                             kf_dum(npoles_dum)*(matmul(BEM_Qf_dum,pot_dum_tp)+matmul(BEM_ADt_dum,qr_dum_tp))
+                          fqr_dum_tp_p(:,npoles_dum)=fqr_dum_tp_p(:,npoles_dum)-&
+                                                     sum(fqr_dum_tp_p(:,npoles_dum))/pedra_dum_n_tessere
                   else
-                          fqr_dum_tp_p(:,npoles_dum)=matmul(BEM_Qf_dum,pot_tp)+matmul(BEM_ADt_dum,qr_dum_tp)
+                          fqr_dum_tp_p(:,npoles_dum)=matmul(BEM_Qf_dum,pot_dum_tp)+matmul(BEM_ADt_dum,qr_dum_tp)
                   endif
           else
                   ipoles=1
                   fqr_dum_tp_p(:,ipoles)=-w2_dum(ipoles)*qr_dum_tp_p(:,ipoles)+&
-                                          kf_dum(ipoles)*(matmul(BEM_Qf_dum,pot_tp)+matmul(BEM_ADt,qr_tp))
-                  fqr_dum_tp_p(:,ipoles)=fqr_dum_tp_p(:,ipoles)-sum(fqr_dum_tp_p(:,ipoles))/pedra_dum_n_tessere
+                                         kf_dum(ipoles)*(matmul(BEM_Qf_dum,pot_dum_tp)+matmul(BEM_ADt_dum,qr_dum_tp))
+                  fqr_dum_tp_p(:,ipoles)=fqr_dum_tp_p(:,ipoles)-&
+                                         sum(fqr_dum_tp_p(:,ipoles))/pedra_dum_n_tessere
           endif
           fqr_dum_tp2_p(:)=zero
           fqr_dum_tp3_p(:)=zero
@@ -1457,8 +1474,12 @@
            potf_tp=matmul(BEM_S,qext)
          endif
          if(global_medium_Fmdm.eq.'cmix') then
-           pot_dum_tp=pot
-           if(global_medium_Floc.eq."loc") potf_dum_tp=potf
+           pot_tp=pot_tp+matmul(transpose(BEM_Sdum_act),qr_dum_tp)
+           pot_dum_tp=pot+matmul(BEM_Sdum_act,qr_tp)
+           if(global_medium_Floc.eq."loc") then
+             potf_tp=potf_tp+matmul(transpose(BEM_Sdum_act),qx_dum_tp)
+             potf_dum_tp=potf+matmul(BEM_Sdum_act,qx_tp)
+           endif
          endif
        else
          pot_tp = pot
@@ -1539,6 +1560,17 @@
          potf_tp2=potf_tp
        endif
 
+       if(global_medium_Fmdm.eq.'cmix') then
+       qr_dum_tp2=qr_dum_tp
+       qr_dum_tp=qr_dum_t
+       pot_dum_tp2=pot_dum_tp
+       if(global_medium_Floc.eq."loc") then
+         qx_dum_tp2=qx_dum_tp
+         qx_dum_tp=qx_dum_t
+         potf_dum_tp2=potf_dum_tp
+       endif
+       endif
+
        if(pedra_surf_Fdum.eq."yes".and.&
           (global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq.'cmix').and.&
           global_prop_Fprop.ne."chr-ons") then
@@ -1547,8 +1579,8 @@
          ! same for the local field
          if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z3,qx_tp)
          if(global_medium_Fmdm.eq.'cmix') then
-           qr=qr+qr_dum_t
-           if(global_medium_Floc.eq."loc") qx=qx+qx_dum_t
+           qr=qr+qr_dum_tp
+           if(global_medium_Floc.eq."loc") qx=qx+qx_dum_tp
          endif
        else
          qr = qr_tp
@@ -2096,7 +2128,7 @@
        if (typ_prop.eq."0") then
           ncycle=npoles_dum
        else
-            if(npoles_dum.eq.1) then
+            if(npoles_dum.eq.1.and.gg_dum(npoles_dum).ne.zero) then
                ncycle=npoles_dum
             else
                ncycle=npoles_dum-1
@@ -2143,13 +2175,14 @@
                 !second order method
                 fqr_dum_t_p(:,pidx)=matmul(BEM_Qf_dum,pot_dum_tp)+matmul(BEM_ADt_dum,qr_dum_tp)
                 dfqr_dum_t_p(:)=3*fqr_dum_t_p(:,pidx)-8*fqr_dum_tp_p(:,pidx)+7*fqr_dum_tp2_p(:)-2*fqr_dum_tp3_p(:)
-                qr_dum_t_p(:,pidx)=qr_dum_tp_p(:,pidx)+quantum_dt*dqr_dum_tp_p(:,pidx)+kf_dum(pidx)/(w2_dum(pidx))*dfqr_dum_t_p(:)
+                qr_dum_t_p(:,pidx)=qr_dum_tp_p(:,pidx)+quantum_dt*dqr_dum_tp_p(:,pidx)+&
+                                   kf_dum(pidx)/(w2_dum(pidx))*dfqr_dum_t_p(:)
                 dqr_dum_t_p(:,pidx)=dqr_dum_tp_p(:,pidx)+kf_dum(pidx)/(quantum_dt*w2_dum(pidx))*(dfqr_dum_t_p(:))
                 fqr_dum_tp3_p(:)=fqr_dum_tp2_p(:)
                 fqr_dum_tp2_p(:)=fqr_dum_tp_p(:,pidx)
                 dqr_dum_tp_p(:,pidx)=dqr_dum_t_p(:,pidx)
                 dfqr_dum_tp_p(:)=dfqr_dum_t_p(:)
-                fqr_tp_p(:,pidx)=fqr_t_p(:,pidx)
+                fqr_dum_tp_p(:,pidx)=fqr_dum_t_p(:,pidx)
            elseif (typ_prop.eq."3") then
                 fqr_dum_t_p(:,pidx)=matmul(BEM_ADt_dum,qr_dum_t)+matmul(BEM_Qf_dum,pot_dum_tp)
                 qr_dum_t_p(:,pidx)=kf0_dum(pidx)*matmul(BEM_ADtm1_dum,fqr_dum_tp_p(:,pidx))
@@ -3088,6 +3121,8 @@
         real(dbl), allocatable :: potf_aux(:)
         real(dbl), allocatable :: qaux(:)
         real(dbl), allocatable :: fullpotaux(:)
+        real(dbl), allocatable :: qr_now(:), qx_now(:)
+        real(dbl), allocatable :: qr_dum_now(:), qx_dum_now(:)
 
         if(pedra_surf_Fdum.eq."yes".and.&
            (global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq.'cmix').and.&
@@ -3112,8 +3147,10 @@
            allocate(qaux(pedra_dum_n_tessere+pedra_surf_n_tessere))
            qaux=matmul(BEM_Q0_super,fullpotaux)
            deallocate(fullpotaux)
-           qr_dum_tp=qaux(1:pedra_dum_n_tessere)
-           qr_tp=qaux(pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere)
+           allocate(qr_now(pedra_surf_n_tessere))
+           allocate(qr_dum_now(pedra_dum_n_tessere))
+           qr_dum_now=qaux(1:pedra_dum_n_tessere)
+           qr_now=qaux(pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere)
            deallocate(qaux)
            if(global_medium_Floc.eq."loc") then
            allocate(fullpotaux(pedra_dum_n_tessere+pedra_surf_n_tessere))
@@ -3122,15 +3159,17 @@
            allocate(qaux(pedra_dum_n_tessere+pedra_surf_n_tessere))
            qaux=matmul(BEM_Q0x_super,fullpotaux)
            deallocate(fullpotaux)
-           qx_dum_tp=qaux(1:pedra_dum_n_tessere)
-           qx_tp=qaux(pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere)
+           allocate(qx_now(pedra_surf_n_tessere))
+           allocate(qx_dum_now(pedra_dum_n_tessere))
+           qx_dum_now=qaux(1:pedra_dum_n_tessere)
+           qx_now=qaux(pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere)
            deallocate(qaux)
            endif
-           qr=matmul(BEM_Z3,qr_tp)
-           if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z3,qx_tp)
-           if(global_medium_Fmdm.eq.'cmix') then
-             qr=qr+qr_dum_tp
-             if(global_medium_Floc.eq."loc") qx=qx+qx_dum_tp
+           qr=matmul(BEM_Z3,qr_now)
+           qr=qr+qr_dum_now
+           if(global_medium_Floc.eq."loc") then
+             qx=matmul(BEM_Z3,qx_now)
+             qx=qx+qx_dum_now
            endif
           endif
         else

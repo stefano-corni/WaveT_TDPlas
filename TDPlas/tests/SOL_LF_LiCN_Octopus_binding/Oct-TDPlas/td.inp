@@ -5,7 +5,7 @@ XYZCoordinates = 'LiCN.xyz'
 
 TDPropagator = aetrs
 TDTimeStep = 0.0023/eV
-TDMaxSteps = 4350
+TDMaxSteps = 50
 
 radius = 12.0*angstrom
 spacing = 0.18*angstrom
@@ -14,7 +14,7 @@ PCMCalculation = yes
 PCMTDPlasBinding = yes
 PCMLocalField = yes
 
-amplitude = 1*eV/angstrom
+amplitude = 5*eV/angstrom
 omega = 18.0*eV
 tau0 = 0.5/eV
 t0 = tau0
