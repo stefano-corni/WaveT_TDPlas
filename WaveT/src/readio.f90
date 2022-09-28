@@ -1410,9 +1410,7 @@
           allocate(e_ci(n_ci))
           allocate(mut(3,n_ci,n_ci))
           allocate(c_i(n_ci))
-          if (Fmag.eq.'mag') then
-             allocate(lt(3,n_ci,n_ci))
-          endif         
+          if (Fmag.eq.'mag') allocate(lt(3,n_ci,n_ci))
        endif
 
        call mpi_bcast(e_ci,      n_ci,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
