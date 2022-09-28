@@ -40,7 +40,7 @@ FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024
 CPP=-cpp
 #CPP= -fpp
 
-LIBS = -mkl
+LIBS = -qmkl
 INC = -I/home/coccia/Libs/fftw-3.3.8
 
 # libraries to be linked - paths to be set by the user

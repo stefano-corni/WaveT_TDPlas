@@ -1,4 +1,4 @@
-FC = ifort
+FC = mpiifort
 
 # open mp flags
  # comment first line and uncommment the second for ifort
@@ -8,7 +8,7 @@ FC = ifort
 
  # mpi flags
 
- MPI=
+ MPI= -DMPI
 
  # other flags - to clean up?
 
@@ -17,7 +17,7 @@ FC = ifort
  # actual flags used in the compilation
  #FFLAGS= -O3 ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
  #FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
- FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024 -check bounds
+ FFLAGS= -O3 -ftz -align all ${OMP} ${MPI} -heap-arrays 1024 
 
  # preprocessor flag
  # comment the first and uncomment the second if compiler is ifort
@@ -25,12 +25,12 @@ FC = ifort
  CPP= -cpp
 
 
-LIBS = -mkl -lfftw3 -lm
-INC = -I/home/coccia/Libs/fftw-3.3.8
-INC = -I/home/coccia/Codes/WaveT_nondipole/WaveT/WaveT/src
+LIBS = -qmkl -lfftw3 -lm
+INC = #-I/home/coccia/Libs/fftw-3.3.8
+INC = #-I/home/coccia/Codes/WaveT_nondipole/WaveT/WaveT/src
 #INC = -I/usr/local/include
-LIBSPAR= -L/opt/scali/lib64 -lfmpi -lmpi
-INCPAR= -I/opt/scali/include64 -I/local/home/corni/emanuele/fftw-3.3.4/include/
+LIBSPAR= #-L/opt/scali/lib64 -lfmpi -lmpi
+INCPAR= #-I/opt/scali/include64 -I/local/home/corni/emanuele/fftw-3.3.4/include/
 
 # executable and tools directories
 
@@ -42,7 +42,7 @@ TOOLSPATH=tools
 WAVETOBJ = random.o constants.o readio.o spectra.o interface_tdplas.o scf.o QM_coupling.o dissipation.o initialise.o propagate.o
 OBJ= $(WAVETOBJ) main.o
 OBJ_SPECTRA= $(WAVETOBJ) main_spectra.o
-OBJ_VIB= constants.o readio.o $(TOOLSPATH)/vib.o $(TOOLSPATH)/vib_tool.o
+OBJ_VIB= random.o constants.o readio.o $(TOOLSPATH)/vib.o $(TOOLSPATH)/vib_tool.o
 OBJ_COH= constants.o $(TOOLSPATH)/coherence_tool.o
 OBJ_FFT= constants.o $(TOOLSPATH)/fft_tool.o
 OBJ_POP_COH= constants.o $(TOOLSPATH)/pop_coh_tool.o
@@ -189,7 +189,7 @@ initialise.o: constants.o readio.o interface_tdplas.o scf.o QM_coupling.o
 
 dissipation.o: random.o constants.o readio.o interface_tdplas.o
 
-propagate.o: spectra.o dissipation.o interface_tdplas.o initialise.o
+propagate.o: random.o spectra.o dissipation.o interface_tdplas.o initialise.o
 
 main_spectra.o: readio.o spectra.o interface_tdplas.o
 
