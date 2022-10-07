@@ -1,7 +1,7 @@
 # compilers
-FC = ifort
+#FC = ifort
 #FC = gfortran
-#FC = mpiifort
+FC = mpiifort
 # useful predefined compiler flags for different architectures and compilers
 # they are not necessarily used in the compiling unless you refer to them in FFLAGS
 #FFLAGS_XEON= -O3 -ftz -align -arch pn4 -tune pn4 -xN -tpp7
@@ -20,7 +20,7 @@ OMP= -qopenmp -DOMP
 #OMP= -qopenmp -DOMP
 
 # mpi flags (not used here)
-#MPI= -DMPI
+MPI= -DMPI
 
 LDLAGS=
 #LDLAGS= --static --disable-shared --enable-static
@@ -33,7 +33,7 @@ LDLAGS=
 #FFLAGS= -Og -g -fcheck-array-temporaries ${OMP} -fbounds-check #debug flag list to check coherence of array dimension 
 #FFLAGS= -Og -g ${OMP} -fPIC -m64 #-heap-arrays 1024  
 
-FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024
+FFLAGS= -O3 -ftz -align all ${OMP} ${MPI} -heap-arrays 1024 -check bounds 
 
 # preprocessor flag
 # comment the first and uncomment the second if compiler is ifort

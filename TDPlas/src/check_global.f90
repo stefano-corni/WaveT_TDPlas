@@ -4,6 +4,9 @@
 
         use global_tdplas
         use pedra_friends
+#ifdef MPI
+        use mpi
+#endif        
 
         implicit none
 

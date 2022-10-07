@@ -109,11 +109,8 @@
 
 
 
-
             call global_eps_init(d_entry_convert_to_internal(dict_Feps, user_input%epsilon_omega),       &
                                  d_entry_convert_to_internal(dict_typ_prop, user_input%propagation_pole))
-
-
 
 
             call global_medium_init(d_entry_convert_to_internal(dict_Fmdm,      user_input%medium_type),   &
@@ -124,8 +121,6 @@
                                     d_entry_convert_to_internal(dict_read_write,user_input%bem_read_write),&
                                     d_entry_convert_to_internal(dict_Fnorm,     user_input%normalization), &
                                     d_entry_convert_to_internal(dict_bem_sym,   user_input%bem_symmetric))
-
-
 
 
             call global_surface_init(d_entry_convert_to_internal(dict_Fsurf, user_input%surface_type))
