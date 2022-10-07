@@ -103,6 +103,7 @@
       integer(i4b)           :: npoles_dum    !< number of poles when general dielectric function is used
       type(poles_t) :: poles_eps_dum
       real(dbl), allocatable :: BEM_Q0_super(:,:),BEM_Q0x_super(:,:)
+      real(dbl), allocatable :: gauging_vector(:),gauging_vector_dum(:)
 
       save
       private
@@ -121,7 +122,7 @@
              qmol,qmolp,qext,qextp,npoles_dum,&
              BEM_Sdum,BEM_Sdum_act,BEM_Qf_dum,BEM_ADt_dum,BEM_Qfx_dum,&
              gg_dum,w2_dum,kf_dum,kf0_dum,BEM_ADtm1_dum,BEM_Q0_dum,BEM_Q0x_dum,&
-             BEM_Q0_super,BEM_Q0x_super
+             BEM_Q0_super,BEM_Q0x_super,BEM_Sm1,BEM_Sm1_dum,gauging_vector,gauging_vector_dum
 
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -517,12 +518,12 @@
        if(allocated(poles)) deallocate(poles)
        if(allocated(BEM_2ppDA)) deallocate(BEM_2ppDA)
        if(allocated(BEM_2ppDAx)) deallocate(BEM_2ppDAx)
-       if(allocated(BEM_Sm1)) deallocate(BEM_Sm1)
+       !if(allocated(BEM_Sm1)) deallocate(BEM_Sm1)
 
        if(allocated(BEM_Ddum)) deallocate(BEM_Ddum)
        if(allocated(BEM_2ppDA_dum)) deallocate(BEM_2ppDA_dum)
        if(allocated(BEM_2ppDAx_dum)) deallocate(BEM_2ppDAx_dum)
-       if(allocated(BEM_Sm1_dum)) deallocate(BEM_Sm1_dum)
+       !if(allocated(BEM_Sm1_dum)) deallocate(BEM_Sm1_dum)
        return
 
       end subroutine finalize_BEM
@@ -1830,7 +1831,8 @@ end subroutine
 !------------------------------------------------------------------------
 
        integer(i4b) :: i,j
-       real(dbl), allocatable :: scr1(:,:),scr2(:,:),scr3(:,:)
+       real(dbl), allocatable :: scr1(:,:)
+       real(dbl), allocatable :: ones(:)
 
 
 #ifndef MPI
@@ -1847,36 +1849,38 @@ end subroutine
 
        ! inverse of S'' for dummy surface
 
-       allocate(scr1(pedra_dum_n_tessere,pedra_dum_n_tessere))
+       if(.not.allocated(BEM_Sm1_dum)) then
 
-       scr1 = inv(BEM_Sdum)
+       allocate(BEM_Sm1_dum(pedra_dum_n_tessere,pedra_dum_n_tessere))
+
+       BEM_Sm1_dum = inv(BEM_Sdum)
 
        deallocate(BEM_Sdum)
 
-       ! Form D''A'' for dummy surface
+       endif
 
-       allocate(scr2(pedra_dum_n_tessere,pedra_dum_n_tessere))
-
-       scr2 = zero
-       do i=1,pedra_dum_n_tessere
-         scr2(:,i)= BEM_Ddum(:,i)*pedra_dum_tessere(i)%area
-       enddo
+       allocate(ones(pedra_dum_n_tessere),gauging_vector_dum(pedra_dum_n_tessere))
+       ones(:)=one
+       gauging_vector_dum = matmul(BEM_Sm1_dum,ones)/sum(BEM_Sm1_dum)
+       deallocate(ones)
 
        ! Form 2 pi - D''A'' for dummy surface
 
-       allocate(scr3(pedra_dum_n_tessere,pedra_dum_n_tessere))
+       allocate(scr1(pedra_dum_n_tessere,pedra_dum_n_tessere))
 
+       scr1 = zero
        do i=1,pedra_dum_n_tessere
-         scr3(i,i)= -scr2(i,i) + twp
+         scr1(:,i)= -BEM_Ddum(:,i)*pedra_dum_tessere(i)%area
+         scr1(i,i)= scr1(i,i) + twp
        enddo
 
        ! Form S''^-1 (2 pi - D''A'') / 4 pi for dummy surface
 
        allocate(BEM_Z1_mol(pedra_dum_n_tessere,pedra_dum_n_tessere))
 
-       BEM_Z1_mol = matmul(scr1,scr3)/4.0d0/pi
+       BEM_Z1_mol = matmul(BEM_Sm1_dum,scr1) * 0.25d0/pi
 
-       deallocate(scr3)
+       deallocate(scr1)
 
        if(global_medium_Floc=='loc') then
        ! I - Dummy charges that reproduce external potential outside dummy surface
@@ -1884,121 +1888,82 @@ end subroutine
 
        ! Form 2 pi + D''A'' for dummy surface
 
-       allocate(scr3(pedra_dum_n_tessere,pedra_dum_n_tessere))
+       allocate(scr1(pedra_dum_n_tessere,pedra_dum_n_tessere))
 
+       scr1 = zero
        do i=1,pedra_dum_n_tessere
-         scr3(i,i)= scr2(i,i) + twp
+         scr1(:,i)= BEM_Ddum(:,i)*pedra_dum_tessere(i)%area
+         scr1(i,i)= scr1(i,i) + twp
        enddo
 
-       deallocate(scr2)
-
-       ! Form S''^-1 (2 pi + D''A'')/4 pi for dummy surface
+       ! Form -S''^-1 (2 pi + D''A'')/4 pi for dummy surface
 
        allocate(BEM_Z1_ext(pedra_dum_n_tessere,pedra_dum_n_tessere))
 
-       BEM_Z1_ext = -matmul(scr1,scr3)/4.0d0/pi
+       BEM_Z1_ext = -matmul(BEM_Sm1_dum,scr1) * 0.25d0/pi
+
+       deallocate(scr1)
 
        endif
 
-       deallocate(scr1)
-       if(allocated(scr2)) deallocate(scr2)
-       if(allocated(scr3)) deallocate(scr3)
-
        ! II - Dummy charges at dummy surface to dummy charges at actual surface
 
-       ! Form DA for actual surface
+       if(.not.allocated(BEM_Sm1)) then
+
+       BEM_Sm1 = inv(BEM_S)
+
+       endif
+
+       allocate(ones(pedra_surf_n_tessere),gauging_vector(pedra_surf_n_tessere))
+       ones(:)=one
+       gauging_vector = matmul(BEM_Sm1,ones)/sum(BEM_Sm1)
+       deallocate(ones)
+
+       ! Form 2 pi + DA for actual surface
 
        allocate(scr1(pedra_surf_n_tessere,pedra_surf_n_tessere))
 
        scr1 = zero
        do i=1,pedra_surf_n_tessere
          scr1(:,i)= BEM_D(:,i)*pedra_surf_tessere(i)%area
+         scr1(i,i)= scr1(i,i) + twp
        enddo
-
-       ! Form 4 pi + DA for actual surface
-
-       do i=1,pedra_surf_n_tessere
-         !scr1(i,i)= scr1(i,i) + 4.0d0*pi
-         scr1(i,i)= -scr1(i,i) + 4.0d0*pi
-       enddo
-
-       allocate(scr2(pedra_surf_n_tessere,pedra_surf_n_tessere))
-
-       ! inverse of 4 pi + DA for actual surface
-
-       scr2 = inv(scr1)
-
-       deallocate(scr1)
-
-       allocate(scr3(pedra_surf_n_tessere,pedra_dum_n_tessere))
 
        ! Build D' (and also S', used in td_contmed) [both with target in act (used in II) and in dum (used in III)]
 
        call do_BEM_dum_act
 
-       ! Form AD' bridging dummy and actual surface
+       deallocate(BEM_Dact_dum,BEM_Ddum_act) ! XXX
 
-       scr3 = zero
-       do i=1,pedra_surf_n_tessere
-         scr3(i,:)= BEM_Dact_dum(i,:)*pedra_surf_tessere(i)%area
-       enddo
-
-       deallocate(BEM_Dact_dum)
-
-       ! Form -(4 pi + DA)^-1 AD' bridging dummy and actual surface
+       ! Form -S^-1 (2 pi + DA) S' bridging dummy and actual surface
 
        allocate(BEM_Z2(pedra_surf_n_tessere,pedra_dum_n_tessere))
 
-       BEM_Z2 = -matmul(scr2,scr3)
+       BEM_Z2 = -matmul(inv(BEM_S),matmul(scr1,transpose(BEM_Sdum_act))) * 0.25d0/pi
 
-       deallocate(scr2,scr3)
+       deallocate(scr1)
 
        ! III - Actual polarization charges at actual surface to dummy charges at dummy surface
 
-       ! Form D''A'' for dummy surface
+       ! Form 2 pi + D''A'' for dummy surface
 
        allocate(scr1(pedra_dum_n_tessere,pedra_dum_n_tessere))
 
        scr1 = zero
        do i=1,pedra_dum_n_tessere
          scr1(:,i)= BEM_Ddum(:,i)*pedra_dum_tessere(i)%area
+         scr1(i,i)= scr1(i,i) + twp
        enddo
 
        deallocate(BEM_Ddum)
 
-       ! Form 4 pi - D''A'' for dummy surface
-
-       do i=1,pedra_dum_n_tessere
-         !scr1(i,i)= -scr1(i,i) + 4.0d0*pi
-         scr1(i,i)= scr1(i,i) + 4.0d0*pi
-       enddo
-
-       allocate(scr2(pedra_dum_n_tessere,pedra_dum_n_tessere))
-
-       ! inverse of 4 pi - D''A'' for dummy surface
-
-       scr2 = inv(scr1)
-
-       deallocate(scr1)
-
-       allocate(scr3(pedra_dum_n_tessere,pedra_surf_n_tessere))
-
-       ! Form A''D' bridging dummy and actual surface
-
-       scr3 = zero
-       do i=1,pedra_dum_n_tessere
-         scr3(i,:)= BEM_Ddum_act(i,:)*pedra_dum_tessere(i)%area
-       enddo
-
-       deallocate(BEM_Ddum_act)
-
-       ! Form (4 pi - D''A'')^-1 A''D' bridging dummy and actual surface
+       ! Form -S''^-1 (2 pi + D''A'') S'^T bridging dummy and actual surface
 
        allocate(BEM_Z3(pedra_dum_n_tessere,pedra_surf_n_tessere))
 
-       BEM_Z3 = matmul(scr2,scr3)
+       BEM_Z3 = -matmul(BEM_Sm1_dum,matmul(scr1,BEM_Sdum_act)) * 0.25d0/pi
 
-       deallocate(scr2,scr3)
+       deallocate(scr1)
 
        if (tp_myrank.eq.0) write(6,*) "Done BEM translator"
 

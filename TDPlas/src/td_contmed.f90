@@ -564,18 +564,40 @@
        complex(cmp) :: c_gs(quantum_n_ci)
        integer(i4b) :: its
 
+       real(dbl), allocatable :: qaux(:)
+
        if(pedra_surf_Fdum.eq."yes".and.&
           (global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq.'cmix').and.&
           global_prop_Fprop.ne."chr-ons") then
          qmolp=matmul(BEM_Z1_mol,pot_t)
+         ! gauging to keep potential value at dummy surface
+         allocate(qaux(pedra_dum_n_tessere))
+         qaux=matmul(BEM_Sm1_dum,pot_t)
+         qmolp(:)=qmolp(:)-sum(qmolp-qaux) * gauging_vector_dum(:)
+         deallocate(qaux)
          qmol=matmul(BEM_Z2,qmolp)
+         ! gauging to keep potential value at dummy surface
+         allocate(qaux(pedra_surf_n_tessere))
+         qaux=matmul(BEM_Sm1,matmul(transpose(BEM_Sdum_act),qmolp))
+         qmol(:)=qmol(:)-sum(qmol-qaux) * gauging_vector(:)
+         deallocate(qaux)
          allocate(pot_tp(pedra_surf_n_tessere))
          pot_tp=matmul(BEM_S,qmol)
          if(global_medium_Floc.eq."loc") then
            allocate(qextp(pedra_dum_n_tessere))
            qextp=matmul(BEM_Z1_ext,potf_t)
+           ! gauging to keep potential value at dummy surface
+           allocate(qaux(pedra_dum_n_tessere))
+           qaux=matmul(BEM_Sm1_dum,potf_t)
+           qextp(:)=qextp(:)-sum(qextp-qaux) * gauging_vector_dum(:)
+           deallocate(qaux)
            allocate(qext(pedra_surf_n_tessere))
            qext=matmul(BEM_Z2,qextp)
+           ! gauging to keep potential value at dummy surface
+           allocate(qaux(pedra_surf_n_tessere))
+           qaux=matmul(BEM_Sm1,matmul(transpose(BEM_Sdum_act),qextp))
+           qext(:)=qext(:)-sum(qext-qaux) * gauging_vector(:)
+           deallocate(qaux)
            allocate(potf_tp(pedra_surf_n_tessere))
            potf_tp=matmul(BEM_S,qext)
            allocate(potf_tp2(pedra_surf_n_tessere))
@@ -1040,8 +1062,20 @@
           global_prop_Fprop.ne."chr-ons") then
          ! dummy charges in dummy surface from polarization charges in actual surface
          qr=matmul(BEM_Z3,qr_tp)
+         ! gauging to keep potential value at dummy surface
+         allocate(qaux(pedra_dum_n_tessere))
+         qaux=matmul(BEM_Sm1_dum,matmul(BEM_Sdum_act,qr_tp))
+         qr(:)=qr(:)-sum(qr-qaux) * gauging_vector_dum(:)
+         deallocate(qaux)
          ! same for the local field
-         if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z3,qx_tp)
+         if(global_medium_Floc.eq."loc") then
+           qx=matmul(BEM_Z3,qx_tp)
+           ! gauging to keep potential value at dummy surface
+           allocate(qaux(pedra_dum_n_tessere))
+           qaux=matmul(BEM_Sm1_dum,matmul(BEM_Sdum_act,qx_tp))
+           qx(:)=qx(:)-sum(qx-qaux) * gauging_vector_dum(:)
+           deallocate(qaux)
+         endif
          if(global_medium_Fmdm.eq.'cmix') then
            qr=qr+qr_dum_tp
            if(global_medium_Floc.eq."loc") qx=qx+qx_dum_tp
@@ -1454,6 +1488,8 @@
       real(dbl), intent(out) :: qr(:) !< (1:nts_act)
       real(dbl), intent(out) :: qx(:) !< (1:nts_act)
 
+      real(dbl), allocatable :: qaux(:)
+
 #ifndef MPI
        tp_myrank=0
 #endif
@@ -1463,14 +1499,34 @@
           global_prop_Fprop.ne."chr-ons") then
          ! dummy charges in dummy surface reproducing molecular potential outside
          qmolp=matmul(BEM_Z1_mol,pot)
+         ! gauging to keep potential value at dummy surface
+         allocate(qaux(pedra_dum_n_tessere))
+         qaux=matmul(BEM_Sm1_dum,pot)
+         qmolp(:)=qmolp(:)-sum(qmolp-qaux) * gauging_vector_dum(:)
+         deallocate(qaux)
          ! dummy charges in actual surface reproducing molecular potential in between dummy and actual surface
          qmol=matmul(BEM_Z2,qmolp)
+         ! gauging to keep potential value at dummy surface
+         allocate(qaux(pedra_surf_n_tessere))
+         qaux=matmul(BEM_Sm1,matmul(transpose(BEM_Sdum_act),qmolp))
+         qmol(:)=qmol(:)-sum(qmol-qaux) * gauging_vector(:)
+         deallocate(qaux)
          pot_tp=matmul(BEM_S,qmol)
          if(global_medium_Floc.eq."loc") then
            ! dummy charges in dummy surface reproducing external potential outside
            qextp=matmul(BEM_Z1_ext,potf)
+           ! gauging to keep potential value at dummy surface
+           allocate(qaux(pedra_dum_n_tessere))
+           qaux=matmul(BEM_Sm1_dum,potf)
+           qextp(:)=qextp(:)-sum(qextp-qaux) * gauging_vector_dum(:)
+           deallocate(qaux)
            ! dummy charges in actual surface reproducing external potential in between dummy and actual surface
            qext=matmul(BEM_Z2,qextp)
+           ! gauging to keep potential value at dummy surface
+           allocate(qaux(pedra_surf_n_tessere))
+           qaux=matmul(BEM_Sm1,matmul(transpose(BEM_Sdum_act),qextp))
+           qext(:)=qext(:)-sum(qext-qaux) * gauging_vector(:)
+           deallocate(qaux)
            potf_tp=matmul(BEM_S,qext)
          endif
          if(global_medium_Fmdm.eq.'cmix') then
@@ -1576,8 +1632,20 @@
           global_prop_Fprop.ne."chr-ons") then
          ! dummy charges in dummy surface from polarization charges in actual surface
          qr=matmul(BEM_Z3,qr_tp)
+         ! gauging to keep potential value at dummy surface
+         allocate(qaux(pedra_dum_n_tessere))
+         qaux=matmul(BEM_Sm1_dum,matmul(BEM_Sdum_act,qr_tp))
+         qr(:)=qr(:)-sum(qr-qaux) * gauging_vector_dum(:)
+         deallocate(qaux)
          ! same for the local field
-         if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z3,qx_tp)
+         if(global_medium_Floc.eq."loc") then
+           qx=matmul(BEM_Z3,qx_tp)
+           ! gauging to keep potential value at dummy surface
+           allocate(qaux(pedra_dum_n_tessere))
+           qaux=matmul(BEM_Sm1_dum,matmul(BEM_Sdum_act,qx_tp))
+           qx(:)=qx(:)-sum(qx-qaux) * gauging_vector_dum(:)
+           deallocate(qaux)
+         endif
          if(global_medium_Fmdm.eq.'cmix') then
            qr=qr+qr_dum_tp
            if(global_medium_Floc.eq."loc") qx=qx+qx_dum_tp
@@ -3128,12 +3196,32 @@
            (global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq.'cmix').and.&
            global_prop_Fprop.ne."chr-ons") then
           qmolp=matmul(BEM_Z1_mol,pot)
+          ! gauging to keep potential value at dummy surface
+          allocate(qaux(pedra_dum_n_tessere))
+          qaux=matmul(BEM_Sm1_dum,pot)
+          qmolp(:)=qmolp(:)-sum(qmolp-qaux) * gauging_vector_dum(:)
+          deallocate(qaux)
           qmol=matmul(BEM_Z2,qmolp)
+          ! gauging to keep potential value at dummy surface
+          allocate(qaux(pedra_surf_n_tessere))
+          qaux=matmul(BEM_Sm1,matmul(transpose(BEM_Sdum_act),qmolp))
+          qmol(:)=qmol(:)-sum(qmol-qaux) * gauging_vector(:)
+          deallocate(qaux)
           allocate(pot_aux(pedra_surf_n_tessere))
           pot_aux=matmul(BEM_S,qmol)
           if(global_medium_Floc.eq."loc") then
             qextp=matmul(BEM_Z1_ext,potf)
+            ! gauging to keep potential value at dummy surface
+            allocate(qaux(pedra_dum_n_tessere))
+            qaux=matmul(BEM_Sm1_dum,potf)
+            qextp(:)=qextp(:)-sum(qextp-qaux) * gauging_vector_dum(:)
+            deallocate(qaux)
             qext=matmul(BEM_Z2,qextp)
+            ! gauging to keep potential value at dummy surface
+            allocate(qaux(pedra_surf_n_tessere))
+            qaux=matmul(BEM_Sm1,matmul(transpose(BEM_Sdum_act),qextp))
+            qext(:)=qext(:)-sum(qext-qaux) * gauging_vector(:)
+            deallocate(qaux)
             allocate(potf_aux(pedra_surf_n_tessere))
             potf_aux=matmul(BEM_S,qext)
           endif
@@ -3166,9 +3254,19 @@
            deallocate(qaux)
            endif
            qr=matmul(BEM_Z3,qr_now)
+           ! gauging to keep potential value at dummy surface
+           allocate(qaux(pedra_dum_n_tessere))
+           qaux=matmul(BEM_Sm1_dum,matmul(BEM_Sdum_act,qr_now))
+           qr(:)=qr(:)-sum(qr-qaux) * gauging_vector_dum(:)
+           deallocate(qaux)
            qr=qr+qr_dum_now
            if(global_medium_Floc.eq."loc") then
              qx=matmul(BEM_Z3,qx_now)
+             ! gauging to keep potential value at dummy surface
+             allocate(qaux(pedra_dum_n_tessere))
+             qaux=matmul(BEM_Sm1_dum,matmul(BEM_Sdum_act,qx_now))
+             qx(:)=qx(:)-sum(qx-qaux) * gauging_vector_dum(:)
+             deallocate(qaux)
              qx=qx+qx_dum_now
            endif
           endif
