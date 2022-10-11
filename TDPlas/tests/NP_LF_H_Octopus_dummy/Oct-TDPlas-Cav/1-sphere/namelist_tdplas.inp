@@ -1,5 +1,5 @@
 &SYSTEM
-test_type='n-r'
+test_type='n-l'
 /
 &OUT_MATRIX
 /

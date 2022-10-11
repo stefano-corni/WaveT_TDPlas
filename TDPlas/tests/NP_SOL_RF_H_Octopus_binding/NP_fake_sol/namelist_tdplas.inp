@@ -24,8 +24,8 @@ dum_sphere_radius= 4.7243149714
 &EPS_FUNCTION
 epsilon_omega='general'
 propagation_pole="first-order"
-eps_0_dum=1.01
-eps_d_dum=1.01
+eps_0_dum=1.0
+eps_d_dum=1.0
 /
 &PROPAGATE  
 propagation_type='charge-ief'

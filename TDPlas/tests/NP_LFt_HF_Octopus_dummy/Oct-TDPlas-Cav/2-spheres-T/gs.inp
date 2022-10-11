@@ -1,0 +1,14 @@
+CalculationMode = gs
+UnitsOutput = eV_Angstrom
+
+XYZCoordinates = 'HF.xyz'
+
+PseudopotentialSet = hgh_lda
+
+radius = 10.0*angstrom
+spacing = 0.23*angstrom
+
+PCMCalculation = yes
+PCMTDPlasBinding = yes
+
+FromScratch = yes
