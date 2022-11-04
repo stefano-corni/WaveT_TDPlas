@@ -426,6 +426,12 @@
             spheroid_radius      =       user_input%spheroid_radius
             inversion            =       user_input%inversion
             find_spheres         =       user_input%find_spheres
+            dummy_surface         = user_input%dummy_surface
+            dum_spheres_number    = user_input%dum_spheres_number
+            dum_sphere_position_x = user_input%dum_sphere_position_x
+            dum_sphere_position_y = user_input%dum_sphere_position_y
+            dum_sphere_position_z = user_input%dum_sphere_position_z
+            dum_sphere_radius     = user_input%dum_sphere_radius
 
 
 

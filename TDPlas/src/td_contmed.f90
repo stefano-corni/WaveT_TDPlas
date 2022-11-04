@@ -584,14 +584,12 @@
          allocate(pot_tp(pedra_surf_n_tessere))
          pot_tp=matmul(BEM_S,qmol)
          if(global_medium_Floc.eq."loc") then
-           allocate(qextp(pedra_dum_n_tessere))
            qextp=matmul(BEM_Z1_ext,potf_t)
            ! gauging to keep potential value at dummy surface
            allocate(qaux(pedra_dum_n_tessere))
            qaux=matmul(BEM_Sm1_dum,potf_t)
            qextp(:)=qextp(:)-sum(qextp-qaux) * gauging_vector_dum(:)
            deallocate(qaux)
-           allocate(qext(pedra_surf_n_tessere))
            qext=matmul(BEM_Z2,qextp)
            ! gauging to keep potential value at dummy surface
            allocate(qaux(pedra_surf_n_tessere))
@@ -2060,7 +2058,7 @@
        if (typ_prop.eq."0") then
           ncycle=npoles
        else
-            if(npoles.eq.1) then
+            if(npoles.eq.1.and.gg(npoles).ne.zero) then
                ncycle=npoles
             else
                ncycle=npoles-1
@@ -2109,7 +2107,7 @@
         qx_t(:) = qx_t(:) + qx_t_p(:,pidx)
        endif
        enddo
-       if (typ_prop.ne."0".and.npoles.ne.1) then
+       if (typ_prop.ne."0".and.(npoles.ne.1.or.(npoles.eq.1.and.gg(npoles).eq.zero))) then
            pidx=npoles
            if (typ_prop.eq."1") then
                 !derivative method
@@ -2232,7 +2230,7 @@
        endif
        enddo
 
-       if (typ_prop.ne."0".and.npoles_dum.ne.1) then
+       if (typ_prop.ne."0".and.(npoles_dum.ne.1.or.(npoles_dum.eq.1.and.gg_dum(npoles_dum).eq.zero))) then
            pidx=npoles_dum
            if (typ_prop.eq."1") then
                 !derivative method
