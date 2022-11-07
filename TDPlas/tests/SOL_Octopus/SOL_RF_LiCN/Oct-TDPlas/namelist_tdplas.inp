@@ -15,7 +15,6 @@ bem_read_write='read'
 &SURFACE
 surface_type='mesh'
 input_mesh='read_file'
-dummy_surface='no'
 /
 
 &EPS_FUNCTION
