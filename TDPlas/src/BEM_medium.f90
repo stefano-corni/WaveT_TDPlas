@@ -191,7 +191,7 @@
            if(global_medium_Fmdm.eq.'cmix') then
              allocate(BEM_Qd_dum(pedra_dum_n_tessere,pedra_dum_n_tessere))
              allocate(BEM_Q0_dum(pedra_dum_n_tessere,pedra_dum_n_tessere))
-             if(global_medium_Floc.eq.'loc'.and.global_medium_Fmdm.eq.'csol') then
+             if(global_medium_Floc.eq.'loc') then
                allocate(BEM_Qdx_dum(pedra_dum_n_tessere,pedra_dum_n_tessere))
                allocate(BEM_Q0x_dum(pedra_dum_n_tessere,pedra_dum_n_tessere))
              endif
@@ -1628,7 +1628,8 @@ end subroutine
          enddo
        elseif(global_eps_Feps.eq."gen") then
          do i=1,pedra_surf_n_tessere
-           scr2(i,i)= scr2(i,i) + one/sum(kf0)
+       !    scr2(i,i)= scr2(i,i) + one/sum(kf0)
+           scr2(i,i)= sum(kf0) * scr2(i,i) + one
          enddo
        endif
 
@@ -1642,7 +1643,8 @@ end subroutine
        ! Form Q0
 
        if ( global_eps_Feps.eq."gen" ) then
-               BEM_Q0=-matmul(scr2,matmul(BEM_Sm1,BEM_2ppDA))
+               !BEM_Q0=-matmul(scr2,matmul(BEM_Sm1,BEM_2ppDA))
+               BEM_Q0=-sum(kf0) * matmul(scr2,matmul(BEM_Sm1,BEM_2ppDA))
        else
                BEM_Q0=-matmul(BEM_Sm1,matmul(scr2,BEM_2ppDA))
        endif
@@ -2132,7 +2134,7 @@ end subroutine
          allocate(BEM_Sm1_dum(pedra_dum_n_tessere,pedra_dum_n_tessere),&
                   BEM_2ppDA_dum(pedra_dum_n_tessere,pedra_dum_n_tessere),&
                   BEM_ADt_dum(pedra_dum_n_tessere,pedra_dum_n_tessere))
-         if(global_medium_Floc.eq.'loc'.and.global_medium_Fmdm.eq.'csol') &
+         if(global_medium_Floc.eq.'loc') &
            allocate(BEM_2ppDAx_dum(pedra_dum_n_tessere,pedra_dum_n_tessere))
        endif
 
