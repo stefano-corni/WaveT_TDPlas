@@ -491,7 +491,8 @@ program read_adf
      ntoten = ntoten + nener
   end do
   write(*,*) ' ntoten ' , ntoten
-  allocate(tddfteig(kvirt, kocc, ntoten), tddfteigl(kvirt, kocc, ntoten))!, &
+  allocate(tddfteig(kvirt, kocc, ntoten)) 
+  if(cdspectrum) allocate(tddfteigl(kvirt, kocc, ntoten))!, &
            !tddfteigli(kvirt, kocc,ntoten))
   allocate(exciten(ntoten))
   open(80,file='eig.dat')
@@ -531,8 +532,13 @@ program read_adf
         call csputi(ieigstr, iener)
         !v. 2018
         call KFRDNR(iu21,'eigenveceps '//trim(ieigstr),tddfteig(1,1,itoten),ndimvx,1)
-        call KFRDNR(iu21,'eigenveceps_mag '//trim(ieigstr),tddfteigl(1,1,itoten),ndimvx,1)
-        if(hybrid) call KFRDNR(iu21,'left eigenvector '//trim(ieigstr),tddfteigl(1,1,itoten),ndimvx,1) !VIENE CHIAMATO SOLO PER CALCOLI RPA (IBRIDI)
+        if(cdspectrum) then
+          if(.not.hybrid.and..not.tda) then 
+            call KFRDNR(iu21,'eigenveceps_mag '//trim(ieigstr),tddfteigl(1,1,itoten),ndimvx,1)
+          elseif(hybrid) then
+            call KFRDNR(iu21,'left eigenvector '//trim(ieigstr),tddfteigl(1,1,itoten),ndimvx,1)
+          endif
+        endif
         !write(*,*) 'eigenveceps_mag '// trim(ieigstr)
         !call KFRDNR(iu21,'eigenvector '//trim(ieigstr),tddfteig(1,1,itoten),ndimvx,1)
         !write(*,*) 'eigenvector '// trim(ieigstr)
@@ -549,6 +555,7 @@ program read_adf
               ! expressions
               ! have factors of excen**(+/- 1/2), that we need to take care
               ! of here:
+            if(cdspectrum) then
               if(tda) then
                  tddfteigl(j,i,itoten)=tddfteig(j,i,itoten)
               elseif(hybrid) then
@@ -557,25 +564,24 @@ program read_adf
                  tddfteig(j,i,itoten)=tddfteig(j,i,itoten)/dsqrt(exciten(itoten))
                  tddfteigl(j,i,itoten)=tddfteigl(j,i,itoten)*dsqrt(exciten(itoten))
               endif
-              !tddfteig(j,i,itoten)=tddfteig(j,i,itoten)*dsqrt((eigvks(nocc+j)-eigvks(i))/exciten(itoten)) 
+            else
+                 if (.not.tda.and..not.hybrid) then
+                  tddfteig(j,i,itoten)=tddfteig(j,i,itoten)/dsqrt(exciten(itoten))
+                 endif
+            endif
               write(80,*) tddfteig(j,i,itoten)
-              write(81,*) tddfteigl(j,i,itoten)
-!             write(82,*) tddfteigli(j,i,itoten)
-              !write(*,*) ' j, i, tddfteig: ', j, i, tddfteig(j,i,itoten)
+              if(cdspectrum) write(81,*) tddfteigl(j,i,itoten)
               write(40, "(1x, i4, 2x, i4, 2x, i4, 2x, e21.13)") i, kocc+j, ispin, &
                    tddfteig(j,i,itoten)
            end do
         end do
         close(40)
-        !debug
-        !write(*,*) tddfteig
      enddo
   enddo
   write(*,*) ' kocc kvirt ' , kocc, kvirt, nocc
   write(*,*) ' excit ener ',exciten
   close(80)
   close(81)
-!  close(82)
   open(70,file='ene.dat')
   do i=1,ntoten
      write(70,*) exciten(i)
@@ -604,7 +610,7 @@ program read_adf
 
   deallocate (dip,eigin,eigfi,vectx,vecty,vectz,xyznuc,e0)
   deallocate (npartin, npartfi, insy, inst, insp)
-  deallocate(tddfteig, tddfteigl)
+  deallocate(tddfteig)
   deallocate(dipmatx)
   deallocate(dipmaty)
   deallocate(dipmatz)
@@ -614,6 +620,7 @@ program read_adf
      deallocate(lmatz)
      deallocate(lvectx,lvecty,lvectz)
      deallocate(lm)
+     deallocate(tddfteigl)
   endif
   deallocate(eigvks)
   deallocate(nsymdav)
