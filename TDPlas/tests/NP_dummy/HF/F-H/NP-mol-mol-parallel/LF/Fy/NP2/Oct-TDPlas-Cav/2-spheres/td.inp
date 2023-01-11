@@ -14,6 +14,7 @@ spacing = 0.23*angstrom
 
 PCMCalculation = yes
 PCMTDPlasBinding = yes
+PCMLocalField = yes
 
 amplitude = 1*eV/angstrom
 omega = 18.0*eV
@@ -21,7 +22,7 @@ tau0 = 0.5/eV
 t0 = tau0
 
 %TDExternalFields
-  electric_field | 1 | 0 | 0 | omega | "envelope_cos"
+  electric_field | 0 | 1 | 0 | omega | "envelope_cos"
 %
  
 %TDFunctions

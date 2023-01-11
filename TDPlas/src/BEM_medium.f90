@@ -86,11 +86,8 @@
       real(dbl), allocatable :: BEM_Dact_dum(:,:)        !< Calderon D matrix bridging actual and dummy surface
       real(dbl), allocatable :: BEM_Z1_mol(:,:)           !< BEM matrix to translate molecular to dummy charges
       real(dbl), allocatable :: BEM_Z1_ext(:,:)           !< BEM matrix to translate molecular to dummy charges
-      real(dbl), allocatable :: BEM_Z2(:,:)              !< BEM matrix to translate dummy to dummy charges
       real(dbl), allocatable :: BEM_Z3(:,:)              !< BEM matrix to translate actual to dummy charges
-      real(dbl), allocatable :: qmol(:)                 !< dummy charges reproducing molecular potential in between act and dum
       real(dbl), allocatable :: qmolp(:)                !< dummy charges reproducing molecular potential outside dummy surface
-      real(dbl), allocatable :: qext(:)                 !< dummy charges reproducing external potential in between act and dum
       real(dbl), allocatable :: qextp(:)                !< dummy charges reproducing external potential outside dummy surface
       real(dbl), allocatable :: BEM_Q0_dum(:,:),BEM_Qd_dum(:,:)  !< Static and Dyanamic BEM matrices $Q_0$ and $Q_d$
       real(dbl), allocatable :: BEM_Qf_dum(:,:)          !< Drude-Lorents propagation matrices $Q_f$
@@ -118,11 +115,11 @@
              deallocate_BEM_public,deallocate_MPL_public,BEM_Qg,BEM_2G,&
              BEM_ADt,kf,w2,gg,BEM_Qdf,BEM_Qdfx,BEM_Qdf_2g,    &
              BEM_Qdfx_2g,kf0,deallocate_BEM_end_propagation,BEM_ADtm1, &
-             clean_all_ocpy_BEM,BEM_Z1_mol,BEM_Z1_ext,BEM_Z2,BEM_Z3,BEM_S,&
-             qmol,qmolp,qext,qextp,npoles_dum,&
+             clean_all_ocpy_BEM,BEM_Z1_mol,BEM_Z1_ext,BEM_Z3,BEM_S,&
+             qmolp,qextp,npoles_dum,&
              BEM_Sdum,BEM_Sdum_act,BEM_Qf_dum,BEM_ADt_dum,BEM_Qfx_dum,&
              gg_dum,w2_dum,kf_dum,kf0_dum,BEM_ADtm1_dum,BEM_Q0_dum,BEM_Q0x_dum,&
-             BEM_Q0_super,BEM_Q0x_super,BEM_Sm1,BEM_Sm1_dum,gauging_vector,gauging_vector_dum
+             BEM_Q0_super,BEM_Q0x_super,BEM_Sm1,BEM_Sm1_dum
 
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -214,10 +211,8 @@
            call do_BEM_translator
            if(global_medium_Fmdm.eq.'cmix') call do_BEM_supermatrix
            allocate(qmolp(pedra_dum_n_tessere))
-           allocate(qmol(pedra_surf_n_tessere))
            if(global_medium_Floc.eq."loc") then
              allocate(qextp(pedra_dum_n_tessere))
-             allocate(qext(pedra_surf_n_tessere))
            endif
          endif
        endif
@@ -576,12 +571,9 @@
 
        if(allocated(BEM_Z1_mol)) deallocate(BEM_Z1_mol)
        if(allocated(BEM_Z1_ext)) deallocate(BEM_Z1_ext)
-       if(allocated(BEM_Z2)) deallocate(BEM_Z2)
        if(allocated(BEM_Z3)) deallocate(BEM_Z3)
        if(allocated(BEM_S))deallocate(BEM_S)
-       if(allocated(qmol))deallocate(qmol)
        if(allocated(qmolp))deallocate(qmolp)
-       if(allocated(qext))deallocate(qext)
        if(allocated(qextp))deallocate(qextp)
 
        if(allocated(BEM_Qf_dum)) deallocate(BEM_Qf_dum)
@@ -691,12 +683,9 @@ subroutine clean_all_ocpy_BEM
 
  if(allocated(BEM_Z1_mol)) deallocate(BEM_Z1_mol)
  if(allocated(BEM_Z1_ext)) deallocate(BEM_Z1_ext)
- if(allocated(BEM_Z2)) deallocate(BEM_Z2)
  if(allocated(BEM_Z3)) deallocate(BEM_Z3)
  if(allocated(BEM_S))deallocate(BEM_S)
- if(allocated(qmol))deallocate(qmol)
  if(allocated(qmolp))deallocate(qmolp)
- if(allocated(qext))deallocate(qext)
  if(allocated(qextp))deallocate(qextp)
 
  if(allocated(BEM_Qf_dum)) deallocate(BEM_Qf_dum)
@@ -1006,8 +995,6 @@ end subroutine
        character(len=3) :: target
 
        allocate(BEM_Sdum_act(pedra_dum_n_tessere,pedra_surf_n_tessere))
-       allocate(BEM_Dact_dum(pedra_surf_n_tessere,pedra_dum_n_tessere))
-       allocate(BEM_Ddum_act(pedra_dum_n_tessere,pedra_surf_n_tessere))
 
 !$OMP PARALLEL
 !$OMP DO
@@ -1015,10 +1002,6 @@ end subroutine
         do j=1,pedra_surf_n_tessere
           call green_s_dum_act(i,j,temp)
           BEM_Sdum_act(i,j)=temp
-          call green_d_dum_act(i,j,'dum',temp)
-          BEM_Ddum_act(i,j)=temp
-          call green_d_dum_act(i,j,'act',temp)
-          BEM_Dact_dum(j,i)=temp
         enddo
        enddo
 !$OMP enddo
@@ -1178,35 +1161,6 @@ end subroutine
        return
 
       end subroutine green_s_dum
-
-
-!------------------------------------------------------------------------
-! @brief 
-!
-! @date Created: G. Gil
-! Modified: 
-!------------------------------------------------------------------------
-      subroutine green_d_dum_act(i,j,target,value)
-
-       integer(i4b), intent(in):: i,j
-       character(len=3), intent(in) :: target
-       real(dbl), intent(out) :: value
-       real(dbl):: dist,sum_d
-       integer(i4b) :: k
-
-       scrd3(1)=(pedra_dum_tessere(i)%x-pedra_surf_tessere(j)%x)
-       scrd3(2)=(pedra_dum_tessere(i)%y-pedra_surf_tessere(j)%y)
-       scrd3(3)=(pedra_dum_tessere(i)%z-pedra_surf_tessere(j)%z)
-       dist=sqrt(dot_product(scrd3,scrd3))
-       if(target.eq.'act') then
-       value=dot_product(pedra_surf_tessere(j)%n,scrd3)/dist**3
-       else if(target.eq.'dum') then
-       value=-dot_product(pedra_dum_tessere(i)%n,scrd3)/dist**3
-       endif
-
-       return
-
-      end subroutine green_d_dum_act
 
 !------------------------------------------------------------------------
 ! @brief Calderon S matrix
@@ -1628,7 +1582,6 @@ end subroutine
          enddo
        elseif(global_eps_Feps.eq."gen") then
          do i=1,pedra_surf_n_tessere
-       !    scr2(i,i)= scr2(i,i) + one/sum(kf0)
            scr2(i,i)= sum(kf0) * scr2(i,i) + one
          enddo
        endif
@@ -1643,7 +1596,6 @@ end subroutine
        ! Form Q0
 
        if ( global_eps_Feps.eq."gen" ) then
-               !BEM_Q0=-matmul(scr2,matmul(BEM_Sm1,BEM_2ppDA))
                BEM_Q0=-sum(kf0) * matmul(scr2,matmul(BEM_Sm1,BEM_2ppDA))
        else
                BEM_Q0=-matmul(BEM_Sm1,matmul(scr2,BEM_2ppDA))
@@ -1770,7 +1722,7 @@ end subroutine
        ! Form eps0 dependent matrix term
 
        do i=1,pedra_dum_n_tessere
-         scr2(i,i)= scr2(i,i) + one/sum(kf0_dum)
+         scr2(i,i)= sum(kf0_dum) * scr2(i,i) + one
        enddo
 
        ! inverse
@@ -1782,7 +1734,7 @@ end subroutine
 
        ! Form Q0
 
-       BEM_Q0_dum=-matmul(scr2,matmul(BEM_Sm1_dum,BEM_2ppDA_dum))
+       BEM_Q0_dum=-sum(kf0_dum) * matmul(scr2,matmul(BEM_Sm1_dum,BEM_2ppDA_dum))
 
        ! Form epsd dependent matrix term
 
@@ -1861,11 +1813,6 @@ end subroutine
 
        endif
 
-       allocate(ones(pedra_dum_n_tessere),gauging_vector_dum(pedra_dum_n_tessere))
-       ones(:)=one
-       gauging_vector_dum = matmul(BEM_Sm1_dum,ones)/sum(BEM_Sm1_dum)
-       deallocate(ones)
-
        ! Form 2 pi - D''A'' for dummy surface
 
        allocate(scr1(pedra_dum_n_tessere,pedra_dum_n_tessere))
@@ -1898,7 +1845,7 @@ end subroutine
          scr1(i,i)= scr1(i,i) + twp
        enddo
 
-       ! Form -S''^-1 (2 pi + D''A'')/4 pi for dummy surface
+       ! Form -S''^-1 (2 pi + D''A'') / 4 pi for dummy surface
 
        allocate(BEM_Z1_ext(pedra_dum_n_tessere,pedra_dum_n_tessere))
 
@@ -1907,43 +1854,6 @@ end subroutine
        deallocate(scr1)
 
        endif
-
-       ! II - Dummy charges at dummy surface to dummy charges at actual surface
-
-       if(.not.allocated(BEM_Sm1)) then
-
-       BEM_Sm1 = inv(BEM_S)
-
-       endif
-
-       allocate(ones(pedra_surf_n_tessere),gauging_vector(pedra_surf_n_tessere))
-       ones(:)=one
-       gauging_vector = matmul(BEM_Sm1,ones)/sum(BEM_Sm1)
-       deallocate(ones)
-
-       ! Form 2 pi + DA for actual surface
-
-       allocate(scr1(pedra_surf_n_tessere,pedra_surf_n_tessere))
-
-       scr1 = zero
-       do i=1,pedra_surf_n_tessere
-         scr1(:,i)= BEM_D(:,i)*pedra_surf_tessere(i)%area
-         scr1(i,i)= scr1(i,i) + twp
-       enddo
-
-       ! Build D' (and also S', used in td_contmed) [both with target in act (used in II) and in dum (used in III)]
-
-       call do_BEM_dum_act
-
-       deallocate(BEM_Dact_dum,BEM_Ddum_act) ! XXX
-
-       ! Form -S^-1 (2 pi + DA) S' bridging dummy and actual surface
-
-       allocate(BEM_Z2(pedra_surf_n_tessere,pedra_dum_n_tessere))
-
-       BEM_Z2 = -matmul(inv(BEM_S),matmul(scr1,transpose(BEM_Sdum_act))) * 0.25d0/pi
-
-       deallocate(scr1)
 
        ! III - Actual polarization charges at actual surface to dummy charges at dummy surface
 
@@ -1959,7 +1869,11 @@ end subroutine
 
        deallocate(BEM_Ddum)
 
-       ! Form -S''^-1 (2 pi + D''A'') S'^T bridging dummy and actual surface
+       ! Build S'
+
+       call do_BEM_dum_act
+
+       ! Form -S''^-1 (2 pi + D''A'') S'^T / 4 pi bridging dummy and actual surface
 
        allocate(BEM_Z3(pedra_dum_n_tessere,pedra_surf_n_tessere))
 

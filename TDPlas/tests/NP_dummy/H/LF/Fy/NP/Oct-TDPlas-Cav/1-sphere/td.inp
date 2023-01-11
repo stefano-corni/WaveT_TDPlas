@@ -12,6 +12,7 @@ spacing = 0.23*angstrom
 
 PCMCalculation = yes
 PCMTDPlasBinding = yes
+PCMLocalField = yes
 
 amplitude = 1*eV/angstrom
 omega = 18.0*eV

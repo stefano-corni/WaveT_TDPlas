@@ -431,10 +431,10 @@
 #endif
 
       if (what.eq.'act') then
-        call pedra(0,1,nesf_act,sfe_act,nts_act,dum2)
+        call pedra(0,4,nesf_act,sfe_act,nts_act,dum2)
 !        write (6,*) "nts_act",nts_act
         allocate(cts_act(nts_act))
-        call pedra(1,1,nesf_act,sfe_act,nts_act,cts_act)
+        call pedra(1,4,nesf_act,sfe_act,nts_act,cts_act)
 !        write (6,*) "nts_act",nts_act
       else if (what.eq.'pro') then
         call pedra(0,4,nesf_pro,sfe_pro,nts_pro,dum2)
