@@ -569,11 +569,11 @@
        if(pedra_surf_Fdum.eq."yes".and.&
           (global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq.'cmix').and.&
           global_prop_Fprop.ne."chr-ons") then
-         qmolp=matmul(BEM_Z1_mol,pot_t)
+         qmolp=matmul(BEM_Sm1_dum,pot_t)
          allocate(pot_tp(pedra_surf_n_tessere))
          pot_tp=matmul(transpose(BEM_Sdum_act),qmolp)
          if(global_medium_Floc.eq."loc") then
-           qextp=matmul(BEM_Z1_ext,potf_t)
+           qextp=matmul(BEM_Sm1_dum,potf_t)
            allocate(potf_tp(pedra_surf_n_tessere))
            potf_tp=matmul(transpose(BEM_Sdum_act),qextp)
            allocate(potf_tp2(pedra_surf_n_tessere))
@@ -885,6 +885,7 @@
            dqx_dum_t(:)=zero
          endif
        endif
+
        if(global_eps_Feps.eq."drl") then
          allocate(dqr_tp(pedra_surf_n_tessere))
          allocate(fqr_tp(pedra_surf_n_tessere))
@@ -1038,9 +1039,9 @@
           (global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq.'cmix').and.&
           global_prop_Fprop.ne."chr-ons") then
          ! dummy charges in dummy surface from polarization charges in actual surface
-         qr=matmul(BEM_Z3,qr_tp)
+         qr=matmul(BEM_Z,qr_tp)
          ! same for the local field
-         if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z3,qx_tp)
+         if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z,qx_tp)
          if(global_medium_Fmdm.eq.'cmix') then
            qr=qr+qr_dum_tp
            if(global_medium_Floc.eq."loc") qx=qx+qx_dum_tp
@@ -1463,16 +1464,16 @@
           (global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq.'cmix').and.&
           global_prop_Fprop.ne."chr-ons") then
          ! dummy charges in dummy surface reproducing molecular potential outside
-         qmolp=matmul(BEM_Z1_mol,pot)
+         qmolp=matmul(BEM_Sm1_dum,pot)
          pot_tp=matmul(transpose(BEM_Sdum_act),qmolp)
          if(global_medium_Floc.eq."loc") then
            ! dummy charges in dummy surface reproducing external potential outside
-           qextp=matmul(BEM_Z1_ext,potf)
+           qextp=matmul(BEM_Sm1_dum,potf)
            potf_tp=matmul(transpose(BEM_Sdum_act),qextp)
          endif
          if(global_medium_Fmdm.eq.'cmix') then ! TO CHECK - STEFANO POINTED OUT
            pot_tp=pot_tp+matmul(transpose(BEM_Sdum_act),qr_dum_tp)
-           pot_dum_tp=pot+matmul(BEM_Sdum_act,qr_tp)
+           pot_dum_tp=pot !The remaining part must be included by hand in the EOM
            if(global_medium_Floc.eq."loc") then
              potf_tp=potf_tp+matmul(transpose(BEM_Sdum_act),qx_dum_tp)
              potf_dum_tp=potf+matmul(BEM_Sdum_act,qx_tp)
@@ -1573,9 +1574,9 @@
           (global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq.'cmix').and.&
           global_prop_Fprop.ne."chr-ons") then
          ! dummy charges in dummy surface from polarization charges in actual surface
-         qr=matmul(BEM_Z3,qr_tp)
+         qr=matmul(BEM_Z,qr_tp)
          ! same for the local field
-         if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z3,qx_tp)
+         if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z,qx_tp)
          if(global_medium_Fmdm.eq.'cmix') then
            qr=qr+qr_dum_tp
            if(global_medium_Floc.eq."loc") qx=qx+qx_dum_tp
@@ -2138,7 +2139,9 @@
        if(global_medium_Floc.eq."loc") qx_dum_t(:) = zero
        do pidx = 1, ncycle
         fqr_dum_t_p(:,pidx)=-w2_dum(pidx)*qr_dum_tp_p(:,pidx)+&
-                            kf_dum(pidx)*(matmul(BEM_Qf_dum,pot_dum_tp)+matmul(BEM_ADt_dum,qr_dum_tp))
+                            kf_dum(pidx)*(matmul(BEM_Qf_dum,pot_dum_tp)+&
+                                          matmul(BEM_Mxdum_act,qr_tp)+&
+                                          matmul(BEM_ADt_dum,qr_dum_tp))
         fqr_dum_t_p(:,pidx)=fqr_dum_t_p(:,pidx)-sum(fqr_dum_t_p(:,pidx))/pedra_dum_n_tessere
         dqr_dum_t_p(:,pidx)=std_f3_dum(pidx)*dqr_dum_tp_p(:,pidx)+f4*(fqr_dum_t_p(:,pidx)+&
                             fqr_dum_tp_p(:,pidx))-std_f5_dum(pidx)*fqr_dum_tp_p(:,pidx)
@@ -2166,12 +2169,16 @@
            pidx=npoles_dum
            if (typ_prop.eq."1") then
                 !derivative method
-                fqr_dum_t_p(:,pidx)=matmul(BEM_Qf_dum,pot_dum_tp)+matmul(BEM_ADt_dum,qr_dum_tp)
+                fqr_dum_t_p(:,pidx)=matmul(BEM_Qf_dum,pot_dum_tp)+&
+                                    matmul(BEM_Mxdum_act,qr_tp)+&
+                                    matmul(BEM_ADt_dum,qr_dum_tp)
                 qr_dum_t_p(:,pidx)=qr_dum_tp_p(:,pidx)+kf0_dum(pidx)*(fqr_dum_t_p(:,pidx)-fqr_dum_tp_p(:,pidx))
                 fqr_dum_tp_p(:,pidx)=fqr_dum_t_p(:,pidx)
            elseif (typ_prop.eq."2") then
                 !second order method
-                fqr_dum_t_p(:,pidx)=matmul(BEM_Qf_dum,pot_dum_tp)+matmul(BEM_ADt_dum,qr_dum_tp)
+                fqr_dum_t_p(:,pidx)=matmul(BEM_Qf_dum,pot_dum_tp)+&
+                                    matmul(BEM_Mxdum_act,qr_tp)+&
+                                    matmul(BEM_ADt_dum,qr_dum_tp)
                 dfqr_dum_t_p(:)=3*fqr_dum_t_p(:,pidx)-8*fqr_dum_tp_p(:,pidx)+7*fqr_dum_tp2_p(:)-2*fqr_dum_tp3_p(:)
                 qr_dum_t_p(:,pidx)=qr_dum_tp_p(:,pidx)+quantum_dt*dqr_dum_tp_p(:,pidx)+&
                                    kf_dum(pidx)/(w2_dum(pidx))*dfqr_dum_t_p(:)
@@ -2182,7 +2189,9 @@
                 dfqr_dum_tp_p(:)=dfqr_dum_t_p(:)
                 fqr_dum_tp_p(:,pidx)=fqr_dum_t_p(:,pidx)
            elseif (typ_prop.eq."3") then
-                fqr_dum_t_p(:,pidx)=matmul(BEM_ADt_dum,qr_dum_t)+matmul(BEM_Qf_dum,pot_dum_tp)
+                fqr_dum_t_p(:,pidx)=matmul(BEM_ADt_dum,qr_dum_t)+&
+                                    matmul(BEM_Mxdum_act,qr_tp)+&
+                                    matmul(BEM_Qf_dum,pot_dum_tp)
                 qr_dum_t_p(:,pidx)=kf0_dum(pidx)*matmul(BEM_ADtm1_dum,fqr_dum_tp_p(:,pidx))
            endif
            qr_dum_tp_p(:,pidx)=qr_dum_t_p(:,pidx)
@@ -3125,17 +3134,17 @@
         if(pedra_surf_Fdum.eq."yes".and.&
            (global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq.'cmix').and.&
            global_prop_Fprop.ne."chr-ons") then
-          qmolp=matmul(BEM_Z1_mol,pot)
+          qmolp=matmul(BEM_Sm1_dum,pot)
           allocate(pot_aux(pedra_surf_n_tessere))
           pot_aux=matmul(transpose(BEM_Sdum_act),qmolp)
           if(global_medium_Floc.eq."loc") then
-            qextp=matmul(BEM_Z1_ext,potf)
+            qextp=matmul(BEM_Sm1_dum,potf)
             allocate(potf_aux(pedra_surf_n_tessere))
             potf_aux=matmul(transpose(BEM_Sdum_act),qextp)
           endif
           if(global_medium_Fmdm.ne.'cmix') then
-           qr=matmul(BEM_Z3,matmul(BEM_Q0,pot_aux))
-           if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z3,matmul(BEM_Q0,potf_aux)) !< BEM_Q0x for nanoparticle is the same
+           qr=matmul(BEM_Z,matmul(BEM_Q0,pot_aux))
+           if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z,matmul(BEM_Q0,potf_aux)) !< BEM_Q0x for nanoparticle is the same
           else
            allocate(fullpotaux(pedra_dum_n_tessere+pedra_surf_n_tessere))
            fullpotaux(1:pedra_dum_n_tessere)=pot
@@ -3163,10 +3172,10 @@
            qx_now=qaux(pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere)
            deallocate(qaux)
            endif
-           qr=matmul(BEM_Z3,qr_now)
+           qr=matmul(BEM_Z,qr_now)
            qr=qr+qr_dum_now
            if(global_medium_Floc.eq."loc") then
-             qx=matmul(BEM_Z3,qx_now)
+             qx=matmul(BEM_Z,qx_now)
              qx=qx+qx_dum_now
            endif
           endif
