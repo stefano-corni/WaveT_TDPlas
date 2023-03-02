@@ -25,4 +25,5 @@
       use BEM_medium
       use td_contmed
       implicit none
+      public
       end module tdplas
