@@ -108,11 +108,11 @@
          endif
          nstates=n_ci*(this_nmodes+1)
        else
-         write(6,*) "System initialised as in input files"
+         !write(6,*) "System initialised as in input files"
          nstates=n_ci 
          !stop
        endif
-       write(6,*) "Hilbert Space with ",nstates, " states."
+       !write(6,*) "Hilbert Space with ",nstates, " states."
        allocate(energies(nstates))
        allocate(coeff0(nstates))
        allocate(trans_dipoles(3,nstates,nstates))

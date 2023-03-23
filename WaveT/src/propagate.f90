@@ -202,10 +202,14 @@
             endif
            end if
            ! GG: 11/03/2019 end changes
+           write(*,*) 'qui 0', myrank
            if (Fres.eq.'Nonr') then
               i=1
+              write(*,*) 'prima', myrank
               call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+              write(*,*) 'dopo', myrank
            endif
+           write(*,*) 'qui 1'
        endif
        if (Fres.eq.'Nonr') then
           call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)          
@@ -219,7 +223,7 @@
        elseif (Fres.eq.'Yesr') then
           if (Fdis.ne."nodis") call random_seq(restart_i)
        endif
-
+       write(*,*) 'qui 2'
 ! EC 20/12/16
 ! Dissipation according to the Markovian SSE (eq 25 J. Phys: Condens.
 ! Matter vol. 24 (2012) 273201)
@@ -236,6 +240,9 @@
              call add_h_rnd2(h_rnd2,nstates)
           endif
        endif
+
+       write(*,*) 'qui 3'
+
        if (n_step.gt.1) then
          if (Fexp.eq.'exp') then
 ! Energy term is propagated analytically
@@ -247,6 +254,8 @@
            call full_euler_prop(nstates)
          endif
        endif
+
+       write(*,*) 'qui 4'
 
 ! DEALLOCATION AND CLOSING
        deallocate(c,c_prev,c_prev2,h_int)
