@@ -303,28 +303,35 @@
        close(7)
 !test
 ! MM 
-       if(Fmag.eq.'mag') then
+      if(Fmag.eq.'mag') then
          open(7,file="ci_lt.inp",status="old")
          allocate (lt(3,n_ci,n_ci))
          do i=1,n_ci_read
            if (i.le.n_ci) then
               read(7,*)junk,junk,junk,junk,lt(1,1,i),lt(2,1,i),lt(3,1,i)
-              lt(:,i,1)=-lt(:,1,i)
+              if (i.ne.1) then
+                 lt(:,i,1)=-lt(:,1,i)
+              endif
            else
               read(7,*)
            endif
          enddo
+         !do i=2,n_ci_read
+         !  do j =2,i
          do i=2,n_ci_read
-           do j =2,i
+            do j=i,n_ci_read
              if (i.le.n_ci.and.j.le.n_ci) then
                 read(7,*)junk,junk,junk,junk,lt(1,i,j),lt(2,i,j),lt(3,i,j)
-                lt(:,j,i)=-lt(:,i,j)
+                if (i.ne.j) then
+                   lt(:,j,i)=-lt(:,i,j)
+                endif
              else
                 read(7,*)
              endif
            enddo
          enddo
        endif
+
 
        close(7)
       
