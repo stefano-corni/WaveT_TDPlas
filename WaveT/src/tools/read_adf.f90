@@ -25,7 +25,7 @@ program read_adf
   use KF 
   
   implicit none
-  real*8, allocatable :: dipmatx(:,:) , dipmaty(:,:) ,dipmatz(:,:), potmat(:,:,:), potmat_nuc(:,:,:)
+  real*8, allocatable :: dipmatx(:,:) , dipmaty(:,:) ,dipmatz(:,:), potmat(:,:,:)
   real*8, allocatable :: lmatx(:,:) , lmaty(:,:) , lmatz(:,:) 
   integer, allocatable :: nsymdav(:), ialpha(:)
   real*8, allocatable :: transmag(:,:)
@@ -52,8 +52,8 @@ program read_adf
   real*8 :: epsin, epsfi, dipx, dipy, dipz, exce, fvalue
   real*8 :: lx,ly,lz
   real*8 :: sig
-  real*8, allocatable :: dip(:,:),eigin(:),eigfi(:),vectx(:),vecty(:),lm(:,:), pot(:,:), ppot(:), pot_nuc(:,:), ppot_nuc(:)
-  real*8, allocatable :: vectz(:),xyznuc(:,:),e0(:),lvectx(:),lvecty(:),lvectz(:), potvect(:,:), potvect_nuc(:,:)
+  real*8, allocatable :: dip(:,:),eigin(:),eigfi(:),vectx(:),vecty(:),lm(:,:), pot(:,:), ppot(:), pot_nuc(:)
+  real*8, allocatable :: vectz(:),xyznuc(:,:),e0(:),lvectx(:),lvecty(:),lvectz(:), potvect(:,:)
   !real*8 :: dip ( larray , 3 )
   !real*8 :: eigin ( lbas )
   !real*8 :: eigfi ( lbas )
@@ -166,9 +166,7 @@ program read_adf
    endif
 
    if (NP) then
-      allocate (pot_nuc(naosx,nts))
-      allocate (potvect_nuc(naos,nts))
-      allocate (ppot_nuc(nts))
+      allocate (pot_nuc(nts))
    endif
 
   !INPUT AND CHECK SECTION
@@ -282,7 +280,7 @@ program read_adf
         elseif (ints.ge.1000.and.ints.lt.10000) then
            write(tessera_attuale, '(i4.4)') ints
         endif
-        call KFRDNR (iu15, 'Matrices%potential_nuc'//trim(tessera_attuale), pot_nuc(1,ints), naosx, 1)
+        call KFRDNR (iu15, 'Matrices%potential_nuc'//trim(tessera_attuale), pot_nuc(ints), 1, 1)
      enddo
   endif
 
@@ -308,9 +306,9 @@ program read_adf
      allocate(potmat(ntotmo,ntotmo,nts))
   endif
 
-  if (NP) then
-     allocate(potmat_nuc(ntotmo,ntotmo,nts))
-  endif
+  !if (NP) then
+  !   allocate(potmat_nuc(ntotmo,ntotmo,nts))
+  !endif
 
   if (cdspectrum) then
      allocate(lmatx(ntotmo,ntotmo))
@@ -331,9 +329,6 @@ program read_adf
      potmat = zero
   endif
 
-  if (NP) then
-     potmat_nuc = zero
-  endif
    
   open(50,file='mos_info.dat')
   write(50,*) ntotmo
@@ -464,7 +459,7 @@ program read_adf
            call KFCLSC  (iu21)
            if (NP) then
               potvect=0.d0
-              potvect_nuc=0.d0
+           !   potvect_nuc=0.d0
            endif
            do j = 1 , lenfin
               vectx(j) = 0.0
@@ -508,11 +503,11 @@ program read_adf
                     enddo
                  endif
 
-                 if (NP) then
-                    do ints = 1, nts
-                       potvect_nuc(j,ints) = potvect_nuc(j,ints) + eigin (i)*pot_nuc (k,ints)
-                    enddo
-                 endif
+                 !if (NP) then
+                 !   do ints = 1, nts
+                 !      potvect_nuc(j,ints) = potvect_nuc(j,ints) + eigin (i)*pot_nuc (k,ints)
+                 !   enddo
+                 !endif
 
                  if (cdspectrum) then
                     lvectx(j) = lvectx(j) +  eigin ( i ) * lm ( k , 1 ) * sig
@@ -558,11 +553,11 @@ program read_adf
                  enddo
               endif
 
-              if (NP) then
-                 do ints=1,nts
-                    ppot_nuc(ints)= .0
-                 enddo
-              endif
+              !if (NP) then
+              !   do ints=1,nts
+              !      ppot_nuc(ints)= .0
+              !  enddo
+              !endif
 
               do j = 1, lenfin
                  dipx = dipx + eigfi(j)*vectx(j)
@@ -575,11 +570,11 @@ program read_adf
                     enddo
                  endif
 
-                 if (NP) then
-                    do ints= 1,nts
-                       ppot_nuc(ints) = ppot_nuc(ints) + eigfi(j)*potvect_nuc(j,ints)
-                    enddo
-                 endif
+                 !if (NP) then
+                 !   do ints= 1,nts
+                 !      ppot_nuc(ints) = ppot_nuc(ints) + eigfi(j)*potvect_nuc(j,ints)
+                 !   enddo
+                 !endif
 
                  if (cdspectrum) then
                     lx = lx + eigfi(j)*lvectx(j)
@@ -602,13 +597,13 @@ program read_adf
                  enddo
               endif
 
-              if (NP) then
-                 do ints=1,nts
-                    potmat_nuc(indmoi,indmoj,ints) = ppot_nuc(ints)
-                     write(99,*) 'potmat_nuc(',indmoi,',',indmoj,',',ints,') =', potmat_nuc(indmoi,indmoj,ints)
-                    potmat_nuc(indmoj,indmoi,ints) = ppot_nuc(ints)
-                 enddo
-              endif
+              !if (NP) then
+              !   do ints=1,nts
+              !      potmat_nuc(indmoi,indmoj,ints) = ppot_nuc(ints)
+              !       write(99,*) 'potmat_nuc(',indmoi,',',indmoj,',',ints,') =', potmat_nuc(indmoi,indmoj,ints)
+              !      potmat_nuc(indmoj,indmoi,ints) = ppot_nuc(ints)
+              !   enddo
+              !endif
 
               if (cdspectrum) then
                 lmatx(indmoi,indmoj) = lx
@@ -848,12 +843,12 @@ program read_adf
      open(93,file='potmat_nuc.dat')
      ints=0
    do ints=1,nts
-     do i=1,ntotmo
-        do j=1,ntotmo
-              write(93,*) potmat_nuc(j,i,ints)
-           enddo
-        enddo
-     enddo
+     !do i=1,ntotmo
+     !   do j=1,ntotmo
+              write(93,*) pot_nuc(ints)
+     !   enddo
+     !enddo
+    enddo
      close(93)
   endif
 
@@ -883,6 +878,13 @@ program read_adf
      deallocate(lm)
      deallocate(tddfteigl)
   endif
+  if (NP) then 
+     deallocate(pot)
+     deallocate(potmat)
+     deallocate(pot_nuc)
+     deallocate(potvect)
+     deallocate(ppot)
+  endif  
   deallocate(eigvks)
   deallocate(nsymdav)
   deallocate(lrep2do)

@@ -8,7 +8,7 @@ PROGRAM write_wavet
 
   real*8,  allocatable :: dipmatx(:,:) , dipmaty(:,:) , dipmatz(:,:)
   real*8,  allocatable :: lmatx(:,:) , lmaty(:,:) , lmatz(:,:)
-  real*8,  allocatable :: potmat(:,:,:), potmat_nuc(:,:,:), potmut(:,:), potmut_nuc(:,:), pot0(:), pot_nuc0(:)
+  real*8,  allocatable :: potmat(:,:,:), potmat_nuc(:,:,:), potmut(:,:), pot0(:), pot_nuc0(:)
   real*8,  allocatable :: exciten(:), tddfteig(:,:,:), tddfteigl(:,:,:)
   real*8,  allocatable :: dmut(:,:),norm(:), norml(:), lmut(:,:)
   real*8               :: dip0(3),dip_nuc(3),l0(3)
@@ -113,9 +113,7 @@ PROGRAM write_wavet
 
   if (NP) then 
      allocate(potmat(ntotmo,ntotmo,nts))
-     allocate(potmat_nuc(ntotmo,ntotmo,nts))
      allocate(potmut(ntotentr,nts))
-     allocate(potmut_nuc(ntotentr,nts))
      allocate(pot0(nts))
      allocate(pot_nuc0(nts))
   endif 
@@ -238,11 +236,12 @@ PROGRAM write_wavet
   if (NP) then
      open(93, file='potmat_nuc.dat')
      do ints=1,nts
-        do i=1,ntotmo
-           do j=1,ntotmo
-                 read(93,*) potmat_nuc(j,i,ints)
-              enddo
-           enddo
+!        do i=1,ntotmo
+!           do j=1,ntotmo
+!                 read(93,*) potmat_nuc(j,i,ints)
+         read(93,*) pot_nuc0(ints)
+!              enddo
+!           enddo
         enddo
      close(93)
   endif
@@ -291,19 +290,19 @@ PROGRAM write_wavet
 !$OMP END PARALLEL DO
 #endif
   
-   pot_nuc0=0.d0
+!   pot_nuc0=0.d0
   
-#ifdef OMP
-!$OMP PARALLEL DO REDUCTION(+:pot_nuc0)
-#endif
-  do j=1,kocc
-     do ints=1,nts
-        pot_nuc0(ints) = pot_nuc0(ints) + potmat_nuc(j,j,ints)
-     enddo
-  enddo
-#ifdef OMP
-!$OMP END PARALLEL DO
-#endif
+!#ifdef OMP
+!!$OMP PARALLEL DO REDUCTION(+:pot_nuc0)
+!#endif
+!  do j=1,kocc
+!     do ints=1,nts
+!        pot_nuc0(ints) = pot_nuc0(ints) + potmat_nuc(1,1,ints)
+!     enddo
+!  enddo
+!#ifdef OMP
+!!$OMP END PARALLEL DO
+!#endif
 
   endif
   
@@ -318,7 +317,7 @@ PROGRAM write_wavet
      potmut = 0.d0
      !pot_nuc0 = 0.d0
      potmut(1,:)=2.d0*pot0(:)
-     potmut_nuc(1,:)=2.d0*pot_nuc0(:)
+     !potmut_nuc(1,:)=2.d0*pot_nuc0(:)
   endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -345,23 +344,23 @@ PROGRAM write_wavet
 !$OMP PARALLEL DO  
 #endif
   do is=1,ntoten
-!     dd = cont(1,is+1)
+      kk = cont(1,is+1)
 !     kk = dd
       do i=1,kocc
         do ia=1,kvirt
-#ifdef OMP
-            !$OMP ATOMIC
-#endif
-           dmut(1,cont(1,is+1))  = dmut(1,cont(1,is+1)) + tddfteig(ia,i,is)*dipmatx(i,kocc+ia)
-           dmut(2,cont(1,is+1))  = dmut(2,cont(1,is+1)) + tddfteig(ia,i,is)*dipmaty(i,kocc+ia) 
-           dmut(3,cont(1,is+1))  = dmut(3,cont(1,is+1)) + tddfteig(ia,i,is)*dipmatz(i,kocc+ia)
+!#ifdef OMP
+!            !$OMP ATOMIC
+!#endif
+           dmut(1,kk)  = dmut(1,kk) + tddfteig(ia,i,is)*dipmatx(i,kocc+ia)
+           dmut(2,kk)  = dmut(2,kk) + tddfteig(ia,i,is)*dipmaty(i,kocc+ia) 
+           dmut(3,kk)  = dmut(3,kk) + tddfteig(ia,i,is)*dipmatz(i,kocc+ia)
         enddo
      enddo
   enddo
 #ifdef OMP
 !$OMP END PARALLEL DO
 #endif
-
+write(*,*) "Sono dopo dmut"
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 ! NANOPARTICLE by Pier e Leo
@@ -376,14 +375,14 @@ PROGRAM write_wavet
   do ints=1,nts
      do is=1,ntoten
      
-!     kk = cont(1,is+1)
+      kk = cont(1,is+1)
 !     dd = kk
         do i=1,kocc
            do ia=1,kvirt
-#ifdef OMP
-              !$OMP ATOMIC
-#endif
-              potmut(cont(1,is+1),ints) = potmut(cont(1,is+1),ints) + tddfteig(ia,i,is)*potmat(i,kocc+ia,ints)
+!#ifdef OMP
+!              !$OMP ATOMIC
+!#endif
+              potmut(kk,ints) = potmut(kk,ints) + tddfteig(ia,i,is)*potmat(i,kocc+ia,ints)
            enddo
         enddo
       enddo
@@ -400,16 +399,16 @@ PROGRAM write_wavet
 !$OMP PARALLEL DO 
 #endif
     do is=1,ntoten 
-!    kk = cont(1,is+1)
+      kk = cont(1,is+1)
 !     dd = kk
         do i=1,kocc
            do ia=1,kvirt
-#ifdef OMP
-              !$OMP ATOMIC 
-#endif
-              lmut(1,cont(1,is+1)) = lmut(1,cont(1,is+1)) + tddfteigl(ia,i,is)*lmatx(i,kocc+ia)
-              lmut(2,cont(1,is+1)) = lmut(2,cont(1,is+1)) + tddfteigl(ia,i,is)*lmaty(i,kocc+ia)
-              lmut(3,cont(1,is+1)) = lmut(3,cont(1,is+1)) + tddfteigl(ia,i,is)*lmatz(i,kocc+ia)
+!#ifdef OMP
+!              !$OMP ATOMIC 
+!#endif
+              lmut(1,kk) = lmut(1,kk) + tddfteigl(ia,i,is)*lmatx(i,kocc+ia)
+              lmut(2,kk) = lmut(2,kk) + tddfteigl(ia,i,is)*lmaty(i,kocc+ia)
+              lmut(3,kk) = lmut(3,kk) + tddfteigl(ia,i,is)*lmatz(i,kocc+ia)
            enddo
         enddo
      enddo
@@ -453,16 +452,16 @@ PROGRAM write_wavet
 #endif
   do is=1,ntoten
      do js=is,ntoten
-!       dd = cont(is+1,js+1)
+        kk = cont(is+1,js+1)
 !       kk = dd
         do i=1,kocc
            do ia=1,kvirt
-#ifdef OMP            
-              !$OMP ATOMIC
-#endif
-              dmut(1,cont(is+1,js+1)) = dmut(1,cont(is+1,js+1)) + tddfteig(ia,i,is)*tddfteig(ia,i,js)*(2.d0*dip0(1) + dipmatx(kocc+ia,kocc+ia)-dipmatx(i,i))
-              dmut(2,cont(is+1,js+1)) = dmut(2,cont(is+1,js+1)) + tddfteig(ia,i,is)*tddfteig(ia,i,js)*(2.d0*dip0(2) + dipmaty(kocc+ia,kocc+ia)-dipmaty(i,i))
-              dmut(3,cont(is+1,js+1)) = dmut(3,cont(is+1,js+1)) + tddfteig(ia,i,is)*tddfteig(ia,i,js)*(2.d0*dip0(3) + dipmatz(kocc+ia,kocc+ia)-dipmatz(i,i))
+!#ifdef OMP            
+!              !$OMP ATOMIC
+!#endif
+              dmut(1,kk) = dmut(1,kk) + tddfteig(ia,i,is)*tddfteig(ia,i,js)*(2.d0*dip0(1) + dipmatx(kocc+ia,kocc+ia)-dipmatx(i,i))
+              dmut(2,kk) = dmut(2,kk) + tddfteig(ia,i,is)*tddfteig(ia,i,js)*(2.d0*dip0(2) + dipmaty(kocc+ia,kocc+ia)-dipmaty(i,i))
+              dmut(3,kk) = dmut(3,kk) + tddfteig(ia,i,is)*tddfteig(ia,i,js)*(2.d0*dip0(3) + dipmatz(kocc+ia,kocc+ia)-dipmatz(i,i))
               !do ib=1,ia-1
               !   dmut(1,is+1,js+1) = dmut(1,is+1,js+1) + tddfteig(ia,i,is)*tddfteig(ib,i,js)*dipmatx(kocc+ia,kocc+ib)
               !   dmut(2,is+1,js+1) = dmut(2,is+1,js+1) + tddfteig(ia,i,is)*tddfteig(ib,i,js)*dipmaty(kocc+ia,kocc+ib)
@@ -475,21 +474,21 @@ PROGRAM write_wavet
               !enddo
               do ib=1,kvirt
                  if (ib.eq.ia) cycle
-#ifdef OMP
-                !$OMP ATOMIC
-#endif
-                 dmut(1,cont(is+1,js+1)) = dmut(1,cont(is+1,js+1)) + tddfteig(ia,i,is)*tddfteig(ib,i,js)*dipmatx(kocc+ia,kocc+ib)
-                 dmut(2,cont(is+1,js+1)) = dmut(2,cont(is+1,js+1)) + tddfteig(ia,i,is)*tddfteig(ib,i,js)*dipmaty(kocc+ia,kocc+ib)
-                 dmut(3,cont(is+1,js+1)) = dmut(3,cont(is+1,js+1)) + tddfteig(ia,i,is)*tddfteig(ib,i,js)*dipmatz(kocc+ia,kocc+ib)
+!#ifdef OMP
+!                !$OMP ATOMIC
+!#endif
+                 dmut(1,kk) = dmut(1,kk) + tddfteig(ia,i,is)*tddfteig(ib,i,js)*dipmatx(kocc+ia,kocc+ib)
+                 dmut(2,kk) = dmut(2,kk) + tddfteig(ia,i,is)*tddfteig(ib,i,js)*dipmaty(kocc+ia,kocc+ib)
+                 dmut(3,kk) = dmut(3,kk) + tddfteig(ia,i,is)*tddfteig(ib,i,js)*dipmatz(kocc+ia,kocc+ib)
               enddo
               do j=1,kocc
                  if (j.eq.i) cycle 
-#ifdef OMP
-                !$OMP ATOMIC 
-#endif
-                 dmut(1,cont(is+1,js+1)) = dmut(1,cont(is+1,js+1)) - tddfteig(ia,i,is)*tddfteig(ia,j,js)*dipmatx(j,i)
-                 dmut(2,cont(is+1,js+1)) = dmut(2,cont(is+1,js+1)) - tddfteig(ia,i,is)*tddfteig(ia,j,js)*dipmaty(j,i)
-                 dmut(3,cont(is+1,js+1)) = dmut(3,cont(is+1,js+1)) - tddfteig(ia,i,is)*tddfteig(ia,j,js)*dipmatz(j,i)
+!#ifdef OMP
+!                !$OMP ATOMIC 
+!#endif
+                 dmut(1,kk) = dmut(1,kk) - tddfteig(ia,i,is)*tddfteig(ia,j,js)*dipmatx(j,i)
+                 dmut(2,kk) = dmut(2,kk) - tddfteig(ia,i,is)*tddfteig(ia,j,js)*dipmaty(j,i)
+                 dmut(3,kk) = dmut(3,kk) - tddfteig(ia,i,is)*tddfteig(ia,j,js)*dipmatz(j,i)
               enddo
 
               !do j=1,i-1
@@ -510,7 +509,7 @@ PROGRAM write_wavet
 !$OMP END PARALLEL DO
 #endif 
 !EXC-EXC
-
+write(*,*) "Sono dopo gli stati eccitati"
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 ! NANOPARTICLE by Pier e Leo
@@ -523,28 +522,28 @@ PROGRAM write_wavet
      do ints=1,nts
         do is=1,ntoten
            do js=is,ntoten
-!             kk = cont(is+1,js+1)
+              kk = cont(is+1,js+1)
 !             dd = kk
               do i=1,kocc
                  do ia=1,kvirt
-#ifdef OMP
-                       !$OMP ATOMIC
-#endif                      
-                       potmut(cont(is+1,js+1),ints) = potmut(cont(is+1,js+1),ints) + tddfteig(ia,i,is)*tddfteig(ia,i,js)*(2.d0*pot0(ints) + potmat(kocc+ia,kocc+ia,ints)-potmat(i,i,ints))
+!#ifdef OMP
+!                       !$OMP ATOMIC
+!#endif                      
+                       potmut(kk,ints) = potmut(kk,ints) + tddfteig(ia,i,is)*tddfteig(ia,i,js)*(2.d0*pot0(ints) + potmat(kocc+ia,kocc+ia,ints)-potmat(i,i,ints))
                        do ib=1,kvirt
                           if (ib.eq.ia) cycle
-#ifdef OMP
-                          !$OMP ATOMIC
-#endif
-                          potmut(cont(is+1,js+1),ints) = potmut(cont(is+1,js+1),ints) + tddfteig(ia,i,is)*tddfteig(ib,i,js)*potmat(kocc+ia,kocc+ib,ints)
+!#ifdef OMP
+!                          !$OMP ATOMIC
+!#endif
+                          potmut(kk,ints) = potmut(kk,ints) + tddfteig(ia,i,is)*tddfteig(ib,i,js)*potmat(kocc+ia,kocc+ib,ints)
 
                        enddo
                        do j=1,kocc
                           if (j.eq.i) cycle
-#ifdef OMP
-                          !$OMP ATOMIC
-#endif 
-                          potmut(cont(is+1,js+1),ints) = potmut(cont(is+1,js+1),ints) - tddfteig(ia,i,is)*tddfteig(ia,j,js)*potmat(j,i,ints)
+!#ifdef OMP
+!                          !$OMP ATOMIC
+!#endif 
+                          potmut(kk,ints) = potmut(kk,ints) - tddfteig(ia,i,is)*tddfteig(ia,j,js)*potmat(j,i,ints)
                        enddo
                     enddo
                  enddo
@@ -562,34 +561,34 @@ PROGRAM write_wavet
 #endif
     do is=1,ntoten
        do js=is,ntoten
-!         kk = cont(is+1,js+1)
+          kk = cont(is+1,js+1)
 !         dd = kk
           do i=1,kocc
              do ia=1,kvirt
-#ifdef OMP
-               !$OMP ATOMIC  
-#endif
-                lmut(1,cont(is+1,js+1)) = lmut(1,cont(is+1,js+1)) + tddfteigl(ia,i,is)*tddfteigl(ia,i,js)*(2.d0*l0(1) + lmatx(kocc+ia,kocc+ia)-lmatx(i,i))
-                lmut(2,cont(is+1,js+1)) = lmut(2,cont(is+1,js+1)) + tddfteigl(ia,i,is)*tddfteigl(ia,i,js)*(2.d0*l0(2) + lmaty(kocc+ia,kocc+ia)-lmaty(i,i))
-                lmut(3,cont(is+1,js+1)) = lmut(3,cont(is+1,js+1)) + tddfteigl(ia,i,is)*tddfteigl(ia,i,js)*(2.d0*l0(3) + lmatz(kocc+ia,kocc+ia)-lmatz(i,i))
+!#ifdef OMP
+!               !$OMP ATOMIC  
+!#endif
+                lmut(1,kk) = lmut(1,kk) + tddfteigl(ia,i,is)*tddfteigl(ia,i,js)*(2.d0*l0(1) + lmatx(kocc+ia,kocc+ia)-lmatx(i,i))
+                lmut(2,kk) = lmut(2,kk) + tddfteigl(ia,i,is)*tddfteigl(ia,i,js)*(2.d0*l0(2) + lmaty(kocc+ia,kocc+ia)-lmaty(i,i))
+                lmut(3,kk) = lmut(3,kk) + tddfteigl(ia,i,is)*tddfteigl(ia,i,js)*(2.d0*l0(3) + lmatz(kocc+ia,kocc+ia)-lmatz(i,i))
                 do ib=1,kvirt
                    if (ib.eq.ia) cycle
-#ifdef OMP
-                  !$OMP ATOMIC
-#endif
-                   lmut(1,cont(is+1,js+1)) = lmut(1,cont(is+1,js+1)) + tddfteigl(ia,i,is)*tddfteigl(ib,i,js)*lmatx(kocc+ia,kocc+ib)
-                   lmut(2,cont(is+1,js+1)) = lmut(2,cont(is+1,js+1)) + tddfteigl(ia,i,is)*tddfteigl(ib,i,js)*lmaty(kocc+ia,kocc+ib)
-                   lmut(3,cont(is+1,js+1)) = lmut(3,cont(is+1,js+1)) + tddfteigl(ia,i,is)*tddfteigl(ib,i,js)*lmatz(kocc+ia,kocc+ib)
+!#ifdef OMP
+!                  !$OMP ATOMIC
+!#endif
+                   lmut(1,kk) = lmut(1,kk) + tddfteigl(ia,i,is)*tddfteigl(ib,i,js)*lmatx(kocc+ia,kocc+ib)
+                   lmut(2,kk) = lmut(2,kk) + tddfteigl(ia,i,is)*tddfteigl(ib,i,js)*lmaty(kocc+ia,kocc+ib)
+                   lmut(3,kk) = lmut(3,kk) + tddfteigl(ia,i,is)*tddfteigl(ib,i,js)*lmatz(kocc+ia,kocc+ib)
                 enddo
                 
                 do j=1,kocc
                    if (j.eq.i) cycle
-#ifdef OMP
-                   !$OMP ATOMIC 
-#endif
-                   lmut(1,cont(is+1,js+1)) = lmut(1,cont(is+1,js+1)) - tddfteigl(ia,i,is)*tddfteigl(ia,j,js)*lmatx(j,i)
-                   lmut(2,cont(is+1,js+1)) = lmut(2,cont(is+1,js+1)) - tddfteigl(ia,i,is)*tddfteigl(ia,j,js)*lmaty(j,i)
-                   lmut(3,cont(is+1,js+1)) = lmut(3,cont(is+1,js+1)) - tddfteigl(ia,i,is)*tddfteigl(ia,j,js)*lmatz(j,i)
+!#ifdef OMP
+!                   !$OMP ATOMIC 
+!#endif
+                   lmut(1,kk) = lmut(1,kk) - tddfteigl(ia,i,is)*tddfteigl(ia,j,js)*lmatx(j,i)
+                   lmut(2,kk) = lmut(2,kk) - tddfteigl(ia,i,is)*tddfteigl(ia,j,js)*lmaty(j,i)
+                   lmut(3,kk) = lmut(3,kk) - tddfteigl(ia,i,is)*tddfteigl(ia,j,js)*lmatz(j,i)
                 enddo
              enddo
           enddo
@@ -619,6 +618,7 @@ PROGRAM write_wavet
 
 
   exciten=exciten*EVAU
+  write(*,*) "Sto per scrivere"
 
   open(24,file='ci_energy.inp')
   do i=1,ntoten
@@ -692,12 +692,12 @@ PROGRAM write_wavet
      j=0
      write(17,*) i,j
      do ints=1,nts
-        write(17,*) potmut(1,ints), 0, pot_nuc0(ints)
+        write(17,*) potmut(1,ints), 0, pot_nuc0(ints)  
      enddo
 
-     do i=1,ntoten+1
+     do i=2,ntoten+1
         dd=cont(1,i)
-        write(17,*) 0, i
+        write(17,*) 0, i-1
         do ints=1,nts
            write(17,*) potmut(dd,ints)
         enddo
@@ -720,7 +720,7 @@ PROGRAM write_wavet
   deallocate(cont)
 
 
-        
+ write(*,*) "Ho finito di scrivere"
 
 
   WRITE(*,98) ' ********************************* '
