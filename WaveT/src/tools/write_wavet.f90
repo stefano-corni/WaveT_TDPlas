@@ -61,10 +61,8 @@ PROGRAM write_wavet
   call CPU_TIME(start)
   open(80,file='eig.dat', form='unformatted')
   read(80) nsym,kocc,kvirt,ntoten,ntotmo,cdspectrum,NP
-  write(*,*) 'sono arrivato dopo eig.dat'
   if (NP) then
   read(80) nts
-  write(*,*) 'num tessere', nts
   endif
   ntotentr = ((ntoten+1)*(ntoten+2))/2
   if (cdspectrum) open(81,file='eig_l.dat')
@@ -72,7 +70,7 @@ PROGRAM write_wavet
   allocate(dipmaty(ntotmo,ntotmo))
   allocate(dipmatz(ntotmo,ntotmo))
   allocate(cont(ntoten+1,ntoten+1))
-  write(*,*) 'sono arrivato dopo l allocazione di dipmat, questo ntotmo',ntotmo
+  
   if (cdspectrum) then
      allocate(lmatx(ntotmo,ntotmo))
      allocate(lmaty(ntotmo,ntotmo))
@@ -84,7 +82,6 @@ PROGRAM write_wavet
   allocate(lmut(3,ntotentr))
   allocate(norml(ntoten))
   endif
-  write(*,*) 'numero orbitali virtuali', kvirt, 'num orb occ', kocc, 'num tot stati',ntoten
   
   dipmatx=0.d0
   dipmaty=0.d0
@@ -360,7 +357,6 @@ PROGRAM write_wavet
 #ifdef OMP
 !$OMP END PARALLEL DO
 #endif
-write(*,*) "Sono dopo dmut"
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 ! NANOPARTICLE by Pier e Leo
@@ -509,7 +505,6 @@ write(*,*) "Sono dopo dmut"
 !$OMP END PARALLEL DO
 #endif 
 !EXC-EXC
-write(*,*) "Sono dopo gli stati eccitati"
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 ! NANOPARTICLE by Pier e Leo
@@ -618,7 +613,6 @@ write(*,*) "Sono dopo gli stati eccitati"
 
 
   exciten=exciten*EVAU
-  write(*,*) "Sto per scrivere"
 
   open(24,file='ci_energy.inp')
   do i=1,ntoten
@@ -692,14 +686,14 @@ write(*,*) "Sono dopo gli stati eccitati"
      j=0
      write(17,*) i,j
      do ints=1,nts
-        write(17,*) potmut(1,ints), 0, pot_nuc0(ints)  
+        write(17,*) -potmut(1,ints), 0, pot_nuc0(ints)  
      enddo
 
      do i=2,ntoten+1
         dd=cont(1,i)
         write(17,*) 0, i-1
         do ints=1,nts
-           write(17,*) potmut(dd,ints)
+           write(17,*) -potmut(dd,ints)
         enddo
      enddo
 
@@ -708,7 +702,7 @@ write(*,*) "Sono dopo gli stati eccitati"
               dd=cont(i,j)
               write(17,*)  i-1, j-1
               do ints=1,nts
-                 write(17,*) potmut(dd,ints)
+                 write(17,*) -potmut(dd,ints)
               enddo
            enddo
        enddo
@@ -718,9 +712,6 @@ write(*,*) "Sono dopo gli stati eccitati"
   endif
 
   deallocate(cont)
-
-
- write(*,*) "Ho finito di scrivere"
 
 
   WRITE(*,98) ' ********************************* '
