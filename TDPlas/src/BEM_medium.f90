@@ -1235,8 +1235,12 @@ end subroutine
 
       subroutine do_dummy_scaling
 
-       real(dbl) :: radius
+       real(dbl) :: scr, max, min
        integer(i4b) :: its
+
+       !caveat 1: dummy volume should contain the origin
+       !caveat 2: dummy surface should not contain the origin
+       !caveat 3: actual surface should not intersect the dummy surface
 
        center=zero
        do its=1,pedra_surf_n_tessere
@@ -1248,31 +1252,25 @@ end subroutine
 
        scaling=sqrt(sum(center(:)**2))
 
-       write(*,*) "distance to np", scaling
-
-       radius=zero
+       max=zero
        do its=1,pedra_surf_n_tessere
-         radius=radius+(pedra_surf_tessere(its)%x-center(1))**2+&
-                       (pedra_surf_tessere(its)%y-center(2))**2+&
-                       (pedra_surf_tessere(its)%z-center(3))**2
+         scr=sqrt((pedra_surf_tessere(its)%x-center(1))**2+&
+                  (pedra_surf_tessere(its)%y-center(2))**2+&
+                  (pedra_surf_tessere(its)%z-center(3))**2)
+         if(scr>max) max=scr
        enddo
-       radius=sqrt(radius/pedra_surf_n_tessere)
 
-       write(*,*) "np radius is:", radius
-
-       scaling=scaling+1.1d0*radius
+       scaling=scaling+1.1d0*max
        
-       radius=zero
+       min=zero
        do its=1,pedra_dum_n_tessere
-         radius=radius+pedra_dum_tessere(its)%x**2+&
-                       pedra_dum_tessere(its)%y**2+&
-                       pedra_dum_tessere(its)%z**2
+         scr=sqrt(pedra_dum_tessere(its)%x**2+&
+                  pedra_dum_tessere(its)%y**2+&
+                  pedra_dum_tessere(its)%z**2)
+       	 if(scr<min) min=scr
        enddo
-       radius=sqrt(radius/pedra_dum_n_tessere)
 
-       write(*,*) "dummy radius", radius
-
-       scaling=scaling/radius
+       scaling=scaling/min
 
        write(*,*) "scaling factor", scaling
 
