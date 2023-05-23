@@ -127,6 +127,7 @@
             user_input%bem_read_write    =  "read"
             user_input%local_field       =  "non"
             user_input%normalization     =  "non"       
+            user_input%bem_symmetric     =  "yes"
 
             user_input%surface_type               = "mesh"
             user_input%input_mesh                 = "non"
