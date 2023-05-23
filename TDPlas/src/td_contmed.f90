@@ -573,9 +573,11 @@
          allocate(pot_tp(pedra_surf_n_tessere))
          pot_tp=matmul(transpose(BEM_Sdum_act),qmolp)
          if(global_medium_Floc.eq."loc") then
-           qextp=matmul(BEM_Sm1_dum,potf_t)
+           ! caveat 1: be sure that field is uniform.
+           ! caveat 2: be sure that scaling is such that contains actual interface.
+           qextp=matmul(BEM_Sm1_dum,scaling**2*potf_t)
            allocate(potf_tp(pedra_surf_n_tessere))
-           potf_tp=matmul(transpose(BEM_Sdum_act),qextp)
+           potf_tp=matmul(transpose(BEM_Sdum_act_p),qextp)
            allocate(potf_tp2(pedra_surf_n_tessere))
            potf_tp2=potf_tp
          endif
@@ -1468,8 +1470,11 @@
          pot_tp=matmul(transpose(BEM_Sdum_act),qmolp)
          if(global_medium_Floc.eq."loc") then
            ! dummy charges in dummy surface reproducing external potential outside
-           qextp=matmul(BEM_Sm1_dum,potf)
-           potf_tp=matmul(transpose(BEM_Sdum_act),qextp)
+           ! caveat 1: be sure that field is uniform.
+           ! caveat 2: be sure that scaling is such that contains actual interface.
+           qextp=matmul(BEM_Sm1_dum,scaling**2*potf)
+           potf_tp=matmul(transpose(BEM_Sdum_act_p),qextp)
+           potf_tp=potf
          endif
          if(global_medium_Fmdm.eq.'cmix') then ! TO CHECK - STEFANO POINTED OUT
            pot_tp=pot_tp+matmul(transpose(BEM_Sdum_act),qr_dum_tp)
@@ -3138,9 +3143,11 @@
           allocate(pot_aux(pedra_surf_n_tessere))
           pot_aux=matmul(transpose(BEM_Sdum_act),qmolp)
           if(global_medium_Floc.eq."loc") then
-            qextp=matmul(BEM_Sm1_dum,potf)
+            ! caveat 1: be sure that field is uniform.
+            ! caveat 2: be sure that scaling is such that contains actual interface.
+            qextp=matmul(BEM_Sm1_dum,scaling**2*potf)
             allocate(potf_aux(pedra_surf_n_tessere))
-            potf_aux=matmul(transpose(BEM_Sdum_act),qextp)
+            potf_aux=matmul(transpose(BEM_Sdum_act_p),qextp)
           endif
           if(global_medium_Fmdm.ne.'cmix') then
            qr=matmul(BEM_Z,matmul(BEM_Q0,pot_aux))

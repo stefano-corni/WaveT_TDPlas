@@ -101,6 +101,9 @@
       real(dbl), allocatable :: BEM_Q0_super(:,:),BEM_Q0x_super(:,:)
       real(dbl), allocatable :: gauging_vector(:),gauging_vector_dum(:)
 
+      real(dbl), allocatable :: BEM_Sdum_act_p(:,:)
+      real(dbl) :: scaling, center(3)
+
       save
       private
       public BEM_L,BEM_T,ONS_ff,ONS_fw,                                &
@@ -118,7 +121,8 @@
              qmolp,qextp,npoles_dum,&
              BEM_Sdum,BEM_Sdum_act,BEM_Qf_dum,BEM_ADt_dum,BEM_Qfx_dum,&
              gg_dum,w2_dum,kf_dum,kf0_dum,BEM_ADtm1_dum,BEM_Q0_dum,BEM_Q0x_dum,&
-             BEM_Q0_super,BEM_Q0x_super,BEM_Sm1,BEM_Sm1_dum,BEM_Mxdum_act
+             BEM_Q0_super,BEM_Q0x_super,BEM_Sm1,BEM_Sm1_dum,BEM_Mxdum_act,&
+             BEM_Sdum_act_p, scaling, center
 
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -205,6 +209,7 @@
            endif
          endif
          if( (pedra_surf_Fdum.eq."yes".and.global_medium_Fmdm.eq.'cnan') .or. global_medium_Fmdm.eq.'cmix' ) then
+           call do_dummy_scaling
            call do_BEM_translator
            if(global_medium_Fmdm.eq.'cmix') call do_BEM_supermatrix
            allocate(qmolp(pedra_dum_n_tessere))
@@ -976,7 +981,7 @@ end subroutine
       end subroutine do_BEM_dum
 
 !------------------------------------------------------------------------
-! @brief Compute a Calderon D rectangular matrix for dummy-actual surfaces
+! @brief Compute a Calderon S rectangular matrix for dummy-actual surfaces
 !
 ! @date Created: G. Gil
 ! Modified:
@@ -1003,6 +1008,35 @@ end subroutine
        return
 
       end subroutine do_BEM_dum_act
+
+!------------------------------------------------------------------------
+! @brief Compute a Calderon S rectangular matrix for dummy-actual surfaces
+!        in case of external field
+! @date Created: G. Gil
+! Modified:
+!------------------------------------------------------------------------
+      subroutine do_BEM_dum_act_p
+
+       real(dbl) :: temp
+       integer(i4b) :: i,j
+       character(len=3) :: target
+
+       allocate(BEM_Sdum_act_p(pedra_dum_n_tessere,pedra_surf_n_tessere))
+
+!$OMP PARALLEL
+!$OMP DO
+       do i=1,pedra_dum_n_tessere
+        do j=1,pedra_surf_n_tessere
+          call green_s_dum_act_p(i,j,temp)
+          BEM_Sdum_act_p(i,j)=temp
+        enddo
+       enddo
+!$OMP enddo
+!$OMP END PARALLEL
+
+       return
+
+      end subroutine do_BEM_dum_act_p
 
 !------------------------------------------------------------------------
 ! @brief Calderon D matrix with Purisima Dii elements
@@ -1177,6 +1211,72 @@ end subroutine
 
       end subroutine green_s_dum_act
 
+!------------------------------------------------------------------------
+! @brief Calderon S matrix
+!
+! @date Created: G. Gil
+! Modified:
+!------------------------------------------------------------------------
+      subroutine green_s_dum_act_p(i,j,value)
+
+       integer(i4b), intent(in):: i,j
+       real(dbl), intent(out) :: value
+       real(dbl):: dist
+
+       scrd3(1)=(pedra_dum_tessere(i)%x*scaling-pedra_surf_tessere(j)%x)
+       scrd3(2)=(pedra_dum_tessere(i)%y*scaling-pedra_surf_tessere(j)%y)
+       scrd3(3)=(pedra_dum_tessere(i)%z*scaling-pedra_surf_tessere(j)%z)
+       dist=sqrt(dot_product(scrd3,scrd3))
+       value=one/dist
+
+       return
+
+      end subroutine green_s_dum_act_p
+
+      subroutine do_dummy_scaling
+
+       real(dbl) :: scr, max, min
+       integer(i4b) :: its
+
+       !caveat 1: dummy volume should contain the origin
+       !caveat 2: dummy surface should not contain the origin
+       !caveat 3: actual surface should not intersect the dummy surface
+
+       center=zero
+       do its=1,pedra_surf_n_tessere
+         center(1)=center(1)+pedra_surf_tessere(its)%x
+         center(2)=center(2)+pedra_surf_tessere(its)%y
+         center(3)=center(3)+pedra_surf_tessere(its)%z
+       enddo
+       center=center/pedra_surf_n_tessere
+
+       scaling=sqrt(sum(center(:)**2))
+
+       max=zero
+       do its=1,pedra_surf_n_tessere
+         scr=sqrt((pedra_surf_tessere(its)%x-center(1))**2+&
+                  (pedra_surf_tessere(its)%y-center(2))**2+&
+                  (pedra_surf_tessere(its)%z-center(3))**2)
+         if(scr>max) max=scr
+       enddo
+
+       scaling=scaling+1.1d0*max
+       
+       min=zero
+       do its=1,pedra_dum_n_tessere
+         scr=sqrt(pedra_dum_tessere(its)%x**2+&
+                  pedra_dum_tessere(its)%y**2+&
+                  pedra_dum_tessere(its)%z**2)
+       	 if(scr<min) min=scr
+       enddo
+
+       scaling=scaling/min
+
+       write(*,*) "scaling factor", scaling
+
+       return
+
+      end subroutine do_dummy_scaling
 
 !------------------------------------------------------------------------
 ! @brief Compute BEM matrices within diagonal approach
@@ -1811,6 +1911,14 @@ end subroutine
        ! Build S'
 
        call do_BEM_dum_act
+
+       if(global_medium_Floc.eq."loc") then
+
+        ! Build S' : case external field
+
+        call do_BEM_dum_act_p
+
+       endif
 
        ! Build S''^-1 S'
 
