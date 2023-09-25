@@ -398,7 +398,7 @@
 ! tesserae (vts) 
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: L. Biancorosso
 !------------------------------------------------------------------------
       subroutine out_vts
 
@@ -412,30 +412,61 @@
 
 
 
-
        open(unit=7,file="ci_pot_scf.inp",status="unknown", &
           form="formatted")
-       write (7,*) this_nts_act
-       write (7,*) "V0  check Vnuc"
+
+       write(7,*) this_nts_act
+       i=0
+       j=0
+       ! V00
+       write(7,*) i,j 
        do its=1,this_nts_act
-        write (7,*) this_vts(its,1,1),0.d0,this_vtsn(its)
+        write(7,*) this_vts(its,1,1)-this_vtsn(its),0.d0,this_vtsn(its)
        enddo
-       do j=2,n_ci
-         write(7,*) 0,j-1
-         do its=1,this_nts_act
-          write(7,*) this_vts(its,1,j)
-         enddo
-       enddo
-       !Vij
+
        do i=2,n_ci
-          do j=i,n_ci   
-             write(7,*) i-1,j-1
-             do its=1,this_nts_act
-                write(7,*) this_vts(its,i,j)             
-             enddo
+          write(7,*) 0, i-1
+          do its=1,this_nts_act
+             write(7,*) this_vts(its,1,i) 
           enddo
        enddo
-       close(unit=7)
+
+       do i=2,n_ci
+           do j=2,i
+              write(7,*)  i-1, j-1
+              do its=1,this_nts_act
+                 if (i.eq.j) then
+                     write(7,*) this_vts(its,i,j)-this_vtsn(its)
+                 else
+                     write(7,*) this_vts(its,i,j) 
+                 endif
+              enddo
+           enddo
+       enddo
+
+!       open(unit=7,file="ci_pot_scf.inp",status="unknown", &
+!          form="formatted")
+!       write (7,*) this_nts_act
+!       write (7,*) "V0  check Vnuc"
+!       do its=1,this_nts_act
+!        write (7,*) this_vts(its,1,1),0.d0,this_vtsn(its)
+!       enddo
+!       do j=2,n_ci
+!         write(7,*) 0,j-1
+!         do its=1,this_nts_act
+!          write(7,*) this_vts(its,1,j)
+!         enddo
+!       enddo
+       !Vij
+!       do i=2,n_ci
+!          do j=i,n_ci   
+!             write(7,*) i-1,j-1
+!             do its=1,this_nts_act
+!                write(7,*) this_vts(its,i,j)             
+!             enddo
+!          enddo
+!       enddo
+!       close(unit=7)
        if (myrank.eq.0) write(6,*) "Written out the SCF potentials"
 
        return 
@@ -446,7 +477,7 @@
 ! @brief Transform to the new basis and write out dipole integrals (mut)  
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: L. Biancorosso 9/23
 !------------------------------------------------------------------------
       subroutine out_dipoles
 
@@ -462,6 +493,15 @@
         mut(its,:,:)=matmul(mut(its,:,:),eigt_c)
         mut(its,:,:)=matmul(transpose(eigt_c),mut(its,:,:))
        enddo
+
+       if (Fmag.eq.'mag') then
+          do its=1,3
+             lt(its,:,:)=matmul(lt(its,:,:),eigt_c)
+             lt(its,:,:)=matmul(transpose(eigt_c),lt(its,:,:))
+          enddo
+       endif
+
+
 ! write out the scf dipoles
        open(unit=7,file="ci_mut_scf.inp",status="unknown", &
            form="formatted")
@@ -474,6 +514,22 @@
          enddo
        enddo
        close(unit=7)
+
+       if (Fmag.eq.'mag') then
+           open(unit=8,file='ci_lt_scf.inp',status='unknown', &
+           form="formatted")
+           do i=1,n_ci
+              write(8,"(A,I6,X,A,I6,X,3(E15.8,X))") 'States', 0,'and',i-1,lt(1,1,i),lt(2,1,i),lt(3,1,i)
+           enddo
+           do i=2,n_ci
+              do j=2,i
+               write(8,"(A,I6,X,A,I6,X,3(E15.8,X))") 'States', j-1,'and',i-1,lt(1,i,j),lt(2,i,j),lt(3,i,j)
+              enddo
+           enddo
+           close(unit=8)
+       endif
+
+         
        if (myrank.eq.0) write(6,*) "Written out the SCF dipoles"
 
        return 

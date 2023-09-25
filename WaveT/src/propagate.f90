@@ -35,7 +35,7 @@
 !    int_rad_int is the integral of the classical radiated power at current step
       real(dbl) :: int_rad,int_rad_int,mu_a(3),sm
       complex(cmp) :: m_a(3)
-      integer(i4b) :: file_c=10,file_e=8,file_mu=9,file_m=11 !MM 
+      integer(i4b) :: file_c=10,file_e=8,file_mu=9,file_m=611 !MM 
       save
       private
       public create_field, prop
@@ -71,6 +71,7 @@
        write(name_mu,'(a5,i0,a4)') "mu_t_",n_f,".dat"
        if (Fmag.eq.'mag') then
           write(name_m,'(a4,i0,a4)') "m_t_",n_f,".dat"
+          write(*,*) "sono il primo m_t"
        endif
        if (Fres.eq.'Yesr') then
           if (Fbin.ne.'bin') then
@@ -165,11 +166,10 @@
        int_rad_int=0.d0
        if(Frad.eq."arl".or.Fdis.ne."nodis") &
                                call seed_random_number_sc(iseed)
-
        if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") then
            ! GG: 11/03/2019 begin changes
            !MR print time
-           call cpu_time(start) 
+           call cpu_time(start)
            call init_medium(c_prev,mu_prev,f_prev,h_int)
            call cpu_time(finish)
            write(*,*) '("Time = ",f6.3," seconds.")',finish-start
@@ -192,6 +192,11 @@
             ! compute the molecular state in equilibrium with the medium starting from an excited state in the frozen approximation
             ! onsager model ("dip") or pcm model
             call do_scf(q_or_f,c_prev)
+            trans_dipoles = mut
+            energies=e_ci 
+            if(Fmag.eq.'mag') then 
+                trans_mag=lt
+            endif
             ! compute the molecular dipole
             call do_dip_from_coeff(c_prev,mu_prev,nstates)
             if(this_Fprop.eq."dip") then
@@ -202,14 +207,10 @@
             endif
            end if
            ! GG: 11/03/2019 end changes
-           write(*,*) 'qui 0', myrank
            if (Fres.eq.'Nonr') then
               i=1
-              write(*,*) 'prima', myrank
               call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-              write(*,*) 'dopo', myrank
            endif
-           write(*,*) 'qui 1'
        endif
        if (Fres.eq.'Nonr') then
           call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)          
@@ -223,7 +224,6 @@
        elseif (Fres.eq.'Yesr') then
           if (Fdis.ne."nodis") call random_seq(restart_i)
        endif
-       write(*,*) 'qui 2'
 ! EC 20/12/16
 ! Dissipation according to the Markovian SSE (eq 25 J. Phys: Condens.
 ! Matter vol. 24 (2012) 273201)
@@ -241,7 +241,6 @@
           endif
        endif
 
-       write(*,*) 'qui 3'
 
        if (n_step.gt.1) then
          if (Fexp.eq.'exp') then
@@ -255,7 +254,6 @@
          endif
        endif
 
-       write(*,*) 'qui 4'
 
 ! DEALLOCATION AND CLOSING
        deallocate(c,c_prev,c_prev2,h_int)
