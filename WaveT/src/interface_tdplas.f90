@@ -326,9 +326,9 @@ module interface_tdplas
          if(global_sys_Ftest.eq."n-r") then
           call prop_mdm(i, mu_t = mu, pot_t = pot, potf_t = potf, h_int = h)
          else
-          write(*,*) 'uella 1', myrank
+          !write(*,*) 'uella 1', myrank
           call prop_mdm(i, pot_t = pot, potf_t = potf, h_int = h)
-          write(*,*) 'uella 2', myrank
+          !write(*,*) 'uella 2', myrank
 #ifdef MPI
          call mpi_finalize(ierr_mpi)
          stop

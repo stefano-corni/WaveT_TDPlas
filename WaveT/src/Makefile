@@ -1,23 +1,23 @@
-FC = mpiifort
-
+#FC = mpiifort
+FC = gfortran
 # open mp flags
  # comment first line and uncommment the second for ifort
 
- #OMP= -fopenmp -DOMP
- OMP= -qopenmp -DOMP
+ OMP= -fopenmp -DOMP
+ #OMP= -qopenmp -DOMP
 
  # mpi flags
 
- MPI= -DMPI
+ #MPI= -DMPI
 
  # other flags - to clean up?
 
- LDLAGS=
+ #LDLAGS=
 
  # actual flags used in the compilation
  #FFLAGS= -O3 ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
- #FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
- FFLAGS= -O3 -ftz -align all ${OMP} ${MPI} -heap-arrays 1024 -check bounds 
+ FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+ #FFLAGS= -O3 -ftz -align all ${OMP} ${MPI} -heap-arrays 1024 -check bounds 
 
  # preprocessor flag
  # comment the first and uncomment the second if compiler is ifort
@@ -25,10 +25,11 @@ FC = mpiifort
  CPP= -cpp
 
 
-LIBS = -qmkl -lfftw3 -lm
-INC = #-I/home/coccia/Libs/fftw-3.3.8
-INC = #-I/home/coccia/Codes/WaveT_nondipole/WaveT/WaveT/src
-#INC = -I/usr/local/include
+#LIBS = -qmkl -lfftw3 -lm
+#INC = -I/home/coccia/Libs/fftw-3.3.8
+#INC = -I/home/coccia/Codes/WaveT_nondipole/WaveT/WaveT/src
+INC = -I/usr/include/x86_64-linux-gnu
+LIBS = -L/usr/lib/x86_64-linux-gnu -llapack -lblas -lfftw3
 LIBSPAR= #-L/opt/scali/lib64 -lfmpi -lmpi
 INCPAR= #-I/opt/scali/include64 -I/local/home/corni/emanuele/fftw-3.3.4/include/
 

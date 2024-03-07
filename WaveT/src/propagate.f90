@@ -441,6 +441,16 @@
                  (t_mid+sum(tdelay(1:j-1))))**2/(sigma(j)**2)) 
               enddo
            enddo
+           ! Linear Gaussian pulse: exp(-(t-t0)^2/s^2)
+        case ("lga")
+           do i=1,n_tot
+              t_a=dt*(i-1)
+              f(:,i)=fmax(:,1)*t_a*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))
+              do j=2,npulse
+                 f(:,i)=f(:,i) + fmax(:,j)*t_a*exp(-pt5*(t_a- &
+                 (t_mid+sum(tdelay(1:j-1))))**2/(sigma(j)**2))
+              enddo
+           enddo
 ! SP 270817: the following (commented) is probably needed for spectra  
          !do i=1,n_tot
          ! t_a=dt*(dble(i)-1)
