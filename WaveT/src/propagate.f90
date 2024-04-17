@@ -441,6 +441,12 @@
                  (t_mid+sum(tdelay(1:j-1))))**2/(sigma(j)**2)) 
               enddo
            enddo
+        !EC 150424
+        case ("tra")
+        ! Trapezoidal pulse
+           do i=1,n_tot
+              if (i.gt.pini.and.i.lt.pfin) f(:,i)=fmax(:,1)
+           enddo  
            ! Linear Gaussian pulse: exp(-(t-t0)^2/s^2)
         case ("lga")
            do i=1,n_tot
