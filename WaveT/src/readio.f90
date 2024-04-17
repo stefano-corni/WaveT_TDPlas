@@ -99,7 +99,7 @@
       integer(i4b) :: nexc   ! number of excited states
       integer(i4b) :: nrel   ! number of relaxation channels
       integer(i4b) :: nf     ! number of relaxation channels (including |e> -> |0> terms) 
-      integer(i4b) :: i,nspectra,pini,pfinnn
+      integer(i4b) :: i,nspectra,pini,pfin
 ! kind of surrounding medium and shape of the impulse
 !     Fmdm=sol: solvent
 !     Fmdm=nan: nanoparticle
