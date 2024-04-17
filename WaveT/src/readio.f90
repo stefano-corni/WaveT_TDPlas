@@ -99,7 +99,7 @@
       integer(i4b) :: nexc   ! number of excited states
       integer(i4b) :: nrel   ! number of relaxation channels
       integer(i4b) :: nf     ! number of relaxation channels (including |e> -> |0> terms) 
-      integer(i4b) :: i,nspectra
+      integer(i4b) :: i,nspectra,pini,pfinnn
 ! kind of surrounding medium and shape of the impulse
 !     Fmdm=sol: solvent
 !     Fmdm=nan: nanoparticle
@@ -132,7 +132,7 @@
              ncit,Fopt,ik,Fwrt,tar,all_pop,all_coh,pop,coh, &
              write_bin,Ip,prop_type,                        &
              Fmag,lt,e_dir,m_i_prev,m_i_prev2, &
-             m_i_prev3,m_i_prev4,m_i_prev5,Flig,f0 !MM 
+             m_i_prev3,m_i_prev4,m_i_prev5,Flig,f0,pini,pfin 
              
 !
       contains
@@ -159,7 +159,7 @@
                          binary,ncit,Ip
        !External field paramaters
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
-                        npulse,tdelay,pshift,Fmag,e_dir,Flig,f0
+                        npulse,tdelay,pshift,Fmag,e_dir,Flig,f0,pini,pfin
        !Stochastic Schroedinger equation
        namelist /sse/ dissipative,idep,dis_prop,prop_type,nrnd,tdis,nr_typ,krnd,out_sse
        !Namelist spectra
@@ -864,6 +864,11 @@
        Flig='lin'
        ! Field amplitude for circular polarization
        f0=0.d0
+       ! Initial point for trapezoidal pulse
+       pini=10
+       ! Final point for trapezoidal pulse
+       pfin=20
+
 
        return
 
@@ -1124,6 +1129,8 @@
        write (*,*) "time at the center of the pulse (au):",t_mid
        write (*,*) "Width of the pulse (time au):",sigma(1)
        write (*,*) "Frequency (au):",omega(1)
+       ! EC 150424
+       if (Ffld.eq.'tra') write(*,*) 'Time duration of the kick', (pfin-pini)*dt
        if (Flig.eq.'lin') then
           write (*,*) "Maximum E field (au)",fmax(:,1)
           write (*,*) "Maximum E field (V/m)",fmax(:,1)*au_to_vm
@@ -1360,6 +1367,8 @@
        call mpi_bcast(nrnd,      1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(tdis,      1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)    
        call mpi_bcast(nr_typ,    1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(pini,      1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(pfin,      1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
 
        call mpi_bcast(dt,        1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(t_mid,     1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
