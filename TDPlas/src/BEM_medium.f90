@@ -1522,8 +1522,7 @@ end subroutine
            elseif(global_medium_bem_sym.eq."non") then
               q_omega=matmul(BEM_VLc,pot)
               q_omega=Kdiag_omega*q_omega
-              q_omega=matmul(BEM_VRc,q_omega)
-              q_omega=-matmul(BEM_Sm1,q_omega)
+              q_omega=-matmul(BEM_VRc,q_omega)
            endif
            if(global_medium_Fnorm.eq."tot") then
               q_tot=0

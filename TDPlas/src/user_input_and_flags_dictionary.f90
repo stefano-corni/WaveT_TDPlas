@@ -180,7 +180,7 @@
 
       call  dict_entry_init(dict_typ_prop, 4,                                                    &
                  [Character(flg) :: "propagation_pole", "typ_prop"],                              &
-                 [Character(flg) :: "velocity-verlet", "first-order", "inversion", "second-order"],  &
+                 [Character(flg) :: "velocity-verlet", "first-order", "second-order", "inversion"],  &
                  [Character(flg) :: "0", "1", "2", "3"])
 
 
