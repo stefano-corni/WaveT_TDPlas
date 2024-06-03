@@ -81,7 +81,7 @@
              F10.3,"s")') real(current-st)/real(rate)
 #endif
        !> Initialize system wavefunction and Hilbert space
-       call init_propagation
+       call init_Hspace      
        !> Propagate wavefunction 
        call prop
        ! SP 10/07/17: commented the following, do_spectra gives errors 

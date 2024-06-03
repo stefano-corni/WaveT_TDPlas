@@ -35,7 +35,7 @@
 
       save
       private
-      public init_propagation, & ! subroutines
+      public init_Hspace, & ! subroutines
              energies, trans_dipoles, nstates, coeff0, &   ! variables   
              trans_mag ! MM
 !
@@ -48,28 +48,34 @@
 !>    @author S.Pipolo
 !>    @note 
 !----------------------------------------------------------------------------
-      subroutine init_propagation
+      subroutine init_Hspace
        implicit none 
        integer :: ici
 #ifndef MPI
        myrank=0
 #endif
        call init_initialise  
-       if (this_Finit_int.eq."scf") then
-         !> SCF initialisation 
-         !call do_scf(nstates,energies,trans_dipoles)
-       elseif (this_Finit_int.eq."qmt") then
-         !> Quantum Coupling initialisation 
-         call do_QM_coupling(nstates,energies,trans_dipoles)
+       if (Fmdm.ne."vac") then
+         !call init_environment
+         if (this_Finit_int.eq."scf") then
+           !> SCF initialisation 
+           call do_scf(c_i)
+         elseif (this_Finit_int.eq."qmt") then
+           !> Quantum Coupling initialisation 
+           call do_QM_coupling(nstates,energies,trans_dipoles)
+         else
+           write(6,*) "Wrong initialisation... stopping."
+           stop
+         endif
        else
+         !> Input initialisation as in ci_*.inp 
          energies=e_ci
          trans_dipoles=mut
          if (Fmag.eq.'mag') then
             trans_mag=lt !MM
          endif
-         !> Input initialisation as in ci_*.inp 
        endif
-       ! The following lines need to be moified in order to initialize
+       ! The following lines need to be modified in order to initialize
        ! the system in plexciton states greater than n_ci
        do ici=1,n_ci
          coeff0(ici)=c_i(ici)
@@ -82,7 +88,7 @@
        !call fin_initialise  
 
       return
-      end subroutine init_propagation
+      end subroutine init_Hspace
 !
 !
 !------------------------------------------------------------------------
@@ -94,19 +100,23 @@
       subroutine init_initialise
        implicit none
        ! The charge mode w=0 is counted in this_nmodes for testing purposes
-       if (this_Finit_int.eq."qmt") call do_BEM_quant_in_wavet
-       if (this_Finit_int.eq."scf") then
-         write(6,*) "System initialised with self-consistent procedure"
-         nstates=n_ci 
-       elseif (this_Finit_int.eq."qmt") then
-         write(6,*) "System initialised with Quantum Coupling"
-         if(global_sys_Ftest.eq."qmt") then 
-           this_nmodes=3
-           this_qmmodes(1)=2 
-           this_qmmodes(2)=3 
-           this_qmmodes(3)=4 
+       if (Fmdm.ne."vac") then
+         if (this_Finit_int.eq."qmt") call do_BEM_quant_in_wavet
+         if (this_Finit_int.eq."scf") then
+           write(6,*)"System initialised with self-consistent procedure"
+           nstates=n_ci 
+         elseif (this_Finit_int.eq."qmt") then
+           write(6,*) "System initialised with Quantum Coupling"
+           if(global_sys_Ftest.eq."qmt") then 
+             this_nmodes=3
+             this_qmmodes(1)=2 
+             this_qmmodes(2)=3 
+             this_qmmodes(3)=4 
+           endif
+           nstates=n_ci*(this_nmodes+1)
          endif
-         nstates=n_ci*(this_nmodes+1)
+       ! here one may add a scf initialisation with a static electric
+       ! field
        else
          !write(6,*) "System initialised as in input files"
          nstates=n_ci 

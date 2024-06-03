@@ -267,8 +267,8 @@ module interface_tdplas
            this_BEM_W2=BEM_W2
          end if
          if(Fmdm.eq."qnan") then
-          allocate(this_BEM_Modes(this_nts_act,this_nts_act))
-          this_BEM_Modes=BEM_Modes
+           allocate(this_BEM_Modes(this_nts_act,this_nts_act))
+           this_BEM_Modes=BEM_Modes
          end if
         end if
 #else

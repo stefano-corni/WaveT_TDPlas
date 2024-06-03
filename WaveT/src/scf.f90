@@ -37,10 +37,9 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-      subroutine do_scf(q_or_f,c_prev)
+      subroutine do_scf(c_prev)
 
        implicit none
-       real(dbl), intent(INOUT):: q_or_f(:)     !< charges or field  
        complex(cmp), intent(INOUT) :: c_prev(:)  !< basis state coefficients
        integer(i4b) :: ncyc=1                   !< cycle number 
        logical :: docycle=.true.                !< choice on continue cycling
@@ -62,27 +61,19 @@
        thre=10**(-this_thrshld)
        if (myrank.eq.0) write(6,*) "Threshold ", thrv,thre
        call init_scf ! Initialize/allocate
+       if (Fmdm.ne."vac") call init_environment_scf(c_c,f)
        ! scf cycle
        do while (docycle.and.ncyc.le.this_ncycmax) 
-         ! Build the Hamiltonian
-         if(this_Fint.eq."ons") then
-           if(this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then 
-             call do_field_from_charges_in_wavet(q_or_f,fld)
-             call do_htot(fld)
-           endif
-         else
-           call do_htot(q_or_f)
-         endif
+         ! Build the diagonal part of the Hamiltonian 
+         call do_htot_ene
+         if (Fmdm.ne."vac") call add_interaction_h(Htot)
          ! Diagonalize Hamiltonian           
          eigt_c=Htot
          call diag_mat_in_wavet(eigt_c,eigv_c,n_ci)       
          ! Update charges or field with new coefficients 
          call do_c_oldbasis
-         if(this_Fprop.eq."dip") call do_field(q_or_f)
-         if(this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then
-            call do_charges(q_or_f)
-         endif
-         call do_energies(e_scf,e_ini)
+         call update_energies(e_scf,e_ini)
+         if (Fmdm.ne."vac") call update_environment_scf(c_c,f)
          ! Check convergence                                
          if (ncyc.gt.2) then 
            call check_conv(maxe,maxv,n_ci)       
@@ -103,17 +94,7 @@
        enddo
        if (myrank.eq.0) write(6,*) "SCF Done"
        ! Write-out integrals/properties in the new basis 
-       if (this_Fprop.eq.'chr-ief'.or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then
-       ! transform vts to the SCF state basis
-        do its=1,this_nts_act
-         this_vts(its,:,:)=matmul(this_vts(its,:,:),eigt_c)
-         this_vts(its,:,:)=matmul(transpose(eigt_c),this_vts(its,:,:))
-        enddo
-         if (myrank.eq.0) then
-            call out_charges(q_or_f)
-            call out_vts
-         endif
-       endif
+       if (Fmdm.ne."vac") call out_environment_scf(eigt_c)
        if (myrank.eq.0) then
           call out_dipoles
           call out_energies
@@ -141,7 +122,6 @@
        allocate(eigv_c(n_ci),eigt_c(n_ci,n_ci))
        allocate(eigv_cp(n_ci),eigt_cp(n_ci,n_ci))
        allocate(Htot(n_ci,n_ci))
-       if(this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") allocate(pot(this_nts_act))
        allocate(c_c(n_ci))
 
        return
@@ -159,7 +139,6 @@
        deallocate(eigv_c,eigt_c)
        deallocate(eigv_cp,eigt_cp)
        deallocate(Htot)
-       if(allocated(pot))deallocate(pot)
        deallocate(c_c)
 
        return
@@ -215,86 +194,38 @@
 
 
 !------------------------------------------------------------------------
-! @brief Compute field from dipole 
-!
-! @date Created: S. Pipolo
-! Modified:
-!------------------------------------------------------------------------
-      subroutine do_field(f)
-
-       implicit none 
-
-       real(dbl), intent(OUT):: f(3)     
-       integer(i4b)::i    
-
-       do i=1,3
-         mu(i)=dot_product(c_c,matmul(mut(i,:,:),c_c))
-       enddo
-       ! SP 04/0717 matmul for general spheroid orientation
-       f=(1.-this_mix_coef)*f+this_mix_coef*matmul(this_mat_f0,mu)
-
-       return
-
-      end subroutine do_field
-
-!------------------------------------------------------------------------
-! @brief Compute charges from potential 
-!
-! @date Created: S. Pipolo
-! Modified:
-!------------------------------------------------------------------------
-      subroutine do_charges(q)
-
-       implicit none 
-
-       real(dbl), intent(OUT):: q(this_nts_act)     
-       integer(i4b)::i    
-
-       do i=1,this_nts_act
-         pot(i)=dot_product(c_c,matmul(this_vts(i,:,:),c_c))
-       enddo 
-
-       q=(1.-this_mix_coef)*q+this_mix_coef*matmul(this_BEM_Q0,pot)
-! SC 12/8/2016: apparently for NP, charge compensation is needed
-       if (Fmdm.eq.'cnan'.or.Fmdm.eq.'qnan') q=q-sum(q)/this_nts_act
-
-       return
-
-      end subroutine do_charges
-
-!------------------------------------------------------------------------
 ! @brief Compute Hamiltonian with charges or fields 
 !
 ! @date Created: S. Pipolo
 ! Modified: S.Corni 
 !------------------------------------------------------------------------
-      subroutine do_htot(q_or_f)
-
-       real(dbl), intent(IN):: q_or_f(:)     
+      subroutine do_htot_ene
        integer(4)::i,j,k 
-       if (this_Fint.eq."pcm") then
-          do j=1,n_ci
-             do k=j,n_ci   
-                 Htot(k,j)=dot_product(this_vts(:,k,j),q_or_f(:)-this_q0(:))
-                 Htot(j,k)=Htot(k,j)
-             enddo
-             Htot(j,j)=Htot(j,j)+e_ci(j)
-             if(this_Fwrite.eq."high") write(6,*) j,Htot(j,j)
-          enddo
-       else
-          do j=1,n_ci
-             do k=j,n_ci
-           Htot(k,j)=dot_product(mut(:,k,j),q_or_f(:)-this_fr_0(:))
-           Htot(j,k)=Htot(k,j)
-         enddo
-         Htot(j,j)=Htot(j,j)+e_ci(j)
-         if(this_Fwrite.eq."high") write(6,*) j,Htot(j,j)
+        do j=1,n_ci
+          Htot(j,j)=Htot(j,j)+e_ci(j)
+          if(this_Fwrite.eq."high") write(6,*) j,Htot(j,j)
         enddo
-       endif
-
        return
 
-      end subroutine do_htot
+      end subroutine do_htot_ene
+
+
+!------------------------------------------------------------------------
+! @brief Compute dipoles from coefficients should probably go in a
+!        MathTools module
+!
+! @date Created: S. Pipolo
+! Modified:         
+!------------------------------------------------------------------------
+      subroutine do_dip_from_coeff(c,m)
+       complex(cmp), intent(in) :: c(n_ci) !> (1:n_ci) - molecular wavefunction coefficients
+       complex(cmp), intent(out):: m(3) !> (1:n_ci)    - molecular dipole                   
+       integer(4)::i, 
+       do i=1,3
+         mu(i)=dot_product(c,matmul(mut(i,:,:),c))
+       enddo
+       return
+      end subroutine do_htot_ene
 
 
 !------------------------------------------------------------------------
@@ -335,7 +266,7 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-      subroutine do_energies(e_scf,e_ini)
+      subroutine update_energies(e_scf,e_ini)
 
        implicit none
 
@@ -352,127 +283,13 @@
 
        return
 
-      end subroutine do_energies
+      end subroutine update_energies
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!! OUTPUT/TRANSFORMATION ROUTINES !!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
-!------------------------------------------------------------------------
-! @brief Write out the charges in the charges0_scf.dat file 
-!
-! @date Created: S. Pipolo
-! Modified:
-!------------------------------------------------------------------------
-      subroutine out_charges(q)
-
-       implicit none
-
-       real(dbl), intent(IN):: q(this_nts_act)     
-       integer(i4b) its
-
-#ifndef MPI
-       myrank=0
-#endif
-
-       open(unit=7,file="charges0_scf.inp",status="unknown", &
-            form="formatted")
-         write (7,*) this_nts_act
-         do its=1,this_nts_act
-          write (7,'(E22.8,F22.10)') q(its)
-         enddo
-       close(unit=7)
-       if (myrank.eq.0) write(6,*) "Written out the SCF charges"
-       ! SP 23/10/16: update the q0 vector to have a consistent correction if a
-       !              propagation is performed after the SCF cycle
-       this_q0(:)=q(:)
-
-       return 
-
-      end subroutine out_charges     
-
-
-!------------------------------------------------------------------------
-! @brief Transform to the new basis and write out potential integrals on
-! tesserae (vts) 
-!
-! @date Created: S. Pipolo
-! Modified: L. Biancorosso
-!------------------------------------------------------------------------
-      subroutine out_vts
-
-       implicit none
-
-       integer(i4b) :: its,i,j
-
-#ifndef MPI
-       myrank=0
-#endif
-
-
-
-       open(unit=7,file="ci_pot_scf.inp",status="unknown", &
-          form="formatted")
-
-       write(7,*) this_nts_act
-       i=0
-       j=0
-       ! V00
-       write(7,*) i,j 
-       do its=1,this_nts_act
-        write(7,*) this_vts(its,1,1)-this_vtsn(its),0.d0,this_vtsn(its)
-       enddo
-
-       do i=2,n_ci
-          write(7,*) 0, i-1
-          do its=1,this_nts_act
-             write(7,*) this_vts(its,1,i) 
-          enddo
-       enddo
-
-       do i=2,n_ci
-           do j=2,i
-              write(7,*)  i-1, j-1
-              do its=1,this_nts_act
-                 if (i.eq.j) then
-                     write(7,*) this_vts(its,i,j)-this_vtsn(its)
-                 else
-                     write(7,*) this_vts(its,i,j) 
-                 endif
-              enddo
-           enddo
-       enddo
-
-!       open(unit=7,file="ci_pot_scf.inp",status="unknown", &
-!          form="formatted")
-!       write (7,*) this_nts_act
-!       write (7,*) "V0  check Vnuc"
-!       do its=1,this_nts_act
-!        write (7,*) this_vts(its,1,1),0.d0,this_vtsn(its)
-!       enddo
-!       do j=2,n_ci
-!         write(7,*) 0,j-1
-!         do its=1,this_nts_act
-!          write(7,*) this_vts(its,1,j)
-!         enddo
-!       enddo
-       !Vij
-!       do i=2,n_ci
-!          do j=i,n_ci   
-!             write(7,*) i-1,j-1
-!             do its=1,this_nts_act
-!                write(7,*) this_vts(its,i,j)             
-!             enddo
-!          enddo
-!       enddo
-!       close(unit=7)
-       if (myrank.eq.0) write(6,*) "Written out the SCF potentials"
-
-       return 
-
-      end subroutine out_vts      
-
 !------------------------------------------------------------------------
 ! @brief Transform to the new basis and write out dipole integrals (mut)  
 !

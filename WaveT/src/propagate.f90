@@ -167,50 +167,10 @@
        if(Frad.eq."arl".or.Fdis.ne."nodis") &
                                call seed_random_number_sc(iseed)
        if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") then
-           ! GG: 11/03/2019 begin changes
-           !MR print time
            call cpu_time(start)
-           call init_medium(c_prev,mu_prev,f_prev,h_int)
+           call init_env_prop(c_prev,mu_prev,f_prev,h_int)
            call cpu_time(finish)
            write(*,*) '("Time = ",f6.3," seconds.")',finish-start
-           ! SP 18/05/20 the following should go in a init_quantumstate
-           ! module together with the QM_coupling module
-           if(this_Finit_int.eq.'sce') then
-            if(this_Fprop.eq."dip") then
-             ! reaction field                                                 |               ! reaction field
-             allocate(q_or_f(3))        
-             ! mixing iter 1 and 0
-             call preparing_for_scf_in_wavet(this_mix_coef,f_prev,q_or_f)
-            else
-             allocate(pot_prev(this_nts_act))
-             call do_pot_from_coeff(c_prev,pot_prev)
-             ! reaction-field polarization charges                            |               ! reaction-field polarization charges
-             allocate(q_or_f(this_nts_act))
-             ! mixing iter 1 and 0
-             call preparing_for_scf_in_wavet(this_mix_coef,pot_prev,q_or_f)
-            endif
-            ! compute the molecular state in equilibrium with the medium starting from an excited state in the frozen approximation
-            ! onsager model ("dip") or pcm model
-            call do_scf(q_or_f,c_prev)
-            trans_dipoles = mut
-            energies=e_ci 
-            if(Fmag.eq.'mag') then 
-                trans_mag=lt
-            endif
-            ! compute the molecular dipole
-            call do_dip_from_coeff(c_prev,mu_prev,nstates)
-            if(this_Fprop.eq."dip") then
-                    call init_after_scf_in_wavet(mu_prev)
-            else
-                    call do_pot_from_coeff(c_prev,pot_prev)
-                    call init_after_scf_in_wavet(pot_prev)
-            endif
-           end if
-           ! GG: 11/03/2019 end changes
-           if (Fres.eq.'Nonr') then
-              i=1
-              call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-           endif
        endif
        if (Fres.eq.'Nonr') then
           call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)          
