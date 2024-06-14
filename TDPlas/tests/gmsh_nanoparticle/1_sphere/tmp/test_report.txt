@@ -1,2 +1,0 @@
-ven 14 giu 2024, 17:56:59, CEST
-Running test in /home/giulia/WaveT/TDPlas/tests/gmsh_nanoparticle/1_sphere

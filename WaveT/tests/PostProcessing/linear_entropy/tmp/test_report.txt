@@ -1,2 +1,0 @@
-gio 13 giu 2024, 17:46:39, CEST
-Running test in /home/giulia/WaveT/WaveT/tests/PostProcessing/linear_entropy

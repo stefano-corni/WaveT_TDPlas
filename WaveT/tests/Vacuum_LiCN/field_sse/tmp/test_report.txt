@@ -1,2 +1,0 @@
-gio 13 giu 2024, 17:47:45, CEST
-Running test in /home/giulia/WaveT/WaveT/tests/Vacuum_LiCN/field_sse

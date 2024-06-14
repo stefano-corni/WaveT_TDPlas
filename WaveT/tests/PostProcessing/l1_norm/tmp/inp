@@ -1,8 +1,0 @@
-&coherence
-nsteps=3
-quant='l1'
-ngs=1
-read_bin='n'
-nrep=3
-nstates=3
-/

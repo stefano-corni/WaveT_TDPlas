@@ -1,7 +1,0 @@
-gio 13 giu 2024, 17:46:03, CEST
-Running test in /home/giulia/WaveT/WaveT/tests/NP_LF_LiCN/IEF-PCM_strongF
-++ Test type: tdplas
-++ Arguments: 
-using binary  /home/giulia/WaveT/WaveT/bin
-running compare.sh
-  DONE: TEST PASSED!

@@ -1,2 +1,0 @@
-gio 13 giu 2024, 17:46:13, CEST
-Running test in /home/giulia/WaveT/WaveT/tests/NP_RF_LiCN/IEF-PCM

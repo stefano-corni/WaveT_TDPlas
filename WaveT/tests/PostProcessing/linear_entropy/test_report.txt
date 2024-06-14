@@ -1,8 +1,0 @@
-gio 13 giu 2024, 17:46:39, CEST
-Running test in /home/giulia/WaveT/WaveT/tests/PostProcessing/linear_entropy
-++ Test type: makecoh
-++ Arguments: 
-using binary  /home/giulia/WaveT/WaveT/bin
-Note: The following floating-point exceptions are signalling: IEEE_UNDERFLOW_FLAG IEEE_DENORMAL
-running compare.sh
-  DONE: TEST PASSED!

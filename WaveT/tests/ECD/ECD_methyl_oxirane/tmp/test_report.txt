@@ -1,2 +1,0 @@
-gio 13 giu 2024, 17:45:45, CEST
-Running test in /home/giulia/WaveT/WaveT/tests/ECD/ECD_methyl_oxirane
