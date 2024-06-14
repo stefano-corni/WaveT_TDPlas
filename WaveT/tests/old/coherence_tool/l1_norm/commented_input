@@ -1,9 +1,0 @@
-nsteps   !number of steps of the dynamics
-nrep     !number of trajectories from SSE calculation
-nstates  !number of states of the system
-quant    !defines the quantifier 
-ngs      !number of ground states (default is 1)
-<<<<<<< HEAD
-read_bin !formatted or unformatted coefficient file 
-=======
->>>>>>> 6aca8bafb8f0a655d59eca0760404858ae098822

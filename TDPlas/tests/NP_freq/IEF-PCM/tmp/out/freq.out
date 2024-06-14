@@ -1,0 +1,19 @@
+ Essential output written.
+ Nanoparticle as external medium
+ Local field effects are NOT included
+ Medium polarization described by apparent charges
+ This is a Classical BEM run
+ This is full run reading matrix and boundary
+ Medium polarization frozen to molecule in its GS
+ Surface read from file cavity.inp
+ Drude-Lorentz model for dielectric function is used
+ Used keyword: eps_A:   0.11022400000000000      , eps_gm:    7.5757600000000000E-003 , eps_w0:    0.0000000000000000      , f_vel:    0.0000000000000000     
+ The applied perturbation is an external field directed as
+   1.0000000000000000        0.0000000000000000        0.0000000000000000     
+Done reading input, took     0.002s
+ BEM surface and Matrixes S D have been read in
+ BEM correctly initialized
+ Done BEM diagonal
+ Written the static matrix for gamess
+ Written the dynamic matrix for gamess
+Done , total elapsed time     1.310s

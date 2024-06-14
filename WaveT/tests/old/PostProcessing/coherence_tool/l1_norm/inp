@@ -1,0 +1,8 @@
+&coherence
+nsteps=3
+nrep=3
+nstates=3
+quant='l1'
+ngs=1
+read_bin='n'
+/

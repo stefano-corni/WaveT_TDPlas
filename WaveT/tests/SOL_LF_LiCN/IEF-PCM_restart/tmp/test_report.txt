@@ -1,0 +1,2 @@
+gio 13 giu 2024, 17:47:28, CEST
+Running test in /home/giulia/WaveT/WaveT/tests/SOL_LF_LiCN/IEF-PCM_restart

@@ -59,7 +59,7 @@ fi
 
 #### run the test depending on test type 
 case "$type" in
-(time)
+(tdplas)
   $mpi $tdplas/tdplas.x > tdplas.dat 2> err;
   #### check if an out/ directory containing reference output is present  
   test -f out/tdplas.dat || {

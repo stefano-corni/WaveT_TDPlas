@@ -1,0 +1,7 @@
+ven 14 giu 2024, 17:57:17, CEST
+Running test in /home/giulia/WaveT/TDPlas/tests/NP_composite/Freq_sym
+++ Test type: freq
+++ Arguments: 
+using binary  /home/giulia/WaveT/TDPlas/bin
+running compare.sh
+  DONE: TEST PASSED!

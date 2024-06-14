@@ -1,0 +1,7 @@
+ven 14 giu 2024, 17:57:01, CEST
+Running test in /home/giulia/WaveT/TDPlas/tests/gmsh_nanoparticle/ellipsoid
+++ Test type: tdplas
+++ Arguments: 
+using binary  /home/giulia/WaveT/TDPlas/bin
+running compare.sh
+  DONE: TEST PASSED!

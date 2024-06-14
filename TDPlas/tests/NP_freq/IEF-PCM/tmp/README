@@ -1,0 +1,2 @@
+Calculated the response (i.e., polarizability) of a nanoparticle to an external, monochromatic field, for several frequencies
+./../../bin/freq_bem.x  > freq.out

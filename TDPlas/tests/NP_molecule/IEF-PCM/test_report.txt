@@ -1,0 +1,7 @@
+ven 14 giu 2024, 17:57:35, CEST
+Running test in /home/giulia/WaveT/TDPlas/tests/NP_molecule/IEF-PCM
+++ Test type: freq
+++ Arguments: 
+using binary  /home/giulia/WaveT/TDPlas/bin
+running compare.sh
+  DONE: TEST PASSED!

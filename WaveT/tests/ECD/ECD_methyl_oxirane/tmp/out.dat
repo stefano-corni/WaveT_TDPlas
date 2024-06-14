@@ -1,0 +1,83 @@
+ 
+ ****************************************************
+ ****************************************************
+ **                                                **
+ **                    WaveT                       **
+ **     Evolution of molecular wavefunctions       **
+ **   under external electromagnetic perturbations **
+ **                                                **
+ **                     by                         **
+ **               Emanuele Coccia                  **
+ **                Stefano Corni                   **
+ **               Giulia Dall'Osto                 **
+ **                Jacopo Fregoni                  **
+ **                 Gabriel Gil                    **
+ **                Silvio Pipolo                   **
+ **                 Marta Rosa                     **
+ **                                                **
+ ****************************************************
+ ****************************************************
+ 
+ Number to append to dat file           1
+ Number of CIS states to be read          20
+ Number of CIS states to be used          20
+ Molecular center of charge
+   0.0000000000000000        0.0000000000000000        0.0000000000000000     
+ 
+ Time step (in au), number of steps, stride   5.0000000000000003E-002       20670           1
+ 
+ No external medium, vacuum calculation
+ No restart
+ Only |k> -> |0> relaxation
+ Energy term is propagated analytically
+ Matmul is used in the propagation.
+ 
+ CD calculation activated w/ Fmag = mag       
+ Linear polarization
+ 
+ Time shape of the perturbing fieldgau       
+ time at the center of the pulse (au):   500.00000000000000     
+ Width of the pulse (time au):   1.6499999999999999     
+ Frequency (au):  0.37147291282699202     
+ Maximum E field (au)   0.0000000000000000        0.0000000000000000        1.6899999999999999E-006
+ Maximum E field (V/m)   0.0000000000000000        0.0000000000000000        869032.93348299991     
+ Maximum intensity (W/cm^2)   0.0000000000000000        0.0000000000000000        100249.10999999999     
+ 
+ No dissipation
+ SSE quantum jumps not written
+ 
+ Excitation energies read from input, in Hartree
+           1  0.25788306515067816     
+           2  0.27548744963854555     
+           3  0.27933179387133567     
+           4  0.28433484352100641     
+           5  0.29053334788717333     
+           6  0.30877864016033713     
+           7  0.31059993544928727     
+           8  0.31305589114259924     
+           9  0.32024515662640335     
+          10  0.32486160364411770     
+          11  0.32663696230854838     
+          12  0.34096771918665614     
+          13  0.35206123026162389     
+          14  0.35402695029806347     
+          15  0.35549655478969217     
+          16  0.36233155702520164     
+          17  0.37147147533260283     
+          18  0.37303883296120910     
+          19  0.37333319485113026     
+          20  0.37569213239345700     
+
+ Starting point for FT calculation   0.0000000000000000     
+ Artificial damping   200.00000000000000     
+ 
+ *************OMP*****************
+
+ OMP parallelization on
+The number of processors available =        1
+The number of threads available    =        1
+
+ *************OMP*****************
+Done reading input & setting up the field, took     0.239s
+ sono il primo m_t
+Done , total elapsed time     3.199s

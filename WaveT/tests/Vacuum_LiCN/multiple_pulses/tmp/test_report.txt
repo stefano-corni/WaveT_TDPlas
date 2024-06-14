@@ -1,0 +1,2 @@
+gio 13 giu 2024, 17:47:46, CEST
+Running test in /home/giulia/WaveT/WaveT/tests/Vacuum_LiCN/multiple_pulses

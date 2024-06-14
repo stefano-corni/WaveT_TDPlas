@@ -1,0 +1,2 @@
+ven 14 giu 2024, 17:57:32, CEST
+Running test in /home/giulia/WaveT/TDPlas/tests/NP_molecule_eet/IEF-PCM

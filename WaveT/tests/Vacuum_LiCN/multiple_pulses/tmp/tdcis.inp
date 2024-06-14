@@ -1,0 +1,59 @@
+
+&general n_ci=10,n_ci_read=10
+mol_cc=
+0.0
+0.0
+0.0
+n_f=1
+medium='vac'
+dt=0.05
+n_step=100000
+n_out=20
+/ 
+
+&field Ffld='mdg',
+       omega(1)=0.1420,
+       omega(2)=0.13
+       omega(3)=0.15
+       omega(4)=0.11
+       sigma(1)=50.
+       sigma(2)=50.
+       sigma(3)=25.
+       sigma(4)=65.
+       t_mid=150,radiative='non',iseed=123456789,
+       npulse=4,
+       tdelay(1)=300.
+       tdelay(2)=300.
+       tdelay(3)=400.
+       pshift(1)=0.
+       pshift(2)=0.
+       pshift(3)=3.14       
+       
+fmax(1,1)=0.00001
+fmax(2,1)=0.
+fmax(3,1)=0.
+fmax(1,2)=0.00000
+fmax(2,2)=0.00002
+fmax(3,2)=0.
+fmax(1,3)=0.
+fmax(2,3)=0.
+fmax(3,3)=0.00004
+fmax(1,4)=0.00002
+fmax(2,4)=0.
+fmax(3,4)=0.
+/
+
+&sse dissipative='non',idep=1,dis_prop='qjump',nrnd=0,tdis=0,nr_typ=1,krnd=0.0 /
+
+&spectra start=0, 
+
+tau=
+2.0
+0.0
+
+dir_ft=
+0.0
+1.0
+0.0 
+/
+

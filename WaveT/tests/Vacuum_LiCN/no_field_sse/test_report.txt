@@ -1,0 +1,7 @@
+gio 13 giu 2024, 17:47:50, CEST
+Running test in /home/giulia/WaveT/WaveT/tests/Vacuum_LiCN/no_field_sse
+++ Test type: standard
+++ Arguments: 
+using binary  /home/giulia/WaveT/WaveT/bin
+running compare.sh
+  DONE: TEST PASSED!

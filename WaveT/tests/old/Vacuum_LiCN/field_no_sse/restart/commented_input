@@ -1,0 +1,37 @@
+Input:
+
+n_ci                Number of excited states
+n_ci_read           Number of excited states to be read
+mol_cc              Molecular center of charge
+n_f                 Number to be be appended to all output file names
+medium              Presence of external medium
+dt                  Time step (au)
+n_step              Number of steps
+n_out               Frequency for writing output files
+restart             Reading coefficients from restart file
+n_restart           Frequency for writing restart file
+lsim                If 'y', the total length of the simulation (run+restart) is n_step, regardless of the value in the restart input
+
+Ffld                Type of field
+omega               Pulse frequency (au)
+sigma               Sigma of the envelope function (if needed)
+t_mid               Center of the pulse
+radiative           Stochastic term in dynamics
+iseed               Random number ad seed
+fmax                Maximum value of the field (3D variable) (au)
+
+start               Starting point (au) for FT 
+tau                 Tau (au) for FT
+dir_ft              Direction for FT
+
+dissipative         SSE propagation
+idep                Type of dephasing operator
+dis_prop            Type of propagation
+nrnd                Factor between deterministic time step and Wiener process time step 
+tdis                Type of continuous propagator (if needed)
+nr_typ              Type pf nonradiative relaxation decay rate
+krnd                Factor multiplying Gaussian fluctuation of energies
+
+Calculations done using full numerical propagation of coefficients (it is not the default anymore, propa='n' in the namelist general)
+
+

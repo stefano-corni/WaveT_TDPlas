@@ -1,0 +1,193 @@
+ 
+ ****************************************************
+ ****************************************************
+ **                                                **
+ **                    WaveT                       **
+ **     Evolution of molecular wavefunctions       **
+ **   under external electromagnetic perturbations **
+ **                                                **
+ **                     by                         **
+ **                Stefano Corni                   **
+ **                Silvio Pipolo                   **
+ **               Emanuele Coccia                  **
+ **                 Gabriel Gil                    **
+ **                Jacopo Fregoni                  **
+ **                                                **
+ ****************************************************
+ ****************************************************
+ 
+ Number to append to dat file           1
+ Number of CIS states to be read           5
+ Number of CIS states to be used           5
+ Molecular center of charge
+   0.0000000000000000        0.0000000000000000        0.0000000000000000     
+ 
+ Time step (in au), number of steps, stride  0.20000000000000001             1000           1
+ 
+ Solvent as external medium
+ No restart
+ Only |k> -> |0> relaxation
+ Energy term is propagated analytically
+ Matmul is used in the propagation.
+ 
+ Time shape of the perturbing fieldpip       
+ time at the center of the pulse (au):   250.00000000000000     
+ Width of the pulse (time au):   20.000000000000000     
+ Frequency (au):  0.26296100000000000     
+ Maximum E field (au)   0.0000000000000000        0.0000000000000000        0.0000000000000000     
+ Maximum E field (V/m)   0.0000000000000000        0.0000000000000000        0.0000000000000000     
+ Maximum intensity (W/cm^2)   0.0000000000000000        0.0000000000000000        0.0000000000000000     
+ 
+ No dissipation
+ SSE quantum jumps not written
+ 
+ Excitation energies read from input, in Hartree
+           1  0.23991947435064415     
+           2  0.24484356143453079     
+           3  0.24484356143453276     
+           4  0.24900196722366114     
+           5  0.24900196779883316     
+
+ Starting point for FT calculation   80.000000000000000     
+ Artificial damping   2000.0000000000000        2000.0000000000000     
+ Direction along which the field is oriented   1.0000000000000000        1.0000000000000000        1.0000000000000000     
+ 
+ *************OMP*****************
+
+ OMP parallelization on
+The number of processors available =        4
+The number of threads available    =        4
+
+ *************OMP*****************
+ Essential output written.
+ WARNING: Tests are performed. Checks are missing on some keywordsconsistency. You should know what you are doing
+ TEST: Solvent reaction field
+ Solvent as external medium
+ Local field effects are NOT included
+ Medium polarization described by apparent charges
+ This is a Classical BEM run
+ This is full run reading matrix and boundary
+ Medium polarization set initially to zero
+ This is a Spherical Onsager run in solution
+ Spherical cavity
+ Radius (a.u.) sphere           1   10.000000000000000     
+ Debye model for dielectric function is used
+ Used keyword: tau_deb:    500.00000000000000      , eps_d:    1.1799999999999999      , eps_0:    35.688000000000002     
+ Only the dipolar reaction field is propagated
+ Medium charges do not follow the quantum jump
+ Frequency of updating the interaction potential:            1
+ Use GS RF as coded in the ci_energy.inp values
+ The coupling is of Onsager type: dip \cdot Fld
+ all modes diagonalized and printed 
+Done reading input & setting up the field, took     0.008s
+ System initialised as in input files
+ Hilbert Space with            6  states.
+ Onsager
+ eps_0,eps_d   35.688000000000002        1.1799999999999999     
+ lambda  0.33333333333333331     
+ f0   9.5854979551232458E-004
+ fd   1.0714285714285711E-004
+ tau   23.212114513098264     
+ Medium contribution to ground state free energy:  -0.0000000000000000     
+ G_neq at t=0:  -0.0000000000000000     
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+ Error: restart is not implemented yet for other interaction types other than PCM. wrt
+Done , total elapsed time     0.057s

@@ -1,0 +1,2 @@
+ven 14 giu 2024, 17:57:11, CEST
+Running test in /home/giulia/WaveT/TDPlas/tests/gmsh_nanoparticle/inhomogeneous_mesh
