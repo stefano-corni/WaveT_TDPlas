@@ -79,6 +79,7 @@
                 quantum_n_ci=n_ci
                 quantum_n_ci_read = n_ci_read
                 allocate(quantum_e_ci(quantum_n_ci))
+                allocate(quantum_c_i(quantum_n_ci))
                 quantum_e_ci = e_ci
                 quantum_c_i = c_i
                 allocate(quantum_mut(3,quantum_n_ci,quantum_n_ci))
@@ -104,9 +105,7 @@
 
                 call set_default_input_tdplas_for_wt(user_input)
                 call dict_tdplas_init                                          !init dictionary to convert from user friendly values to internal
-
                 call read_input_tdplas_for_propagation(user_input)
-
                 call check_tdplas_input_for_wt(user_input)
                 call init_tdplas(calculation_exe, nthr, user_input)
                 call check_global_var
@@ -133,6 +132,7 @@
            user_input%bem_read_write    =  "read"
            user_input%local_field       =  "non"
            user_input%normalization     =  "non"       
+           user_input%bem_symmetric     =  "yes"       
 
            user_input%surface_type               = "mesh"
            user_input%input_mesh                 = "non"

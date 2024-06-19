@@ -118,7 +118,8 @@
              qmolp,qextp,npoles_dum,&
              BEM_Sdum,BEM_Sdum_act,BEM_Qf_dum,BEM_ADt_dum,BEM_Qfx_dum,&
              gg_dum,w2_dum,kf_dum,kf0_dum,BEM_ADtm1_dum,BEM_Q0_dum,BEM_Q0x_dum,&
-             BEM_Q0_super,BEM_Q0x_super,BEM_Sm1,BEM_Sm1_dum,BEM_Mxdum_act
+             BEM_Q0_super,BEM_Q0x_super,BEM_Sm1,BEM_Sm1_dum,BEM_Mxdum_act,&
+             BEM_Ddum, BEM_2ppDA
 
       contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -506,11 +507,10 @@
        if(allocated(K0x)) deallocate(K0x)
        if(allocated(Kdx)) deallocate(Kdx)
        if(allocated(poles)) deallocate(poles)
-       if(allocated(BEM_2ppDA)) deallocate(BEM_2ppDA)
+       !if(allocated(BEM_2ppDA)) deallocate(BEM_2ppDA)
        if(allocated(BEM_2ppDAx)) deallocate(BEM_2ppDAx)
        !if(allocated(BEM_Sm1)) deallocate(BEM_Sm1)
 
-       if(allocated(BEM_Ddum)) deallocate(BEM_Ddum)
        if(allocated(BEM_2ppDA_dum)) deallocate(BEM_2ppDA_dum)
        if(allocated(BEM_2ppDAx_dum)) deallocate(BEM_2ppDAx_dum)
        !if(allocated(BEM_Sm1_dum)) deallocate(BEM_Sm1_dum)
@@ -976,7 +976,7 @@ end subroutine
       end subroutine do_BEM_dum
 
 !------------------------------------------------------------------------
-! @brief Compute a Calderon D rectangular matrix for dummy-actual surfaces
+! @brief Compute a Calderon S rectangular matrix for dummy-actual surfaces
 !
 ! @date Created: G. Gil
 ! Modified:
@@ -1176,7 +1176,6 @@ end subroutine
        return
 
       end subroutine green_s_dum_act
-
 
 !------------------------------------------------------------------------
 ! @brief Compute BEM matrices within diagonal approach
@@ -1509,7 +1508,6 @@ end subroutine
        real(dbl) :: scrd3(3), dist
        real(dbl) :: fact_eps
 
-
 #ifndef MPI
        tp_myrank=0
 #endif
@@ -1575,7 +1573,8 @@ end subroutine
          enddo
        elseif(global_eps_Feps.eq."gen") then
          do i=1,pedra_surf_n_tessere
-           scr2(i,i)= sum(kf0) * scr2(i,i) + one
+           scr2(i,i)= scr2(i,i) + one/sum(kf0)
+           !scr2(i,i)= sum(kf0) * scr2(i,i) + one
          enddo
        endif
 
@@ -1589,7 +1588,8 @@ end subroutine
        ! Form Q0
 
        if ( global_eps_Feps.eq."gen" ) then
-               BEM_Q0=-sum(kf0) * matmul(scr2,matmul(BEM_Sm1,BEM_2ppDA))
+               BEM_Q0=-matmul(scr2,matmul(BEM_Sm1,BEM_2ppDA))
+               !BEM_Q0=-sum(kf0) * matmul(scr2,matmul(BEM_Sm1,BEM_2ppDA))
        else
                BEM_Q0=-matmul(BEM_Sm1,matmul(scr2,BEM_2ppDA))
        endif
@@ -1631,9 +1631,9 @@ end subroutine
        ! GG: analogous to Q_0 and Q_d matrices in the case of
        ! local-field for solvent external medium
        if(global_medium_Floc.eq.'loc'.and.global_medium_Fmdm.eq.'csol') then
-        BEM_2ppDAx = scr1
+        BEM_2ppDAx = -scr1
         do i=1,pedra_surf_n_tessere
-          BEM_2ppDAx(i,i)= -BEM_2ppDAx(i,i) + twp
+          BEM_2ppDAx(i,i)= BEM_2ppDAx(i,i) + twp
         enddo
 
         deallocate(scr1)
@@ -1756,9 +1756,9 @@ end subroutine
        ! GG: analogous to Q_0 and Q_d matrices in the case of
        ! local-field for solvent external medium
       
-       BEM_2ppDAx_dum = scr1
+       BEM_2ppDAx_dum = -scr1
        do i=1,pedra_dum_n_tessere
-         BEM_2ppDAx_dum(i,i)= -BEM_2ppDAx_dum(i,i) + twp
+         BEM_2ppDAx_dum(i,i)= BEM_2ppDAx_dum(i,i) + twp
        enddo
 
        BEM_Q0x_dum=matmul(scr2,matmul(BEM_Sm1_dum,BEM_2ppDAx_dum))
@@ -1847,7 +1847,7 @@ end subroutine
        BEM_Q0_super(pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere,&
                     pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere) = BEM_Q0
 
-       ! Form block matrix ( I'' -Qx''S^T' )
+       ! Form block matrix ( I'' -Q''S^T' )
        !                   (-QS'  I        )
 
        allocate(scr1(pedra_dum_n_tessere+pedra_surf_n_tessere,pedra_dum_n_tessere+pedra_surf_n_tessere))
@@ -1856,11 +1856,11 @@ end subroutine
          scr1(i,i)= one
        enddo
        scr1(1:pedra_dum_n_tessere,&
-            pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere) = -matmul(BEM_Q0x_dum,BEM_Sdum_act)
+            pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere) = -matmul(BEM_Q0_dum,BEM_Sdum_act)
        scr1(pedra_dum_n_tessere+1:pedra_dum_n_tessere+pedra_surf_n_tessere,&
             1:pedra_dum_n_tessere) = -matmul(BEM_Q0,transpose(BEM_Sdum_act))
 
-       ! inverse of block matrix ( I'' -Qx''S^T' )
+       ! inverse of block matrix ( I'' -Q''S^T' )
        !                         (-QS'  I        )
 
        allocate(scr2(pedra_dum_n_tessere+pedra_surf_n_tessere,pedra_dum_n_tessere+pedra_surf_n_tessere))
@@ -1868,7 +1868,7 @@ end subroutine
 
        deallocate(scr1)
 
-       ! Form block matrix ( I'' -Qx''S^T')^-1 ( Q'' 0 )
+       ! Form block matrix ( I'' -Q''S^T')^-1 ( Q'' 0 )
        !                   (-QS'  I       )    ( 0   Q )
 
        BEM_Q0_super = matmul(scr2,BEM_Q0_super)
@@ -2483,7 +2483,7 @@ end subroutine
 
        allocate(BEM_Mxdum_act(1:pedra_dum_n_tessere,1:pedra_surf_n_tessere))
 
-       BEM_Mxdum_act= matmul(BEM_Sm1_dum,matmul(BEM_2ppDAx_dum,BEM_Sdum_act))
+       BEM_Mxdum_act= matmul(BEM_Qf_dum,BEM_Sdum_act)
 
        endif
 

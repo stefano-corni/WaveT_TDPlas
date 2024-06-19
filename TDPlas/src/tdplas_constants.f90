@@ -1,5 +1,6 @@
       module tdplas_constants
       implicit none
+
       INTEGER, PARAMETER :: dbl = selected_real_kind(14,200)
       INTEGER, PARAMETER :: sgl = selected_real_kind(6,30)
       INTEGER, PARAMETER :: i4b = selected_int_kind(9)
@@ -9,7 +10,7 @@
       INTEGER, PARAMETER :: path = 500
       INTEGER, PARAMETER :: nvibmax = 1000
       INTEGER, PARAMETER :: npulsemax = 10
-      integer, parameter :: nsmax     =  10   !< Maximum number of speres/spheroids to read from input!
+      integer, parameter :: nsmax     =  20   !< Maximum number of speres/spheroids to read from input!
       integer, parameter :: nmmax     =  10   !< Maximum number of plasmon modes to read from input!
       integer(i4b),parameter :: nts_max=100
       integer(i4b),parameter :: letter_max=100
