@@ -50,14 +50,14 @@ BINPATH=../bin
 TDPLASLIB= libtdplas.a
 
 # QM code to be interfaced with TDPlas = wt, ocpy, octopus
-QMCODE= octopus
+QMCODE= wt
 QMCODE_OK= $(shell echo $(QMCODE) | tr A-Z a-z)
 INTERFACE_MODULE= interface_global_quantum_$(QMCODE_OK)
 
 
 # objects to be linked with executables
  
-OBJ = tdplas.o tdplas_constants.o auxiliary_functions.o cavity_types.o dictionary_entry.o readio_tdplas_mod.o read_inputfile_tdplas.o check_global.o lower_and_check_namelist.o init.o global_quantum.o global_tdplas.o  debye_epsilon.o drudel_epsilon.o readfile_freq.o readfile_epsilon.o dielectric_function.o  sphe_surface.o pedra_friends.o user_input_type.o user_input_read_namelist.o user_input_check.o user_input_and_flags_dictionary.o write_header_out_tdplas.o MathTools.o BEM_medium.o td_contmed.o 
+OBJ = tdplas.o tdplas_types.o tdplas_constants.o auxiliary_functions.o cavity_types.o dictionary_entry.o readio_tdplas_mod.o read_inputfile_tdplas.o check_global.o lower_and_check_namelist.o init.o global_quantum.o global_tdplas.o  debye_epsilon.o drudel_epsilon.o readfile_freq.o readfile_epsilon.o dielectric_function.o  sphe_surface.o pedra_friends.o user_input_type.o user_input_read_namelist.o user_input_check.o user_input_and_flags_dictionary.o write_header_out_tdplas.o MathTools.o BEM_medium.o td_contmed.o 
 
 # compilation rules
 
@@ -84,6 +84,8 @@ $(TDPLASLIB): $(OBJ)
 	ar rcs $@ $^
 	ranlib $@
 
+tdplas_types.o: tdplas_types.f90
+	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
 tdplas_constants.o: tdplas_constants.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
@@ -178,6 +180,10 @@ main_eps.o: main_eps.f90
 
 # dependencies
 
+tdplas_types.o:
+
+tdplas_constants.o: tdplas_types.o
+
 auxiliary_functions.o: tdplas_constants.o
 
 
@@ -237,7 +243,7 @@ BEM_medium.o: tdplas_constants.o global_quantum.o readfile_freq.o pedra_friends.
 
 td_contmed.o: tdplas_constants.o global_quantum.o pedra_friends.o sphe_surface.o global_tdplas.o MathTools.o BEM_medium.o readfile_epsilon.o drudel_epsilon.o debye_epsilon.o readfile_freq.o 
 
-tdplas.o: tdplas_constants.o auxiliary_functions.o cavity_types.o dictionary_entry.o read_inputfile_tdplas.o readio_tdplas_mod.o check_global.o lower_and_check_namelist.o init.o global_quantum.o global_tdplas.o  debye_epsilon.o drudel_epsilon.o readfile_epsilon.o dielectric_function.o  sphe_surface.o pedra_friends.o user_input_type.o user_input_read_namelist.o user_input_check.o user_input_and_flags_dictionary.o write_header_out_tdplas.o MathTools.o BEM_medium.o td_contmed.o  
+tdplas.o: tdplas_types.o tdplas_constants.o auxiliary_functions.o cavity_types.o dictionary_entry.o read_inputfile_tdplas.o readio_tdplas_mod.o check_global.o lower_and_check_namelist.o init.o global_quantum.o global_tdplas.o  debye_epsilon.o drudel_epsilon.o readfile_epsilon.o dielectric_function.o  sphe_surface.o pedra_friends.o user_input_type.o user_input_read_namelist.o user_input_check.o user_input_and_flags_dictionary.o write_header_out_tdplas.o MathTools.o BEM_medium.o td_contmed.o  
 
 main_tdplas.o: tdplas.o
 

@@ -1,10 +1,8 @@
       module tdplas_constants
+      use tdplas_types
       implicit none
+      public
 
-      INTEGER, PARAMETER :: dbl = selected_real_kind(14,200)
-      INTEGER, PARAMETER :: sgl = selected_real_kind(6,30)
-      INTEGER, PARAMETER :: i4b = selected_int_kind(9)
-      INTEGER, PARAMETER :: cmp = dbl
       INTEGER, PARAMETER :: flg = 20
       INTEGER, PARAMETER :: usr_flg = 40
       INTEGER, PARAMETER :: path = 500

@@ -101,6 +101,9 @@
       real(dbl), allocatable :: BEM_Q0_super(:,:),BEM_Q0x_super(:,:)
       real(dbl), allocatable :: gauging_vector(:),gauging_vector_dum(:)
 
+      real(dbl), allocatable :: BEM_Sdum_act_p(:,:)
+      real(dbl) :: scaling, center(3)
+
       save
       private
       public BEM_L,BEM_T,ONS_ff,ONS_fw,                                &
