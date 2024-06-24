@@ -10,8 +10,8 @@ bem_read_write='read'
 local_field='non'
 /
 &SURFACE
-create_cavity = 'read_file'
-input_surface='cavity'
+surface_type='mesh'
+input_mesh = 'read_file'
 /
 
 &EPS_FUNCTION
