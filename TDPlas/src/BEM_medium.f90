@@ -1044,11 +1044,6 @@ end subroutine
 !        Drude-Lorentz dielectric function
          Kd=zero
          fact2(:)=(twp-sgn*BEM_L(:))*drudel_eps_A/(two*twp)
-! SC: the first eigenvector should be 0 for the NP
-         if ((global_medium_Fmdm.eq.'cnan').or.&
-             (global_medium_Fmdm.eq.'qnan')) then
-                fact2(1)=0.d0
-         endif
          ! SC: no spurious negative square frequencies
 
          do i=1,pedra_surf_n_tessere
@@ -1059,6 +1054,12 @@ end subroutine
              BEM_L(i)=-twp
            endif
          enddo
+
+         ! SC: the first eigenvector should be 0 for the NP
+         if ((global_medium_Fmdm.eq.'cnan').or.&
+             (global_medium_Fmdm.eq.'qnan')) then
+                fact2(1)=0.d0
+         endif
 
          if (drudel_eps_w0.eq.zero) drudel_eps_w0=1.d-8
          BEM_W2(:)=fact2(:)+drudel_eps_w0*drudel_eps_w0

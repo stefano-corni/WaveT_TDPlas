@@ -172,7 +172,7 @@
            call cpu_time(start)
            call init_medium(c_prev,mu_prev,f_prev,h_int)
            call cpu_time(finish)
-           write(*,*) '("Time = ",f6.3," seconds.")',finish-start
+           write(*,'(a,f6.3,a)') 'Time = ',finish-start,' seconds.'
            ! SP 18/05/20 the following should go in a init_quantumstate
            ! module together with the QM_coupling module
            if(this_Finit_int.eq.'sce') then
