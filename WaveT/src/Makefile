@@ -56,16 +56,16 @@ OBJ_NUCL= constants.o $(TOOLSPATH)/nucl_wavep_tool.o
 # tdplas binding flag
 # write no if you want to compile wavet without any link to tdplas
 
-TDPLASLINK= YES 
+TDPLASLINK= YES
 TDPLASLIB=
 TDPLASINC=
 TDPLASPP=
 
-#ifeq ($(TDPLASLINK),YES)
+ifeq ($(TDPLASLINK),YES)
 
 # tdplas directory
 
-TDPLAS=../../TDPlas/src/
+TDPLAS= ../../TDPlas/src/
 
 # tdplas library file
 
@@ -79,7 +79,7 @@ TDPLASINC= -I$(TDPLAS)
 
 TDPLASPP= -DTDPLAS
 
-#endif
+endif
 
 # compilation and linking rules
 
