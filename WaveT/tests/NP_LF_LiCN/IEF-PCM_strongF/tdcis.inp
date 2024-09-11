@@ -15,7 +15,6 @@ sigma=125.,
 t_mid=125.            
 radiative='non'      
 fmax= 0. 0.0 0.5    
-!iseed=1238        
 /                 
                  
 &sse            

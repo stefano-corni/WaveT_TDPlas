@@ -15,7 +15,6 @@ omega(1)=0.26
 t_mid=4961.
 radiative='non'
 fmax= 0. 0.00001 0.0     
-iseed=1238
 /
 
 &sse

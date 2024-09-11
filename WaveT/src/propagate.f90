@@ -71,7 +71,6 @@
        write(name_mu,'(a5,i0,a4)') "mu_t_",n_f,".dat"
        if (Fmag.eq.'mag') then
           write(name_m,'(a4,i0,a4)') "m_t_",n_f,".dat"
-          write(*,*) "sono il primo m_t"
        endif
        if (Fres.eq.'Yesr') then
           if (Fbin.ne.'bin') then
