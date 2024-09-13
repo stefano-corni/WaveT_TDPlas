@@ -1,0 +1,6 @@
+medium = vac            ! Medium can be either vac or nan (in the second case also a frequency calculation must be done to compute the nanoparticle transition dipole moment at the incident pulse frequency)
+calculation = raman     ! Calculation type raman or rayleigh (to include also the 0-0 transition)
+add_time = 900000       ! Number of points to add to end_time to obtain a better FT (1000000 total points is suggested)
+end_time = 100000       ! Number of steps to be read in the input file (it can be either an integer number or the string all)
+nout = 50000            ! Number of points in the spectrum file
+setup = average         ! Setup average to compute Raman as (45*a2+7*g2+5*d2)/45 or directions to compute all tensor terms (xx,xy,xz,yx,yy,yz,zx,zy,zz)

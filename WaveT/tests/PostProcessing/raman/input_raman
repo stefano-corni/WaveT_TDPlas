@@ -1,0 +1,6 @@
+medium = vac            
+calculation = raman     
+add_time = 200000       
+end_time = 50000       
+nout = 12500            
+setup = average         
