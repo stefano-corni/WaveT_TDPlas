@@ -298,7 +298,8 @@
        ! Calculate potential on tesserae
        allocate(pot(pedra_surf_n_tessere))
        !call do_pot_from_field(fmax(:,1),pot)
-
+       allocate(Kdiag_omega(pedra_surf_n_tessere))
+       allocate(q_omega(pedra_surf_n_tessere))
        pot(:)=zero
        !SC 7/12/2020: modified to either use n homogeneous field...
        if (global_ext_pert_Ftyp.eq."field") then
@@ -350,8 +351,8 @@
 
        endif
 ! 
-       allocate(Kdiag_omega(pedra_surf_n_tessere))
-       allocate(q_omega(pedra_surf_n_tessere))
+       !allocate(Kdiag_omega(pedra_surf_n_tessere))
+       !allocate(q_omega(pedra_surf_n_tessere))
        if (global_ext_pert_Ftyp.ne."raman") call do_charge_freq(pot,pot2,mu_omega,1,1)
        deallocate(pot,q_omega,Kdiag_omega)
        if (global_ext_pert_Feet.eq."yes") deallocate(pot2)
@@ -1507,8 +1508,12 @@ end subroutine
         endif
        endif
 !
-!
-       do i=1,dielectric_func_n_omega
+       if(global_ext_pert_Ftyp.eq."raman") then
+          idum = 2
+       else
+          idum = 1
+       endif
+       do i=idum,dielectric_func_n_omega
 
 !$OMP PARALLEL
            select case( global_eps_Feps )
