@@ -249,10 +249,10 @@
                  [Character(flg) :: "sta", "dyn", "non"])
 
         !ext_pert
-       call  dict_entry_init(dict_Ftyp, 2,                                             &
-                 [Character(flg) :: "pert_type", "global_ext_pert_Ftyp"],              &
-                 [Character(flg) :: "field", "molecule"],                              &
-                 [Character(flg) :: "field", "molecule"])
+       call  dict_entry_init(dict_Ftyp, 5,                                                &
+                 [Character(flg) :: "pert_type", "global_ext_pert_Ftyp"],                 &
+                 [Character(flg) :: "field", "molecule", "from_cipot", "dipole", "raman"],&
+                 [Character(flg) :: "field", "molecule", "from_cipot", "dipole", "raman"])
 
        call  dict_entry_init(dict_Feet, 2,                                             &
                  [Character(flg) :: "eet", "global_ext_pert_Feet"],                    &
