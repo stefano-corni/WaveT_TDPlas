@@ -821,7 +821,7 @@
                       fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/pedra_surf_n_tessere
                   enddo
                   if (typ_prop.eq."0") then
-                      fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+kf(ipoles)/sum(kf0) * qr_tp(:)
+                      fqr_tp_p(:,npoles)=-w2(npoles)*qr_tp_p(:,npoles)+kf(npoles)/sum(kf0) * qr_tp(:)
                       fqr_tp_p(:,npoles)=fqr_tp_p(:,npoles)-sum(fqr_tp_p(:,npoles))/pedra_surf_n_tessere
                   else
                       fqr_tp_p(:,npoles)=one/sum(kf0) * qr_tp(:)
