@@ -1,0 +1,9 @@
+To perform a Raman calculation:
+1) Run 3 WaveT calculations (with electric field along x use n_f=1, with field along y use n_f=2 and with field along z use n_f=3)
+
+2) ONLY IN PRESENCE OF THE NP: run an additional calculation with freq_bem.x using the keyword pert_type="raman" to compute the NP transition dipole moment at the incident electric field frequency, the file dipole_max.dat generated must be in the same directory with coefficients files. 
+
+3) Run raman post processing /WaveT/WaveT/src/tools/raman_time.py as:
+          python3 raman_time.py input_raman output
+
+4) To obtain the Raman cross section the results (second column of files obtained in 3)) must be multiplied by some constants depending on incident field feature, as in eq. 16 of J. Phys. Chem. A 2022, 126, 8088-8100. raman_cross.py script is an example, use python3 raman_cross.py to use it, changing the file names and field features inside

@@ -812,23 +812,23 @@
           allocate(sum_x(npoles))
           qr_tp(:)=zero
           do ipoles=1,npoles
-             qr_tp_p(:,ipoles)=kf0(ipoles)*(matmul(BEM_Qf,pot_0)+matmul(BEM_ADt,q0) )
+             qr_tp_p(:,ipoles)=kf0(ipoles)/sum(kf0) * q0(:)
              qr_tp(:)=qr_tp(:)+qr_tp_p(:,ipoles)
           enddo
           if (npoles.ne.1) then
                   do ipoles=1,npoles-1
-                      fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+kf(ipoles)*(matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp))
+                      fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles) +kf(ipoles)/sum(kf0) * qr_tp(:)
                       fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/pedra_surf_n_tessere
                   enddo
                   if (typ_prop.eq."0") then
-                          fqr_tp_p(:,npoles)=-w2(npoles)*qr_tp_p(:,npoles)+kf(npoles)*(matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp))
-                          fqr_tp_p(:,npoles)=fqr_tp_p(:,npoles)-sum(fqr_tp_p(:,npoles))/pedra_surf_n_tessere
+                      fqr_tp_p(:,npoles)=-w2(npoles)*qr_tp_p(:,npoles)+kf(npoles)/sum(kf0) * qr_tp(:)
+                      fqr_tp_p(:,npoles)=fqr_tp_p(:,npoles)-sum(fqr_tp_p(:,npoles))/pedra_surf_n_tessere
                   else
-                          fqr_tp_p(:,npoles)=matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp)
+                      fqr_tp_p(:,npoles)=one/sum(kf0) * qr_tp(:)
                   endif
           else
                   ipoles=1
-                  fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+kf(ipoles)*(matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp))
+                  fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+kf(ipoles)/sum(kf0) * qr_tp(:)
                   fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/pedra_surf_n_tessere
           endif
           fqr_tp2_p(:)=zero

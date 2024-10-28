@@ -59,7 +59,8 @@ fi
 
 #### run the test depending on test type 
 case "$type" in
-(time)
+(tdplas)
+  echo "using binary " $tdplas "/tdplas.x"
   $mpi $tdplas/tdplas.x > tdplas.dat 2> err;
   #### check if an out/ directory containing reference output is present  
   test -f out/tdplas.dat || {
@@ -68,6 +69,7 @@ case "$type" in
   }
   ;;
 (freq)
+  echo "using binary " $tdplas "freq_bem.x"
   $mpi $tdplas/freq_bem.x > freq.dat 2> err;
   #### check if an out/ directory containing reference output is present  
   test -f out/freq.dat || {
@@ -75,14 +77,15 @@ case "$type" in
   exit 1
   }
   ;;
-(main)
-  $mpi $tdplas/main_eps.x < main.inp > main.dat 2> err;
-  test -f main.inp || {
+(eps)
+  echo "using binary " $tdplas "/main_eps.x"
+  $mpi $tdplas/main_eps.x > out.dat 2> err;
+  test -f eps.inp || {
   echo "FAILURE: in file not present"
   exit 1
   };
   #### check if an out/ directory containing reference output is present  
-  test -f out/main.dat || {
+  test -f out/eps.out || {
   echo "FAILURE: out/main.dat file reference not found"
   exit 1
   }

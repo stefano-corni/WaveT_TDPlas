@@ -12,7 +12,6 @@ n_out=1
 &field 
 Ffld='snd'
 omega(1)=0.26
-sigma(1)=10,
 t_mid=5000
 radiative='non'
 npulse=1

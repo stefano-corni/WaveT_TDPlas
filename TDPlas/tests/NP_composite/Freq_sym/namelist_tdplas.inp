@@ -24,9 +24,9 @@ epsilon_omega='general'
 /
 
 &do_eps
-n_omega = 500 
+n_omega = 10 
 omega_ini = 0.0003674984 
-omega_end = 0.1837492190
+omega_end = 0.0036749844
 /
 
 &EXT_PERT

@@ -7,15 +7,32 @@ module vib
       implicit none
       save
 
-      integer(i4b)              :: nstates,nvib,nmodes,ntot,ncomb,nfc,nbin
-      real(dbl)                 :: sigma,emin,emax
-      real(dbl),    allocatable :: w(:,:),q(:,:),mu(:,:)
-      real(dbl),    allocatable :: e(:),dip(:,:,:)
-      real(dbl),    allocatable :: ef(:),dipf(:,:,:)
-      integer(i4b), allocatable :: iv(:,:)
-      logical                   :: coupling,mix
+      integer(i4b)              :: nstates                                               ! number of electronic states
+      integer(i4b)              :: nvib                                                  ! number of vibrational quanta on ES used
+      integer(i4b)              :: nmodes_gs                                             ! number of modes in the ground state
+      integer(i4b)              :: nmodes                                                ! number of modes in the excited state
+      integer(i4b)              :: ntot                                                  ! number of total vibronic state
+      integer(i4b)              :: ncomb                                                 ! number of combination
+      integer(i4b)              :: nfc                                                   ! Power for <v'|x^nfc|v> 
+      integer(i4b)              :: nbin                                                  ! write binary files  
+      integer(i4b)              :: nvib_inp                                              ! number of vibrational quanta on ES read
+      integer(i4b)              :: nts                                                   ! number of tessere on NP surface
+      real(dbl)                 :: sigma,emin,emax                                       ! properties of vibrational spectrum
+      real(dbl),    allocatable :: w(:,:),q(:,:),mu(:,:)                                 ! frequency, dipoles read 
+      real(dbl),    allocatable :: fcint(:,:),htint(:,:,:),dispint(:,:)                  ! fc, ht, and displacement between GS(n=0) and ES(n>0)
+      real(dbl),    allocatable :: htintr(:,:,:,:),fcintr(:,:,:), dispintr(:,:,:)        ! fc, ht, and displacement between GS(n>0) and ES(n>0)
+      real(dbl),    allocatable :: e(:),dip(:,:,:)                                       ! energies and dipoles read
+      real(dbl),    allocatable :: ef(:),dipf(:,:,:),integ(:,:),pot_diff(:,:)            ! final energies and dipoles 
+      real(dbl),    allocatable :: quantum_vts(:,:,:), quantum_vtsn(:), vts(:,:,:)       ! potential on NP surface
+      integer(i4b), allocatable :: map(:,:)                                              ! map between vib level of GS and ES
+      integer(i4b), allocatable :: iv(:,:)                                               ! map between vib level of GS and ES (use in computefc) 
+      logical                   :: coupling,mix                                          ! coupling and mixing not implemented
+      logical                   :: computefc                                             ! .true. to compute fc or .false. to read from  files fc.inp and/or ht.inp
+      character(20)             :: diptype                                               ! 'fc', 'ht', or 'fcht' to read only fc, ht or both 
+      character(20)             :: calctype                                              ! 'rayleigh' (compute  and read only GS(0)->ES(n)) terms or 'raman' (compute and read also GS(n)->ES(n)) calculations
+      character(20)             :: medium                                                ! 'nan' or 'vac', for nanoparticle (compute ci_pot_new) or in vacuum calculations
 
-      public nstates,nvib,nmodes,w,q,e,dip,ef,dipf,fact,dfact,bin_coef, &
+      public nstates,nvib,nmodes,nmodes_gs,w,q,e,dip,ef,dipf,fact,dfact,bin_coef, &
              mix,coupling,iv,ncomb,nfc,sigma,nbin,mu
        
       contains        
@@ -42,7 +59,7 @@ module vib
          read(7,*) junk,junk,junk,e(i)
          e(i)=e(i)*ev_to_au
        enddo
-       write (6,*)
+       write (6,*) (e(i),i=2,nstates)
        close(7)
 
 !    read transition dipoles (also for pcm: useful for analysis)
@@ -73,20 +90,33 @@ module vib
 !------------------------------------------------------------------------
      subroutine read_input_vib() 
  
-        integer(i4b)             :: idum,i,j 
+        integer(i4b)             :: idum,i,j,k,h,n_out,dime,kk
+        character(20)            :: filein
+        character(10)            :: idum_c
+        real                     :: rdum
+
+
  
-        namelist /vibrations/nstates,nvib,nmodes,coupling,mix,nfc,sigma,nbin,emax
+        namelist/vibrations/nstates,nvib,nvib_inp,nmodes,coupling,mix,nfc,sigma,nbin,emax,computefc,diptype,&
+                      &calctype,medium,nmodes_gs
 
         mix=.false.
         coupling=.false.
         nmodes=1
+        nmodes_gs=0
         nvib=10
+        nvib_inp=0
+        n_out=5
         nstates=1
         nfc=1
         sigma=3.d0
         nbin=10000
         emin=0.d0
         emax=15.d0 !eV
+        computefc=.false.
+        diptype='fc'
+        calctype='rayleigh'
+        medium='vacuum'
 
         ! Read w, q and mu  for any vib level (vib.dat file)
         ! Frequency in cm-1, normal coordinates in bohr, reduced mass in amu 
@@ -100,15 +130,28 @@ module vib
         ! ...
 
         read(*,nml=vibrations)
-
         if (nvib.gt.nvibmax) then
            nvib=nvibmax 
         endif 
-
+        
+        if (.not.(computefc).and.(nstates.gt.2)) then
+                write(*,*) "ERROR: case with nstates>2 not implemented yet"
+                stop   
+        endif
         ncomb=nvib**nmodes
+        if (nmodes_gs.eq.0) nmodes_gs = nmodes
+        if (nvib_inp.eq.0) nvib_inp = nvib
 
-        allocate(w(nstates,nmodes),q(nstates,nmodes),mu(nstates,nmodes))
-        allocate(iv(ncomb,nmodes))
+        allocate(q(nstates,nmodes),mu(nstates,nmodes))
+        if (computefc) allocate(iv(ncomb,nmodes))
+        allocate(fcint(nmodes,nvib_inp))
+        allocate(htint(nmodes,nvib_inp,3))
+        allocate(dispint(nmodes,nvib_inp))
+        if (calctype.eq."raman") then
+                allocate(fcintr(nmodes_gs,nmodes,nvib_inp))
+                allocate(htintr(nmodes_gs,nmodes,nvib_inp,3))
+                allocate(dispintr(nmodes_gs,nmodes,nvib_inp))
+        endif
 
         write(*,*)  
         write(*,*) '***************************************'
@@ -123,8 +166,145 @@ module vib
         write(*,*) '*                                     *'
         write(*,*) '***************************************'
 
+        if (computefc) then
+                allocate(w(nstates,nmodes))
+                ntot=nstates*ncomb
+                w(:,:) = 1000.d0
+                q(:,:) = 2.d0
+                mu(:,:) = 1836.d0
+                open(60,file='vib.dat')
+                do i=1,nstates
+                       read(60,*) idum, idum
+                       do j=1,nmodes
+                              read(60,*) w(i,j), q(i,j), mu(i,j)
+                       enddo
+                enddo
+                close(60)
+                w(:,:) = w(:,:)*cm_to_au
+                mu(:,:) = mu(:,:)*amu_to_au
 
-        ntot=nstates*ncomb
+        else
+                allocate(w(nstates,nmodes))
+                ntot=nmodes*(nvib-1)+nmodes_gs+2
+                w(:,:) = 0.d0
+                open(12, file="frequency.dat", status="old")
+                fcint(:,:)=0
+                htint(:,:,:)=0
+                if (calctype.eq."raman") then
+                        open(13, file="map.inp", status="old")
+                        allocate(map(nmodes,nmodes_gs+1))
+                        do i=1,nmodes_gs+1
+                             read(13,*) 
+                             do j=1,nmodes
+                                 read(13,*) map(j,i)
+                             enddo
+                        enddo
+                        close(13)
+                else
+                        allocate(map(nmodes,1))
+                        do i=1,nmodes
+                           map(i,1)=i
+                        enddo
+                endif
+                
+                open(11, file="fc.inp", status="old")
+                read(11,*)
+                if (diptype.eq."ht".or.diptype.eq."fcht") then
+                        open(13, file="ht.inp", status="old")
+                        read(13,*)
+                        htint(:,:,:)=0.0
+                        if (calctype.eq."raman") htintr(:,:,:,:)=0.0
+                        if (medium.eq.'nan') then
+                            open(14, file="ht_disp.inp", status="old")
+                            read(14,*)
+                            dispint=0.0
+                            if (calctype.eq."raman") dispintr=0.0
+                        endif
+                endif
+                do i=1,nmodes
+                     read(11,*)
+                     read(11,*)   idum_c, (fcint(i,k),k=1,nvib_inp)
+                     read(11,*)
+                     if (diptype.eq."ht".or.diptype.eq."fcht") then
+                             read(13,*)
+                             do j=2,nvib_inp
+                                read(13,*)
+                                read(13,*)   idum_c, htint(i,j,:)
+                             enddo
+                             if (medium.eq.'nan') then
+                                read(14,*)
+                                do j=2,nvib_inp
+                                    read(14,*)   idum, idum, dispint(i,j)
+                                enddo
+                             endif
+                     endif
+                enddo
+                
+                do i=1,nmodes_gs
+                    read(12,*) w(1,i)
+                    w(1,i)=w(1,i)*cm_to_au
+                enddo
+                do i=1,nmodes
+                    read(12,*) w(2,i)
+                    w(2,i)=w(2,i)*cm_to_au
+                enddo
+                if (calctype.eq."raman") then
+                   do kk=1,nmodes_gs
+                      read(11,*)
+                      do i=1,nmodes
+                        read(11,*)
+                        read(11,*)   idum_c, (fcintr(kk,map(i,kk+1),k),k=1,nvib_inp)
+                        read(11,*)
+                      enddo
+                   enddo
+                   if (diptype.eq."ht".or.diptype.eq."fcht") then
+                        do kk=1,nmodes_gs
+                           read(13,*)
+                           read(13,*)
+                           read(13,*)
+                           if (medium.eq.'nan') read(14,*)
+                           do i=1,nmodes
+                               read(13,*)
+                               do j=1,nvib_inp-1
+                                   read(13,*)
+                                   read(13,*)
+                               enddo
+                               do j=1,nvib_inp
+                                  read(13,*)   idum_c, idum_c, idum,  k
+                                  read(13,*)   idum_c, htintr(kk,map(i,kk+1),k,:)
+                               enddo
+                               if (medium.eq.'nan') then
+                                    read(14,*)
+                                    do j=2,nvib_inp
+                                       read(14,*)
+                                    enddo
+                                    do j=2,nvib_inp
+                                       read(14,*)   idum, k, dispintr(kk,map(i,kk+1),k)
+                                    enddo
+                               endif
+                           enddo
+                        enddo
+                   endif
+                endif
+                close(11)
+                close(12)
+                close(13)
+                close(14)
+                if (diptype=="fcht") close(13)
+        endif
+
+        if (medium.eq.'nan') then
+                call read_gau_out_medium(nstates)
+                if(diptype.eq."ht".or.diptype.eq."fcht") then
+                        allocate(pot_diff(nts,nmodes))
+                        open(15, file="pot_diff_total.dat", status="old")
+                        do i=1,nts
+                            read(15,*) pot_diff(i,:)
+                        enddo
+                        close(15)
+                endif
+        endif
+
         write(*,*) ''
         write(*,*) 'Total number of states', ntot
         write(*,*) 'Number of electronic states', nstates
@@ -143,23 +323,13 @@ module vib
         write(*,*) ''
         write(*,*) 'Maximum number of vibrational states:', nvibmax
         write(*,*) ''
+        if (medium.eq.'nan') write(*,*) 'Calculation of potentials on NP surface will be performed'
+        if (computefc) then
+                write(*,*) 'Franck-Condon factors will be computed'
+        else
+                write(*,*) 'Franck-Condon and/or Hertzberg-Teller terms are read'
+        endif
 
-        w(:,:) = 1000.d0
-        q(:,:) = 2.d0
-        mu(:,:) = 1836.d0
-
-        open(60,file='vib.dat')
-        do i=1,nstates
-           read(60,*) idum, idum 
-           do j=1,nmodes
-              read(60,*) w(i,j), q(i,j), mu(i,j)
-           enddo
-        enddo
-        close(60)
-
-        w(:,:) = w(:,:)*cm_to_au
-        mu(:,:) = mu(:,:)*amu_to_au
- 
         allocate(ef(ntot),dipf(3,ntot,ntot)) 
 
         return
@@ -320,7 +490,7 @@ module vib
        deallocate(w,q)
        deallocate(e,dip)
        deallocate(ef,dipf)
-       deallocate(iv)
+       if (computefc) deallocate(iv)
 
        return
       
@@ -424,89 +594,176 @@ module vib
      subroutine compute_e_dip()
 
         integer(i4b)                :: i,j,k,v,v1,kk,kk1,ii,jj
-        integer(i4b)                :: imap(ntot),kmap(nstates,ncomb)
-        real(dbl)                   :: egrs
-
-        call gen_map(nmodes,nvib,ncomb,iv)
+        integer(i4b)                :: imap(ntot) 
+        integer(i4b), allocatable   :: kmap(:,:)
+        real(dbl)                   :: egrs,tfc
 
         dipf=0.d0
         ! Neglecting normal mode mixing
         if (.not.mix) then
-           kk=0
-           !do j=1,ncomb
-              do i=1,nstates
-                do j=1,ncomb
-                 kk=kk+1
-                 kmap(i,j)=kk 
-              enddo
-           enddo
-           do i=1,nstates
-              do j=1,ncomb
-                 do ii=i,nstates
-                    do jj=1,ncomb
-                       call modify_dip(dip(:,i,ii),j,jj,i,ii,nmodes,dipf(:,kmap(i,j),kmap(ii,jj)))
-                       dipf(:,kmap(ii,jj),kmap(i,j)) = dipf(:,kmap(i,j),kmap(ii,jj)) 
+           if (computefc) then
+                 allocate(kmap(nstates,ncomb))
+                 call gen_map(nmodes,nvib,ncomb,iv)
+                 kk=0
+                 do i=1,nstates
+                    do j=1,ncomb
+                       kk=kk+1
+                       kmap(i,j)=kk 
                     enddo
                  enddo
-              enddo 
-           enddo 
-        ! Duschinsky rotation
+                 do i=1,nstates
+                    do j=1,ncomb
+                       do ii=i,nstates
+                          do jj=1,ncomb
+                             call modify_dip(dip(:,i,ii),j,jj,i,ii,nmodes,dipf(:,kmap(i,j),kmap(ii,jj)))
+                             dipf(:,kmap(ii,jj),kmap(i,j)) = dipf(:,kmap(i,j),kmap(ii,jj)) 
+                          enddo
+                       enddo
+                    enddo 
+                 enddo 
+
+                 kk=0
+                 do i=1,nstates 
+                    do j=1,ncomb
+                       kk=kk+1
+                       call add_vibe(e(i),i,nmodes,iv(j,:),ef(kk),computefc)
+                    enddo
+                 enddo
+
+                 open(72,file='e_map.dat')
+                 kk=0
+                 egrs=ef(1)
+                 do i=1,nstates
+                    do j=1,ncomb
+                       kk=kk+1
+                       ef(kk)=ef(kk)-egrs
+                    enddo
+                 enddo
+                 
+                 ! Sort energies in ascending order
+                 call sort(ef,ntot,imap)
+
+                 kk=0
+                 do i=1,nstates
+                    do j=1,ncomb
+                       kk=kk+1
+                       write(72,*) 'Electronic state:', i, 'and vib level', j, 'for state', imap(kk)
+                    enddo
+                 enddo 
+                 close(72)
+
+           else  
+                 kk=1
+                 do i=1,nstates
+                      if (i.eq.1) then
+                              kk=nmodes_gs+1
+                      else
+                              kk=1
+                      endif
+                      do j=1,nmodes
+                          ! Dipoles between GS(n=0) and ES(n=0)
+                          if (i.eq.1.and.j.eq.1) then
+                              kk=kk+1
+                              jj=1
+                              k=1
+                              dipf(:,k,kk)=dip(:,1,2)*fcint(j,jj)
+                              dipf(:,kk,k)=dipf(:,k,kk)
+                          endif
+                          if (i.eq.1) then
+                            do jj=2,nvib
+                               kk=kk+1
+                               !if (i.eq.1) then
+                                   ! Dipoles between GS(n=0) and ES(n>0)
+                                   k=1
+                                   if (diptype.eq."fcht".or.diptype.eq."fc") then
+                                           dipf(:,k,kk)=dip(:,1,2)*fcint(j,jj)
+                                   endif
+                                   if (diptype.eq."ht".or.diptype.eq."fcht") then
+                                           dipf(1,k,kk)=dipf(1,k,kk)+htint(j,jj,1)
+                                           dipf(2,k,kk)=dipf(2,k,kk)+htint(j,jj,2)
+                                           dipf(3,k,kk)=dipf(3,k,kk)+htint(j,jj,3)
+                                   endif
+                                   dipf(:,kk,k)=dipf(:,k,kk)
+                                   if (calctype.eq."raman") then
+                                           do k=1,nmodes_gs
+                                              ! Dipoles between GS(n>0) and ES(n>0)
+                                              dipf(:,k+1,kk)=dip(:,1,2)*fcintr(k,j,jj)
+                                              if (diptype.eq."ht".or.diptype.eq."fcht") then
+                                                    dipf(1,k+1,kk)=dipf(1,k+1,kk)+htintr(k,j,jj,1)
+                                                    dipf(2,k+1,kk)=dipf(2,k+1,kk)+htintr(k,j,jj,2)
+                                                    dipf(3,k+1,kk)=dipf(3,k+1,kk)+htintr(k,j,jj,3)
+                                              endif
+                                              dipf(:,kk,k+1)=dipf(:,k+1,kk)
+                                           enddo
+                                           k=1
+                                   endif
+                            enddo
+                          else
+                            if ((j.le.nmodes_gs).and.(calctype.eq."raman")) then
+                                kk=kk+1
+                                k=nmodes_gs+2
+                                if (diptype.eq."fcht".or.diptype.eq."fc") then
+                                        dipf(:,k,kk)=dip(:,1,2)*fcintr(j,1,1)
+                                endif
+                                if (diptype.eq."ht".or.diptype.eq."fcht") then
+                                        dipf(1,k,kk)=dipf(1,k,kk)+htintr(j,1,1,1)
+                                        dipf(2,k,kk)=dipf(2,k,kk)+htintr(j,1,1,2)
+                                        dipf(3,k,kk)=dipf(3,k,kk)+htintr(j,1,1,3)
+                                endif
+                                dipf(:,kk,k)=dipf(:,k,kk)
+                            endif
+                          endif
+                      enddo
+                      dipf(:,k,k)=dip(:,i,i)
+                 enddo
+
+               kk=0
+               do i=1,nstates
+                   kk=kk+1
+                   ef(kk)=e(i)
+                   do j=1,nmodes
+                       if (i.eq.1.and.w(i,j).ne.0) then
+                             kk=kk+1
+                             ef(kk)=e(i) + w(i,j)
+                       elseif (i.eq.2) then
+                             do k=2,nvib
+                                  kk=kk+1
+                                  ef(kk)=e(i) + w(i,j)*(k-1)
+                             enddo
+                       endif
+                   enddo
+               enddo
+               call sort(ef,ntot,imap)
+               if (medium.eq."nan")  call do_potentials(imap)
+           endif
+             ! Duschinsky rotation
         else
            write(*,*) 'Duschinsky rotation not implemented yet'
            stop
         endif
-
-        kk=0
-        do i=1,nstates 
-           do j=1,ncomb
-              kk=kk+1
-              call add_vibe(e(i),i,nmodes,iv(j,:),ef(kk))
-           enddo
-        enddo
-
         ! Print energies and dipoles for WaveT
         open(70,file='ci_energy_new.inp')
-        open(71,file='ci_mut_new.inp')        
-        open(72,file='e_map.dat')
-        kk=0
-        egrs=ef(1)
-        do i=1,nstates
-           do j=1,ncomb
-              kk=kk+1
-              ef(kk)=ef(kk)-egrs
-           enddo
-        enddo
-        
-        ! Sort energies in ascending order
-        call sort(ef,ntot,imap)
-
-        kk=0
-        do i=1,nstates
-           do j=1,ncomb
-              kk=kk+1
-              write(72,*) 'Electronic state:', i, 'and vib level', j, 'for state', imap(kk)
-           enddo
-        enddo 
-
-        do i=2,ntot
-           write(70,*) 'Root', i-1, ':', ef(i)/ev_to_au 
-        enddo
-
+        open(71,file='ci_mut_new.inp')
         do i=1,ntot
-           write(71,"(A,I6,X,A,I6,X,3(E15.8,X))") 'States', 0, 'and',i-1,dipf(1,1,imap(i)),dipf(2,1,imap(i)),dipf(3,1,imap(i))      
+            write(71,"(A,I6,X,A,I6,X,3(E15.8,X))") 'States', 0, 'and',i-1,dipf(:,1,imap(i))
+            !write(71,"(A,I6,X,A,I6,X,3(E15.8,X))") 'States', 0, 'and',i-1,dipf(:,1,i)
         enddo
 
         kk=0
         do i=2,ntot
-           do j=2,i
-              kk=kk+1
-              write(71,"(A,I6,X,A,I6,X,3(E15.8,X))") 'States', j-1, 'and',i-1,dipf(:,imap(i),imap(j))
-           enddo
+            do j=2,i
+                 kk=kk+1
+                 !write(71,"(A,I6,X,A,I6,X,3(E15.8,X))") 'States', j-1, 'and',i-1,dipf(:,j,i)
+                 write(71,"(A,I6,X,A,I6,X,3(E15.8,X))") 'States', j-1, 'and',i-1,dipf(:,imap(j),imap(i))
+            enddo
+        enddo
+
+        do i=2,ntot
+           write(70,*) 'Root', i-1, ':', ef(i)/ev_to_au
         enddo
 
         close(70)
         close(71)
-        close(72)
 
         return
  
@@ -620,7 +877,7 @@ module vib
 ! @date Created   : E. Coccia 26 Sep 2017
 ! Modified  :
 !------------------------------------------------------------------------
-     subroutine add_vibe(e,i,nmodes,ii,ef)
+     subroutine add_vibe(e,i,nmodes,ii,ef,logi)
 
        implicit none 
 
@@ -628,13 +885,19 @@ module vib
        integer(i4b), intent(in)  :: i,nmodes
        integer(i4b), intent(in)  :: ii(nmodes)
        real(dbl),    intent(out) :: ef
-
+       logical,      intent(in)  :: logi
        integer(i4b)  :: k
 
        ef=e
-       do k=1,nmodes
-          ef = ef + w(i,k)*(ii(k)+0.5d0) 
-       enddo
+       if (logi) then
+           do k=1,nmodes
+                     ef = ef + w(i,k)*(ii(k)+0.5d0)
+           enddo
+       else
+           do k=1,nmodes
+                     ef = ef + w(1,k)*ii(k)
+           enddo
+       endif
 
        return
 
@@ -900,4 +1163,123 @@ module vib
 
       end function safe_division 
 
+
+      subroutine read_gau_out_medium(quantum_n_ci)
+       integer(i4b), intent(in)  :: quantum_n_ci
+       integer(i4b) :: i,j,its
+       real(dbl)  :: scr
+
+       open(7,file="ci_pot.inp",status="old")
+       read(7,*) nts
+       allocate (quantum_vts(nts,quantum_n_ci,quantum_n_ci))
+       allocate (quantum_vtsn(nts),vts(nts,ntot,ntot))
+       quantum_vts=zero
+       quantum_vtsn=zero
+       ! V00
+       read(7,*)
+       do its=1,nts
+        read(7,*) quantum_vts(its,1,1),scr,quantum_vtsn(its)
+       enddo
+       !all the others
+10     read(7,*,end=20) i,j
+       i=i+1
+       j=j+1
+       if (i.le.quantum_n_ci.and.j.le.quantum_n_ci) then
+        do its=1,nts
+         read(7,*) quantum_vts(its,i,j)
+         quantum_vts(its,j,i)=quantum_vts(its,i,j)
+        enddo
+       else
+        do its=1,nts
+         read(7,*)
+        enddo
+       endif
+       goto 10
+20     close(7)
+
+
+       return
+
+      end subroutine read_gau_out_medium
+
+      subroutine do_potentials(imap)
+              integer(i4b) :: i,j,k,kk,jj,its,n
+              integer(i4b), intent(inout)                :: imap(ntot)
+              real(dbl) :: scr
+
+
+              vts(:,:,:)=0 
+              do i=1,nstates
+                   if (i.eq.1) then
+                           kk=nmodes_gs+1
+                   else
+                           kk=1
+                   endif
+                   do j=1,nmodes
+                       ! Potentials between GS(n=0) and ES(n=0)
+                       if (i.eq.1.and.j.eq.1) then
+                           kk=kk+1
+                           jj=1
+                           k=1
+                           vts(:,k,kk)=quantum_vts(:,1,2)*fcint(j,jj)
+                           vts(:,kk,k)=vts(:,k,kk)
+                       endif
+                       if (i.eq.1) then
+                           do jj=2,nvib
+                              kk=kk+1
+                              k=1
+                              vts(:,k,kk)=quantum_vts(:,1,2)*fcint(j,jj)
+                              if (diptype.eq."ht".or.diptype.eq."fcht") then
+                                  vts(:,k,kk)=vts(:,k,kk)+dispint(j,jj)*pot_diff(:,j)
+                              endif
+                              vts(:,kk,k)=vts(:,k,kk)
+                              if (calctype.eq."raman") then
+                                   do k=1,nmodes_gs
+                                        vts(:,k+1,kk)=quantum_vts(:,1,2)*fcintr(k,j,jj)
+                                        if (diptype.eq."ht".or.diptype.eq."fcht") then
+                                             vts(:,k+1,kk)=vts(:,k+1,kk)+dispintr(k,j,jj)*pot_diff(:,j)
+                                        endif
+                                        vts(:,kk,k+1)=vts(:,k+1,kk)
+                                   enddo
+                                   k=1
+                              endif
+                           enddo
+                       else
+                           if (j.le.nmodes_gs) then
+                              k=nmodes_gs+2
+                              kk=kk+1
+                              vts(:,k,kk)=quantum_vts(:,1,2)*fcintr(j,1,1)
+                              vts(:,kk,k)=vts(:,k,kk)
+                           endif
+                       endif
+                   enddo                   
+                   vts(:,k,k)=quantum_vts(:,i,i)
+              enddo
+
+              scr=0.000
+              open(20, file="ci_pot_new.inp", status="unknown")
+              write(20,*) nts
+              write(20,*) 0,"     ",0
+
+
+              do its=1,nts
+                    write(20,*) vts(its,1,1),scr,quantum_vtsn(its)
+              enddo
+              do i=1,ntot-1
+                    write(20,*)  0, i    
+                    do its=1,nts
+                       write(20,*) vts(its,1,imap(i+1))
+                    enddo
+              enddo
+              do i=2,ntot
+                   do j=i,ntot
+                      write(20,*)    i-1,j-1
+                      do its=1,nts
+                          write(20,*) vts(its,imap(i),imap(j))
+                      enddo
+                   enddo
+              enddo
+ 
+      end subroutine
+      
 end module vib

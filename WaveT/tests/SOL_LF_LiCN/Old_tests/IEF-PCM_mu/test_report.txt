@@ -1,5 +1,0 @@
-Sun 20 Sep 21:09:56 CEST 2020
-Running test in /home/silvio/Work/Codes/WaveTTDPlas_250620/WaveT/tests/SOL_LF_LiCN/IEF-PCM_mu
-++ Test type: tdplas
-++ Arguments: 
-using binary  /home/silvio/Work/Codes/WaveTTDPlas_250620/WaveT/bin/WaveT-serial.x

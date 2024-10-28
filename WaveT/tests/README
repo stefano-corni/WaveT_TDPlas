@@ -3,7 +3,7 @@ In what follows lines starting with $ are bash commands.
 
 RUNNING TESTS:
 -set the environment variable defining the executable name with FULL path, e.g.:
- $ export WAVET_PROGRAM_NAME=$(cd ../bin && pwd)/WaveT-serial.x
+ $ export WAVET_PROGRAM_PATH=$(cd ../bin && pwd)
 -run the make command:
  $ make
 

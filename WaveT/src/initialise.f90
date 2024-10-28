@@ -98,6 +98,7 @@
        if (this_Finit_int.eq."scf") then
          write(6,*) "System initialised with self-consistent procedure"
          nstates=n_ci 
+#ifdef TDPLAS         
        elseif (this_Finit_int.eq."qmt") then
          write(6,*) "System initialised with Quantum Coupling"
          if(global_sys_Ftest.eq."qmt") then 
@@ -107,8 +108,12 @@
            this_qmmodes(3)=4 
          endif
          nstates=n_ci*(this_nmodes+1)
+#else
+      stop "Error: TDPlas library has not been linked to WaveT"
+#endif
        else
-         !write(6,*) "System initialised as in input files"
+
+               !write(6,*) "System initialised as in input files"
          nstates=n_ci 
          !stop
        endif

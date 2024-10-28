@@ -1,5 +1,0 @@
-1                                    # Number of spheres (N), one intereger followed by N lines
-0. 0. 0. 25. 30  30  30  30  30  30  # spere position, (x,y,z - reals Angstrom), sphere radius (real Angstrom), number of discretisation points (integer) +z +y +x -x -y -z
-100. 0. 0. 10. 20  20  20  20  20  20  # spere position, (x,y,z - reals Angstrom), sphere radius (real Angstrom), number of discretisation points (integer) +z +y +x -x -y -z
-100. 0. 0. 10. 20  20  20  20  20  20  # spere position, (x,y,z - reals Angstrom), sphere radius (real Angstrom), number of discretisation points (integer) +z +y +x -x -y -z
-

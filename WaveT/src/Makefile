@@ -23,11 +23,15 @@ FC = gfortran
  # comment the first and uncomment the second if compiler is ifort
 
  CPP= -cpp
-
+#CPP= -fpp
 
 #LIBS = -qmkl -lfftw3 -lm
 #INC = -I/home/coccia/Libs/fftw-3.3.8
 #INC = -I/home/coccia/Codes/WaveT_nondipole/WaveT/WaveT/src
+
+#LIBS = -L/share/lib64 -llapack -lblas -lpthread -lfftw3 #FOR PADOVA
+#INC =  -I/usr/include #FOR PADOVA
+
 INC = -I/usr/include/x86_64-linux-gnu
 LIBS = -L/usr/lib/x86_64-linux-gnu -llapack -lblas -lfftw3
 LIBSPAR= #-L/opt/scali/lib64 -lfmpi -lmpi
@@ -52,16 +56,16 @@ OBJ_NUCL= constants.o $(TOOLSPATH)/nucl_wavep_tool.o
 # tdplas binding flag
 # write no if you want to compile wavet without any link to tdplas
 
-TDPLASLINK= YES 
+TDPLASLINK= YES
 TDPLASLIB=
 TDPLASINC=
 TDPLASPP=
 
-#ifeq ($(TDPLASLINK),YES)
+ifeq ($(TDPLASLINK),YES)
 
 # tdplas directory
 
-TDPLAS=../../TDPlas/src/
+TDPLAS= ../../TDPlas/src/
 
 # tdplas library file
 
@@ -75,7 +79,7 @@ TDPLASINC= -I$(TDPLAS)
 
 TDPLASPP= -DTDPLAS
 
-#endif
+endif
 
 # compilation and linking rules
 

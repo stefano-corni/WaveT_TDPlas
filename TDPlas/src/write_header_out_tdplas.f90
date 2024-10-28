@@ -360,6 +360,9 @@ module write_header_out_tdplas
             case('from_cipot')
                 write(6,*) "The applied perturbation is an extenal potential read from"
                 write(6,*) "ci_pot.inp choosing the excited state of interest from input"
+            case('raman')
+                write(6,*) "The applied perturbation is an extenal potential read from"
+                write(6,*) "ci_pot.inp between all states for raman calculation"
             case('dipole')
                 write(6,*) "The applied perturbation is an extenal potential generated from"
                 write(6,*) "the dipole moment of the molecule"
