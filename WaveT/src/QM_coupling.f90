@@ -83,7 +83,7 @@
        if(this_Ftest.eq."qmt") then
          if (allocated(this_vts)) deallocate(this_vts)
          allocate (this_vts(this_nts_act,n_ci,n_ci))
-         call do_vts_from_dip_in_wavet
+         call get_vts_from_dip
          if (myrank.eq.0) write(6,*) "Integrals from dipoles computed"
        endif
        !> compute charges associated to each mode

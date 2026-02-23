@@ -46,11 +46,10 @@ CPP=-cpp
 # libraries to be linked - paths to be set by the user
 #LIBS = -L/usr/lib -llapack -lblas -lpthread #FOR PADOVA
 #LIBS = -L/usr/lib -llapack  -lblas -lfftw3 #MARTA PC
-LIBS = -L/usr/lib/x86_64-linux-gnu -llapack  -lblas -lfftw3 #SILVIO PC
 #LIBS =  -Wl,--start-group -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -Wl,--end-group#FOR HYDRA
-INC =  -I/usr/local/include
-#INC = -I/usr/include/x86_64-linux-gnu
-#LIBS = -L/usr/lib/x86_64-linux-gnu -llapack  -lblas
+#INC =  -I/usr/local/include
+INC = -I/usr/include/x86_64-linux-gnu
+LIBS = -L/usr/lib/x86_64-linux-gnu -llapack  -lblas
 # executable directory
 BINPATH=../bin
 # tdplas library file

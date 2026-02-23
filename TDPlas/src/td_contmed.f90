@@ -104,12 +104,13 @@
       private
 !SC 07/02/16: added output_gneq
       public init_mdm,prop_mdm,finalize_mdm,qtot,ref,get_gneq, &
-             get_ons,get_mdm_dip,set_charges,preparing_for_scf,&
+             get_ons,get_mdm_dip,set_charges,&
              init_after_scf,mpibcast_readio_mdm,fr_0,q0, &
              set_potential, init_potential, prop_chr, init_charges,&
              get_propagated_charges, get_corrected_propagated_charges,&
              init_vv_propagator,get_qr_fr,deallocate_potential,       &
-             finalize_prop, clean_all_ocpy_tdcont
+             finalize_prop, clean_all_ocpy_tdcont, &
+             do_charges_from_pot, do_Rfield_from_dip
 
       contains
 !
@@ -390,10 +391,10 @@
        real(dbl),intent(out):: q(:)
   
          if (global_prop_Fint.eq."ons") then
-          q=fr_t-fr_0
+          q=fr_t
           if(global_medium_Floc.eq."loc") q=q+fx_t  
          else 
-          q=qr_t-q0
+          q=qr_t
           if(global_medium_Floc.eq."loc") q=q+qx_t(:)
           ! SC 31/10/2016: avoid including interaction with an unwanted net charge
           q=q+(qtot0-sum(q))/pedra_surf_n_tessere
@@ -401,8 +402,8 @@
          if(global_sys_Fdeb.eq."off") q=0
          ! SP 18/05/20 test purposes
          if(global_sys_Ftest.eq."n-r") q=q0
-         return
-        end subroutine get_qorf
+       return
+      end subroutine get_full_qorf
 
 !------------------------------------------------------------------------
 ! @brief  Get the current reaction- and local-field charges or Onsager reaction fields
@@ -417,8 +418,10 @@
   
          if (global_prop_Fint.eq."ons") then
           q=fr_t-fr_0
+          if(global_medium_Floc.eq."loc") q=q+fx_t  
          else 
           q=qr_t-q0
+          if(global_medium_Floc.eq."loc") q=q+qx_t(:)
           ! SC 31/10/2016: avoid including interaction with an unwanted net charge
           q=q+(qtot0-sum(q))/pedra_surf_n_tessere
          endif
@@ -440,9 +443,15 @@
   
          if (global_prop_Fint.eq."ons") then
           q=fr_0
+          if(global_medium_Floc.eq."loc") q=q+fx_0  
          else 
-          q=q0+(qtot0-sum(q0))/pedra_surf_n_tessere
+          q=q0
+          if(global_medium_Floc.eq."loc") q=q+qx0(:)
+          q=q+(qtot0-sum(q))/pedra_surf_n_tessere
          endif
+         if(global_sys_Fdeb.eq."off") q=0
+         ! SP 18/05/20 test purposes
+         if(global_sys_Ftest.eq."n-r") q=q0
          return
         end subroutine get_qorf0
 
@@ -504,6 +513,7 @@
        !endif
        ! END
        ! from here on this would be a init_pot_prop
+      end subroutine init_potential
 
 !------------------------------------------------------------------------
 ! @brief Initialize potentials for propagation
@@ -712,6 +722,7 @@
        if(global_prop_Fint.eq."ons") then 
          call do_field_from_charges(q0,fr_0)
          if (global_medium_Floc.eq."loc") call do_field_from_charges(qx0,fx_0)
+       endif
 ! SC 31/10/2016: in case of nanoparticle, normalize initial charges to zero
        if(global_medium_Fmdm.eq.'cnan'.or.global_medium_Fmdm.eq.'qnan') then
          qtot0=zero
@@ -769,11 +780,13 @@
          qr_tp=q0+matmul(BEM_Qd,(pot_tp-pot_0))
        else
          !SP 15/05/24 BEGIN taken from init_after_scf:
-         qr_tp=matmul(BEM_Q0,pot_or_mut)
-         g_neq_0=0.5*dot_product(qr_tp,pot_or_mut)
-         qr_tp=matmul(BEM_Qd,pot_or_mut)
-         g_neq2_0=0.5*dot_product(qr_tp,pot_or_mut)
-         qr_tp=matmul(BEM_Q0,pot_or_mut)
+         !SP 15/05/24 WARNING the choiche of pot_tp in the folloeing 
+         !            needs to be checked
+         qr_tp=matmul(BEM_Q0,pot_tp)
+         g_neq_0=0.5*dot_product(qr_tp,pot_tp)
+         qr_tp=matmul(BEM_Qd,pot_tp)
+         g_neq2_0=0.5*dot_product(qr_tp,pot_tp)
+         qr_tp=matmul(BEM_Q0,pot_tp)
          qr_t(:)=qr_tp(:)
          dqr_t(:)=zero
          !SP 15/05/24 END taken from init_after_scf:
@@ -1119,27 +1132,44 @@
 
       end subroutine init_dip_sphe_sol
       
+! WARNING 180226: the following two routines should stay in BEM_medium,
+! not related to propagation
 
-      ! SP 15/05/2024 this should be transformed in do_charges_from_pot 
-      subroutine preparing_for_scf(mix,pot_or_mut)
-
-       implicit none
-
-       real(dbl) :: mix
-
-       real(dbl), intent(in) :: pot_or_mut(:) 
-
-       if (global_prop_Fprop.eq."dip") then
+!------------------------------------------------------------------------
+! @brief Compute Reaction  field from molecular dipole 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+      subroutine do_Rfield_from_dip(mu,f)
+       real(dbl), intent(in) :: mu(3)         !< (1:3)      - molecular dipole
+       real(dbl), intent(out) :: f(3)         !< (1:3)      - field                               
         if(sph_surf_Fshape.eq."sphe") then
-         fr_t=mix*ONS_f0*pot_or_mut+(1.-mix)*fr_0
+         f=ONS_f0*mu
         else if(sph_surf_Fshape.eq."spho") then
-         fr_t=mix*matmul(mat_f0,pot_or_mut)+(1.-mix)*fr_0
+         f=matmul(mat_f0,mu)
         end if
-       else
-        qr_t=mix*matmul(BEM_Q0,pot_or_mut)+(1.-mix)*q0
-       endif
+       return
+      end subroutine do_Rfield_from_dip
 
-      end subroutine preparing_for_scf
+
+
+!------------------------------------------------------------------------
+! @brief Compute Reaction charges from molecular dipole 
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+      subroutine do_charges_from_pot(pot,q)
+       real(dbl),intent(IN):: pot(pedra_surf_n_tessere)
+       real(dbl),intent(OUT):: q(pedra_surf_n_tessere)
+         q=matmul(BEM_Q0,pot)
+       return
+      end subroutine do_charges_from_pot
+      
+
+
+
 
       subroutine init_after_scf(pot_or_mut)
 

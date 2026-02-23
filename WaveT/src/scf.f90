@@ -94,8 +94,10 @@
        enddo
        if (myrank.eq.0) write(6,*) "SCF Done"
        ! Write-out integrals/properties in the new basis 
-       if (Fmdm.ne."vac") call out_environment_scf(eigt_c)
+       call transform_dipoles
+       if(Fmdm.ne."vac") call transform_environment_scf(eigt_c)
        if (myrank.eq.0) then
+          if(Fmdm.ne."vac") call out_environment_scf
           call out_dipoles
           call out_energies
        endif
@@ -225,7 +227,7 @@
          mu(i)=dot_product(c,matmul(mut(i,:,:),c))
        enddo
        return
-      end subroutine do_htot_ene
+      end subroutine do_dip_from_coeff
 
 
 !------------------------------------------------------------------------
@@ -291,7 +293,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
 !------------------------------------------------------------------------
-! @brief Transform to the new basis and write out dipole integrals (mut)  
+! @brief Transform dipole integrals to the new basis  
 !
 ! @date Created: S. Pipolo
 ! Modified: L. Biancorosso 9/23
@@ -305,19 +307,34 @@
 #ifndef MPI
        myrank=0
 #endif
-
        do its=1,3
         mut(its,:,:)=matmul(mut(its,:,:),eigt_c)
         mut(its,:,:)=matmul(transpose(eigt_c),mut(its,:,:))
        enddo
-
        if (Fmag.eq.'mag') then
           do its=1,3
              lt(its,:,:)=matmul(lt(its,:,:),eigt_c)
              lt(its,:,:)=matmul(transpose(eigt_c),lt(its,:,:))
           enddo
        endif
+       return 
+      end subroutine transform_dipoles      
 
+!------------------------------------------------------------------------
+! @brief write out dipole integrals (mut)  
+!
+! @date Created: S. Pipolo
+! Modified: L. Biancorosso 9/23
+!------------------------------------------------------------------------
+      subroutine out_dipoles
+
+       implicit none
+
+       integer(i4b) :: its,i,j
+
+#ifndef MPI
+       myrank=0
+#endif
 
 ! write out the scf dipoles
        open(unit=7,file="ci_mut_scf.inp",status="unknown", &
