@@ -17,6 +17,10 @@ radiative='non'
 fmax= 0. 0.00001 0.0     
 /
 
+&twodspectra
+twodcalc='no'
+/
+
 &sse
 dissipative='non'
 /

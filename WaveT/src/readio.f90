@@ -137,7 +137,7 @@
              nspectra,Fabs,ion_rate,mpibcast_ion_rate,Fbin, &
              ncit,Fopt,ik,Fwrt,tar,all_pop,all_coh,pop,coh, &
              write_bin,Ip,prop_type,twodcalc,de_delay,ndelay,&
-             Fmag,lt,e_dir,m_i_prev,m_i_prev2,map_phase,    &
+             Fmag,lt,e_dir,m_i_prev,m_i_prev2,map_phase,dstart,&
              m_i_prev3,m_i_prev4,m_i_prev5,Flig,f0,pini,pfin 
              
 !

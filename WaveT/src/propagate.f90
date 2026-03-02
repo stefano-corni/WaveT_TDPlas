@@ -1,4 +1,4 @@
-      module propagate
+module propagate
       use constants
       use readio
       use spectra
@@ -107,13 +107,13 @@
              endif
           endif
        else
-          write(name_c,'(a9,i0,a1,i0,a4)') "mu_t_esa_",nmap,"_",n_f,".dat"
+          !write(name_c,'(a9,i0,a1,i0,a4)') "mu_t_esa_",nmap,"_",n_f,".dat"
           write(name_mu,'(a5,i0,a1,i0,a4)') "mu_t_",nmap,"_",n_f,".dat"
           if (Fbin.ne.'bin') then
-                open (file_c,file=name_c,status="unknown")
+                !open (file_c,file=name_c,status="unknown")
                 open (file_mu,file=name_mu,status="unknown")
           else
-             open(file_c,file=name_c,status="unknown",form="unformatted")
+             !open(file_c,file=name_c,status="unknown",form="unformatted")
              open(file_mu,file=name_mu,status="unknown",form="unformatted")
           endif
        endif
@@ -305,7 +305,7 @@
          close (file_mu)
          close (file_m)
        else
-         close(file_c)
+         !close(file_c)
          close(file_mu)
        endif
 
@@ -696,20 +696,20 @@
       write(name_esa,'(a7,i0,a4)') "mu_esa_",n_f,".dat"
       write(name_all,'(a7,i0,a4)') "mu_all_",n_f,".dat"
       do j=1,12
-        write(name_c,'(a9,i0,a1,i0,a4)') "mu_t_esa_",j,"_",n_f,".dat"
+        !write(name_c,'(a9,i0,a1,i0,a4)') "mu_t_esa_",j,"_",n_f,".dat"
         write(name_mu,'(a5,i0,a1,i0,a4)') "mu_t_",j,"_",n_f,".dat"
         if (Fbin.ne.'bin') then
-          open (file_c,file=name_c,status="unknown")
+          !open (file_c,file=name_c,status="unknown")
           open (file_mu,file=name_mu,status="unknown")
-          read(file_mu,*)
-          read(file_c,*)
+          !read(file_mu,*)
+           !read(file_c,*)
           do i=1,n_step
              read(file_mu,*) idum, rdum, mu_read
-             read(file_c,*) idum, rdum, mu_esa_read
+             !read(file_c,*) idum, rdum, mu_esa_read
              mu_phase(i,1) = mu_phase(i,1) + (mu_read(1) + mu_read(2) + mu_read(3))*mat_c_inv(j,1)
              mu_phase(i,2) = mu_phase(i,2) + (mu_read(1) + mu_read(2) + mu_read(3))*mat_c_inv(j,2)
-             mu_esa_phase(i,1) = mu_esa_phase(i,1) + (mu_esa_read(1) + mu_esa_read(2) + mu_esa_read(3))*mat_c_inv(j,1)
-             mu_esa_phase(i,2) = mu_esa_phase(i,2) + (mu_esa_read(1) + mu_esa_read(2) + mu_esa_read(3))*mat_c_inv(j,2)
+             !mu_esa_phase(i,1) = mu_esa_phase(i,1) + (mu_esa_read(1) + mu_esa_read(2) + mu_esa_read(3))*mat_c_inv(j,1)
+             !mu_esa_phase(i,2) = mu_esa_phase(i,2) + (mu_esa_read(1) + mu_esa_read(2) + mu_esa_read(3))*mat_c_inv(j,2)
           enddo
           close(file_c, status='delete')
           close(file_mu, status='delete')
@@ -721,34 +721,34 @@
              read(file_c) idum, rdum, mu_esa_read
              mu_phase(i,1) = mu_phase(i,1) + (mu_read(1) + mu_read(2) + mu_read(3))*mat_c_inv(j,1)
              mu_phase(i,2) = mu_phase(i,2) + (mu_read(1) + mu_read(2) + mu_read(3))*mat_c_inv(j,2)
-             mu_esa_phase(i,1) = mu_esa_phase(i,1) + (mu_esa_read(1) + mu_esa_read(2) + mu_esa_read(3))*mat_c_inv(j,1)
-             mu_esa_phase(i,2) = mu_esa_phase(i,2) + (mu_esa_read(1) + mu_esa_read(2) + mu_esa_read(3))*mat_c_inv(j,2)
+             !mu_esa_phase(i,1) = mu_esa_phase(i,1) + (mu_esa_read(1) + mu_esa_read(2) + mu_esa_read(3))*mat_c_inv(j,1)
+             !mu_esa_phase(i,2) = mu_esa_phase(i,2) + (mu_esa_read(1) + mu_esa_read(2) + mu_esa_read(3))*mat_c_inv(j,2)
           enddo
-          close(file_c, status='delete')
+          !close(file_c, status='delete')
           close(file_mu, status='delete')
         endif
       enddo
 
       if (Fbin.ne.'bin') then
           open(20,file=name_all,status="unknown")
-          open(21,file=name_esa,status="unknown")
+          !open(21,file=name_esa,status="unknown")
           do i=1,n_step
              write(20,*) real(mu_phase(i,1)), aimag(mu_phase(i,1)), &
                          real(mu_phase(i,2)), aimag(mu_phase(i,2))
-             write(21,*) real(mu_esa_phase(i,1)), aimag(mu_esa_phase(i,1)),&
-                         real(mu_esa_phase(i,2)), aimag(mu_esa_phase(i,2))
+             !write(21,*) real(mu_esa_phase(i,1)), aimag(mu_esa_phase(i,1)),&
+             !            real(mu_esa_phase(i,2)), aimag(mu_esa_phase(i,2))
           enddo
       else
           open(20,file=name_all,status="unknown",form="unformatted")
-          open(21,file=name_esa,status="unknown",form="unformatted")
+          !open(21,file=name_esa,status="unknown",form="unformatted")
           do i=1,n_step
              write(20) mu_phase(i,:)
-             write(21) mu_esa_phase(i,:)
+          !   write(21) mu_esa_phase(i,:)
          enddo
       endif
       deallocate(mu_phase, mu_esa_phase)
       close(20)
-      close(21)
+      !close(21)
 
       end subroutine
 
@@ -913,10 +913,10 @@
           if (Fbin.ne.'bin') then
              write (file_mu,'(i8,f14.4,3e22.10)') i,t,mu_a(:)
              ! mut without ground state contribution
-             write (file_c,'(i8,f14.4,3e22.10)') i,t,mu_a_esa(:)
+             !write (file_c,'(i8,f14.4,3e22.10)') i,t,mu_a_esa(:)
           else
              write(file_mu) i,t,mu_a(:)
-             write(file_c) i,t,mu_a_esa(:)
+             !write(file_c) i,t,mu_a_esa(:)
           endif
        endif
        j=int(dble(i)/dble(n_out))
