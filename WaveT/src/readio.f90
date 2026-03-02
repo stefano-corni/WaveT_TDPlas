@@ -11,7 +11,7 @@
 
       save
 !
-      integer(i4b) :: n_f,n_ci,n_ci_read,n_step,n_out,ncit 
+      integer(i4b) :: n_f,n_ci,n_ci_read,n_step,n_out,ncit,nmap 
       !integer(i4b) :: imar !imar=0 Markvian, imar=1, nonMarkovian
       integer(i4b) :: i_sp=0,i_nr=0,i_de=0 !counters for quantum jump occurrences
       integer(i4b) :: nrnd !the time step for Euler-Maruyama is dt/nrnd
@@ -19,6 +19,8 @@
       integer(i4b) :: nr_typ !input integer for type of decay for the internal conversion
       integer(i4b) :: idep   !input integer for the dephasing operator
       integer(i4b) :: tdis   !input integer for Euler tdis=0, Matthews tdis=1 
+      integer(i4b) :: ndelay ! number of delay times considered to build 2D map
+      integer(i4b) :: dstart ! index of the first delay time used for twodspectra
 ! SP270917: added for merging to newer master
       integer(i4b)              :: npulse    !number of pulses
       integer(i4b), allocatable :: irel(:,:) !mapping for intermediate relaxations  
@@ -33,6 +35,9 @@
 
       real(dbl), allocatable    :: mut_np2(:,:) !squared dipole from NP
       real(dbl)                 :: tdelay(npulsemax), pshift(npulsemax)  ! time delay and phase shift with two pulses
+      real(dbl)                 :: de_delay    ! variation of delay time between first and second pulse for 2d calc
+      real(dbl)                 :: map_phase(12,3) ! ausiliary map used in 2d calc
+      complex(cmp)              :: mat_c_inv(12,2) ! inverse of map_phase
       !real(dbl), allocatable    :: c_i(:),e_ci(:)  ! energy from cis
       real(dbl), allocatable    :: e_ci(:)  ! energy from cis
       complex(cmp), allocatable :: c_i(:),c_i_t(:),c_i_prev(:),c_i_prev2(:) ! coefficients from cis
@@ -95,6 +100,7 @@
       character(flg) :: all_pop ! flags for the postprocessing input
       character(flg) :: all_coh ! flags for the postprocessing input
       character(flg) :: write_bin ! flags for the postprocessing input
+      character(flg) :: twodcalc  ! flags for activate 2d calculation   
       integer(i4b) :: iseed  ! seed for random number generator
       integer(i4b) :: nexc   ! number of excited states
       integer(i4b) :: nrel   ! number of relaxation channels
@@ -116,13 +122,13 @@
       public read_input,n_ci,n_ci_read,n_step,dt,           &
              Ffld,t_mid,sigma,omega,fmax,restart,           & 
              Fmdm,mol_cc,tau,start,c_i,e_ci,mut,            &
-             Frad,n_out,iseed,n_f,dir_ft,full,              &
+             Frad,n_out,iseed,n_f,dir_ft,full,nmap,         &
 ! SP 17/07/17: Changed to char flags
              tdis,nr_gam,de_gam,sp_gam,tmom2,nexc,delta,    &
              deallocate_dis,i_sp,i_nr,i_de,nrnd,sp_fact,    &
 !             nr_typ,idep,imar,de_gam1,krnd,ernd       
              de_gam1,krnd,Fdis,Fdis_deph,Fdis_rel,nf,irel,  &
-             npulse,tdelay,pshift,nrel,Fful,  &
+             npulse,tdelay,pshift,nrel,Fful,mat_c_inv,      &
              Fexp,Fres,restart_t,restart_i,n_restart,       &
              c_i_t,c_i_prev,c_i_prev2,mu_i_prev,mu_i_prev2, &
              mu_i_prev3,mu_i_prev4,mu_i_prev5,restart_seed, &
@@ -130,8 +136,8 @@
              mpibcast_e_dip,mpibcast_sse,mpibcast_restart,  &
              nspectra,Fabs,ion_rate,mpibcast_ion_rate,Fbin, &
              ncit,Fopt,ik,Fwrt,tar,all_pop,all_coh,pop,coh, &
-             write_bin,Ip,prop_type,                        &
-             Fmag,lt,e_dir,m_i_prev,m_i_prev2, &
+             write_bin,Ip,prop_type,twodcalc,de_delay,ndelay,&
+             Fmag,lt,e_dir,m_i_prev,m_i_prev2,map_phase,    &
              m_i_prev3,m_i_prev4,m_i_prev5,Flig,f0,pini,pfin 
              
 !
@@ -162,6 +168,8 @@
                         npulse,tdelay,pshift,Fmag,e_dir,Flig,f0,pini,pfin
        !Stochastic Schroedinger equation
        namelist /sse/ dissipative,idep,dis_prop,prop_type,nrnd,tdis,nr_typ,krnd,out_sse
+       !Namelist for 2D calculations
+       namelist /twodspectra/ twodcalc,de_delay,dstart,ndelay
        !Namelist spectra
        namelist /spectra/ start,tau,dir_ft
        !Namelist for postprocessing
@@ -204,7 +212,11 @@
           stop 
        endif
        call write_nml_field() 
-
+       ! Namelist 2D
+       pshift=pshift*pi
+       call init_nml_twodspectra()
+       read(*,nml=twodspectra)
+       call write_nml_twod()
        !Namelist sse
        call init_nml_sse()
        read(*,nml=sse)
@@ -340,7 +352,7 @@
        if (Fres.eq.'Nonr') then
           open(7,file="ci_ini.inp",status="old")
           do i=1,n_ci
-             read(7,*) rtmp 
+             read(7,*) rtmp
              c_i(i) = dcmplx(rtmp,0.d0)   
           enddo
           c_i=c_i/sqrt(dot_product(c_i,c_i))
@@ -819,7 +831,7 @@
        ! Threshold value for doing matmul or explicit loop in prop()
        ncit=150
        ! Iionization energy (effective only when absorber='y')
-       Ip=0.d0 
+       Ip=0.d0
 
        return
 
@@ -894,6 +906,39 @@
        return
 
       end subroutine init_nml_spectra
+
+!------------------------------------------------------------------------                                                                                                                     
+! @brief Initialize variables in the namelist for 2D spectra                                                                                                                                  
+!                                                                                                                                                                                             
+! @date Created   : G. Dall'Osto 30 Apr 2025                                                                                                                                                  
+! Modified  :                                                                                                                                                                                 
+! @param 2d                                                                                                                                                                                   
+!------------------------------------------------------------------------
+        subroutine init_nml_twodspectra()
+
+        ! 2D calculation
+        twodcalc='no'
+        ! Variation of first delay time
+        de_delay=0.0
+        ! Number of delay time considered
+        ndelay=1
+        dstart=0
+        ! Definition of map phases
+        map_phase(:,1)= [0.0, 0.0, 0.5, 0.5, 1.0, 1.0, 1.5, 0.0, 0.0, 0.5, 1.5, 1.5]
+        map_phase(:,2)= [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        map_phase(:,3)= [0.0, 0.5, 1.0, 0.5, 0.0, 0.5, 1.5, 1.5, 1.0, 1.5, 1.0, 0.5]
+
+        map_phase = map_phase*pi
+        mat_c_inv(:,1) = (/ (0.0, 0.0), (1.0, -1.0), (1.0, 1.0),   &
+                            (-1.0,0.0), (0.0, 0.0), (0.0, 0.0),    &
+                            (-1.0, 0.0), (1.0, 1.0), (-2.0, 0.0)  ,&
+                            (0.0, -1.0),(1.0, -1.0), (0.0, 1.0) /)
+         mat_c_inv(:,2) = (/ (1.0, 1.0), (-1.0, -1.0), (1.0, -1.0), &
+                            (0.0, 0.0),(-1.0, -1.0), (1.0, 1.0),   &
+                            (1.0, -1.0), (0.0, 0.0), (0.0, 0.0),   &
+                            (-1.0, 1.0), (-1.0, 1.0), (0.0, 0.0) /)
+
+        end subroutine init_nml_twodspectra
 
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist sse 
@@ -1170,6 +1215,27 @@
        return
 
       end subroutine write_nml_spectra
+
+!------------------------------------------------------------------------
+! @brief Write variables in the namelist twod and put conditions
+!
+! @date Created   : G. Dall'Osto 15/05/2025
+! Modified  :
+! @param twodcalc,de_delay,ndelay
+!------------------------------------------------------------------------
+      subroutine write_nml_twod()
+         select case (twodcalc)
+           case ('yes','Yes','YES')
+               write(*,*) "Calculation to calculate a 2D map is active ", &
+                       "performing",ndelay,"steps, varying the delay time by ", &
+                       de_delay," a.u., starting from step ", dstart
+           case ('no','No','NO')
+               write(*,*) "Calculation with 2D flag deactivated"
+         end select
+
+         return
+
+      end subroutine write_nml_twod
 
 !------------------------------------------------------------------------
 ! @brief Write variables in the namelist sse and put conditions 
