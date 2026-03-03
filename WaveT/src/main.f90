@@ -44,6 +44,7 @@
        !Send input data to all the processes
        call mpibcast_readio()
        call mpibcast_e_dip()
+       if (twodcalc.eq."yes") call mpibcast_twod()
        if (Fdis.ne."nodis") call mpibcast_sse()
        if (Fres.eq.'Yesr')       call mpibcast_restart()
        if (Fmdm.ne.'vac')        call mpi_bcast(nspectra,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)

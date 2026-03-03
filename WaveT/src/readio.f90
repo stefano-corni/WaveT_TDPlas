@@ -76,7 +76,7 @@
       ! Stochastic propagation from:
       ! Appl. Math. Res. Express vol. 2013 34-56 (2013)
       ! IMA J. Numer. Anal. vol. 36 13-79 (2016)
-      real(dbl) :: t_mid,sigma(npulsemax),dir_ft(3),fmax(3,npulsemax),omega(npulsemax),mol_cc(3)
+      real(dbl) :: t_mid,sigma(npulsemax),dir_ft(3),fmax(3,npulsemax),omega(npulsemax),mol_cc(3),t_ap
       character(flg) :: Ffld !< Field type 
       character(flg) :: Fmdm !< Flag for medium type, this will be defined in readio_medium after separation
       character(flg) :: Frad !< Flag for radiative damping 
@@ -132,13 +132,14 @@
              Fexp,Fres,restart_t,restart_i,n_restart,       &
              c_i_t,c_i_prev,c_i_prev2,mu_i_prev,mu_i_prev2, &
              mu_i_prev3,mu_i_prev4,mu_i_prev5,restart_seed, &
-             n_jump,Fsim,diff_step,mpibcast_readio,         &
+             n_jump,Fsim,diff_step,mpibcast_readio,dstart,  &
              mpibcast_e_dip,mpibcast_sse,mpibcast_restart,  &
              nspectra,Fabs,ion_rate,mpibcast_ion_rate,Fbin, &
              ncit,Fopt,ik,Fwrt,tar,all_pop,all_coh,pop,coh, &
              write_bin,Ip,prop_type,twodcalc,de_delay,ndelay,&
-             Fmag,lt,e_dir,m_i_prev,m_i_prev2,map_phase,dstart,&
-             m_i_prev3,m_i_prev4,m_i_prev5,Flig,f0,pini,pfin 
+             Fmag,lt,e_dir,m_i_prev,m_i_prev2,map_phase,t_ap,&
+             m_i_prev3,m_i_prev4,m_i_prev5,Flig,f0,pini,pfin,&
+             mpibcast_twod 
              
 !
       contains
@@ -165,7 +166,7 @@
                          binary,ncit,Ip
        !External field paramaters
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
-                        npulse,tdelay,pshift,Fmag,e_dir,Flig,f0,pini,pfin
+                        npulse,tdelay,pshift,Fmag,e_dir,Flig,f0,pini,pfin,t_ap
        !Stochastic Schroedinger equation
        namelist /sse/ dissipative,idep,dis_prop,prop_type,nrnd,tdis,nr_typ,krnd,out_sse
        !Namelist for 2D calculations
@@ -880,6 +881,8 @@
        pini=10
        ! Final point for trapezoidal pulse
        pfin=20
+       ! Apodization for sinc pulse
+       t_ap = 99999.d0
 
 
        return
@@ -1438,6 +1441,7 @@
 
        call mpi_bcast(dt,        1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(t_mid,     1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(t_ap,      1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(krnd,      1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(start,     1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(tau,       2,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
@@ -1450,6 +1454,7 @@
        call mpi_bcast(fmax,      3*npulsemax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(f0,        1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
 
+       call mpi_bcast(twodcalc,    flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(propa,       flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(lsim,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(medium,      flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
@@ -1507,6 +1512,24 @@
        return
 
       end subroutine mpibcast_e_dip
+
+
+
+!------------------------------------------------------------------------
+! @brief MPI broadcast of SSE relaxation and dephasing rates 
+!
+! @date Created   : G. Dall'Osto 2 Mar 2026
+! Modified  :
+!------------------------------------------------------------------------
+      subroutine mpibcast_twod()
+
+#ifdef MPI
+         call mpi_bcast(ndelay,      1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+         call mpi_bcast(dstart,      1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) 
+         call mpi_bcast(de_delay,    1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+#endif
+
+      end subroutine mpibcast_twod
 
 !------------------------------------------------------------------------
 ! @brief MPI broadcast of SSE relaxation and dephasing rates 

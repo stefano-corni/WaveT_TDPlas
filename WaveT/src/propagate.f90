@@ -390,6 +390,20 @@ module propagate
                           sin(omega(j)*t_a+sum(pshift(1:j-1)))
                 enddo 
              enddo
+            case ("snc")             
+        ! Sinc apodized pulse: sin(Tt/2)/(Tt/2) * sin(wt) *
+        ! exp(-Gamma*abs(t))         
+             do i=1,n_tot
+                t_a=dt*(i-1)      
+                f(:,i) =fmax(:,1)*(sin(0.5*sigma(1)*(t_a - t_mid + 0.5*dt))/(0.5*sigma(1)*(t_a - t_mid + 0.5*dt)))*sin(omega(1)*t_a)* &
+                exp(-(2.d0/t_ap)*abs(t_a - t_mid + 0.5*dt))
+                do j=2,npulse
+                   f(:,i) = f(:,i) + fmax(:,j)*(sin(0.5*sigma(j)*(t_a -(t_mid + sum(tdelay(1:j-1))) + 0.5*dt))/ &
+                   (0.5*sigma(j)*(t_a - (t_mid + sum(tdelay(1:j-1))) +0.5*dt)))* &
+                   sin(omega(j)*t_a + sum(pshift(1:j-1)))* &
+                   exp(-(2.d0/t_ap)*abs(t_a - (t_mid + sum(tdelay(1:j-1))) + 0.5*dt))
+                enddo 
+             enddo
            case ("mds")
         ! Cosine^2 modulated sinusoid: 1/2* cos^2(pi(t-t0)/(2t0)) * sin(wt) 
         !          f=0 for t>t0
@@ -1185,7 +1199,6 @@ module propagate
 ! eps -> uniform random number in [0,1]
             call loss_norm(c_prev,nstates,pjump)
             call random_number(eps) 
-            eps=eps 
             if (dtot.gt.eps)  then
                call quan_jump(c,c_prev,nstates,pjump)
                ijump=i
@@ -1435,7 +1448,6 @@ module propagate
 ! eps -> uniform random number in [0,1]
             call loss_norm(c_prev,nstates,pjump)
             call random_number(eps)
-            eps=eps
             if (dtot.gt.eps)  then
                call quan_jump(c,c_prev,nstates,pjump)
                ijump=i
