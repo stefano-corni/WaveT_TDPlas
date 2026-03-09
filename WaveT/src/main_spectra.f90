@@ -1,7 +1,7 @@
 program make_spectra
       use readio  
       use spectra       
-      use interface_tdplas
+      use interface_classic
 
       implicit none
 

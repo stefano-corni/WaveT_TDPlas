@@ -1,7 +1,7 @@
       Module scf            
       use constants
       use readio    
-      use interface_tdplas
+      use interface_classic
       use, intrinsic :: iso_c_binding
 
 #ifdef MPI
@@ -18,9 +18,7 @@
       real(dbl) :: maxv                      !< Max values if eigenvectors differences wrt previous cycle                   
       real(dbl) :: maxe                      !< Max values if eigenvalues  differences wrt previous cycle       
       ! Working arrays
-      real(dbl) :: mu(3)                    !< Temporary array containing dipole in SCF cycle
-      real(dbl), allocatable :: pot(:)      !< Temporary array containing potential in SCF cycle
-      real(dbl), allocatable :: c_c(:)      !< Temporary array containing coefficients in old basis 
+      real(dbl), allocatable :: c_c(:)       !< Temporary array containing coefficients in old basis 
 
       save
       private
@@ -37,17 +35,16 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-      subroutine do_scf(c_prev)
+      subroutine do_scf(c)
 
        implicit none
-       complex(cmp), intent(INOUT) :: c_prev(:)  !< basis state coefficients
+       complex(cmp), intent(INOUT) :: c(:)      !< basis state coefficients
        integer(i4b) :: ncyc=1                   !< cycle number 
        logical :: docycle=.true.                !< choice on continue cycling
        real(dbl) :: thre,thrv                   !< thresholds
        real(dbl) :: e_scf, e_ini                !< GS energies
-       real(dbl) :: fld(3)                      !  field from charges
-       integer(i4b):: max_p(1)   
-       integer(i4b):: its 
+       real(dbl) :: f(3)                        !< external field this should be fixed        
+       integer(i4b):: max_p(1),i   
 
 #ifndef MPI
        myrank=0
@@ -60,27 +57,33 @@
        thrv=10**(-this_thrshld+2)
        thre=10**(-this_thrshld)
        if (myrank.eq.0) write(6,*) "Threshold ", thrv,thre
-       call init_scf ! Initialize/allocate
-       if (Fmdm.ne."vac") call init_environment_scf(c_c,f)
+       ! Initialize/allocate
+       call init_scf 
+       if (Fmdm.ne."vac") call init_environment_scf(c,f)
        ! scf cycle
        do while (docycle.and.ncyc.le.this_ncycmax) 
          ! Build the diagonal part of the Hamiltonian 
          call do_htot_ene
-         if (Fmdm.ne."vac") call add_interaction_h(Htot)
+         if (Fmdm.ne."vac") call do_interaction(Htot)
          ! Diagonalize Hamiltonian           
          eigt_c=Htot
          call diag_mat_in_wavet(eigt_c,eigv_c,n_ci)       
-         ! Update charges or field with new coefficients 
-         call do_c_oldbasis
-         call update_energies(e_scf,e_ini)
-         if (Fmdm.ne."vac") call update_environment_scf(c_c,f)
+         ! Transform the new state on the old basis      
+         ! c below contains new state on the old basis (complex)
+         ! c_c below contains new state (real)  
+         call do_c_oldbasis(eigt_c,c_c,c,n_ci)
+         ! compute scf and initial energies
+         call update_energies(e_scf,e_ini,eigv_c,n_ci)
+         ! Update charges or field with new coefficients, 
+         ! update_environment takes complex coefficients
+         if (Fmdm.ne."vac") call update_environment_scf(c,f)
          ! Check convergence                                
          if (ncyc.gt.2) then 
            call check_conv(maxe,maxv,n_ci)       
-!           if (maxe.le.thre.and.maxv.le.thrv) docycle=.false.         
-! SC 24/4/2016: check convergence only on egeinvalues:
-!               in case of degeneracy the variation of eigenvector
-!               can be erratic
+           ! If (maxe.le.thre.and.maxv.le.thrv) docycle=.false.         
+           ! SC 24/4/2016: check convergence only on egeinvalues:
+           ! in case of degeneracy the variation of eigenvector
+           ! can be erratic
            if (maxe.le.thre) docycle=.false.         
            if (myrank.eq.0) write(6,*) "cycle ", ncyc, e_scf, e_ini
          endif
@@ -101,13 +104,13 @@
           call out_dipoles
           call out_energies
        endif
-       !  find the new eigenvector that is most similar to the old one
-       c_c=abs(matmul(c_i,eigt_c))
-       max_p=maxloc(c_c)
-       if (myrank.eq.0) write(6,*) 'maxloc',max_p(1)
-       c_i=0.d0
-       c_i(max_p(1))=1.d0
-       c_prev=c_i
+       ! find the new eigenvector that is most similar to the old one
+       ! c_c below contains new state (real)  
+       call do_c_oldbasis(eigt_c,c_c,c,n_ci)
+       ! Update the initial coefficients      
+       do i=1,n_ci
+         c_i(i)=complex(c_c(i),0.d0)
+       end do
 
        return
 
@@ -157,39 +160,44 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-      subroutine do_c_oldbasis
+      subroutine do_c_oldbasis(eigt,c,c_old,n)
 
-       implicit none
-
+       implicit none       
+       integer(i4b),intent(IN) :: n             
+       real(dbl), intent(IN) :: eigt(n,n)     !< eigenvalues-transformation matrix              
+       real(dbl), intent(OUT) :: c(n)         !< coefficients
+       complex(cmp), intent(OUT) :: c_old(n)     !< basis state coefficients
        integer(i4b):: max_p(1),i    
-! SP 12/07/17: avoiding use of automatic arrays, especially in cycles   
-       !real(dbl) :: c_c(n_ci)
+       real(dbl), allocatable :: c_tmp(:)         !< coefficients
 
 #ifndef MPI
        myrank=0
 #endif
-
+       allocate(c_tmp(n))
        ! find the new eigenvector that is most similar to the old one
-       c_c=abs(matmul(c_i,eigt_c))
-       max_p=maxloc(c_c)
+       c_tmp=abs(matmul(c_i,eigt))
+       max_p=maxloc(c_tmp)
        if(this_Fwrite.eq."high") then 
           if (myrank.eq.0) write(6,*) 'maxloc',max_p(1)
        endif
-       c_c=0.d0
-       c_c(max_p(1))=1.d0
-       ! This is the new state on the basis of the old states  
-       c_c=matmul(eigt_c,c_c) 
+       c_old=0.d0
+       c_old(max_p(1))=1.d0
+       ! c_old below is the new state on the basis of the old states  
+       c_tmp=matmul(eigt_c,c_old)
+       do i=1,n
+          c(i)=complex(c_tmp(i),0.d0)
+       enddo
        ! write the state
        if(this_Fwrite.eq."high") then
          if (myrank.eq.0) then
              write(6,*) "State on the basis of original states"
          endif
          do i=1,n_ci
-          if (myrank.eq.0) write(6,*) i, c_c(i)
+          if (myrank.eq.0) write(6,*) i, c(i)
          enddo
          write(6,*)
        endif
-
+       deallocate(c_tmp)
        return
 
       end subroutine do_c_oldbasis
@@ -219,15 +227,15 @@
 ! @date Created: S. Pipolo
 ! Modified:         
 !------------------------------------------------------------------------
-      subroutine do_dip_from_coeff(c,m)
-       complex(cmp), intent(in) :: c(n_ci) !> (1:n_ci) - molecular wavefunction coefficients
-       complex(cmp), intent(out):: m(3) !> (1:n_ci)    - molecular dipole                   
-       integer(4)::i, 
-       do i=1,3
-         mu(i)=dot_product(c,matmul(mut(i,:,:),c))
-       enddo
-       return
-      end subroutine do_dip_from_coeff
+!      subroutine do_dip_from_coeff(c,m)
+!       complex(cmp), intent(in) :: c(n_ci) !> (1:n_ci) - molecular wavefunction coefficients
+!       complex(cmp), intent(out):: m(3) !> (1:n_ci)    - molecular dipole                   
+!       integer(4)::i, 
+!       do i=1,3
+!         mu(i)=dot_product(c,matmul(mut(i,:,:),c))
+!       enddo
+!       return
+!      end subroutine do_dip_from_coeff
 
 
 !------------------------------------------------------------------------
@@ -245,11 +253,9 @@
 
        mxv=zero                
        mxe=zero          
-!       write(6,*)
        do i=1,Mdim   
          diff=sqrt((eigv_c(i)-eigv_cp(i))**2)
          if(diff.gt.mxe) mxe=diff
-!         write (6,*) i,eigt_c(i,:)
          do j=1,Mdim   
 ! SC 24/4/2016: changed below, otherwise a change of sign result in non-convergence
            diff=abs(eigt_c(j,i)**2-eigt_cp(j,i)**2)
@@ -268,18 +274,19 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-      subroutine update_energies(e_scf,e_ini)
+      subroutine update_energies(e_scf,e_ini,eigv,n)
 
        implicit none
-
+       integer(i4b),intent(IN) :: n             
+       real(dbl), intent(OUT) :: e_scf,e_ini  !< system energies                
+       real(dbl), intent(IN) :: eigv(n)       !< basis state coefficients
        integer(4) :: i
-       real(8) :: e_scf,e_ini
 
        e_scf=0.d0
        e_ini=0.d0
 
-       do i=1,n_ci
-        e_scf=e_scf+abs(c_i(i))*abs(c_i(i))*eigv_c(i)
+       do i=1,n
+        e_scf=e_scf+abs(c_i(i))*abs(c_i(i))*eigv(i)
         e_ini=e_ini+abs(c_i(i))*abs(c_i(i))*e_ci(i)
        enddo
 
@@ -298,7 +305,7 @@
 ! @date Created: S. Pipolo
 ! Modified: L. Biancorosso 9/23
 !------------------------------------------------------------------------
-      subroutine out_dipoles
+      subroutine transform_dipoles
 
        implicit none
 
@@ -307,14 +314,14 @@
 #ifndef MPI
        myrank=0
 #endif
-       do its=1,3
-        mut(its,:,:)=matmul(mut(its,:,:),eigt_c)
-        mut(its,:,:)=matmul(transpose(eigt_c),mut(its,:,:))
+       do i=1,3
+        mut(i,:,:)=matmul(mut(i,:,:),eigt_c)
+        mut(i,:,:)=matmul(transpose(eigt_c),mut(i,:,:))
        enddo
        if (Fmag.eq.'mag') then
-          do its=1,3
-             lt(its,:,:)=matmul(lt(its,:,:),eigt_c)
-             lt(its,:,:)=matmul(transpose(eigt_c),lt(its,:,:))
+          do i=1,3
+             lt(i,:,:)=matmul(lt(i,:,:),eigt_c)
+             lt(i,:,:)=matmul(transpose(eigt_c),lt(i,:,:))
           enddo
        endif
        return 
@@ -330,7 +337,7 @@
 
        implicit none
 
-       integer(i4b) :: its,i,j
+       integer(i4b) :: i,j
 
 #ifndef MPI
        myrank=0

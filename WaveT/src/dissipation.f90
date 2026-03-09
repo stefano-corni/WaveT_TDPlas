@@ -2,7 +2,7 @@ module dissipation
   use constants   
   use readio
   use random
-  use interface_tdplas, only: set_q0charges,this_Fmdm_relax
+  use interface_classic, only: set_q0charges,this_Fmdm_relax
 #ifdef MPI
       use mpi
 #endif

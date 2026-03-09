@@ -5,7 +5,7 @@
       use random
       use dissipation
       use scf
-      use interface_tdplas
+      use interface_classic
       use initialise
 #ifdef OMP
       use omp_lib

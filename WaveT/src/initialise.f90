@@ -13,7 +13,7 @@
 !------------------------------------------------------------------------------
       Module initialise    
       use constants    
-      use interface_tdplas
+      use interface_classic
       use readio       
       use scf            
       use QM_coupling
@@ -27,11 +27,11 @@
       implicit none
                                                       !> This description comes first.
       !character(flg) :: FQBEM                        !< Flag driving the QM calculation mode
-      real(dbl), allocatable :: energies(:)           !<Energies of the states     
-      real(dbl), allocatable :: trans_dipoles(:,:,:)  !<Transition dipoles between states
-      real(dbl), allocatable :: trans_mag(:,:,:)      !<Mag. Trans. dipoles between states - MM - test
-      complex(cmp), allocatable :: coeff0(:)          !<Initial coefficients 
-      integer(i4b) :: nstates                         !<Dimension of Hilbert space
+      real(dbl), allocatable :: energies(:)           !< Energies of the states     
+      real(dbl), allocatable :: trans_dipoles(:,:,:)  !< Transition dipoles between states
+      real(dbl), allocatable :: trans_mag(:,:,:)      !< Mag. Trans. dipoles between states - MM - test
+      complex(cmp), allocatable :: coeff0(:)          !< Initial coefficients 
+      integer(i4b) :: nstates                         !< Dimension of Hilbert space
 
       save
       private

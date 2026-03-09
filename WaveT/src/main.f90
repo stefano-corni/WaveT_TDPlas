@@ -6,7 +6,7 @@
        use dissipation 
        use initialise
        use propagate
-       use interface_tdplas, only: read_medium_input,mpibcast_read_medium,set_global_tdplas_in_wavet
+       use interface_classic, only: read_medium_input,mpibcast_read_medium,set_global_tdplas_in_wavet
 #ifdef OMP
        use omp_lib
 #endif

@@ -109,8 +109,9 @@
              set_potential, init_potential, prop_chr, init_charges,&
              get_propagated_charges, get_corrected_propagated_charges,&
              init_vv_propagator,get_qr_fr,deallocate_potential,       &
+             get_qorf,get_qorf0,       &
              finalize_prop, clean_all_ocpy_tdcont, &
-             do_charges_from_pot, do_Rfield_from_dip
+             do_charges_from_pot, do_Rfield_from_dip,init_mdm_prop
 
       contains
 !
@@ -124,7 +125,7 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-      subroutine init_mdm(mu_t, f_tp, pot_t, potf_t)
+      subroutine init_mdm(mu_t, f_tp, pot_t, potf_t, morv)
 
       implicit none
 
@@ -132,6 +133,7 @@
       real(dbl), optional, intent(in)    ::  f_tp(:)         !< (1:3)           - external field
       real(dbl), optional, intent(in)    :: pot_t(:)         !< (1:pedra_surf_n_tessere)     - molecular potential
       real(dbl), optional, intent(in)    :: potf_t(:)        !< (1:pedra_surf_n_tessere)     - external  potential
+      real(dbl), intent(in)    :: morv(:)        !< mut(:,1,1) or pot(:,1,1)
       integer(i4b) :: its,i,j
       character(20) :: name_f
 
@@ -139,12 +141,14 @@
         !> Dipole propagation
         ! SP: m_or_v used to initialize spheroid's rf
         allocate(m_or_v(3))
+        m_or_v=morv
         ! SP: both these two calls should be split in init and init_prop
         call do_MPL_prop  !in BEM_medium
         call init_dip_and_field(mu_t)
       else
         !> Charges propagation
         allocate(m_or_v(pedra_surf_n_tessere))
+        m_or_v=morv
         if(.not.allocated(mu_mdm))allocate(mu_mdm(3,1))
         ! SP: the following call should be split in do_BEM and do_BEM_prop
         call do_BEM_prop !in BEM_medium
@@ -158,7 +162,7 @@
       ! SP: used for free-ene and the initialisation of spheroid's RF
       ! CHECK THIS, the initialisation shoudl be done on the state
       ! specified in input
-      call get_m_or_v(m_or_v)
+      ! call get_m_or_v(m_or_v)
       return
       end subroutine init_mdm
 

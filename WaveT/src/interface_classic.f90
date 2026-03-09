@@ -1,4 +1,4 @@
-module interface_tdplas
+module interface_classic
       use constants
       use readio
 #ifdef TDPLAS
@@ -21,7 +21,8 @@ module interface_tdplas
 ! used by QM_coupling 
                         q0,quantum_vts,pedra_surf_n_tessere,global_prop_Fprop,global_prop_Fint,&
                         pedra_surf_tessere,global_prop_Finit_int,pedra_surf_n_spheres,global_medium_Fbem,&
-                        global_sys_Fdeb,do_charges_from_pot 
+                        global_sys_Fdeb,do_charges_from_pot,global_prop_n_q,init_mdm_prop,get_qorf,&
+                        get_qorf0,do_Rfield_from_dip
 ! used only here in interface_tdplas
                         
 #endif
@@ -67,11 +68,12 @@ module interface_tdplas
       real(dbl), allocatable :: this_BEM_Q0(:,:)
       real(dbl), allocatable :: this_BEM_W2(:)
       real(dbl), allocatable :: this_BEM_Modes(:,:)
-      real(dbl), allocatable :: this_q0(:)
-      real(dbl), allocatable :: qx0(:)                 !< local BEM charges 
+      real(dbl), allocatable :: this_q0(:)             !< reaction BEM charges
+      real(dbl), allocatable :: this_qx0(:)            !< local BEM charges 
       real(dbl), allocatable :: q0_fqfm(:),qx0_fqfm(:) !< reaction and local fwfm charges  
-      real(dbl), allocatable :: m0_fqfm(:),mx0_fqfm(:) !< reaction and local fwfm dipoles  
-      real(dbl) :: this_fr0(3)                  !< Reaction field at time 0 defined with Finit_mdm, here because used in scf
+      real(dbl), allocatable :: m0_fqfm(:,:),mx0_fqfm(:,:) !< reaction and local fwfm dipoles  
+      real(dbl) :: this_fr0(3)                         !< Reaction field at time 0 defined with Finit_mdm, here because used in scf
+      real(dbl) :: this_fx0(3)                         !< Reaction field at time 0 defined with Finit_mdm, here because used in scf
       real(dbl), allocatable :: this_mat_f0(:,:) !< Onsager's total matrices needed for scf, free_energy and propagation
       real(dbl) :: this_mix_coef   !< SCF mixing ratio of old (1-global_prop_mix_coef) and new (global_prop_mix_coef) charges/field       
       real(dbl) :: this_eps_A,this_eps_w0
@@ -79,6 +81,7 @@ module interface_tdplas
       integer(i4b) :: this_nmodes
 ! Atomistic medium
       integer(i4b) :: n_atoms
+      real(dbl), allocatable :: r_atoms(:,:)
       real(dbl), allocatable :: vint_atoms(:,:,:)
       real(dbl), allocatable :: fint_atoms(:,:,:,:)
       public set_q0charges,this_Fmdm_relax,export_mdm_qmcoup, &
@@ -97,7 +100,7 @@ module interface_tdplas
              this_BEM_W2,this_Ftest,this_eps_w0,this_eps_A,this_BEM_Modes,this_sfe_act,&
              do_BEM_quant_in_wavet,&
              this_Fmop,this_imod,this_nprint,this_max_mod_todiag,deallocate_BEM_public_in_wavet,&
-             this_qmmodes,this_nmodes
+             this_qmmodes,this_nmodes,get_m_or_v
 ! used by QM_coupling 
 ! module variables this_q0 and this_fr0 contain the updated values of reaction cherges and filed during an SCF run
       contains
@@ -248,10 +251,11 @@ module interface_tdplas
         h_mdm=zero
 
 #ifdef TDPLAS
+        !> Prepare for interaction with continuum medium
         if(this_Fprop.eq."dip") then
           !> build in principle the field coming from all dipoles
           !> initializing medium with molecular dipole and external field
-          call init_mdm(mu_t = mu, f_tp = f)
+          call init_mdm(mu_t = mu, f_tp = f, morv=mut(:,1,1))
           allocate(this_mat_f0(this_nts_act,this_nts_act))
           this_mat_f0=mat_f0
           this_fr0=fr_0
@@ -261,7 +265,7 @@ module interface_tdplas
           pot(:)=zero
           potf(:)=zero
           call do_pot_tdplas(c,mu,f,pot,potf)
-          call init_mdm(pot_t = pot, potf_t = potf)
+          call init_mdm(pot_t = pot, potf_t = potf, morv=quantum_vts(:,1,1))
           deallocate(pot)
           deallocate(potf)
           this_q0=q0
@@ -269,20 +273,18 @@ module interface_tdplas
           call prepare_mdm_for_scf
           call prepare_mdm_for_quantum
         end if
-        !> build the h_mdm interaction hamiltonian
-        call do_int_tdplas
 #endif
 #ifdef fqfm  
+        !> Prepare for interaction with discrete medium
         allocate(pot(n_atoms),potf(n_atoms))
         pot(:)=zero
         potf(:)=zero
         call do_pot_fld_fqfm(c,mu,f,pot,fld,potf)
         call init_fqfm(pot,fld,potf)
-        !> build the h_mdm interaction hamiltonian
-        call do_int_fqfm
 #endif
         !> update the OUT hamiltonian                 
-        h=h+h_mdm
+        !> build the h_mdm interaction hamiltonian
+        call do_interaction(h)
         return
       end subroutine init_environment
 
@@ -310,7 +312,7 @@ module interface_tdplas
           call init_mdm_prop(mu_t = mu, f_tp = f)
         else
           !> build the potential on the surface from all charges and dipoles
-          allocate(pot(this_nts_act),potf(this_nts_act))
+          allocate(pot(pedra_surf_n_tessere),potf(pedra_surf_n_tessere))
           pot(:)=zero
           potf(:)=zero
           call do_pot_tdplas(c,mu,f,pot,potf)
@@ -327,16 +329,17 @@ module interface_tdplas
         potf(:)=zero
         call do_pot_fld_fqfm(c,mu,f,pot,fld,potf)
         call init_fqfm_prop(pot,fld,potf)
+        ! WARNING: should we compute again the interaction???
         !> build the h_mdm interaction hamiltonian
         call do_int_fqfm
 #endif
         !> update the OUT hamiltonian                 
         h=h+h_mdm
-        ! SP 15/05/24: CHECK THIS for restart, it was in propagate, is it really needed?
-        if (Fres.eq.'Nonr') then
-           i=1
-           call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-        endif
+        !WARNING SP 15/05/24: CHECK THIS for restart, it was in propagate, is it really needed?
+        !if (Fres.eq.'Nonr') then
+        !   i=1
+        !   call prop_medium(i,c,mu,f,h)
+        !endif
 
         return
       end subroutine init_env_prop
@@ -360,7 +363,7 @@ module interface_tdplas
         real(dbl)   , intent(in) :: f(3)    !< (1:3)              - external field
         real(dbl)   , intent(OUT):: pot(this_nts_act)  !< (1:this_nts_act)   - potential on continuum surface
         real(dbl)   , intent(OUT):: potf(this_nts_act)  !< (1:this_nts_act)   - potential on continuum surface
-        real(dbl), allocatable      :: r(:)  !< auxiliary 3d vector array
+        real(dbl), allocatable   :: r(:,:)  !< auxiliary 3d vector array
         allocate(r(3,this_nts_act))
         r(1,:)=this_cts_act(:)%x
         r(2,:)=this_cts_act(:)%y
@@ -368,7 +371,7 @@ module interface_tdplas
         !> prepare the potetial acting on the medium for initialisation
         if(this_Fint.eq."ons") then
          !> computing molecular potential from its dipole and not the coefficients                     
-         call do_pot_from_dip(1,this_mol_cc,mu,this_nts_act,r,pot)
+         call do_pot_from_dip(1,mol_cc,mu,this_nts_act,r,pot)
         else
          !> computing molecular potential from the coefficients
          call do_pot_from_coeff(c,this_nts_act,this_vts,pot)
@@ -401,7 +404,7 @@ module interface_tdplas
         real(dbl)   , intent(OUT):: pot(n_atoms)  !< (1:this_nts_act)   - potential on continuum surface
         real(dbl)   , intent(OUT):: fld(3,n_atoms)  !< (1:this_nts_act)   - potential on continuum surface
         real(dbl)   , intent(OUT):: potf(3,n_atoms)  !< (1:this_nts_act)   - potential on continuum surface
-        real(dbl), allocatable      :: r(:)  !< auxiliary 3d vector array
+        real(dbl), allocatable      :: r(:,:)  !< auxiliary 3d vector array
         real(dbl), allocatable      :: qorf(:) !< (1:pedra_surf_n_tessere)     - charges or field  
 #ifdef TDPLAS
         if(this_Fprop.eq."dip") then
@@ -415,17 +418,18 @@ module interface_tdplas
           r(3,:)=this_cts_act(:)%z
           !> get charges from td_contmed               
           call get_qorf(qorf)
+          !> compute potential and field from          
           call do_pot_from_charges(this_nts_act,r,qorf,n_atoms,r_atoms,pot)
           call do_fld_from_charges(this_nts_act,r,qorf,n_atoms,r_atoms,fld)
-          deallocate(r)
         end if
+        deallocate(r)
 #endif  
         !> prepare the potetial acting on the medium for initialisation
-        ! CHECK THIS the following Flag should be defined for fqfm
-        if(this_Fint_fqfm.eq."ons") then
+        ! WARNING CHECK THIS the following Flag should be defined for fqfm
+        if(this_Fint.eq."ons") then
           !> computing molecular potential nad field from its dipole and not the coefficients                     
-          call do_pot_from_dip(1,this_mol_cc,mu,n_atoms,r_atoms,pot)
-          call do_fld_from_dip(1,this_mol_cc,mu,n_atoms,r_atoms,fld)
+          call do_pot_from_dip(1,mol_cc,mu,n_atoms,r_atoms,pot)
+          call do_fld_from_dip(1,mol_cc,mu,n_atoms,r_atoms,fld)
         else
           !> computing molecular potential from the coefficients
           call do_pot_from_coeff(c,n_atoms,vint_atoms,pot)
@@ -435,6 +439,28 @@ module interface_tdplas
         call do_pot_from_field(f,n_atoms,r_atoms,potf)
 
       end subroutine do_pot_fld_fqfm
+
+
+!------------------------------------------------------------------------
+! @brief Initialize medium for quantum states initialisation e.g. scf or 
+!        quantum coupling.
+!
+! @date Created   : S. Pipolo 27/9/17 
+! Modified  :  
+!------------------------------------------------------------------------
+      subroutine do_interaction(h)
+        implicit none
+        real(dbl), intent(INOUT) :: h(n_ci,n_ci) !<   
+
+        !> compute that interaction with a continuum medium
+        call do_int_tdplas
+        !> compute that interaction with a discrete medium
+        call do_int_fqfm
+        !> add the interaction term to the input hamiltonian
+        h=h+h_mdm
+
+        return
+      end subroutine do_interaction
 
 
 !------------------------------------------------------------------------
@@ -472,8 +498,8 @@ module interface_tdplas
 !------------------------------------------------------------------------
       subroutine do_int_fqfm  
         implicit none
-        real(dbl), allocatable      :: q(:) !< (1:pedra_surf_n_tessere)     - charges or field  
-        real(dbl), allocatable      :: m(:,:) !< (1:pedra_surf_n_tessere)     - charges or field  
+        real(dbl), allocatable      :: q(:)   !< (1:N_atoms)     - fq  
+        real(dbl), allocatable      :: m(:,:) !< (1:N_atoms)     - fm   
         allocate(q(n_atoms))
         allocate(m(3,n_atoms))
         !> get charges from fqfm               
@@ -484,7 +510,7 @@ module interface_tdplas
         return
       end subroutine do_int_fqfm 
 
-
+      
 
 !------------------------------------------------------------------------
 ! @brief Prepare medium for scf           
@@ -528,14 +554,14 @@ module interface_tdplas
       subroutine update_environment_scf(c,f)
         implicit none
         complex(cmp), intent(in) :: c(n_ci) !> (1:n_ci)   - molecular wavefunction coefficients
-        complex(cmp), intent(in) :: f(3)    !> (1:3)      - external field                     
+        real(dbl), intent(in)    :: f(3)    !> (1:3)      - external field                     
         real(dbl), allocatable   :: mu(:)   !>            - molecular dipole 
         integer(i4b)::i    
         allocate(mu(3))
         mu=zero
 #ifdef TDPLAS
         if((this_Fprop.eq."dip").or.(this_Fint.eq."ons")) then 
-          call do_dip_from_coeff(c,mu)
+          call do_dip_from_coeff(c,mu,n_ci)
         endif
         if(this_Fprop.eq."dip") then 
           call update_BEM_field(c,mu,f)
@@ -558,7 +584,7 @@ module interface_tdplas
 !------------------------------------------------------------------------
       subroutine transform_environment_scf(c)
         implicit none
-        complex(cmp), intent(in) :: c(n_ci)    !< (1:n_ci)           - molecular wavefunction coefficients
+        real(dbl), intent(in) :: c(n_ci,n_ci)    !< (1:n_ci)           - molecular wavefunction coefficients
         integer(i4b)              :: its  
 
         if(this_Fprop.ne."dip") then 
@@ -597,15 +623,19 @@ module interface_tdplas
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-      subroutine update_BEM_field(c,mu)
+      subroutine update_BEM_field(c,mu,f)
        implicit none 
        complex(cmp), intent(in) :: c(n_ci)    !< (1:n_ci)   - molecular wavefunction coefficients
        real(dbl), intent(in) :: mu(3)         !< (1:3)      - molecular dipole
-       real(dbl), allocatable :: f(:)         !< (1:3)      - field                               
+       real(dbl), intent(in)  :: f(:)         !< (1:3)      - field                               
+       real(dbl), allocatable :: mf(:)        !< (1:3)      - field                               
        ! SP 180226 the following should stay in tdplas     
-       call do_Rfield_from_dip(mu,f)
+       allocate(mf(3))
+       call do_Rfield_from_dip(mu,mf)
        !fr_0=(1.-this_mix_coef)*fr_0+this_mix_coef*matmul(this_mat_f0,mu)
-       this_fr0=(1.-this_mix_coef)*this_fr0+this_mix_coef*f
+       this_fr0=(1.-this_mix_coef)*this_fr0+this_mix_coef*mf
+       this_fx0=(1.-this_mix_coef)*this_fx0+this_mix_coef*f
+       deallocate(mf)
        return
       end subroutine update_BEM_field
 
@@ -618,12 +648,12 @@ module interface_tdplas
 !------------------------------------------------------------------------
       subroutine update_BEM_charges(c,mu,f)
        implicit none 
-       complex(cmp), intent(in) :: c(n_ci)    !< (1:n_ci)        - molecular wavefunction coefficients
-       complex(cmp), intent(in) :: mu(3)      !< (1:3)           - molecular dipole                   
-       complex(cmp), intent(in) :: f(3)       !< (1:3)           - external field                    
-       real(dbl), allocatable      :: pot(:)  !< (1:pedra_surf_n_tessere)     - molecular potential
-       real(dbl), allocatable      :: potf(:) !< (1:pedra_surf_n_tessere)     - field potential
-       real(dbl), allocatable      :: q(:)    !< (1:pedra_surf_n_tessere)     - charges
+       complex(cmp), intent(in) :: c(n_ci)  !< (1:n_ci)        - molecular wavefunction coefficients
+       real(dbl), intent(in)    :: mu(3)    !< (1:3)           - molecular dipole                   
+       real(dbl), intent(in)    :: f(3)     !< (1:3)           - external field                    
+       real(dbl), allocatable   :: pot(:)   !< (1:pedra_surf_n_tessere)     - molecular potential
+       real(dbl), allocatable   :: potf(:)  !< (1:pedra_surf_n_tessere)     - field potential
+       real(dbl), allocatable   :: q(:)     !< (1:pedra_surf_n_tessere)     - charges
        integer(i4b)::i    
        allocate(pot(this_nts_act))
        allocate(potf(this_nts_act))
@@ -652,14 +682,14 @@ module interface_tdplas
 !------------------------------------------------------------------------
       subroutine update_fqfm_char_and_dip(c,mu,f)
        implicit none 
-       complex(cmp), intent(in) :: c(n_ci) !< (1:n_ci)           - molecular wavefunction coefficients
-       real(dbl)   , intent(in) :: mu(3)   !< (1:3)              - molecular dipole
-       real(dbl)   , intent(in) :: f(3)    !< (1:3)              - external field
-       real(dbl)   , intent(OUT):: pot(n_atoms)    !< (1:n_atoms)   - potential on fqfw atoms       
-       real(dbl)   , intent(OUT):: fld(3,n_atoms)  !< (1:n_atoms)   - field on fqfw atoms
-       real(dbl)   , intent(OUT):: potf(3,n_atoms) !< (1:n_atoms)   - external potential fqfw atoms        
-       real(dbl)   , allocatable:: q(n_atoms)      !< (1:n_atoms)   - charges on fqfw atoms
-       real(dbl)   , allocatable:: m(3,n_atoms)    !< (1:n_atoms)   - dipoles on fqfw atoms
+       complex(cmp), intent(in) :: c(n_ci)  !< (1:n_ci)       - molecular wavefunction coefficients
+       real(dbl)   , intent(in) :: mu(3)    !< (1:3)          - molecular dipole
+       real(dbl)   , intent(in) :: f(3)     !< (1:3)          - external field
+       real(dbl)   , allocatable:: pot(:)   !< (1:n_atoms)    - potential on fqfw atoms       
+       real(dbl)   , allocatable:: potf(:)  !< (1:n_atoms)    - external potential fqfw atoms        
+       real(dbl)   , allocatable:: fld(:,:) !< (3,1:n_atoms)  - field on fqfw atoms
+       real(dbl)   , allocatable:: q(:)     !< (1:n_atoms)    - charges on fqfw atoms
+       real(dbl)   , allocatable:: m(:,:)   !< (3,1:n_atoms)  - dipoles on fqfw atoms
        allocate(pot(n_atoms))
        allocate(potf(n_atoms))
        allocate(fld(3,n_atoms))
@@ -761,7 +791,7 @@ module interface_tdplas
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
-      subroutine prop_medium(i,c,mu,f)
+      subroutine prop_medium(i,c,mu,f,h)
 #ifdef MPI
       use mpi
 #endif
@@ -772,14 +802,14 @@ module interface_tdplas
         real(dbl)   , intent(inout) :: h(:,:)  !< (1:n_ci,1:n_ci) - interaction hamiltonian
         real(dbl), allocatable      :: pot(:)  !< (1:pedra_surf_n_tessere)     - molecular potential
         real(dbl), allocatable      :: potf(:) !< (1:pedra_surf_n_tessere)     - external  potential
+        real(dbl), allocatable      :: r(:,:)  !< (3,1:pedra_surf_n_tessere)     - external  potential
         integer(i4b), intent(in) :: i
          ! To be more efficient this if should go in the propagate of waveT
          ! Propagate medium only every global_prop_n_q timesteps
-          if(mod(i,global_prop_n_q).eq.0) then
+          if(mod(i,global_prop_n_q).ne.0) then
             ! Build the interaction Hamiltonian Reaction/Local with previous charges
-            call do_interaction
             ! Update the interaction Hamiltonian
-            h(:,:)=h(:,:)+h_mdm(:,:)
+            call do_interaction(h)
             return
           endif
 #ifdef TDPLAS
@@ -790,32 +820,43 @@ module interface_tdplas
           else
            allocate(pot(this_nts_act))
            allocate(potf(this_nts_act))
+           allocate(r(3,this_nts_act))
+           r(1,:)=this_cts_act(:)%x
+           r(2,:)=this_cts_act(:)%y
+           r(3,:)=this_cts_act(:)%z
            if(this_Fint.eq."ons") then
             ! computing molecular potential corresponding to a point-like dipole
-            call do_pot_from_dip(mu,pot)
+            !call do_pot_from_dip(mu,pot)
+            call do_pot_from_dip(1,mol_cc,mu,this_nts_act,r,pot)
            else
             ! computing molecular potential
             call do_pot_from_coeff(c,this_nts_act,this_vts,pot)
            end if
            ! computing external potential in the long-wavelength limit
-           call do_pot_from_field(f,potf)
+           call do_pot_from_field(f,this_nts_act,r,potf)
            ! propagating medium with molecular and external potentials
            ! SP 15/05/20 changed this_Ftest with global_sys_Ftest
            if(global_sys_Ftest.eq."n-r") then
-            call prop_mdm(i, mu_t = mu, pot_t = pot, potf_t = potf, h_int = h)
+            call prop_mdm(i, mu_t = mu, pot_t = pot, potf_t = potf)
            else
-            call prop_mdm(i, pot_t = pot, potf_t = potf, h_int = h)
+            call prop_mdm(i, pot_t = pot, potf_t = potf)
 #ifdef MPI
             call mpi_finalize(ierr_mpi)
+            !WARNING Why stopping here?
             stop
 #endif      
            end if
+            deallocate(r)
             deallocate(pot)
             deallocate(potf)
           end if
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
+        ! Build the interaction Hamiltonian 
+        ! WARNING Shall we grep charges/field here??
+        ! Update the interaction Hamiltonian
+        call do_interaction(h)
         return
       end subroutine prop_medium
       
@@ -867,31 +908,31 @@ module interface_tdplas
 ! Modified  :  
 !------------------------------------------------------------------------
       subroutine set_global_tdplas_in_wavet(this_dt,this_mdm,this_mol_cc,this_n_ci,this_n_ci_read,this_c_i,this_e_ci,this_mut,&
-				                                    this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
+                                            this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
                                             this_Fbin,this_Fopt,this_res,this_n_res)
 
         implicit none
 
-        real(dbl)     , intent(in) :: this_dt				         ! time step
-        character(3)  , intent(in) :: this_mdm				         ! kind of medium
-        integer(i4b)  , intent(in) :: this_n_ci,this_n_ci_read		 ! number of CIS states
-        real(dbl)     , intent(in) :: this_e_ci(:)	        	     ! CIS energies
-        real(dbl)     , intent(in) :: this_mut(:,:,:)			     ! CIS transition dipoles
-        real(dbl)     , intent(in) :: this_mol_cc(3)			     ! molecule center
-        real(dbl)     , intent(in) :: this_fmax(3,10),this_omega(10) ! field amplitude and frequency
-        real(dbl)     , intent(in) :: this_tdelay(10),this_pshift(10)! time delay and phase shift
-        complex(cmp)  , intent(in) :: this_c_i(:)                    ! CIS coefficients
-        character(3)  , intent(in) :: this_Ffld			           	 ! shape of impulse
-        character(3)  , intent(in) :: this_Fbin                      ! binary output
-        character(3)  , intent(in) :: this_Fopt                      ! matrix/vector multiplication 
-        integer(i4b)  , intent(in) :: this_n_out,this_n_f	         ! auxiliaries for output
-        character(1)  , intent(in) :: this_res                      ! restart for medium 
-        integer(i4b)  , intent(in) :: this_n_res                    ! frequency for restart
+        real(dbl)     , intent(in) :: this_dt                         ! time step
+        character(3)  , intent(in) :: this_mdm                        ! kind of medium
+        integer(i4b)  , intent(in) :: this_n_ci,this_n_ci_read        ! number of CIS states
+        real(dbl)     , intent(in) :: this_e_ci(:)                    ! CIS energies
+        real(dbl)     , intent(in) :: this_mut(:,:,:)                 ! CIS transition dipoles
+        real(dbl)     , intent(in) :: this_mol_cc(3)                  ! molecule center
+        real(dbl)     , intent(in) :: this_fmax(3,10),this_omega(10)  ! field amplitude and frequency
+        real(dbl)     , intent(in) :: this_tdelay(10),this_pshift(10) ! time delay and phase shift
+        complex(cmp)  , intent(in) :: this_c_i(:)                     ! CIS coefficients
+        character(3)  , intent(in) :: this_Ffld                       ! shape of impulse
+        character(3)  , intent(in) :: this_Fbin                       ! binary output
+        character(3)  , intent(in) :: this_Fopt                       ! matrix/vector multiplication 
+        integer(i4b)  , intent(in) :: this_n_out,this_n_f             ! auxiliaries for output
+        character(1)  , intent(in) :: this_res                        ! restart for medium 
+        integer(i4b)  , intent(in) :: this_n_res                      ! frequency for restart
 
 #ifdef TDPLAS
         call quantum_init(this_dt,this_mol_cc,this_n_ci,this_n_ci_read,this_mut,this_e_ci,this_c_i,&
-			       this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,&
-                               this_Fbin,this_Fopt, this_n_res)
+                          this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,&
+                          this_Fbin,this_Fopt, this_n_res)
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
@@ -996,7 +1037,8 @@ module interface_tdplas
       subroutine init_environment_scf(c,f)
         implicit none
         complex(cmp), intent(in) :: c(n_ci) !> (1:n_ci)           - molecular wavefunction coefficients
-        complex(cmp), intent(in) :: f(3)    !> (1:3)           - external field                     
+        real(dbl), intent(in) :: f(3)       !> (1:3)           - external field                     
+        real(dbl) :: mu(3)                  !> (1:3)           - molecular dipole                   
         ! CHECK THIS:  are we forgetting about something for the initialisation? If not this is not needed and 
         ! update_environment_scf can be called at the beginning of the scf cycle
         call update_environment_scf(c,f)
@@ -1006,14 +1048,15 @@ module interface_tdplas
         !if(Fmag.eq.'mag') then 
         !    trans_mag=lt
         !endif
-        ! compute the molecular dipole
-        call do_dip_from_coeff(c,mu,nstates)
-        if(this_Fprop.eq."dip") then
-          call init_after_scf(mu)
-        else
-          call do_pot_from_coeff(c,pot)
-          call init_after_scf(pot)
-        endif
+        !WARNING SP 020326: check the following lines to call maybe after scf!
+        !! compute the molecular dipole
+        ! call do_dip_from_coeff(c,mu,nstates)
+        ! if(this_Fprop.eq."dip") then
+        !  call init_after_scf(mu)
+        !else
+        !  call do_pot_from_coeff(c,pot)
+        !  call init_after_scf(pot)
+        !endif
 #ifdef TDPLAS
         ! SP 130226 shall we use q0 or get it from td_contmed as follows?
         !call preparing_for_scf(mix, pot_or_mu)
@@ -1225,8 +1268,10 @@ module interface_tdplas
 !$OMP END PARALLEL
 !$OMP PARALLEL
 !$OMP DO
-          do i=1,n
-             fld(:,i)=fld(:,i)+dot_product(c,ctmp(:,(i-1)*n_ci+1:i*n_ci))
+          do j=1,3
+           do i=1,n
+              fld(j,i)=fld(j,i)+dot_product(c,ctmp(j,(i-1)*n_ci+1:i*n_ci))
+           enddo
           enddo
 !$OMP END PARALLEL
           deallocate(ctmp)
@@ -1259,7 +1304,7 @@ module interface_tdplas
 
        real(dbl), intent(IN):: fld(3) 
        integer(i4b), intent(IN):: n 
-       real(dbl), intent(IN):: r(n) 
+       real(dbl), intent(IN):: r(3,n) 
        real(dbl), intent(INOUT):: pot(n) 
        integer(i4b) :: i  
 
@@ -1395,12 +1440,12 @@ module interface_tdplas
 !------------------------------------------------------------------------
       subroutine do_fld_from_charges(nq,rq,q,n,r,fld)
 
-       integer(i4b), intent(IN) :: nq
+       integer(i4b), intent(IN) :: nq      
        real(dbl), intent(IN) :: rq(3,nq)
        real(dbl), intent(IN) :: q(nq)
        integer(i4b), intent(IN) :: n
        real(dbl), intent(IN) :: r(3,n)
-       real(dbl), intent(OUT) :: fld(3:n)
+       real(dbl), intent(OUT) :: fld(3,n)
        real(dbl):: diff(3)  
        real(dbl):: dist
        integer(i4b) :: i,j  
@@ -1413,7 +1458,7 @@ module interface_tdplas
          do j=1,nq
             diff(:)=-(rq(:,j)-r(:,i))
             dist=sqrt(dot_product(diff,diff))
-            fld(i)=fld(i)+q(j)*diff/dist/dist/dist
+            fld(:,i)=fld(:,i)+q(j)*diff(:)/dist/dist/dist
          enddo
        enddo
 #ifdef OMP
@@ -1468,9 +1513,9 @@ end subroutine
 ! Modified: E. Coccia 5/7/18
 !------------------------------------------------------------------------
       subroutine do_interaction_discr(q,m,h)
-       real(dbl),intent(IN):: q(n_atoms)
-       real(dbl),intent(IN):: m(3,n_atoms)
-       real(dbl),intent(IN):: h(n_ci,n_ci)
+       real(dbl),intent(IN)   :: q(n_atoms)
+       real(dbl),intent(IN)   :: m(3,n_atoms)
+       real(dbl),intent(INOUT):: h(n_ci,n_ci)
        integer(i4b):: i,j,k
 
 #ifndef MPI
@@ -1495,8 +1540,8 @@ end subroutine
 ! Modified: E. Coccia 5/7/18
 !------------------------------------------------------------------------
       subroutine do_interaction_cont(qorf,h)
-       real(dbl),intent(IN):: qorf(:)
-       real(dbl),intent(IN):: h(n_ci,n_ci)
+       real(dbl),intent(IN)   :: qorf(:)
+       real(dbl),intent(INOUT):: h(n_ci,n_ci)
        integer(i4b):: i,j
 
 #ifndef MPI
@@ -1562,4 +1607,31 @@ end subroutine
 !! this is after do_c_oldbasis in 
 
 
-end module interface_tdplas
+
+
+
+!------------------------------------------------------------------------
+! Routines to be defined in fqfm code
+!------------------------------------------------------------------------
+      subroutine get_q_and_m(q,m)  
+        implicit none
+        real(dbl), intent(out)      :: q(n_atoms)   !< (1:N_atoms)     - fq  
+        real(dbl), intent(out)      :: m(n_atoms) !< (1:N_atoms)     - fm   
+
+        return
+      end subroutine get_q_and_m 
+
+      subroutine do_qandm_fqfm(pot,fld,q,m)
+        implicit none
+        real(dbl), intent(out) :: q(n_atoms)     !< (1:N_atoms)     - fq  
+        real(dbl), intent(out) :: m(n_atoms)     !< (1:N_atoms)     - fm   
+        real(dbl), intent(in) :: pot(n_atoms)   !< (1:N_atoms)     - potential   
+        real(dbl), intent(in) :: fld(3,n_atoms) !< (1:N_atoms)     - field   
+
+        return
+      end subroutine do_qandm_fqfm 
+
+
+
+
+end module interface_classic

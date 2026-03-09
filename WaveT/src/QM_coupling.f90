@@ -29,7 +29,7 @@
 !------------------------------------------------------------------------------
       Module QM_coupling    
       use constants    
-      use interface_tdplas
+      use interface_classic
       use readio       
       use, intrinsic :: iso_c_binding
 #ifdef OMP
