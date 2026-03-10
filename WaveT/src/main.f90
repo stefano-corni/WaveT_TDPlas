@@ -15,6 +15,7 @@
 #endif
        implicit none
        integer :: st,current,rate
+       integer :: tc,td
 #ifndef MPI 
        myrank=0
 #endif
@@ -43,6 +44,7 @@
        !Send input data to all the processes
        call mpibcast_readio()
        call mpibcast_e_dip()
+       if (twod.eq."yes") call mpibcast_twod()
        if (Fdis.ne."nodis") call mpibcast_sse()
        if (Fres.eq.'Yesr')       call mpibcast_restart()
        if (Fmdm.ne.'vac')        call mpi_bcast(nspectra,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
@@ -60,30 +62,48 @@
        endif 
 #endif
        ! Fmdm(1:3) means the first three letters of the char flag Fmdm 
-          if (Fmdm.ne."vac") then
+       if (Fmdm.ne."vac") then
              call set_global_tdplas_in_wavet(dt,Fmdm,mol_cc,n_ci,n_ci_read,c_i, &
                                              e_ci,mut,fmax,omega,Ffld,n_out,n_f, &
                                              tdelay,pshift,Fbin,Fopt,&
                                              restart,n_restart)
              if (myrank.eq.0) call read_medium_input()
-          endif
 #ifdef MPI 
-      !> Send input data to all the processes
-      call mpibcast_read_medium()
+          !> Send input data to all the processes
+          call mpibcast_read_medium()
 #endif
+       endif
        !> Create the field 
        call init_spectra
-       !> Create the field 
-       call create_field
 #ifndef MPI 
        call system_clock(current)
        write(6,'("Done reading input & setting up the field, took", &
              F10.3,"s")') real(current-st)/real(rate)
 #endif
-       !> Initialize system wavefunction and Hilbert space
-       call init_propagation
-       !> Propagate wavefunction 
-       call prop
+       if (twod.eq.'yes') then
+          call init_propagation
+          call print_time
+          do td=dstart,ndelay
+              do tc=1,12
+                 pshift(1)=map_phase(tc,1)
+                 pshift(2)=map_phase(tc,2)
+                 pshift(3)=map_phase(tc,3)
+                 tdelay(1)=de_delay*td
+                 n_f=td
+                 nmap=tc
+                 call create_field
+                 call prop
+              enddo
+              call create_2d_map
+          enddo
+       else
+          !> Create the field
+          call create_field
+          !> Initialize system wavefunction and Hilbert space
+          call init_propagation
+          !> Propagate wavefunction
+          call prop
+       endif
        ! SP 10/07/17: commented the following, do_spectra gives errors 
        !call do_spectra
 #ifndef MPI 

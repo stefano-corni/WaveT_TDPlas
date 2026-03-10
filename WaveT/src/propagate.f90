@@ -1,4 +1,4 @@
-      module propagate
+module propagate
       use constants
       use readio
       use spectra
@@ -33,12 +33,12 @@
 ! SC mu_a is the dipole moment at current step,
 !    int_rad is the classical radiated power at current step
 !    int_rad_int is the integral of the classical radiated power at current step
-      real(dbl) :: int_rad,int_rad_int,mu_a(3),sm
+      real(dbl) :: int_rad,int_rad_int,mu_a(3),sm,mu_a_esa(3)
       complex(cmp) :: m_a(3)
       integer(i4b) :: file_c=10,file_e=8,file_mu=9,file_m=611 !MM 
       save
       private
-      public create_field, prop
+      public create_field, prop, create_2d_map, print_time
 !
       contains
 !
@@ -66,43 +66,55 @@
        real :: start, finish
 
 ! OPEN FILES
-       write(name_c,'(a4,i0,a4)') "c_t_",n_f,".dat"
-       write(name_e,'(a4,i0,a4)') "e_t_",n_f,".dat"
-       write(name_mu,'(a5,i0,a4)') "mu_t_",n_f,".dat"
-       if (Fmag.eq.'mag') then
-          write(name_m,'(a4,i0,a4)') "m_t_",n_f,".dat"
-       endif
-       if (Fres.eq.'Yesr') then
-          if (Fbin.ne.'bin') then
-             open (file_c,file=name_c,status="unknown",access="append")
-             open (file_e,file=name_e,status="unknown",access="append")
-             open (file_mu,file=name_mu,status="unknown",access="append")
-             if (Fmag.eq.'mag') then !MM
-              open(file_m,file=name_m,status="unknown",access="append")
+       if (twod.eq.'no') then
+          write(name_c,'(a4,i0,a4)') "c_t_",n_f,".dat"
+          write(name_e,'(a4,i0,a4)') "e_t_",n_f,".dat"
+          write(name_mu,'(a5,i0,a4)') "mu_t_",n_f,".dat"
+          if (Fmag.eq.'mag') then
+             write(name_m,'(a4,i0,a4)') "m_t_",n_f,".dat"
+          endif
+          if (Fres.eq.'Yesr') then
+             if (Fbin.ne.'bin') then
+                open (file_c,file=name_c,status="unknown",access="append")
+                open (file_e,file=name_e,status="unknown",access="append")
+                open (file_mu,file=name_mu,status="unknown",access="append")
+                if (Fmag.eq.'mag') then !MM
+                 open(file_m,file=name_m,status="unknown",access="append")
+                endif
+             else
+                open (file_c,file=name_c,status="unknown",access="append",form="unformatted")   
+                open (file_e,file=name_e,status="unknown",access="append",form="unformatted")
+                open (file_mu,file=name_mu,status="unknown",access="append",form="unformatted")  
+                if (Fmag.eq.'mag') then !MM
+                 open(file_m,file=name_m,status="unknown",access="append",form="unformatted")
+                endif
              endif
-          else
-             open (file_c,file=name_c,status="unknown",access="append",form="unformatted")   
-             open (file_e,file=name_e,status="unknown",access="append",form="unformatted")
-             open (file_mu,file=name_mu,status="unknown",access="append",form="unformatted")  
-             if (Fmag.eq.'mag') then !MM
-              open(file_m,file=name_m,status="unknown",access="append",form="unformatted")
+          elseif (Fres.eq.'Nonr') then
+             if (Fbin.ne.'bin') then
+                open (file_c,file=name_c,status="unknown")
+                open (file_e,file=name_e,status="unknown")
+                open (file_mu,file=name_mu,status="unknown")
+                if (Fmag.eq.'mag') then !MM
+                 open(file_m,file=name_m,status="unknown")
+                endif
+             else
+                open(file_c,file=name_c,status="unknown",form="unformatted")
+                open(file_e,file=name_e,status="unknown",form="unformatted")
+              open(file_mu,file=name_mu,status="unknown",form="unformatted")
+                if (Fmag.eq.'mag') then !MM
+                   open(file_m,file=name_m,status="unknown",form="unformatted")
+                endif
              endif
           endif
-       elseif (Fres.eq.'Nonr') then
+       else
+          !write(name_c,'(a9,i0,a1,i0,a4)') "mu_t_esa_",nmap,"_",n_f,".dat"
+          write(name_mu,'(a5,i0,a1,i0,a4)') "mu_t_",nmap,"_",n_f,".dat"
           if (Fbin.ne.'bin') then
-             open (file_c,file=name_c,status="unknown")
-             open (file_e,file=name_e,status="unknown")
-             open (file_mu,file=name_mu,status="unknown")
-             if (Fmag.eq.'mag') then !MM
-              open(file_m,file=name_m,status="unknown")
-             endif
+                !open (file_c,file=name_c,status="unknown")
+                open (file_mu,file=name_mu,status="unknown")
           else
-             open(file_c,file=name_c,status="unknown",form="unformatted")
-             open(file_e,file=name_e,status="unknown",form="unformatted")
-           open(file_mu,file=name_mu,status="unknown",form="unformatted")
-             if (Fmag.eq.'mag') then !MM
-             open(file_m,file=name_m,status="unknown",form="unformatted")
-             endif
+             !open(file_c,file=name_c,status="unknown",form="unformatted")
+             open(file_mu,file=name_mu,status="unknown",form="unformatted")
           endif
        endif
 ! ALLOCATING
@@ -218,7 +230,7 @@
           endif
           call add_int_vac(f_prev,h_int)
 ! SP 16/07/17: added call to output at step 0 to have full output in outfiles
-          if (Fbin.ne.'bin') call out_header
+          if (Fbin.ne.'bin'.and.twod.eq.'no') call out_header
           call output(1,c,f_prev,h_int)
        elseif (Fres.eq.'Yesr') then
           if (Fdis.ne."nodis") call random_seq(restart_i)
@@ -255,20 +267,22 @@
 
 
 ! DEALLOCATION AND CLOSING
-       deallocate(c,c_prev,c_prev2,h_int)
+       deallocate(c,c_prev,c_prev2,h_int,f)
        if (Fres.eq."Yesr") deallocate(c_i_prev,c_i_t,c_i_prev2)
        if (Fexp.eq."exp") deallocate(ccexp)
        if (Fdis(1:3).eq."mar".or.Fdis(1:3).eq."nma") then
 
           !call deallocate_dis()
-          !deallocate(h_dis)
+          deallocate(h_dis)
 
           if (Fdis(5:9).ne."qjump") then
              deallocate(h_rnd)
              deallocate(h_rnd2)
              deallocate(w)
              deallocate(w_prev)
-          endif 
+          else
+             deallocate(pjump)
+          endif
 
 #ifndef MPI
           if (Fdis(5:9).eq."qjump") then
@@ -285,11 +299,15 @@
           endif
 #endif
        endif
-
-       close (file_c)
-       close (file_e)
-       close (file_mu)
-       close (file_m)
+       if (twod.eq.'no') then
+         close (file_c)
+         close (file_e)
+         close (file_mu)
+         close (file_m)
+       else
+         !close(file_c)
+         close(file_mu)
+       endif
 
        if(Fmdm.ne.'vac') call finalize_medium
 
@@ -323,29 +341,43 @@
        endif
 
        allocate (f(3,n_tot))
+       if (twod.eq.'no') then
 #ifndef MPI
-       myrank=0
-       write(name_f,'(a5,i0,a4)') "field",n_f,".dat"
-       if (Fbin.ne.'bin') then
-          open (7,file=name_f,status="unknown")
-       else
+          myrank=0
+          write(name_f,'(a5,i0,a4)') "field",n_f,".dat"
+          if (Fbin.ne.'bin') then
+             open (7,file=name_f,status="unknown")
+          else
           open (7,file=name_f,status="unknown",form="unformatted")
        endif  
 #endif
 #ifdef MPI
        if (myrank.eq.0) then
           write(name_f,'(a9)') "field.dat"
-          if (Fbin.ne.'bin') then
-             open (7,file=name_f,status="unknown")
-          else
-             open (7,file=name_f,status="unknown",form="unformatted")
-          endif
+             if (Fbin.ne.'bin') then
+                open (7,file=name_f,status="unknown")
+             else
+                open (7,file=name_f,status="unknown",form="unformatted")
+             endif
        endif
 #endif
+        endif
 
         f(:,:)=0.d0
         if (Flig.eq.'lin') then
            select case (Ffld)
+           case("tdg")
+        ! Gaussian modulated cosine with phase for twod
+           do i=1,n_tot
+               t_a=dt*(i-1)
+               f(:,i) = fmax(:,1)*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))* &
+                       cos(omega(1)*(t_a-t_mid)-pshift(1))
+               do j=2,npulse
+                  f(:,i) = f(:,i) + fmax(:,j)*                                   &
+                  exp(-pt5*(t_a-(t_mid+sum(tdelay(1:j-1))))**2/(sigma(j)**2))*   &
+                  cos(omega(j)*(t_a-(t_mid+sum(tdelay(1:j-1))))-pshift(j))
+               enddo
+           enddo
            case ("mdg")
         ! Gaussian modulated sinusoid: exp(-(t-t0)^2/s^2) * sin(wt) 
              do i=1,n_tot
@@ -356,6 +388,20 @@
                    f(:,i) = f(:,i) + fmax(:,j)*                   &
                           exp(-pt5*(t_a-(t_mid+sum(tdelay(1:j-1))))**2/(sigma(j)**2))*   &
                           sin(omega(j)*t_a+sum(pshift(1:j-1)))
+                enddo 
+             enddo
+            case ("snc")             
+        ! Sinc apodized pulse: sin(Tt/2)/(Tt/2) * sin(wt) *
+        ! exp(-Gamma*abs(t))         
+             do i=1,n_tot
+                t_a=dt*(i-1)      
+                f(:,i) =fmax(:,1)*(sin(0.5*sigma(1)*(t_a - t_mid + 0.5*dt))/(0.5*sigma(1)*(t_a - t_mid + 0.5*dt)))*sin(omega(1)*t_a)* &
+                exp(-(2.d0/t_ap)*abs(t_a - t_mid + 0.5*dt))
+                do j=2,npulse
+                   f(:,i) = f(:,i) + fmax(:,j)*(sin(0.5*sigma(j)*(t_a -(t_mid + sum(tdelay(1:j-1))) + 0.5*dt))/ &
+                   (0.5*sigma(j)*(t_a - (t_mid + sum(tdelay(1:j-1))) +0.5*dt)))* &
+                   sin(omega(j)*t_a + sum(pshift(1:j-1)))* &
+                   exp(-(2.d0/t_ap)*abs(t_a - (t_mid + sum(tdelay(1:j-1))) + 0.5*dt))
                 enddo 
              enddo
            case ("mds")
@@ -518,18 +564,20 @@
 
         if (myrank.eq.0) then
         ! write out field 
-           if (Fbin.ne.'bin') then
-              do i=1,n_tot
-                 t_a=dt*(i-1)
-                 if (mod(i,n_out).eq.0) &
-                     write (7,'(f12.2,3e22.10e3)') t_a,f(:,i)
-              enddo
-           else
-              do i=1,n_tot
-                 t_a=dt*(i-1)
-                 if (mod(i,n_out).eq.0) write (7) t_a,f(:,i)
-              enddo
-           endif 
+          if (twod.eq.'no') then
+             if (Fbin.ne.'bin') then
+                do i=1,n_tot
+                   t_a=dt*(i-1)
+                   if (mod(i,n_out).eq.0) &
+                       write (7,'(f12.2,3e22.10e3)') t_a,f(:,i)
+                enddo
+             else
+                do i=1,n_tot
+                   t_a=dt*(i-1)
+                   if (mod(i,n_out).eq.0) write (7) t_a,f(:,i)
+                enddo
+             endif 
+          endif
         endif
        
 
@@ -553,7 +601,7 @@
        complex(cmp), intent(IN) :: c(nstates)
        real(dbl)                :: mu_prev(3),mu_prev2(3),mu_prev3(3),mu_prev4(3), &
                                    mu_prev5(3)
-       complex(cmp)             :: ctmp(nstates)
+       complex(cmp)             :: ctmp(nstates),c_esa(nstates-1)
        integer(i4b)             :: j,k
 
 #ifdef OMP
@@ -601,6 +649,12 @@
        mu_a(2)=dot_product(c,matmul(trans_dipoles(2,:,:),c))
        mu_a(3)=dot_product(c,matmul(trans_dipoles(3,:,:),c))
 #endif
+       if (twod.eq.'yes') then
+           c_esa = c(2:)
+           mu_a_esa(1)=dot_product(c_esa,matmul(trans_dipoles(1,2:,2:),c_esa))
+           mu_a_esa(2)=dot_product(c_esa,matmul(trans_dipoles(2,2:,2:),c_esa))
+           mu_a_esa(3)=dot_product(c_esa,matmul(trans_dipoles(3,2:,2:),c_esa))
+       endif
 ! SC save previous mu for radiative damping
        mu_prev5=mu_prev4
        mu_prev4=mu_prev3
@@ -611,6 +665,107 @@
        return
  
       end subroutine do_mu
+
+!------------------------------------------------------------------------
+! @brief print time in a separate file for 2D calculation
+!
+! @date Created   : G.Dall'Osto 30/04/2025
+! Modified  :
+!------------------------------------------------------------------------
+      subroutine print_time
+           integer(i4b)                :: i
+
+           if (Fbin.ne.'bin') then
+               open(22,file="time.dat",status="unknown")
+               do i=1,n_step
+                  write(22,*) (i-1)*dt
+               enddo
+           else
+            open(22,file="time.dat",status="unknown",form="unformatted")
+               do i=1,n_step
+                  write(22) (i-1)*dt
+               enddo
+           endif
+
+           close(22)
+
+      end subroutine print_time
+
+!------------------------------------------------------------------------
+! @brief create dipoles along the ks=-k1+k2+k3 and ks=+k1-k2+k3 direction 
+!        for 2D calculation
+!
+! @date Created   : G.Dall'Osto 30/04/2025
+! Modified  :
+!------------------------------------------------------------------------
+      subroutine create_2d_map
+           integer(i4b)                :: j, i, idum
+           real(dbl)                   :: rdum, mu_read(3),mu_esa_read(3)
+           character(20)               :: name_mu,name_c,name_esa,name_all
+           complex(cmp),allocatable    :: mu_phase(:,:), mu_esa_phase(:,:)
+
+      allocate(mu_phase(n_step,2), mu_esa_phase(n_step,2))
+      mu_phase = 0
+      mu_esa_phase = 0
+      write(name_esa,'(a7,i0,a4)') "mu_esa_",n_f,".dat"
+      write(name_all,'(a7,i0,a4)') "mu_all_",n_f,".dat"
+      do j=1,12
+        !write(name_c,'(a9,i0,a1,i0,a4)') "mu_t_esa_",j,"_",n_f,".dat"
+        write(name_mu,'(a5,i0,a1,i0,a4)') "mu_t_",j,"_",n_f,".dat"
+        if (Fbin.ne.'bin') then
+          !open (file_c,file=name_c,status="unknown")
+          open (file_mu,file=name_mu,status="unknown")
+          !read(file_mu,*)
+           !read(file_c,*)
+          do i=1,n_step
+             read(file_mu,*) idum, rdum, mu_read
+             !read(file_c,*) idum, rdum, mu_esa_read
+             mu_phase(i,1) = mu_phase(i,1) + (mu_read(1) + mu_read(2) + mu_read(3))*mat_c_inv(j,1)
+             mu_phase(i,2) = mu_phase(i,2) + (mu_read(1) + mu_read(2) + mu_read(3))*mat_c_inv(j,2)
+             !mu_esa_phase(i,1) = mu_esa_phase(i,1) + (mu_esa_read(1) + mu_esa_read(2) + mu_esa_read(3))*mat_c_inv(j,1)
+             !mu_esa_phase(i,2) = mu_esa_phase(i,2) + (mu_esa_read(1) + mu_esa_read(2) + mu_esa_read(3))*mat_c_inv(j,2)
+          enddo
+          close(file_c, status='delete')
+          close(file_mu, status='delete')
+        else
+          open(file_c,file=name_c,status="unknown",form="unformatted")
+          open(file_mu,file=name_mu,status="unknown",form="unformatted")
+          do i=1,n_step
+             read(file_mu) idum, rdum, mu_read
+             read(file_c) idum, rdum, mu_esa_read
+             mu_phase(i,1) = mu_phase(i,1) + (mu_read(1) + mu_read(2) + mu_read(3))*mat_c_inv(j,1)
+             mu_phase(i,2) = mu_phase(i,2) + (mu_read(1) + mu_read(2) + mu_read(3))*mat_c_inv(j,2)
+             !mu_esa_phase(i,1) = mu_esa_phase(i,1) + (mu_esa_read(1) + mu_esa_read(2) + mu_esa_read(3))*mat_c_inv(j,1)
+             !mu_esa_phase(i,2) = mu_esa_phase(i,2) + (mu_esa_read(1) + mu_esa_read(2) + mu_esa_read(3))*mat_c_inv(j,2)
+          enddo
+          !close(file_c, status='delete')
+          close(file_mu, status='delete')
+        endif
+      enddo
+
+      if (Fbin.ne.'bin') then
+          open(20,file=name_all,status="unknown")
+          !open(21,file=name_esa,status="unknown")
+          do i=1,n_step
+             write(20,*) real(mu_phase(i,1)), aimag(mu_phase(i,1)), &
+                         real(mu_phase(i,2)), aimag(mu_phase(i,2))
+             !write(21,*) real(mu_esa_phase(i,1)), aimag(mu_esa_phase(i,1)),&
+             !            real(mu_esa_phase(i,2)), aimag(mu_esa_phase(i,2))
+          enddo
+      else
+          open(20,file=name_all,status="unknown",form="unformatted")
+          !open(21,file=name_esa,status="unknown",form="unformatted")
+          do i=1,n_step
+             write(20) mu_phase(i,:)
+          !   write(21) mu_esa_phase(i,:)
+         enddo
+      endif
+      deallocate(mu_phase, mu_esa_phase)
+      close(20)
+      !close(21)
+
+      end subroutine
+
 !------------------------------------------------------------------------
 ! @brief Compute C^T m C and save previous dipoles
 !
@@ -707,10 +862,11 @@
        integer(i4b)                :: itmp,j,k
        complex(cmp)                :: ctmp(nstates)
 
-       t=(i-1)*dt 
+       t=(i-1)*dt
+       if (twod.eq.'no') then 
 #ifdef OMP
-       if (Fopt.eq.'omp') then
-          ctmp=0.d0
+         if (Fopt.eq.'omp') then
+            ctmp=0.d0
 !$OMP PARALLEL REDUCTION(+:ctmp) 
 !$OMP DO
           do k=1,nstates
@@ -720,54 +876,63 @@
           enddo
 !$OMP END PARALLEL
           e_a=dot_product(c,energies*c+ctmp)
-       else      
+         else      
           e_a=dot_product(c,energies*c+matmul(h_int,c))
-       endif
+         endif
 #endif
 
 #ifndef OMP
-       e_a=dot_product(c,energies*c+matmul(h_int,c))
+         e_a=dot_product(c,energies*c+matmul(h_int,c))
 #endif
 
 ! SC 07/02/16: added printing of g_neq, g_eq 
-       if(Fmdm.ne.'vac') then 
-          g_eq_t=e_a
-          g_neq_t=e_a
-          g_neq2_t=e_a
-          e_vac=e_a
-          call get_energies(e_vac,g_eq_t,g_neq_t,g_neq2_t)
-          if (Fbin.ne.'bin') then
-             write (file_e,'(i8,f14.4,7e20.8)') i,t,e_a,e_vac, &
-                   g_eq_t,g_neq2_t,g_neq_t,int_rad,int_rad_int
-          else
-             write (file_e) i,t,e_a,e_vac, &
-                   g_eq_t,g_neq2_t,g_neq_t,int_rad,int_rad_int
-          endif
-       else
-          if (Fbin.ne.'bin') then
-             write (file_e,'(i8,f14.4,3e22.10)') i,t,e_a,int_rad,int_rad_int
-          else
-             write (file_e) i,t,e_a,int_rad,int_rad_int
-          endif 
-       endif
+         if(Fmdm.ne.'vac') then 
+           g_eq_t=e_a
+           g_neq_t=e_a
+           g_neq2_t=e_a
+           e_vac=e_a
+           call get_energies(e_vac,g_eq_t,g_neq_t,g_neq2_t)
+           if (Fbin.ne.'bin') then
+              write (file_e,'(i8,f14.4,7e20.8)') i,t,e_a,e_vac, &
+                    g_eq_t,g_neq2_t,g_neq_t,int_rad,int_rad_int
+           else
+              write (file_e) i,t,e_a,e_vac, &
+                    g_eq_t,g_neq2_t,g_neq_t,int_rad,int_rad_int
+           endif
+         else
+           if (Fbin.ne.'bin') then
+              write (file_e,'(i8,f14.4,3e22.10)') i,t,e_a,int_rad,int_rad_int
+           else
+              write (file_e) i,t,e_a,int_rad,int_rad_int
+           endif 
+         endif
 
-       if (Fbin.ne.'bin') then
-          write (fmt_ci,'("(i8,f14.4,",I0,"e17.8E3)")') 2*nstates
-          write (file_c,fmt_ci) i,t,c(:)
-          write (file_mu,'(i8,f14.4,3e22.10)') i,t,mu_a(:)
-          if (Fmag.eq.'mag') then
-              write (file_m,'(i8,f14.4,7e22.10)') i,t,dble(m_a(1)),aimag(m_a(1)),&
+         if (Fbin.ne.'bin') then
+            write (fmt_ci,'("(i8,f14.4,",I0,"e17.8E3)")') 2*nstates
+            write (file_c,fmt_ci) i,t,c(:)
+            write (file_mu,'(i8,f14.4,3e22.10)') i,t,mu_a(:)
+            if (Fmag.eq.'mag') then
+               write (file_m,'(i8,f14.4,7e22.10)') i,t,dble(m_a(1)),aimag(m_a(1)),&
                     dble(m_a(2)),aimag(m_a(2)),dble(m_a(3)),aimag(m_a(3)), sm
-          endif
-       else
-          write (file_c) i,t,c(:)
-          write (file_mu) i,t,mu_a(:)
-          if (Fmag.eq.'mag') then
-              write (file_m) i,t,dble(m_a(1)),aimag(m_a(1)),&
+            endif
+         else
+            write (file_c) i,t,c(:)
+            write (file_mu) i,t,mu_a(:)
+            if (Fmag.eq.'mag') then
+                write (file_m) i,t,dble(m_a(1)),aimag(m_a(1)),&
                     dble(m_a(2)),aimag(m_a(2)),dble(m_a(3)),aimag(m_a(3)),sm
+            endif
+         endif
+       else
+          if (Fbin.ne.'bin') then
+             write (file_mu,'(i8,f14.4,3e22.10)') i,t,mu_a(:)
+             ! mut without ground state contribution
+             !write (file_c,'(i8,f14.4,3e22.10)') i,t,mu_a_esa(:)
+          else
+             write(file_mu) i,t,mu_a(:)
+             !write(file_c) i,t,mu_a_esa(:)
           endif
        endif
-
        j=int(dble(i)/dble(n_out))
        if(j.lt.1) j=1
        Sdip(:,1,j)=mu_a(:)
@@ -967,7 +1132,7 @@
           if (Fmag.eq.'mag') then ! MM
              call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
           endif
-          if (mod(2,n_out).eq.0) call output(2,c,f_prev,h_int)
+          if (n_out.eq.1) call output(2,c,f_prev,h_int)
        endif
 
        if (Fres.eq.'Nonr') then
@@ -1033,7 +1198,7 @@
 ! Loss of the norm, dissipative events simulated
 ! eps -> uniform random number in [0,1]
             call loss_norm(c_prev,nstates,pjump)
-            call random_number(eps)  
+            call random_number(eps) 
             if (dtot.gt.eps)  then
                call quan_jump(c,c_prev,nstates,pjump)
                ijump=i
@@ -1058,7 +1223,7 @@
             if (Fmag.eq.'mag') then ! MM
                call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
             endif
-            if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
+            if (mod(i-1,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
             if (mod(i,n_restart).eq.0) then
                t=(i-1)*dt
@@ -1083,7 +1248,7 @@
                 dis-ui*0.5d0*sqrt(dt)* &
                 matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev))
             endif
-            !c=c/sqrt(dot_product(c,c))
+            c=c/sqrt(dot_product(c,c))
             c_prev=c
 
             f_prev=f(:,i)
@@ -1096,7 +1261,8 @@
             if (Fmag.eq.'mag') then ! MM
                call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
             endif
-            if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
+            ! Correct if n_out is different from 1 it print also t=0, t=n etc
+            if (mod(i-1,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
             if (mod(i,n_restart).eq.0) then
                t=(i-1)*dt
@@ -1147,7 +1313,7 @@
             if (Fmag.eq.'mag') then ! MM
                call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
             endif
-            if (mod(i,n_out).eq.0) call output(i,c,f_prev,h_int)
+            if (mod(i-1,n_out).eq.0) call output(i,c,f_prev,h_int)
             ! Restart
             if (mod(i,n_restart).eq.0) then
                t=(i-1)*dt
@@ -1332,7 +1498,7 @@
                 dis-ui*0.5d0*sqrt(dt)* & 
                 matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev)
             endif
-            !c=c/sqrt(dot_product(c,c))
+            c=c/sqrt(dot_product(c,c))
             c_prev=c
 
             f_prev=f(:,i)
