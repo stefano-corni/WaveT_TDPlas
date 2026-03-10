@@ -100,7 +100,7 @@
       character(flg) :: all_pop ! flags for the postprocessing input
       character(flg) :: all_coh ! flags for the postprocessing input
       character(flg) :: write_bin ! flags for the postprocessing input
-      character(flg) :: twodcalc  ! flags for activate 2d calculation   
+      character(flg) :: twod ! flags for activate 2d calculation   
       integer(i4b) :: iseed  ! seed for random number generator
       integer(i4b) :: nexc   ! number of excited states
       integer(i4b) :: nrel   ! number of relaxation channels
@@ -136,7 +136,7 @@
              mpibcast_e_dip,mpibcast_sse,mpibcast_restart,  &
              nspectra,Fabs,ion_rate,mpibcast_ion_rate,Fbin, &
              ncit,Fopt,ik,Fwrt,tar,all_pop,all_coh,pop,coh, &
-             write_bin,Ip,prop_type,twodcalc,de_delay,ndelay,&
+             write_bin,Ip,prop_type,twod,de_delay,ndelay,&
              Fmag,lt,e_dir,m_i_prev,m_i_prev2,map_phase,t_ap,&
              m_i_prev3,m_i_prev4,m_i_prev5,Flig,f0,pini,pfin,&
              mpibcast_twod 
@@ -163,14 +163,12 @@
        !Molecular parameters 
        namelist /general/n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,& 
                          dt,n_step,n_out,propa,n_restart,lsim,absorber,&
-                         binary,ncit,Ip
+                         binary,ncit,Ip,twod,de_delay,dstart,ndelay
        !External field paramaters
        namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
                         npulse,tdelay,pshift,Fmag,e_dir,Flig,f0,pini,pfin,t_ap
        !Stochastic Schroedinger equation
        namelist /sse/ dissipative,idep,dis_prop,prop_type,nrnd,tdis,nr_typ,krnd,out_sse
-       !Namelist for 2D calculations
-       namelist /twodspectra/ twodcalc,de_delay,dstart,ndelay
        !Namelist spectra
        namelist /spectra/ start,tau,dir_ft
        !Namelist for postprocessing
@@ -214,10 +212,11 @@
        endif
        call write_nml_field() 
        ! Namelist 2D
-       pshift=pshift*pi
-       call init_nml_twodspectra()
-       read(*,nml=twodspectra)
-       call write_nml_twod()
+       if (twod.eq."yes") then 
+            pshift=pshift*pi
+            call init_twod_maps()
+       endif
+       
        !Namelist sse
        call init_nml_sse()
        read(*,nml=sse)
@@ -883,7 +882,14 @@
        pfin=20
        ! Apodization for sinc pulse
        t_ap = 99999.d0
-
+               ! 2D calculation
+       twod='no'
+       ! Variation of first delay time
+       de_delay=0.0
+       ! Number of delay time considered
+       ndelay=1
+       ! Starting number of first delay time scan
+       dstart=0
 
        return
 
@@ -917,15 +923,8 @@
 ! Modified  :                                                                                                                                                                                 
 ! @param 2d                                                                                                                                                                                   
 !------------------------------------------------------------------------
-        subroutine init_nml_twodspectra()
+        subroutine init_twod_maps()
 
-        ! 2D calculation
-        twodcalc='no'
-        ! Variation of first delay time
-        de_delay=0.0
-        ! Number of delay time considered
-        ndelay=1
-        dstart=0
         ! Definition of map phases
         map_phase(:,1)= [0.0, 0.0, 0.5, 0.5, 1.0, 1.0, 1.5, 0.0, 0.0, 0.5, 1.5, 1.5]
         map_phase(:,2)= [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -941,7 +940,7 @@
                             (1.0, -1.0), (0.0, 0.0), (0.0, 0.0),   &
                             (-1.0, 1.0), (-1.0, 1.0), (0.0, 0.0) /)
 
-        end subroutine init_nml_twodspectra
+        end subroutine init_twod_maps
 
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist sse 
@@ -1108,6 +1107,14 @@
           write(*,*) 'Matmul is used in the propagation.'
           Fopt='non'
        endif 
+       select case (twod)
+           case ('yes','Yes','YES')
+               write(*,*) "Calculation to calculate a 2D map is active ", &
+                       "performing",ndelay,"steps, varying the delay time by ", &
+                       de_delay," a.u., starting from step ", dstart
+           case ('no','No','NO')
+               write(*,*) "Calculation with 2D flag deactivated"
+         end select
        write(*,*) ''
 
        return
@@ -1218,27 +1225,6 @@
        return
 
       end subroutine write_nml_spectra
-
-!------------------------------------------------------------------------
-! @brief Write variables in the namelist twod and put conditions
-!
-! @date Created   : G. Dall'Osto 15/05/2025
-! Modified  :
-! @param twodcalc,de_delay,ndelay
-!------------------------------------------------------------------------
-      subroutine write_nml_twod()
-         select case (twodcalc)
-           case ('yes','Yes','YES')
-               write(*,*) "Calculation to calculate a 2D map is active ", &
-                       "performing",ndelay,"steps, varying the delay time by ", &
-                       de_delay," a.u., starting from step ", dstart
-           case ('no','No','NO')
-               write(*,*) "Calculation with 2D flag deactivated"
-         end select
-
-         return
-
-      end subroutine write_nml_twod
 
 !------------------------------------------------------------------------
 ! @brief Write variables in the namelist sse and put conditions 
@@ -1454,7 +1440,7 @@
        call mpi_bcast(fmax,      3*npulsemax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(f0,        1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
 
-       call mpi_bcast(twodcalc,    flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(twod,    flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(propa,       flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(lsim,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(medium,      flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)

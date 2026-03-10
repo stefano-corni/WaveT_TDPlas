@@ -18,10 +18,6 @@ fmax(2,1)=0.01
 fmax(3,1)=0.01 
 /
 
-&twodspectra
-twodcalc='no'
-/
-
 &sse dissipative='mar',idep=1,dis_prop='qjump',nrnd=0,tdis=0,nr_typ=1,krnd=0.0 /
 
 &spectra start=0, 

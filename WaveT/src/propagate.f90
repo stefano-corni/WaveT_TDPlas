@@ -66,7 +66,7 @@ module propagate
        real :: start, finish
 
 ! OPEN FILES
-       if (twodcalc.eq.'no') then
+       if (twod.eq.'no') then
           write(name_c,'(a4,i0,a4)') "c_t_",n_f,".dat"
           write(name_e,'(a4,i0,a4)') "e_t_",n_f,".dat"
           write(name_mu,'(a5,i0,a4)') "mu_t_",n_f,".dat"
@@ -230,7 +230,7 @@ module propagate
           endif
           call add_int_vac(f_prev,h_int)
 ! SP 16/07/17: added call to output at step 0 to have full output in outfiles
-          if (Fbin.ne.'bin'.and.twodcalc.eq.'no') call out_header
+          if (Fbin.ne.'bin'.and.twod.eq.'no') call out_header
           call output(1,c,f_prev,h_int)
        elseif (Fres.eq.'Yesr') then
           if (Fdis.ne."nodis") call random_seq(restart_i)
@@ -299,7 +299,7 @@ module propagate
           endif
 #endif
        endif
-       if (twodcalc.eq.'no') then
+       if (twod.eq.'no') then
          close (file_c)
          close (file_e)
          close (file_mu)
@@ -341,7 +341,7 @@ module propagate
        endif
 
        allocate (f(3,n_tot))
-       if (twodcalc.eq.'no') then
+       if (twod.eq.'no') then
 #ifndef MPI
           myrank=0
           write(name_f,'(a5,i0,a4)') "field",n_f,".dat"
@@ -367,7 +367,7 @@ module propagate
         if (Flig.eq.'lin') then
            select case (Ffld)
            case("tdg")
-        ! Gaussian modulated cosine with phase for twodcalc
+        ! Gaussian modulated cosine with phase for twod
            do i=1,n_tot
                t_a=dt*(i-1)
                f(:,i) = fmax(:,1)*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))* &
@@ -564,7 +564,7 @@ module propagate
 
         if (myrank.eq.0) then
         ! write out field 
-          if (twodcalc.eq.'no') then
+          if (twod.eq.'no') then
              if (Fbin.ne.'bin') then
                 do i=1,n_tot
                    t_a=dt*(i-1)
@@ -649,7 +649,7 @@ module propagate
        mu_a(2)=dot_product(c,matmul(trans_dipoles(2,:,:),c))
        mu_a(3)=dot_product(c,matmul(trans_dipoles(3,:,:),c))
 #endif
-       if (twodcalc.eq.'yes') then
+       if (twod.eq.'yes') then
            c_esa = c(2:)
            mu_a_esa(1)=dot_product(c_esa,matmul(trans_dipoles(1,2:,2:),c_esa))
            mu_a_esa(2)=dot_product(c_esa,matmul(trans_dipoles(2,2:,2:),c_esa))
@@ -863,7 +863,7 @@ module propagate
        complex(cmp)                :: ctmp(nstates)
 
        t=(i-1)*dt
-       if (twodcalc.eq.'no') then 
+       if (twod.eq.'no') then 
 #ifdef OMP
          if (Fopt.eq.'omp') then
             ctmp=0.d0

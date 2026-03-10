@@ -22,10 +22,6 @@ fmax(2,1) = 0.
 fmax(3,1) = 0.000001      
 /
 
-&twodspectra
-twodcalc='no'
-/
-
 &sse dissipative='non'
 /
 
