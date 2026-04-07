@@ -19,7 +19,7 @@ module dissipation
   save 
   private
   public norm, dtot, dsp, dnr, dde, add_dis_m, add_dis_nm, loss_norm
-  public quan_jump, add_h_rnd, define_h_dis, rnd_noise, add_h_rnd2, disp 
+  public quan_jump, add_h_rnd, define_h_dis, define_gamma_sum_from_file, define_rp_from_file, build_rp_random_matrix, rnd_noise, add_h_rnd2, disp 
   public random_seq
 !
   contains
@@ -602,7 +602,7 @@ module dissipation
 ! Random events: dissipation, nonradiative and dephasing
 !
 ! @date Created   : E. Coccia 19 Jan 2017
-! Modified  :
+! Modified  : Manuel Sanchez 02/04/2026
 ! @param w(:), w_prev(:), h_rnd(:,:)
 !------------------------------------------------------------------------
   subroutine add_h_rnd(h_rnd,nci,w,w_prev) 
@@ -616,12 +616,8 @@ module dissipation
    real(dbl)                    :: wrnd(3*nci)
 
 
-!   if (tdis.eq.0) then
-   if (Fdis.eq."mar-EuMar") then
+   if (Fdis.eq."mar-EuMar".or.Fdis.eq."mar-RuKu4".or.Fdis.eq."mar-HeuSt") then
       wrnd=w
-!   elseif (tdis.eq.1) then
-   elseif (Fdis.eq."mar-LeiMa") then
-      wrnd=w+w_prev
    endif 
 
 ! Matrix elements of S_alpha in the basis of the system eigenstates 
@@ -673,7 +669,7 @@ module dissipation
 ! dissipative term in the system Hamiltonian
 !
 ! @date Created   : E. Coccia 20 Jan 2017
-! Modified  :
+! Modified  : Manuel Sanchez 02/04/2026
 ! @param h_dis
 !------------------------------------------------------------------------
   subroutine define_h_dis(h_dis,nci)
@@ -685,7 +681,7 @@ module dissipation
 
    h_dis=zero
 
-   if (Fdis.eq."mar-qjump".or.Fdis.eq."mar-EuMar".or.Fdis.eq."mar-LeiMa") then 
+   if (Fdis.eq."mar-qjump".or.Fdis.eq."mar-EuMar".or.Fdis.eq."mar-RuKu4".or.Fdis.eq."mar-HeuSt") then 
       call add_dis_m(h_dis,n_ci)
    elseif (Fdis.eq."nma") then 
       call add_dis_nm(h_dis,n_ci) 
@@ -696,11 +692,143 @@ module dissipation
   end subroutine define_h_dis
 
 !------------------------------------------------------------------------
+! @brief Build a vector from file entries:
+! final_state initial_state value
+! The output is summed over final_state for each initial_state.
+! Input indices are 0-based: 0..nci-1.
+! @date Created   : Manuel Sanchez 01/04/2026
+! Modified  : Manuel Sanchez 02/04/2026
+!------------------------------------------------------------------------
+  subroutine define_gamma_sum_from_file(gamma_sum,nci,file_gamma)
+
+   implicit none
+   integer, intent(in)       :: nci
+   character(*), intent(in)  :: file_gamma
+   real(dbl), intent(inout)  :: gamma_sum(nci)
+   integer                   :: file_u, io_stat
+   integer                   :: i_final, i_init
+   real(dbl)                 :: value_dis
+
+   gamma_sum = zero
+
+   open(newunit=file_u,file=trim(file_gamma),status='old',action='read',iostat=io_stat)
+   if (io_stat.ne.0) then
+      write(*,*) 'Error opening gamma matrix file: ', trim(file_gamma)
+      stop
+   endif
+
+   do
+      read(file_u,*,iostat=io_stat) i_final, i_init, value_dis
+      if (io_stat.lt.0) exit
+      if (io_stat.gt.0) then
+         write(*,*) 'Error reading gamma matrix file: ', trim(file_gamma)
+         close(file_u)
+         stop
+      endif
+
+      if (i_final.lt.0 .or. i_final.ge.nci .or. i_init.lt.0 .or. i_init.ge.nci) then
+         write(*,*) 'State index out of bounds in file: ', trim(file_gamma)
+         write(*,*) 'Read pair (final,initial)=', i_final, i_init, ' nci=', nci
+         close(file_u)
+         stop
+      endif
+
+      gamma_sum(i_init+1) = gamma_sum(i_init+1) + value_dis
+   enddo
+
+   close(file_u)
+
+   return
+
+  end subroutine define_gamma_sum_from_file
+
+!------------------------------------------------------------------------
+! @brief Build Rp matrix from file entries:
+! final_state initial_state value
+! Rp(final_state+1,initial_state+1) = sqrt(value)
+! Input indices are 0-based: 0..nci-1.
+! @date Created   : Manuel Sanchez 01/04/2026
+! Modified  : Manuel Sanchez 02/04/2026
+!------------------------------------------------------------------------
+  subroutine define_rp_from_file(rp,nci,file_gamma)
+
+   implicit none
+   integer, intent(in)       :: nci
+   character(*), intent(in)  :: file_gamma
+   real(dbl), intent(inout)  :: rp(nci,nci)
+   integer                   :: file_u, io_stat
+   integer                   :: i_final, i_init
+   real(dbl)                 :: value_dis
+
+   rp = zero
+
+   open(newunit=file_u,file=trim(file_gamma),status='old',action='read',iostat=io_stat)
+   if (io_stat.ne.0) then
+      write(*,*) 'Error opening gamma matrix file: ', trim(file_gamma)
+      stop
+   endif
+
+   do
+      read(file_u,*,iostat=io_stat) i_final, i_init, value_dis
+      if (io_stat.lt.0) exit
+      if (io_stat.gt.0) then
+         write(*,*) 'Error reading gamma matrix file: ', trim(file_gamma)
+         close(file_u)
+         stop
+      endif
+
+      if (i_final.lt.0 .or. i_final.ge.nci .or. i_init.lt.0 .or. i_init.ge.nci) then
+         write(*,*) 'State index out of bounds in file: ', trim(file_gamma)
+         write(*,*) 'Read pair (final,initial)=', i_final, i_init, ' nci=', nci
+         close(file_u)
+         stop
+      endif
+
+      if (value_dis.lt.zero) then
+         write(*,*) 'Negative value for Rp sqrt in file: ', trim(file_gamma)
+         write(*,*) 'Read triplet (final,initial,value)=', i_final, i_init, value_dis
+         close(file_u)
+         stop
+      endif
+
+      rp(i_final+1,i_init+1) = sqrt(value_dis)
+   enddo
+
+   close(file_u)
+
+   return
+
+  end subroutine define_rp_from_file
+
+!------------------------------------------------------------------------
+! @brief Build a random matrix with the same shape as Rp:
+! Rn(i,j) = rp(i,j) * random_normal()
+! Modified  : Manuel Sanchez 02/04/2026
+!------------------------------------------------------------------------
+  subroutine build_rp_random_matrix(rp,Rn,nci)
+
+   implicit none
+   integer, intent(in)       :: nci
+   real(dbl), intent(in)     :: rp(nci,nci)
+   real(dbl), intent(inout)  :: Rn(nci,nci)
+   integer                   :: i,j
+
+   do i=1,nci
+      do j=1,nci
+         Rn(i,j) = rp(i,j)*random_normal()
+      enddo
+   enddo
+
+   return
+
+  end subroutine build_rp_random_matrix
+
+!------------------------------------------------------------------------
 ! @brief Define the random fluctuating term in the
 ! stochastic propagator
 !
 ! @date Created   : E. Coccia 20 Jan 2017
-! Modified  :
+! Modified  : Manuel Sanchez 02/04/2026
 ! @param w(:), w_rnd(:)
 !------------------------------------------------------------------------
   subroutine rnd_noise(w,w_prev,nci,first)
@@ -711,28 +839,7 @@ module dissipation
    logical, intent(in)    :: first
    integer                :: i,j
 
-!   if (tdis.eq.1) then
-   if (Fdis.eq."mar-LeiMa") then
-      if (first) then
-         w=0.d0
-         w_prev=0.d0
-         do i=1,3*nci 
-            do j=1,nrnd
-               w(i) = w(i) + random_normal()
-               w_prev(i) = w_prev(i) + random_normal()
-            enddo
-         enddo
-      else 
-         do i=1,3*nci
-            w_prev(i) =  w(i)
-            w(i) = 0.d0             
-            do j=1, nrnd
-               w(i) = w(i) + random_normal()
-            enddo
-         enddo
-      endif
-!   elseif (tdis.eq.0) then
-   elseif (Fdis.eq."mar-EuMar") then
+   if (Fdis.eq."mar-EuMar".or.Fdis.eq."mar-RuKu4".or.Fdis.eq."mar-HeuSt") then
       w=0.d0
       do i=1,3*nci
          do j=1,nrnd

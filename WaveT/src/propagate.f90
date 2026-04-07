@@ -19,7 +19,7 @@ module propagate
       integer(i4b)                :: ijump=0
       real(dbl),     allocatable  :: f(:,:)
       complex(cmp),  allocatable  :: c(:),c_prev(:),c_prev2(:),h_rnd(:,:), h_rnd2(:,:)
-      real(dbl),     allocatable  :: h_int(:,:), h_dis(:)
+      real(dbl),     allocatable  :: h_int(:,:), h_dis(:), gamma_sum(:), Rp(:,:), Rn(:,:)
       real(dbl),     allocatable  :: pjump(:)
       real(dbl)                   :: f_prev(3),f_prev2(3)
       real(dbl)                   :: mu_prev(3),mu_prev2(3),mu_prev3(3),&
@@ -49,6 +49,7 @@ module propagate
 ! 
 ! @date Created   : 
 ! Modified  : E. Coccia Dec-Apr 2017
+! Modified  : Manuel Sanchez 02/04/2026
 !------------------------------------------------------------------------
       subroutine prop
 
@@ -130,6 +131,9 @@ module propagate
 ! SP 17/07/17: new flags
        if (Fdis(1:3).eq."mar".or.Fdis(1:3).eq."nma") then
           allocate(h_dis(nstates))
+          allocate(gamma_sum(nstates))
+          allocate(Rp(nstates,nstates))
+          allocate(Rn(nstates,nstates))
           if (Fdis(5:9).eq."qjump") then
              allocate (pjump(2*nf+nexc+1))
           else
@@ -244,6 +248,10 @@ module propagate
 ! Add a random fluctuation for the stochastic propagation (.not.qjump)
        if (Fdis(1:3).eq."mar".or.Fdis(1:3).eq."nma") then
           call define_h_dis(h_dis,nstates)
+          if (Fdis(5:9).eq."EuMar".or.Fdis(5:9).eq."RuKu4".or.Fdis(5:9).eq."HeuSt") then
+             call define_gamma_sum_from_file(gamma_sum,nstates,'gamma_matrix.inp')
+             call define_rp_from_file(Rp,nstates,'gamma_matrix.inp')
+          endif
           if (Fdis(5:9).ne."qjump") then 
              call rnd_noise(w,w_prev,nstates,first)
              first=.false.
@@ -274,6 +282,9 @@ module propagate
 
           !call deallocate_dis()
           deallocate(h_dis)
+          deallocate(gamma_sum)
+          deallocate(Rp)
+          deallocate(Rn)
 
           if (Fdis(5:9).ne."qjump") then
              deallocate(h_rnd)
@@ -1077,13 +1088,129 @@ module propagate
     
       end subroutine out_header
 
+!------------------------------------------------------------------------
+! @brief Normalize coefficients for EuMar, RuKu4, and HeuSt (same rule).
+!
+! Fixed vs stochastic classification:
+! - A state i is "fixed" if the i-th row of Rn is entirely zeros.
+! - Otherwise it is "stochastic".
+!
+! Populations:
+! - p_fixed = sum_{i fixed} |c(i)|^2
+! - p_stch  = sum_{i stochastic} |c(i)|^2
+!
+! Normalization rule (EuMar, RuKu4, HeuSt):
+! - fixed coefficients unchanged
+! - stochastic coefficients multiplied by sqrt((1 - p_fixed)/p_stch)
+! @date Created   : Manuel Sanchez 02/04/2026
+! Modified  : Manuel Sanchez 02/04/2026
+!------------------------------------------------------------------------
+      subroutine normalize_c_eumar(c,Rn,nci)
+
+        implicit none
+
+        integer(i4b), intent(in)     :: nci
+        complex(cmp), intent(inout)  :: c(nci)
+        real(dbl),    intent(in)      :: Rn(nci,nci)
+
+        integer(i4b) :: i
+        logical       :: is_fixed(nci)
+        real(dbl)     :: p_fixed, p_stch, scale, one_minus_pf
+
+        do i=1,nci
+          ! If Rp(i,*) is all zeros then Rp(i,*)*random_normal() gives Rn(:,i)=0 exactly.
+          is_fixed(i) = all(Rn(i,:) == zero)
+        enddo
+
+        p_fixed = zero
+        p_stch  = zero
+        do i=1,nci
+          if (is_fixed(i)) then
+            p_fixed = p_fixed + abs(c(i))**2
+          else
+            p_stch  = p_stch  + abs(c(i))**2
+          endif
+        enddo
+
+        if (p_stch > zero) then
+          one_minus_pf = max(zero, one - p_fixed)
+          scale = sqrt(one_minus_pf/p_stch)
+          do i=1,nci
+            if (.not.is_fixed(i)) c(i) = c(i) * scale
+          enddo
+        endif
+
+        return
+
+      end subroutine normalize_c_eumar
+
+!------------------------------------------------------------------------
+! @brief One Markovian step: RK4 deterministic (-i Hn - 0.5 Gamma) c
+!        then Euler-Maruyama noise -i*sqrt(dt)*Rn on the RK4 state.
+!        Hn is diag(energies)+h_int; Gamma is diagonal (gamma_sum).
+! @date Created   : Manuel Sanchez 03/04/2026
+!------------------------------------------------------------------------
+      subroutine mar_ruku4_apply(c_new, c_old, nci)
+
+        implicit none
+        integer(i4b), intent(in)    :: nci
+        complex(cmp), intent(in)    :: c_old(nci)
+        complex(cmp), intent(out)   :: c_new(nci)
+        complex(cmp)                :: k1(nci), k2(nci), k3(nci), k4(nci)
+        complex(cmp)                :: cst(nci), c_det(nci)
+        real(dbl), parameter       :: one_sixth = 1.d0/6.d0
+
+        k1 = (-ui)*(energies*c_old + matmul(h_int,c_old)) &
+             - 0.5d0*gamma_sum(1:nci)*c_old
+        cst = c_old + 0.5d0*dt*k1
+        k2 = (-ui)*(energies*cst + matmul(h_int,cst)) &
+             - 0.5d0*gamma_sum(1:nci)*cst
+        cst = c_old + 0.5d0*dt*k2
+        k3 = (-ui)*(energies*cst + matmul(h_int,cst)) &
+             - 0.5d0*gamma_sum(1:nci)*cst
+        cst = c_old + dt*k3
+        k4 = (-ui)*(energies*cst + matmul(h_int,cst)) &
+             - 0.5d0*gamma_sum(1:nci)*cst
+        c_det = c_old + dt*one_sixth*(k1 + 2*k2 + 2*k3 + k4)
+        c_new = c_det - ui*sqrt(dt)*matmul(Rn,c_det)
+
+        return
+      end subroutine mar_ruku4_apply
+
+!------------------------------------------------------------------------
+! @brief HeuSt step: predictor (-i Hn-0.5*Gamma)*dt and -i*sqrt(dt)*Rn on c,
+!        same noise Rn on c_tilde; corrector averages drift and diffusion.
+! @date Created   : Manuel Sanchez 03/04/2026
+!------------------------------------------------------------------------
+      subroutine mar_heust_apply(c_new, c_old, nci)
+
+        implicit none
+        integer(i4b), intent(in)    :: nci
+        complex(cmp), intent(in)    :: c_old(nci)
+        complex(cmp), intent(out)   :: c_new(nci)
+        complex(cmp)                :: k(nci), f1d(nci), f1s(nci)
+        complex(cmp)                :: f2d(nci), f2s(nci), ctil(nci)
+
+        k = (-ui)*(energies*c_old + matmul(h_int,c_old)) &
+            - 0.5d0*gamma_sum(1:nci)*c_old
+        f1d = dt * k
+        f1s = (-ui)*sqrt(dt)*matmul(Rn,c_old)
+        ctil = c_old + f1d + f1s
+        k = (-ui)*(energies*ctil + matmul(h_int,ctil)) &
+            - 0.5d0*gamma_sum(1:nci)*ctil
+        f2d = dt * k
+        f2s = (-ui)*sqrt(dt)*matmul(Rn,ctil)
+        c_new = c_old + 0.5d0*(f1d + f2d) + 0.5d0*(f1s + f2s)
+
+        return
+      end subroutine mar_heust_apply
 
 !------------------------------------------------------------------------
 ! @brief Energy term is propagated analytically
 ! Interaction term via second-order Euler 
 ! 
 ! @date Created   : E. Coccia 15 Nov 2017
-! Modified  :
+! Modified  : Manuel Sanchez 02/04/2026
 !------------------------------------------------------------------------
       subroutine exp_euler_prop(ccexp,nci)
 
@@ -1110,14 +1237,22 @@ module propagate
              dis=disp(h_dis,c_prev,nci)
              c=c-ccexp*dt*dis
              if (Fdis(5:9).eq."EuMar") then
-          ! Euler-Maruyama
-                c=c-ccexp*(ui*sqrt(dt)*matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev))               
-             elseif (Fdis(5:9).eq."LeiMa") then
-          ! Leimkuhler-Matthews
-                c=c-ccexp*(ui*0.5d0*sqrt(dt)*matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev))
+               ! Euler-Maruyama stochastic step
+                call build_rp_random_matrix(Rp,Rn,nstates)
+                c=c-ui*dt*(energies*c_prev+matmul(h_int,c_prev)) - 0.5*dt*gamma_sum*c_prev - ui*sqrt(dt)*matmul(Rn,c_prev)               
+             elseif (Fdis(5:9).eq."RuKu4") then
+                call build_rp_random_matrix(Rp,Rn,nstates)
+                call mar_ruku4_apply(c,c_prev,nci)
+             elseif (Fdis(5:9).eq."HeuSt") then
+                call build_rp_random_matrix(Rp,Rn,nstates)
+                call mar_heust_apply(c,c_prev,nci)
              endif
           endif
-          c=c/sqrt(dot_product(c,c))
+          if (Fdis(5:9).eq."EuMar".or.Fdis(5:9).eq."RuKu4".or.Fdis(5:9).eq."HeuSt") then
+             call normalize_c_eumar(c,Rn,nci)
+          else
+             c=c/sqrt(dot_product(c,c))
+          endif
           c_prev=c
 
 ! SP 16/07/17: added call to medium propagation at step 2 to have full output
@@ -1230,7 +1365,7 @@ module propagate
                call wrt_restart(i,t,c,c_prev,c_prev2,nstates,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend)
             endif
           enddo
-! Markovian dissipation (Euler-Maruyama) 
+! Markovian dissipation: EuMar; RuKu4 (RK4 drift + EM); HeuSt (Heun-type + averaged noise)
        elseif (Fdis(1:3).eq."mar") then
           !do i=3,n_step
           do i=istart,iend
@@ -1239,16 +1374,21 @@ module propagate
             call add_h_rnd(h_rnd,nstates,w,w_prev)
             dis=disp(h_dis,c_prev,nci)
             if (Fdis(5:9).eq."EuMar") then
-            ! Euler-Maruyama 
-                c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev)-dt* &
-                dis-ui*sqrt(dt)*matmul(h_rnd,c_prev)- &
-                dt*matmul(h_rnd2,c_prev))
-            elseif (Fdis(5:9).eq."LeiMa") then
-                c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev)-dt* &
-                dis-ui*0.5d0*sqrt(dt)* &
-                matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev))
+            call build_rp_random_matrix(Rp,Rn,nstates)
+            ! Euler-Maruyama stochastic step
+                c=c-ui*dt*(energies*c_prev+matmul(h_int,c_prev)) - 0.5*dt*gamma_sum*c_prev - ui*sqrt(dt)*matmul(Rn,c_prev)
+            elseif (Fdis(5:9).eq."RuKu4") then
+            call build_rp_random_matrix(Rp,Rn,nstates)
+                call mar_ruku4_apply(c,c_prev,nci)
+            elseif (Fdis(5:9).eq."HeuSt") then
+            call build_rp_random_matrix(Rp,Rn,nstates)
+                call mar_heust_apply(c,c_prev,nci)
             endif
-            c=c/sqrt(dot_product(c,c))
+            if (Fdis(5:9).eq."EuMar".or.Fdis(5:9).eq."RuKu4".or.Fdis(5:9).eq."HeuSt") then
+               call normalize_c_eumar(c,Rn,nci)
+            else
+               c=c/sqrt(dot_product(c,c))
+            endif
             c_prev=c
 
             f_prev=f(:,i)
@@ -1331,7 +1471,7 @@ module propagate
 ! via second-order Euler 
 ! 
 ! @date Created   : E. Coccia 15 Nov 2017
-! Modified  :
+! Modified  : Manuel Sanchez 02/04/2026
 !------------------------------------------------------------------------      
       subroutine full_euler_prop(nci)
 
@@ -1356,14 +1496,22 @@ module propagate
              dis=disp(h_dis,c_prev,nci)
              c=c-dt*dis
              if (Fdis(5:9).eq."EuMar") then
-          ! Euler-Maruyama
-                c=c-ui*sqrt(dt)*matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev)               
-             elseif (Fdis(5:9).eq."LeiMa") then
-          ! Leimkuhler-Matthews
-                c=c-ui*0.5d0*sqrt(dt)*matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev)
+         call build_rp_random_matrix(Rp,Rn,nstates)
+          ! Euler-Maruyama stochastic step
+                c=c-ui*dt*(energies*c_prev+matmul(h_int,c_prev)) - 0.5*dt*gamma_sum*c_prev - ui*sqrt(dt)*matmul(Rn,c_prev)               
+             elseif (Fdis(5:9).eq."RuKu4") then
+         call build_rp_random_matrix(Rp,Rn,nstates)
+                call mar_ruku4_apply(c,c_prev,nci)
+             elseif (Fdis(5:9).eq."HeuSt") then
+         call build_rp_random_matrix(Rp,Rn,nstates)
+                call mar_heust_apply(c,c_prev,nci)
              endif
           endif
-          c=c/sqrt(dot_product(c,c))
+          if (Fdis(5:9).eq."EuMar".or.Fdis(5:9).eq."RuKu4".or.Fdis(5:9).eq."HeuSt") then
+             call normalize_c_eumar(c,Rn,nci)
+          else
+             c=c/sqrt(dot_product(c,c))
+          endif
           c_prev=c
 
 ! SP 16/07/17: added call to medium propagation at step 2 to have full
@@ -1480,7 +1628,7 @@ module propagate
                call wrt_restart(i,t,c,c_prev,c_prev2,nstates,iseed,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5,iend) 
             endif
           enddo
-! Markovian dissipation (Euler-Maruyama) 
+! Markovian dissipation: EuMar; RuKu4 (RK4 drift + EM); HeuSt (Heun-type + averaged noise)
        elseif (Fdis(1:3).eq."mar") then
           !do i=3,n_step
           do i=istart,iend
@@ -1489,16 +1637,21 @@ module propagate
             call add_h_rnd(h_rnd,nstates,w,w_prev)
             dis=disp(h_dis,c_prev,nci)
             if (Fdis(5:9).eq."EuMar") then
-            ! Euler-Maruyama 
-              c=c_prev-ui*dt*(energies*c_prev+matmul(h_int,c_prev))-dt* &
-                dis-ui*sqrt(dt)*matmul(h_rnd,c_prev)- &
-                dt*matmul(h_rnd2,c_prev)
-            elseif (Fdis(5:9).eq."LeiMa") then
-              c=c_prev-ui*dt*(energies*c_prev+matmul(h_int,c_prev))-dt* &
-                dis-ui*0.5d0*sqrt(dt)* & 
-                matmul(h_rnd,c_prev)-dt*matmul(h_rnd2,c_prev)
+            call build_rp_random_matrix(Rp,Rn,nstates)
+            ! Euler-Maruyama stochastic step
+              c=c-ui*dt*(energies*c_prev+matmul(h_int,c_prev)) - 0.5*dt*gamma_sum*c_prev - ui*sqrt(dt)*matmul(Rn,c_prev)
+            elseif (Fdis(5:9).eq."RuKu4") then
+            call build_rp_random_matrix(Rp,Rn,nstates)
+              call mar_ruku4_apply(c,c_prev,nci)
+            elseif (Fdis(5:9).eq."HeuSt") then
+            call build_rp_random_matrix(Rp,Rn,nstates)
+              call mar_heust_apply(c,c_prev,nci)
             endif
-            c=c/sqrt(dot_product(c,c))
+            if (Fdis(5:9).eq."EuMar".or.Fdis(5:9).eq."RuKu4".or.Fdis(5:9).eq."HeuSt") then
+               call normalize_c_eumar(c,Rn,nci)
+            else
+               c=c/sqrt(dot_product(c,c))
+            endif
             c_prev=c
 
             f_prev=f(:,i)
