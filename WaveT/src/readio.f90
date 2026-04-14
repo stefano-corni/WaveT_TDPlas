@@ -1546,7 +1546,8 @@
           allocate(tmom2(nf))
           allocate(sp_fact(nf))
           allocate(tomega(nf))
-          if (Fful.eq.'Yesf') allocate(ik(nexc,nexc))
+          if (Fful.eq.'Yesf') allocate(ik(nexc,nexc)) ! Added by: Manuel Sanchez on 09/04/2026
+          if (Fful.eq.'Yesf') allocate(irel(nrel,2)) ! Added by: Manuel Sanchez on 09/04/2026
        endif
 
        call mpi_bcast(nr_gam,     nf,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
@@ -1561,7 +1562,8 @@
        call mpi_bcast(sp_fact,    nf,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(tmom2,      nf,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
        call mpi_bcast(tomega,     nf,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
-       if (Fful.eq.'Yesf') call mpi_bcast(ik,nexc*nexc,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) 
+       if (Fful.eq.'Yesf') call mpi_bcast(ik,nexc*nexc,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) ! Added by: Manuel Sanchez on 09/04/2026
+       if (Fful.eq.'Yesf') call mpi_bcast(irel,2*nrel,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) ! Added by: Manuel Sanchez on 09/04/2026
 
        call mpi_bcast(Fwrt,       flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
 

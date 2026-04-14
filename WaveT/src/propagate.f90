@@ -19,7 +19,7 @@ module propagate
       integer(i4b)                :: ijump=0
       real(dbl),     allocatable  :: f(:,:)
       complex(cmp),  allocatable  :: c(:),c_prev(:),c_prev2(:),h_rnd(:,:), h_rnd2(:,:)
-      real(dbl),     allocatable  :: h_int(:,:), h_dis(:), gamma_sum(:), Rp(:,:), Rn(:,:)
+      real(dbl),     allocatable  :: h_int(:,:), h_dis(:), gamma_sum(:), Rp(:,:), Rn(:,:), gamma_nr(:,:)
       real(dbl),     allocatable  :: pjump(:)
       real(dbl)                   :: f_prev(3),f_prev2(3)
       real(dbl)                   :: mu_prev(3),mu_prev2(3),mu_prev3(3),&
@@ -134,6 +134,7 @@ module propagate
           allocate(gamma_sum(nstates))
           allocate(Rp(nstates,nstates))
           allocate(Rn(nstates,nstates))
+          allocate(gamma_nr(nstates,nstates))
           if (Fdis(5:9).eq."qjump") then
              allocate (pjump(2*nf+nexc+1))
           else
@@ -249,15 +250,16 @@ module propagate
        if (Fdis(1:3).eq."mar".or.Fdis(1:3).eq."nma") then
           call define_h_dis(h_dis,nstates)
           if (Fdis(5:9).eq."EuMar".or.Fdis(5:9).eq."RuKu4".or.Fdis(5:9).eq."HeuSt") then
-             call define_gamma_sum_from_file(gamma_sum,nstates,'gamma_matrix.inp')
-             call define_rp_from_file(Rp,nstates,'gamma_matrix.inp')
+             call build_gamma_nr_matrix(gamma_nr,nstates)
+             call sqrt_gamma_nr_matrix(gamma_nr,Rp,nstates)
+             call build_gamma_sum_from_gamma_nr(gamma_nr,gamma_sum,nstates)
           endif
-          if (Fdis(5:9).ne."qjump") then 
-             call rnd_noise(w,w_prev,nstates,first)
-             first=.false.
-             call add_h_rnd(h_rnd,nstates,w,w_prev) 
-             call add_h_rnd2(h_rnd2,nstates)
-          endif
+          !if (Fdis(5:9).ne."qjump") then 
+          !   call rnd_noise(w,w_prev,nstates,first)
+          !   first=.false.
+          !   call add_h_rnd(h_rnd,nstates,w,w_prev) 
+          !   call add_h_rnd2(h_rnd2,nstates)
+          !endif
        endif
 
 
@@ -285,6 +287,7 @@ module propagate
           deallocate(gamma_sum)
           deallocate(Rp)
           deallocate(Rn)
+          deallocate(gamma_nr)
 
           if (Fdis(5:9).ne."qjump") then
              deallocate(h_rnd)
@@ -1133,11 +1136,15 @@ module propagate
         enddo
 
         if (p_stch > zero) then
-          one_minus_pf = max(zero, one - p_fixed)
+          one_minus_pf = one - p_fixed!max(zero, one - p_fixed)
           scale = sqrt(one_minus_pf/p_stch)
-          do i=1,nci
-            if (.not.is_fixed(i)) c(i) = c(i) * scale
-          enddo
+          if (one_minus_pf < zero) then
+            c = c / sqrt(dot_product(c,c))
+          else
+            do i=1,nci
+              if (.not.is_fixed(i)) c(i) = c(i) * scale
+            enddo
+          endif
         endif
 
         return
@@ -1370,8 +1377,8 @@ module propagate
           !do i=3,n_step
           do i=istart,iend
 ! Dissipation by a continuous stochastic propagation
-            call rnd_noise(w,w_prev,nstates,first)
-            call add_h_rnd(h_rnd,nstates,w,w_prev)
+            ! call rnd_noise(w,w_prev,nstates,first)
+            ! call add_h_rnd(h_rnd,nstates,w,w_prev)
             dis=disp(h_dis,c_prev,nci)
             if (Fdis(5:9).eq."EuMar") then
             call build_rp_random_matrix(Rp,Rn,nstates)
@@ -1633,8 +1640,8 @@ module propagate
           !do i=3,n_step
           do i=istart,iend
 ! Dissipation by a continuous stochastic propagation
-            call rnd_noise(w,w_prev,nstates,first)
-            call add_h_rnd(h_rnd,nstates,w,w_prev)
+            ! call rnd_noise(w,w_prev,nstates,first)
+            ! call add_h_rnd(h_rnd,nstates,w,w_prev)
             dis=disp(h_dis,c_prev,nci)
             if (Fdis(5:9).eq."EuMar") then
             call build_rp_random_matrix(Rp,Rn,nstates)
