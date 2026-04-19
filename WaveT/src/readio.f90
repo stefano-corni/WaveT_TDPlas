@@ -18,7 +18,7 @@
 ! SP 17/07/17: Changed to char flags
       integer(i4b) :: nr_typ !input integer for type of decay for the internal conversion
       integer(i4b) :: idep   !input integer for the dephasing operator
-      integer(i4b) :: tdis   !input integer for Euler tdis=0, Matthews tdis=1 
+      integer(i4b) :: tdis   !input: tdis=0 EuMar, 1 RuKu4, 2 HeuSt (continuous stochastic scheme) 
       integer(i4b) :: ndelay ! number of delay times considered to build 2D map
       integer(i4b) :: dstart ! index of the first delay time used for twodspectra
 ! SP270917: added for merging to newer master
@@ -69,7 +69,7 @@
       character(flg) :: Fdis_rel  !< Flag for decay for internal conversion, relaxation via dipole "dip" or matrix "mat"
       character(flg) :: Fdis_deph !< Flag for dephasing operator: exp(i delta_i)|i><i| "exp" or |i><i|-|0><0| "i-0" 
       character(flg) :: Fdis !< Flag for dissipation type: 
-                             !! Markovian     : quantum jumps "mar-qjump", Euler-Maruyama "mar-EuMar", Leimkuhler-Matthews "mar-LeiMa"
+                             !! Markovian     : "mar-qjump", "mar-EuMar", "mar-RuKu4", "mar-HeuSt" (see tdis when dis_prop=euler)
                              !! Non-Markovian : quantum jumps "nma-qjump", Continuous stochastic propagator "nma-cstoc"
                              !! Random        : random energy term "ernd" 
       ! qjump works for the Markovian case
@@ -1230,7 +1230,7 @@
 ! @brief Write variables in the namelist sse and put conditions 
 !
 ! @date Created   : E. Coccia 11 May 2017
-! Modified  :
+! Modified  : Manuel Sanchez 02/04/2026
 ! @param dissipative,idep,dis_prop,prop_type,nrnd,tdis,nr_typ,krnd 
 !------------------------------------------------------------------------
       subroutine write_nml_sse()
@@ -1264,8 +1264,11 @@
                 write(*,*) 'Euler-Maruyama algorithm'
                 Fdis="mar-EuMar"
               case (1)
-                write(*,*) 'Leimkuhler-Matthews algorithm'
-                Fdis="mar-LeiMa"
+                write(*,*) 'Runge-Kutta 4th order (deterministic) + EM noise'
+                Fdis="mar-RuKu4"
+              case (2)
+                write(*,*) 'HeuSt: Heun-type drift + averaged stochastic increment'
+                Fdis="mar-HeuSt"
              end select
           end select
           select case (nr_typ)
@@ -1543,7 +1546,8 @@
           allocate(tmom2(nf))
           allocate(sp_fact(nf))
           allocate(tomega(nf))
-          if (Fful.eq.'Yesf') allocate(ik(nexc,nexc))
+          if (Fful.eq.'Yesf') allocate(ik(nexc,nexc)) ! Added by: Manuel Sanchez on 09/04/2026
+          if (Fful.eq.'Yesf') allocate(irel(nrel,2)) ! Added by: Manuel Sanchez on 09/04/2026
        endif
 
        call mpi_bcast(nr_gam,     nf,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
@@ -1558,7 +1562,8 @@
        call mpi_bcast(sp_fact,    nf,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(tmom2,      nf,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
        call mpi_bcast(tomega,     nf,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
-       if (Fful.eq.'Yesf') call mpi_bcast(ik,nexc*nexc,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) 
+       if (Fful.eq.'Yesf') call mpi_bcast(ik,nexc*nexc,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) ! Added by: Manuel Sanchez on 09/04/2026
+       if (Fful.eq.'Yesf') call mpi_bcast(irel,2*nrel,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) ! Added by: Manuel Sanchez on 09/04/2026
 
        call mpi_bcast(Fwrt,       flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
 
