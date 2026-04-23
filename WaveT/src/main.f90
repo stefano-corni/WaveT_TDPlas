@@ -99,6 +99,8 @@
        else
           !> Create the field
           call create_field
+          !> Create vector potential from electric field (velocity gauge only)
+          if (gauge.eq.'vg') call create_vector_potential ! Added by Manuel Sanchez 2026-04-21
           !> Initialize system wavefunction and Hilbert space
           call init_propagation
           !> Propagate wavefunction

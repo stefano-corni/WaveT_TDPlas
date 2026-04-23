@@ -90,6 +90,7 @@
       character(flg) :: Fwrt !< Flag for SSE output
       character(flg) :: Fmag !< Flag for magnetic interaction
       character(flg) :: Flig !< Flag for linear or circular polarization
+      character(flg) :: gauge !< Gauge for light-matter interaction ("lg" or "vg") ! Added by Manuel Sanchez 2026-04-21
 ! Flags read from input file
       character(flg) :: medium,radiative,dissipative,lsim,absorber,binary,out_sse
       character(flg) :: dis_prop,prop_type
@@ -136,7 +137,7 @@
              mpibcast_e_dip,mpibcast_sse,mpibcast_restart,  &
              nspectra,Fabs,ion_rate,mpibcast_ion_rate,Fbin, &
              ncit,Fopt,ik,Fwrt,tar,all_pop,all_coh,pop,coh, &
-             write_bin,Ip,prop_type,twod,de_delay,ndelay,&
+             write_bin,Ip,prop_type,twod,de_delay,ndelay,gauge,&
              Fmag,lt,e_dir,m_i_prev,m_i_prev2,map_phase,t_ap,&
              m_i_prev3,m_i_prev4,m_i_prev5,Flig,f0,pini,pfin,&
              mpibcast_twod 
@@ -165,8 +166,8 @@
                          dt,n_step,n_out,propa,n_restart,lsim,absorber,&
                          binary,ncit,Ip,twod,de_delay,dstart,ndelay
        !External field paramaters
-       namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
-                        npulse,tdelay,pshift,Fmag,e_dir,Flig,f0,pini,pfin,t_ap
+      namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
+                       npulse,tdelay,pshift,Fmag,e_dir,Flig,f0,pini,pfin,t_ap,gauge ! Added by Manuel Sanchez 2026-04-21
        !Stochastic Schroedinger equation
        namelist /sse/ dissipative,idep,dis_prop,prop_type,nrnd,tdis,nr_typ,krnd,out_sse
        !Namelist spectra
@@ -874,6 +875,8 @@
        e_dir(3)=0.d0
        ! Linear polarization
        Flig='lin'
+      ! Default gauge: length gauge ! Added by Manuel Sanchez 2026-04-21
+       gauge='lg' ! Added by Manuel Sanchez 2026-04-21
        ! Field amplitude for circular polarization
        f0=0.d0
        ! Initial point for trapezoidal pulse
@@ -911,7 +914,6 @@
        ! Direction for the signal 
        dir_ft=0.d0
        dir_ft(3)=1.d0
-
        return
 
       end subroutine init_nml_spectra
@@ -1178,6 +1180,19 @@
         case ('cir','Cir','CIR')
          write(*,*) 'Circular polarization'
        end select
+      select case (gauge) ! Added by Manuel Sanchez 2026-04-21
+       case ('lg','LG','Lg','lG') ! Added by Manuel Sanchez 2026-04-21
+        gauge='lg' ! Added by Manuel Sanchez 2026-04-21
+       case ('vg','VG','Vg','vG') ! Added by Manuel Sanchez 2026-04-21
+        gauge='vg' ! Added by Manuel Sanchez 2026-04-21
+       case default ! Added by Manuel Sanchez 2026-04-21
+        write(*,*) 'ERROR: gauge must be ''lg'' or ''vg''' ! Added by Manuel Sanchez 2026-04-21
+#ifdef MPI
+        call mpi_finalize(ierr_mpi) ! Added by Manuel Sanchez 2026-04-21
+#endif
+        stop ! Added by Manuel Sanchez 2026-04-21
+      end select ! Added by Manuel Sanchez 2026-04-21
+      write(*,*) 'Gauge for interaction:', gauge ! Added by Manuel Sanchez 2026-04-21
        write(*,*) ''
 
        write (*,*) "Time shape of the perturbing field",Ffld
@@ -1216,7 +1231,6 @@
        if (medium.ne.'vac') then 
           nspectra=2
        endif
-
        write(*,*) 'Starting point for FT calculation', start
        write(*,*) 'Artificial damping', (tau(i),i=1,nspectra)
        !write(*,*) 'Direction along which the field is oriented', dir_ft
