@@ -1417,7 +1417,7 @@
 ! @brief MPI broadcast of input variables 
 !
 ! @date Created   : E. Coccia 20 Apr 2018
-! Modified  :
+! Modified  : Manuel Sanchez 03/05/2026 (MPI bcast of gauge)
 !------------------------------------------------------------------------
       subroutine mpibcast_readio()
 
@@ -1481,6 +1481,7 @@
        call mpi_bcast(Fopt,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fmag,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Flig,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(gauge,       flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) ! Added by Manuel Sanchez 2026-05-03
 #endif
 
        return 

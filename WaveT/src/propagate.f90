@@ -243,7 +243,7 @@ module propagate
           if (Fmag.eq.'mag') then ! MM
              call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
           endif
-          call add_int_vac(f_prev,h_int)
+          if (gauge.ne.'vg') call add_int_vac(f_prev,h_int) ! Added by Manuel Sanchez 2026-05-03
 ! SP 16/07/17: added call to output at step 0 to have full output in outfiles
           if (Fbin.ne.'bin'.and.twod.eq.'no') call out_header
           call output(1,c,f_prev,h_int)
@@ -422,13 +422,17 @@ module propagate
         ! exp(-Gamma*abs(t))         
              do i=1,n_tot
                 t_a=dt*(i-1)      
-                f(:,i) =fmax(:,1)*(sin(0.5*sigma(1)*(t_a - t_mid + 0.5*dt))/(0.5*sigma(1)*(t_a - t_mid + 0.5*dt)))*sin(omega(1)*t_a)* &
-                exp(-(2.d0/t_ap)*abs(t_a - t_mid + 0.5*dt))
+               f(:,i) = fmax(:,1) * &
+                        (sin(0.5*sigma(1)*(t_a - t_mid + 0.5*dt)) / &
+                        (0.5*sigma(1)*(t_a - t_mid + 0.5*dt))) * &
+                        sin(omega(1)*t_a) * &
+                        exp(-(2.d0/t_ap)*abs(t_a - t_mid + 0.5*dt))
                 do j=2,npulse
-                   f(:,i) = f(:,i) + fmax(:,j)*(sin(0.5*sigma(j)*(t_a -(t_mid + sum(tdelay(1:j-1))) + 0.5*dt))/ &
-                   (0.5*sigma(j)*(t_a - (t_mid + sum(tdelay(1:j-1))) +0.5*dt)))* &
-                   sin(omega(j)*t_a + sum(pshift(1:j-1)))* &
-                   exp(-(2.d0/t_ap)*abs(t_a - (t_mid + sum(tdelay(1:j-1))) + 0.5*dt))
+                  f(:,i) = f(:,i) + fmax(:,j) * &
+                           (sin(0.5*sigma(j)*(t_a -(t_mid + sum(tdelay(1:j-1))) + 0.5*dt)) / &
+                           (0.5*sigma(j)*(t_a - (t_mid + sum(tdelay(1:j-1))) + 0.5*dt))) * &
+                           sin(omega(j)*t_a + sum(pshift(1:j-1))) * &
+                           exp(-(2.d0/t_ap)*abs(t_a - (t_mid + sum(tdelay(1:j-1))) + 0.5*dt))
                 enddo 
              enddo
            case ("mds")
@@ -641,7 +645,7 @@ module propagate
 
        if (allocated(avec)) deallocate(avec)
        allocate(avec(3,n_tot))
-       avec(:,1)=zero
+       avec(:,1)= -pt5*dt*f(:,1) !zero
        do i=2,n_tot
           ! Length/velocity-gauge convention: E(t) = -dA(t)/dt
           avec(:,i)=avec(:,i-1)-pt5*dt*(f(:,i-1)+f(:,i))
@@ -692,9 +696,10 @@ module propagate
 !------------------------------------------------------------------------
 ! @brief Build momentum-like transition matrix trans_p from trans_dipoles
 !        using i*p_ab = E_ab*mu_ab, with E_ab = energies(a)-energies(b).
+!        trans_p is antisymmetric in (a,b) when trans_dipoles is symmetric.
 !
 ! @date Created   : Manuel Sanchez 22/04/2026
-! Modified  :
+! Modified  : Manuel Sanchez 03/05/2026 (upper-triangle build + antisymmetry)
 !------------------------------------------------------------------------
       subroutine build_trans_p_from_dipoles(trans_p)
 
@@ -705,11 +710,12 @@ module propagate
        real(dbl)                 :: eab
 
        trans_p = zeroc
-       do ia=1,nstates
-          do ib=1,nstates
-             eab = energies(ia)-energies(ib)
+       do ia=1,nstates-1
+          do ib=ia+1,nstates
+             eab = energies(ib)-energies(ia)
              do icart=1,3
-                trans_p(icart,ia,ib)=(-ui)*eab*trans_dipoles(icart,ia,ib)
+                trans_p(icart,ia,ib)=(-ui)*eab*trans_dipoles(icart,ia,ib) ! Added by Manuel Sanchez 2026-05-03
+                trans_p(icart,ib,ia)=-trans_p(icart,ia,ib) ! Added by Manuel Sanchez 2026-05-03
              enddo
           enddo
        enddo
@@ -1108,6 +1114,8 @@ module propagate
        return
  
       end subroutine add_int_vac
+
+!------------------------------------------------------------------------
 ! @brief Create the velocity-gauge interaction term from vector potential.
 !        Uses trans_p matrix and updates h_int with -p·A.
 !
@@ -1121,8 +1129,8 @@ module propagate
        real(dbl), intent(IN)    :: a_prev(3)
        complex(cmp), intent(INOUT) :: h_int_vg(nstates,nstates) ! Added by Manuel Sanchez 2026-04-22
 
-       h_int_vg(:,:)=h_int_vg(:,:)+trans_p(1,:,:)*a_prev(1)+             & ! Added by Manuel Sanchez 2026-04-22
-                 trans_p(2,:,:)*a_prev(2)+trans_p(3,:,:)*a_prev(3) ! Added by Manuel Sanchez 2026-04-22
+       h_int_vg(:,:)=h_int_vg(:,:)-trans_p(1,:,:)*a_prev(1)-             & ! Added by Manuel Sanchez 2026-04-22
+                 trans_p(2,:,:)*a_prev(2)-trans_p(3,:,:)*a_prev(3) ! Added by Manuel Sanchez 2026-04-22
 
        return
  
@@ -1431,10 +1439,11 @@ module propagate
              i=2
              call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
           endif
-          call add_int_vac(f_prev,h_int)
           if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
              call build_h_int_vg(2,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
-          endif 
+          else
+             call add_int_vac(f_prev,h_int)
+          endif ! Added by Manuel Sanchez 2026-05-03
           call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
           if (Fmag.eq.'mag') then ! MM
              call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
@@ -1447,10 +1456,11 @@ module propagate
           iend=n_step
        elseif (Fres.eq.'Yesr') then
           istart=restart_i+1
-          call add_int_vac(f_prev,h_int)
           if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
              call build_h_int_vg(restart_i,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
-          endif 
+          else
+             call add_int_vac(f_prev,h_int)
+          endif ! Added by Manuel Sanchez 2026-05-03
           if (Fsim.eq.'y') then 
              iend=diff_step+restart_i
           elseif (Fsim.eq.'n') then
@@ -1542,10 +1552,11 @@ module propagate
             f_prev=f(:,i)
             h_int=zero
             if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-            call add_int_vac(f_prev,h_int)
             if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
                call build_h_int_vg(i,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
-            endif 
+            else
+               call add_int_vac(f_prev,h_int)
+            endif ! Added by Manuel Sanchez 2026-05-03
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, & 
                                                mu_prev4,mu_prev5,h_int)
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
@@ -1592,10 +1603,11 @@ module propagate
             f_prev=f(:,i)
             h_int=zero
             if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-            call add_int_vac(f_prev,h_int)
             if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
                call build_h_int_vg(i,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
-            endif 
+            else
+               call add_int_vac(f_prev,h_int)
+            endif ! Added by Manuel Sanchez 2026-05-03
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
                                                   mu_prev4,mu_prev5,h_int)
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
@@ -1653,10 +1665,11 @@ module propagate
             f_prev=f(:,i)
             h_int=zero
             if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-            call add_int_vac(f_prev,h_int)
             if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
                call build_h_int_vg(i,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
-            endif 
+            else
+               call add_int_vac(f_prev,h_int)
+            endif ! Added by Manuel Sanchez 2026-05-03
 ! SC field
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
                                                mu_prev4,mu_prev5,h_int)
@@ -1742,10 +1755,11 @@ module propagate
              i=2
              call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
           endif
-          call add_int_vac(f_prev,h_int)
           if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
              call build_h_int_vg(2,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
-          endif 
+          else
+             call add_int_vac(f_prev,h_int)
+          endif ! Added by Manuel Sanchez 2026-05-03
           call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
           if (Fmag.eq.'mag') then ! MM
              call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
@@ -1758,10 +1772,11 @@ module propagate
           iend=n_step
        elseif (Fres.eq.'Yesr') then
           istart=restart_i+1
-          call add_int_vac(f_prev,h_int)
           if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
              call build_h_int_vg(restart_i,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
-          endif 
+          else
+             call add_int_vac(f_prev,h_int)
+          endif ! Added by Manuel Sanchez 2026-05-03
           if (Fsim.eq.'y') then 
              iend=diff_step+restart_i
           elseif (Fsim.eq.'n') then
@@ -1854,10 +1869,11 @@ module propagate
             f_prev=f(:,i)
             h_int=zero
             if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-            call add_int_vac(f_prev,h_int)
             if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
                call build_h_int_vg(i,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
-            endif 
+            else
+               call add_int_vac(f_prev,h_int)
+            endif ! Added by Manuel Sanchez 2026-05-03
 ! SC field
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
                                                 mu_prev4,mu_prev5,h_int)
@@ -1906,10 +1922,11 @@ module propagate
             f_prev=f(:,i)
             h_int=zero
             if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-            call add_int_vac(f_prev,h_int)
             if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
                call build_h_int_vg(i,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
-            endif 
+            else
+               call add_int_vac(f_prev,h_int)
+            endif ! Added by Manuel Sanchez 2026-05-03
 ! SC field
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
                                                 mu_prev4,mu_prev5,h_int)
@@ -1968,10 +1985,11 @@ module propagate
             f_prev=f(:,i)
             h_int=zero
             if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-            call add_int_vac(f_prev,h_int)
             if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
                call build_h_int_vg(i,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
-            endif 
+            else
+               call add_int_vac(f_prev,h_int)
+            endif ! Added by Manuel Sanchez 2026-05-03
 ! SC field
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
                                                 mu_prev4,mu_prev5,h_int)

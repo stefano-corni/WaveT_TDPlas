@@ -1,0 +1,2 @@
+In this test case, the length gauge was used (`gauge='lg'` in namelist `field`).
+Test results are located in the `out` folder.

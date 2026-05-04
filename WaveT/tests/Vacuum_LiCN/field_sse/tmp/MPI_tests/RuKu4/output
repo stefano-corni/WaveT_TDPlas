@@ -1,0 +1,81 @@
+ 
+ ****************************************************
+ ****************************************************
+ **                                                **
+ **                    WaveT                       **
+ **     Evolution of molecular wavefunctions       **
+ **   under external electromagnetic perturbations **
+ **                                                **
+ **                     by                         **
+ **               Emanuele Coccia                  **
+ **                Stefano Corni                   **
+ **               Giulia Dall'Osto                 **
+ **                Jacopo Fregoni                  **
+ **                 Gabriel Gil                    **
+ **                Silvio Pipolo                   **
+ **                 Marta Rosa                     **
+ **                                                **
+ ****************************************************
+ ****************************************************
+ 
+ Number to append to dat file           1
+ Number of CIS states to be read          10
+ Number of CIS states to be used          10
+ Molecular center of charge
+  0.000000000000000E+000  0.000000000000000E+000  0.000000000000000E+000
+ 
+ Time step (in au), number of steps, stride  5.000000000000000E-002       10000
+           1
+ 
+ No external medium, vacuum calculation
+ No restart
+ Only |k> -> |0> relaxation
+ Energy term is propagated analytically
+ Matmul is used in the propagation.
+ 
+ Only electric dipole
+ Linear polarization
+ 
+ Time shape of the perturbing fieldgau       
+ time at the center of the pulse (au):   2500.00000000000     
+ Width of the pulse (time au):   707.106781187000     
+ Frequency (au):  0.242000000000000     
+ Maximum E field (au)  1.000000000000000E-002  1.000000000000000E-002
+  1.000000000000000E-002
+ Maximum E field (V/m)   5142206707.00000        5142206707.00000     
+   5142206707.00000     
+ Maximum intensity (W/cm^2)   3510000000000.00        3510000000000.00     
+   3510000000000.00     
+ 
+ Use sqrt(gamma_i) (|i><i|-|0><0|)
+ Markovian dissipation
+ Continuous stochastic propagator
+ Time step for the Brownian motion is:                Infinity
+ Runge-Kutta 4th order (deterministic) + EM noise
+ Internal conversion relaxation via given matrix
+ SSE quantum jumps written in output
+ 
+ Excitation energies read from input, in Hartree
+           1  0.239189226989031     
+           2  0.241982406620969     
+           3  0.241982406620973     
+           4  0.248481326284246     
+           5  0.248481326345823     
+           6  0.264390132375462     
+           7  0.292505208317815     
+           8  0.292505208317815     
+           9  0.308951472642535     
+          10  0.330458849355420     
+ 
+ Starting point for FT calculation  0.000000000000000E+000
+ Artificial damping   2.00000000000000     
+ 
+ Absorber switched off with SSE or full Euler
+ *************OMP*****************
+
+ OMP parallelization on
+The number of processors available =        1
+The number of threads available    =        1
+
+ *************OMP*****************
+MPI totale time (s) (m) (h):     11.5      0.2      0.0

@@ -1,0 +1,3 @@
+Mon May  4 14:02:02 CEST 2026
+Running test in /home/sanchez/WaveT/WaveT/tests/Vacuum_LiCN/field_no_sse_vg
+FAILURE: out/out.dat file reference not found

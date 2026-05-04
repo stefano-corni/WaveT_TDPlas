@@ -1,0 +1,32 @@
+&general 
+n_ci=5,                         !number of CI states to be used in the TD-CIS propagation
+n_ci_read=5	                !number of CI states calculated
+mol_cc= 0. 0. 0.		!mol_cc: molecular center of charges of the molecule. It is used for the calculation of the dipole and electrostatic field in the case of Onsager and PCM-mu models. 
+medium='sol'			!medium: type of external medium. Here a solvent ('sol') is selected. Other possible choice is a nanoparticle ('nan'). 
+n_f=1				!n_f: integer to be appended in all output files to distinguish trajectories in an Stochastic Schrodinger Equation run
+dt=0.20				!dt: time step of the time-dependent propagation
+n_step=5000			!n_step: total number of steps in time-dependent propagation
+n_out=1				!n_out: output files are written each n_out steps of the time-dependent propagation 
+/ 
+
+&field
+Ffld='snd'			!Ffld: type of function. A linearly modulated sinusoid ('snd') is selected here. Other possible choice is a Gaussian ('gau') and a pi pulse ('pip').
+omega(1)=0.5			!omega: frequency of the sinusoid
+sigma(1)=10.,			!sigma: full-(time)width at half maximum of the pulse. Not used for Ffld='snd'.
+t_mid=500			!t_mid: time after which the linear envelope is replaced by a one
+radiative='non'			!radiative: flag for a possible stochastic field. In this run none ('non') is selected.
+npulse=1			!npulse: number of pulses
+fmax(1,1) = 0.			!fmax: amplitude of the pulse. (1,_), (2,_) and (3,_) are the x, y and z components.
+fmax(2,1) = 0. 
+fmax(3,1)=0.000001
+/
+
+&sse dissipative='non'		!sse: Stochastic Schrodinger Equation namelist. dissipative is a flag controlling the kind of dissipation dynamics used SSE.  
+/
+
+&spectra 
+start=80                ! Initial time step considered for the spectra calculations
+tau= 2000.0 2000.0      ! Damping of the molecule and the nanoparticle dipole moments
+dir_ft= 1. 1. 1.        ! x y and z direction of the Fourier transform
+/
+
