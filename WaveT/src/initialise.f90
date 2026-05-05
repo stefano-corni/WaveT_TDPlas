@@ -56,17 +56,16 @@
 #endif
        call init_initialise  
        if (Fmdm.ne."vac") then
-         !call init_environment
-         if (this_Finit_int.eq."scf") then
-           !> SCF initialisation 
-           call do_scf(c_i)
-         elseif (this_Finit_int.eq."qmt") then
-           !> Quantum Coupling initialisation 
-           call do_QM_coupling(nstates,energies,trans_dipoles)
-         else
-           write(6,*) "Wrong initialisation... stopping."
-           stop
-         endif
+         ! SP: better define initial external field, this is the linearly polarized one
+         write(6,*) "Initializing the environment"
+         call init_environment(c_i,fmax(:,1))
+       endif
+       if (this_Finit_int.eq."scf") then
+         !> SCF initialisation 
+         call do_scf(c_i)
+       elseif (this_Finit_int.eq."qmt") then
+         !> Quantum Coupling initialisation 
+         call do_QM_coupling(nstates,energies,trans_dipoles)
        else
          !> Input initialisation as in ci_*.inp 
          energies=e_ci
@@ -105,6 +104,9 @@
          if (this_Finit_int.eq."scf") then
            write(6,*)"System initialised with self-consistent procedure"
            nstates=n_ci 
+         elseif (this_Finit_int.eq."nsc") then
+           write(6,*)"System initialised as from input files"
+           nstates=n_ci 
          elseif (this_Finit_int.eq."qmt") then
            write(6,*) "System initialised with Quantum Coupling"
            if(global_sys_Ftest.eq."qmt") then 
@@ -122,7 +124,7 @@
          nstates=n_ci 
          !stop
        endif
-       !write(6,*) "Hilbert Space with ",nstates, " states."
+       write(6,*) "Hilbert Space has ",nstates, " states."
        allocate(energies(nstates))
        allocate(coeff0(nstates))
        allocate(trans_dipoles(3,nstates,nstates))

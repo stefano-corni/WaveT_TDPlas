@@ -30,7 +30,7 @@ LDLAGS=
 #FFLAGS= -O3 -ftz -align all ${MPI} ${OMP} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds
 #FFLAGS= -O -g ${OMP} #-heap-arrays 1024
 #FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(FFLAGS_OMP_IF) -pg #-check bounds
-FFLAGS= -Og -g -fcheck-array-temporaries ${OMP} -fbounds-check #debug flag list to check coherence of array dimension 
+FFLAGS= -Og -g -Wall -Wextra -pedantic -fimplicit-none -fcheck=all -fbacktrace -fcheck-array-temporaries ${OMP} -fbounds-check #debug flag list to check coherence of array dimension 
 #FFLAGS= -Og -g ${OMP} -fPIC -m64 #-heap-arrays 1024  
 
 #FFLAGS= -O3 -ftz -align all ${OMP} ${MPI} -heap-arrays 1024 -check bounds 

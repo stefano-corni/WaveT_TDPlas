@@ -16,7 +16,8 @@ FC = gfortran
 
  # actual flags used in the compilation
  #FFLAGS= -O3 ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
- FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+ ###########FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+ FFLAGS= -Og -g -Wall -Wextra -pedantic -fimplicit-none -fcheck=all -fbacktrace ${OMP} 
  #FFLAGS= -O3 -ftz -align all ${OMP} ${MPI} -heap-arrays 1024 -check bounds 
 
  # preprocessor flag

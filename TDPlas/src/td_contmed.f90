@@ -50,6 +50,7 @@
       real(dbl), allocatable :: q_mdm(:)                !< medium total charges at current time
       real(dbl), allocatable :: mu_mdm(:,:)             !< medium total dipole for each spheroid/cavity at current time
       real(dbl), allocatable :: m_or_v(:)               !< mut(:,1,1) or vts(:,1,1) depending on interaction
+      real(dbl), allocatable :: moldip(:)               !< mut(:,1,1) 
       real(dbl) :: mu_mdm_p(3,1)                        !< medium total dipole for each pole at current time
       real(dbl) ::  f_mdm(3)                            !< medium total field on the molecule center of charge
 ! Medium Propagation varibles: charges and dipoles
@@ -125,7 +126,7 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-      subroutine init_mdm(mu_t, f_tp, pot_t, potf_t, morv)
+      subroutine init_mdm(mu_t, f_tp, pot_t, potf_t, morv, mm)
 
       implicit none
 
@@ -134,14 +135,17 @@
       real(dbl), optional, intent(in)    :: pot_t(:)         !< (1:pedra_surf_n_tessere)     - molecular potential
       real(dbl), optional, intent(in)    :: potf_t(:)        !< (1:pedra_surf_n_tessere)     - external  potential
       real(dbl), intent(in)    :: morv(:)        !< mut(:,1,1) or pot(:,1,1)
+      real(dbl), intent(in)    :: mm(:)          !< mut(:,1,1) 
       integer(i4b) :: its,i,j
       character(20) :: name_f
 
+      allocate(moldip(3))
       if(global_prop_Fprop.eq."dip") then
         !> Dipole propagation
         ! SP: m_or_v used to initialize spheroid's rf
         allocate(m_or_v(3))
         m_or_v=morv
+        moldip=mm  
         ! SP: both these two calls should be split in init and init_prop
         call do_MPL_prop  !in BEM_medium
         call init_dip_and_field(mu_t)
@@ -273,7 +277,7 @@
          endif
        endif
        ! SP 230916: added to perform tests on the local/reaction field
-       if(global_sys_Ftest.eq."s-r".or.global_sys_Ftest.eq."n-r") mu_tp=m_or_v
+       if(global_sys_Ftest.eq."s-r".or.global_sys_Ftest.eq."n-r") mu_tp=moldip
        if(global_sys_Ftest.eq."n-r") then
          call do_ref(mu_tp)
        elseif(global_sys_Ftest.eq."n-l".or.global_sys_Ftest.eq."s-r".or.global_sys_Ftest.eq."s-l") then
@@ -696,6 +700,8 @@
        tp_myrank=0
 #endif
        allocate(q_mdm(pedra_surf_n_tessere))
+       ! qr_t allocated here for using get_qorf ini init_mdm
+       if (.not.allocated(qr_t)) allocate(qr_t(pedra_surf_n_tessere))
        if (.not.allocated(q0)) allocate (q0(pedra_surf_n_tessere))
        q0(:)=zero
        ! init the state and the RF before propagation
@@ -718,6 +724,7 @@
           enddo
        endif
        if(global_medium_Floc.eq."loc") then
+         allocate(qx_t(pedra_surf_n_tessere))
          allocate(qx0(pedra_surf_n_tessere))
          qx0(:)=matmul(BEM_Q0,potf_0)
        endif
@@ -731,6 +738,8 @@
        if(global_medium_Fmdm.eq.'cnan'.or.global_medium_Fmdm.eq.'qnan') then
          qtot0=zero
        endif
+       qr_t=q0
+       if(global_medium_Floc.eq."loc") qx_t=qx0
        return
 
       end subroutine init_charges
@@ -755,8 +764,6 @@
 #endif
 
        allocate(qd(pedra_surf_n_tessere))
-       allocate(qr_t(pedra_surf_n_tessere))
-       allocate(q_mdm(pedra_surf_n_tessere))
        allocate(qr_tp(pedra_surf_n_tessere))
        allocate(dqr_t(pedra_surf_n_tessere))
 ! SC 31/10/2016: in case of nanoparticle, normalize initial charges to zero
@@ -804,7 +811,6 @@
        dqr_t(:)=zero
        if(global_prop_Fint.eq."ons") call do_field_from_charges(qr_t,fr_0)
        if(global_medium_Floc.eq."loc") then
-         allocate(qx_t(pedra_surf_n_tessere))
          allocate(qx_tp(pedra_surf_n_tessere))
          allocate(dqx_t(pedra_surf_n_tessere))
          ! SP 11/05/24 changed the following for coherence

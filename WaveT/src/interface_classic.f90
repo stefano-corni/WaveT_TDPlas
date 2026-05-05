@@ -87,7 +87,7 @@ module interface_classic
       public set_q0charges,this_Fmdm_relax,export_mdm_qmcoup, &
 ! used by dissipation
              get_medium_dip,get_energies,init_environment,prop_medium,finalize_medium,this_Finit_int,this_Fprop,&
-             init_after_scf_in_wavet,& ! used bypropagate (also this_mix_coef)
+             init_after_scf_in_wavet,init_env_prop,& ! used bypropagate (also this_mix_coef)
              read_medium_input,&
 ! used by main and main_spectra
              mpibcast_read_medium,set_global_tdplas_in_wavet,&
@@ -236,26 +236,30 @@ module interface_classic
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  
 !------------------------------------------------------------------------
-      subroutine init_environment(c,mu,f,h,Fres)
+      subroutine init_environment(c,f)
         implicit none
-        character(flg), intent(in) :: Fres  !<                    - flag for restart                   
-        complex(cmp), intent(in) :: c(:)    !< (1:n_ci)           - molecular wavefunction coefficients
-        real(dbl)   , intent(in) :: mu(:)   !< (1:3)              - molecular dipole
-        real(dbl)   , intent(in) :: f(:)    !< (1:3)              - external field
-        real(dbl)   , intent(inout) :: h(:,:)  !< (1:n_ci,1:n_ci) - interaction hamiltonian
+        complex(cmp), intent(in)    :: c(:)    !< (1:n_ci)           - molecular wavefunction coefficients
+        real(dbl)   , intent(in)    :: f(:)    !< (1:3)              - external field
+        real(dbl), allocatable      :: mu(:)   !< (1:3)              - molecular dipole
         real(dbl), allocatable      :: r(:)    !< auxiliary 3d vector array
+        real(dbl), allocatable      :: mm(:)   !< molecular GS dipole      
         real(dbl), allocatable      :: pot(:)  !< (1:pedra_surf_n_tessere)     - molecular potential
         real(dbl), allocatable      :: potf(:) !< (1:pedra_surf_n_tessere)     - external potential
+        real(dbl), allocatable      :: h0(:,:) !< (1:n_ci,1:n_ci)     initial hamiltonian (deallocated)
         !> Allocating the interaction matrix h_mdm 
         allocate(h_mdm(n_ci,n_ci),h_mdm_0(n_ci,n_ci))
+        allocate(h0(n_ci,n_ci))
+        allocate(mu(3),mm(3))
+        h0=zero
         h_mdm=zero
-
+        h_mdm_0=zero
+        call do_dip_from_coeff(c,mu,n_ci)
 #ifdef TDPLAS
         !> Prepare for interaction with continuum medium
         if(this_Fprop.eq."dip") then
           !> build in principle the field coming from all dipoles
           !> initializing medium with molecular dipole and external field
-          call init_mdm(mu_t = mu, f_tp = f, morv=mut(:,1,1))
+          call init_mdm(mu_t = mu, f_tp = f, morv=mut(:,1,1), mm=mut(:,1,1))
           allocate(this_mat_f0(this_nts_act,this_nts_act))
           this_mat_f0=mat_f0
           this_fr0=fr_0
@@ -265,13 +269,11 @@ module interface_classic
           pot(:)=zero
           potf(:)=zero
           call do_pot_tdplas(c,mu,f,pot,potf)
-          call init_mdm(pot_t = pot, potf_t = potf, morv=quantum_vts(:,1,1))
+          call init_mdm(pot_t = pot, potf_t = potf, morv=quantum_vts(:,1,1), mm=mut(:,1,1))
           deallocate(pot)
           deallocate(potf)
           this_q0=q0
           ! CHECK THIS: these two calls must go in scf and QM_coupling
-          call prepare_mdm_for_scf
-          call prepare_mdm_for_quantum
         end if
 #endif
 #ifdef fqfm  
@@ -284,7 +286,10 @@ module interface_classic
 #endif
         !> update the OUT hamiltonian                 
         !> build the h_mdm interaction hamiltonian
-        call do_interaction(h)
+        ! h_mdm_0 is passed below only because it is equal to zero
+        call do_interaction(h0)
+        h_mdm_0=h_mdm
+        deallocate(h0)
         return
       end subroutine init_environment
 
@@ -455,7 +460,9 @@ module interface_classic
         !> compute that interaction with a continuum medium
         call do_int_tdplas
         !> compute that interaction with a discrete medium
+#ifdef fqfw 
         call do_int_fqfm
+#endif
         !> add the interaction term to the input hamiltonian
         h=h+h_mdm
 
@@ -1041,6 +1048,8 @@ module interface_classic
         real(dbl) :: mu(3)                  !> (1:3)           - molecular dipole                   
         ! CHECK THIS:  are we forgetting about something for the initialisation? If not this is not needed and 
         ! update_environment_scf can be called at the beginning of the scf cycle
+        ! WARNING!!!!! This has to be rewritten, pasted without logic
+        call prepare_mdm_for_scf
         call update_environment_scf(c,f)
         ! SP 15/05/24 before in propagate, now done in initialize
         !trans_dipoles = mut
@@ -1065,6 +1074,16 @@ module interface_classic
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
       end subroutine init_environment_scf
+
+
+
+
+
+      subroutine init_environment_quantum
+        implicit none
+        call prepare_mdm_for_quantum
+        return
+      end subroutine init_environment_quantum
 
 
 

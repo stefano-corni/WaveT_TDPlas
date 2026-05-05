@@ -57,11 +57,6 @@
        complex(cmp), allocatable   :: ccexp(:) !SC 31/10/17: added to store exp(-ui*e(:)*dt), used in propagation
        character(20)               :: name_e,name_c,name_d,name_mu, &
                                       name_m ! MM
-
-       ! GG: 11/03/2019
-       real(dbl), allocatable      :: q_or_f(:) !< reaction field or reaction-field polarization charges
-       real(dbl), allocatable      :: pot_prev(:) 
-
        !MR
        real :: start, finish
 

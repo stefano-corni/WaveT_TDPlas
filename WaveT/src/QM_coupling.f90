@@ -76,7 +76,7 @@
 #ifndef MPI
        myrank=0
 #endif
-       !> Allocate and initialize matrices
+       !> Allocate and initialize matrices here
        call init_QM_coupling(nstates_qm)
        if (myrank.eq.0) write(6,*) "QM_coupling correcty initialized"
        !> Test: use potentials from dipoles    
@@ -156,6 +156,8 @@
       implicit none
        integer(i4b), intent(in) :: nstates_ini 
        FQBEM='prop' !enforces use of correct QM_coupling flag
+       !> Allocate and initialize matrices in the interface
+       call init_environment_quantum
        ! grep info from TDPlas          
        call export_mdm_qmcoup
        Hqm_dim=nstates_ini
