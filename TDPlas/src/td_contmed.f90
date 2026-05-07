@@ -50,7 +50,6 @@
       real(dbl), allocatable :: q_mdm(:)                !< medium total charges at current time
       real(dbl), allocatable :: mu_mdm(:,:)             !< medium total dipole for each spheroid/cavity at current time
       real(dbl), allocatable :: m_or_v(:)               !< mut(:,1,1) or vts(:,1,1) depending on interaction
-      real(dbl), allocatable :: moldip(:)               !< mut(:,1,1) 
       real(dbl) :: mu_mdm_p(3,1)                        !< medium total dipole for each pole at current time
       real(dbl) ::  f_mdm(3)                            !< medium total field on the molecule center of charge
 ! Medium Propagation varibles: charges and dipoles
@@ -105,12 +104,12 @@
       private
 !SC 07/02/16: added output_gneq
       public init_mdm,prop_mdm,finalize_mdm,qtot,ref,get_gneq, &
-             get_ons,get_mdm_dip,set_charges,&
+             get_ons,get_mdm_dip,set_qorf,&
              init_after_scf,mpibcast_readio_mdm,fr_0,q0, &
              set_potential, init_potential, prop_chr, init_charges,&
              get_propagated_charges, get_corrected_propagated_charges,&
              init_vv_propagator,get_qr_fr,deallocate_potential,       &
-             get_qorf,get_qorf0,       &
+             get_qorf,get_qorf0,set_charges,       &
              finalize_prop, clean_all_ocpy_tdcont, &
              do_charges_from_pot, do_Rfield_from_dip,init_mdm_prop
 
@@ -126,7 +125,7 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-      subroutine init_mdm(mu_t, f_tp, pot_t, potf_t, morv, mm)
+      subroutine init_mdm(mu_t, f_tp, pot_t, potf_t, morv)
 
       implicit none
 
@@ -135,17 +134,13 @@
       real(dbl), optional, intent(in)    :: pot_t(:)         !< (1:pedra_surf_n_tessere)     - molecular potential
       real(dbl), optional, intent(in)    :: potf_t(:)        !< (1:pedra_surf_n_tessere)     - external  potential
       real(dbl), intent(in)    :: morv(:)        !< mut(:,1,1) or pot(:,1,1)
-      real(dbl), intent(in)    :: mm(:)          !< mut(:,1,1) 
       integer(i4b) :: its,i,j
-      character(20) :: name_f
 
-      allocate(moldip(3))
       if(global_prop_Fprop.eq."dip") then
         !> Dipole propagation
         ! SP: m_or_v used to initialize spheroid's rf
         allocate(m_or_v(3))
         m_or_v=morv
-        moldip=mm  
         ! SP: both these two calls should be split in init and init_prop
         call do_MPL_prop  !in BEM_medium
         call init_dip_and_field(mu_t)
@@ -277,9 +272,9 @@
          endif
        endif
        ! SP 230916: added to perform tests on the local/reaction field
-       if(global_sys_Ftest.eq."s-r".or.global_sys_Ftest.eq."n-r") mu_tp=moldip
+       !if(global_sys_Ftest.eq."s-r".or.global_sys_Ftest.eq."n-r") mu_tp=mu_t
        if(global_sys_Ftest.eq."n-r") then
-         call do_ref(mu_tp)
+         call do_ref(mu_t)
        elseif(global_sys_Ftest.eq."n-l".or.global_sys_Ftest.eq."s-r".or.global_sys_Ftest.eq."s-l") then
          call do_ref
        end if
@@ -379,13 +374,25 @@
 !------------------------------------------------------------------------
       subroutine set_charges(q)
 
-       real(dbl),intent(in):: q(pedra_surf_n_tessere)
-
+       real(dbl),intent(in):: q(:)
        qr_t=q
-
        return
 
       end subroutine set_charges
+
+!------------------------------------------------------------------------
+! @brief Set charges
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+      subroutine set_qorf(pot)
+
+       real(dbl),intent(in):: pot(:)
+       call do_charges_from_pot(pot,qr_t)
+       return
+
+      end subroutine set_qorf
 
 !------------------------------------------------------------------------
 ! @brief  Get the current reaction- and local-field charges or Onsager reaction fields
@@ -2273,7 +2280,6 @@
            dist=sqrt(dot_product(pos,pos))
            dp=dot_product(mu,pos)
            f(:)=(3*dp*pos(:)/dist**2-mu(:))/dist**3
-           !write(6,*) "pos(1), mu(1), dp, f(1)", pos(1), mu(1), dp, f(1)
            ref=f(1)*rr*rr*rr
          ! Spherical Nanoparticle local field
          case ("n-l")

@@ -68,6 +68,7 @@
          ! Diagonalize Hamiltonian           
          eigt_c=Htot
          call diag_mat_in_wavet(eigt_c,eigv_c,n_ci)       
+         write(6,*) "Eigv ", eigv_c(:)
          ! Transform the new state on the old basis      
          ! c below contains new state on the old basis (complex)
          ! c_c below contains new state (real)  
@@ -246,7 +247,7 @@
 !------------------------------------------------------------------------
       subroutine check_conv(mxe,mxv,Mdim)
 
-       real(dbl),intent(inout) :: mxe,mxv
+       real(dbl),intent(out) :: mxe,mxv
        integer(i4b),intent(in) :: Mdim 
        integer(i4b) :: i,j
        real(dbl):: diff               

@@ -60,7 +60,7 @@
          write(6,*) "Initializing the environment"
          call init_environment(c_i,fmax(:,1))
        endif
-       if (this_Finit_int.eq."scf") then
+       if (this_Finit_int.eq."sce") then
          !> SCF initialisation 
          call do_scf(c_i)
        elseif (this_Finit_int.eq."qmt") then
@@ -100,8 +100,7 @@
        implicit none
        ! The charge mode w=0 is counted in this_nmodes for testing purposes
        if (Fmdm.ne."vac") then
-         if (this_Finit_int.eq."qmt") call do_BEM_quant_in_wavet
-         if (this_Finit_int.eq."scf") then
+         if (this_Finit_int.eq."sce") then
            write(6,*)"System initialised with self-consistent procedure"
            nstates=n_ci 
          elseif (this_Finit_int.eq."nsc") then
@@ -109,6 +108,7 @@
            nstates=n_ci 
          elseif (this_Finit_int.eq."qmt") then
            write(6,*) "System initialised with Quantum Coupling"
+           call do_BEM_quant_in_wavet
            if(global_sys_Ftest.eq."qmt") then 
              this_nmodes=3
              this_qmmodes(1)=2 
@@ -116,6 +116,10 @@
              this_qmmodes(3)=4 
            endif
            nstates=n_ci*(this_nmodes+1)
+         else
+           write(6,*)"WARNING: No initialisation specified, "
+           write(6,*)"  using input file initialisation. "
+           nstates=n_ci 
          endif
        ! here one may add a scf initialisation with a static electric
        ! field

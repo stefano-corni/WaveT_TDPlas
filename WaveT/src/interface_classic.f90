@@ -2,10 +2,10 @@ module interface_classic
       use constants
       use readio
 #ifdef TDPLAS
-      use tdplas, only: set_charges,global_prop_Fmdm_relax,&
+      use tdplas, only: set_qorf,global_prop_Fmdm_relax,&
 ! used by dissipation
                         get_mdm_dip,get_gneq,init_mdm,prop_mdm,finalize_mdm,&
-                        init_after_scf,& 
+                        init_after_scf,set_charges,& 
 ! used by propagate
                         readio_and_init_tdplas_for_wt,&
 ! used by main and main_spectra
@@ -84,9 +84,9 @@ module interface_classic
       real(dbl), allocatable :: r_atoms(:,:)
       real(dbl), allocatable :: vint_atoms(:,:,:)
       real(dbl), allocatable :: fint_atoms(:,:,:,:)
-      public set_q0charges,this_Fmdm_relax,export_mdm_qmcoup, &
+      public this_Fmdm_relax,export_mdm_qmcoup, &
 ! used by dissipation
-             get_medium_dip,get_energies,init_environment,prop_medium,finalize_medium,this_Finit_int,this_Fprop,&
+             set_q0charges,get_medium_dip,get_energies,init_environment,prop_medium,finalize_medium,this_Finit_int,this_Fprop,&
              init_after_scf_in_wavet,init_env_prop,& ! used bypropagate (also this_mix_coef)
              read_medium_input,&
 ! used by main and main_spectra
@@ -106,13 +106,13 @@ module interface_classic
       contains
   
       ! begin - wrapper subroutines
-      subroutine set_q0charges
 !------------------------------------------------------------------------
 ! @brief Bridge subroutine to set charges qr_t to q0 during propagation 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
+      subroutine set_q0charges
         implicit none
 #ifdef TDPLAS
         call set_charges(this_q0)
@@ -121,7 +121,7 @@ module interface_classic
 #endif
         return
       end subroutine set_q0charges
-      
+
 !------------------------------------------------------------------------
 ! @brief Set the dipole(t) in Sdip for spectra 
 !
@@ -242,14 +242,13 @@ module interface_classic
         real(dbl)   , intent(in)    :: f(:)    !< (1:3)              - external field
         real(dbl), allocatable      :: mu(:)   !< (1:3)              - molecular dipole
         real(dbl), allocatable      :: r(:)    !< auxiliary 3d vector array
-        real(dbl), allocatable      :: mm(:)   !< molecular GS dipole      
         real(dbl), allocatable      :: pot(:)  !< (1:pedra_surf_n_tessere)     - molecular potential
         real(dbl), allocatable      :: potf(:) !< (1:pedra_surf_n_tessere)     - external potential
         real(dbl), allocatable      :: h0(:,:) !< (1:n_ci,1:n_ci)     initial hamiltonian (deallocated)
         !> Allocating the interaction matrix h_mdm 
         allocate(h_mdm(n_ci,n_ci),h_mdm_0(n_ci,n_ci))
         allocate(h0(n_ci,n_ci))
-        allocate(mu(3),mm(3))
+        allocate(mu(3))
         h0=zero
         h_mdm=zero
         h_mdm_0=zero
@@ -259,21 +258,23 @@ module interface_classic
         if(this_Fprop.eq."dip") then
           !> build in principle the field coming from all dipoles
           !> initializing medium with molecular dipole and external field
-          call init_mdm(mu_t = mu, f_tp = f, morv=mut(:,1,1), mm=mut(:,1,1))
+          call init_mdm(mu_t = mu, f_tp = f, morv=mut(:,1,1))
           allocate(this_mat_f0(this_nts_act,this_nts_act))
           this_mat_f0=mat_f0
           this_fr0=fr_0
         else
           !> build the potential on the surface from all charges and dipoles
           allocate(pot(this_nts_act),potf(this_nts_act))
+          allocate(this_q0(this_nts_act),this_qx0(this_nts_act))
           pot(:)=zero
           potf(:)=zero
           call do_pot_tdplas(c,mu,f,pot,potf)
-          call init_mdm(pot_t = pot, potf_t = potf, morv=quantum_vts(:,1,1), mm=mut(:,1,1))
+          call init_mdm(pot_t = pot, potf_t = potf, morv=quantum_vts(:,1,1))
+          !SP07/05/26: commented the following, initial charges set in tdplas
+          !call set_qorf(pot)
+          call get_qorf(this_q0)
           deallocate(pot)
           deallocate(potf)
-          this_q0=q0
-          ! CHECK THIS: these two calls must go in scf and QM_coupling
         end if
 #endif
 #ifdef fqfm  
@@ -286,7 +287,6 @@ module interface_classic
 #endif
         !> update the OUT hamiltonian                 
         !> build the h_mdm interaction hamiltonian
-        ! h_mdm_0 is passed below only because it is equal to zero
         call do_interaction(h0)
         h_mdm_0=h_mdm
         deallocate(h0)
@@ -317,7 +317,7 @@ module interface_classic
           call init_mdm_prop(mu_t = mu, f_tp = f)
         else
           !> build the potential on the surface from all charges and dipoles
-          allocate(pot(pedra_surf_n_tessere),potf(pedra_surf_n_tessere))
+          allocate(pot(this_nts_act),potf(this_nts_act))
           pot(:)=zero
           potf(:)=zero
           call do_pot_tdplas(c,mu,f,pot,potf)
@@ -446,6 +446,10 @@ module interface_classic
       end subroutine do_pot_fld_fqfm
 
 
+
+
+
+
 !------------------------------------------------------------------------
 ! @brief Initialize medium for quantum states initialisation e.g. scf or 
 !        quantum coupling.
@@ -458,7 +462,9 @@ module interface_classic
         real(dbl), intent(INOUT) :: h(n_ci,n_ci) !<   
 
         !> compute that interaction with a continuum medium
+#ifdef TDPLAS
         call do_int_tdplas
+#endif
         !> compute that interaction with a discrete medium
 #ifdef fqfw 
         call do_int_fqfm
@@ -665,9 +671,11 @@ module interface_classic
        allocate(pot(this_nts_act))
        allocate(potf(this_nts_act))
        allocate(q(this_nts_act))
+       ! With the following call all potential (mol+fqfm) is included
        call do_pot_tdplas(c,mu,f,pot,potf)
        ! SP 11/05/24: shall we do the matmul operation in td_contmed? YES
-       call do_charges_from_pot(pot,q)
+       call set_qorf(pot)
+       call get_qorf(q)
        this_q0=(1.-this_mix_coef)*this_q0+this_mix_coef*q
        call do_charges_from_pot(potf,q)
        this_qx0=(1.-this_mix_coef)*this_qx0+this_mix_coef*q
@@ -827,6 +835,8 @@ module interface_classic
           else
            allocate(pot(this_nts_act))
            allocate(potf(this_nts_act))
+           pot=zero
+           potf=zero
            allocate(r(3,this_nts_act))
            r(1,:)=this_cts_act(:)%x
            r(2,:)=this_cts_act(:)%y
@@ -1202,7 +1212,7 @@ module interface_classic
        complex(cmp), save                 :: cc
 
 #ifndef OMP
-       do i=1,this_nts_act
+       do i=1,n
           pot(i)=pot(i)+dot_product(c,matmul(v(i,:,:),c))
        enddo
 #endif
