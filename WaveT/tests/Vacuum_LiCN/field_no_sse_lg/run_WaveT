@@ -28,4 +28,4 @@ ROOT=$SLURM_SUBMIT_DIR
 #
 
 cd $ROOT
-mpirun /home/sanchez/WaveT/WaveT/bin/WaveT-parallel.x < tdcis.inp > output
+mpirun /home/sanchez/WaveT/WaveT/bin/WaveT-parallel.x < tdcis.inp > out.dat
