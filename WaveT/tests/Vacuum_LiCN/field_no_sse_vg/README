@@ -1,0 +1,2 @@
+In this test case, the velocity gauge was used (`gauge='vg'` in namelist `field`).
+Test results are located in the `out` folder.

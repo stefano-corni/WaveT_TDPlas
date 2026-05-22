@@ -21,7 +21,9 @@ module dissipation
   public norm, dtot, dsp, dnr, dde, add_dis_m, add_dis_nm, loss_norm
   !Commented by: Manuel Sanchez 09/04/2026
   !public quan_jump, add_h_rnd, define_h_dis, build_gamma_sum_from_gamma_nr, build_rp_random_matrix, build_gamma_nr_matrix, sqrt_gamma_nr_matrix, rnd_noise, add_h_rnd2, disp
-  public quan_jump, define_h_dis, build_gamma_sum_from_gamma_nr, build_rp_random_matrix, build_gamma_nr_matrix, sqrt_gamma_nr_matrix, disp 
+  public quan_jump, define_h_dis, build_gamma_sum_from_gamma_nr, &
+         build_rp_random_matrix, build_gamma_nr_matrix, &
+         sqrt_gamma_nr_matrix, disp
   public random_seq
 !
   contains
