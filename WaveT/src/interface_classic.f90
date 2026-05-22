@@ -2,7 +2,7 @@ module interface_classic
       use constants
       use readio
 #ifdef TDPLAS
-      use tdplas, only: set_qorf,global_prop_Fmdm_relax,&
+      use tdplas, only: set_qorf,set_qorf_pot,global_prop_Fmdm_relax,&
 ! used by dissipation
                         get_mdm_dip,get_gneq,init_mdm,prop_mdm,finalize_mdm,&
                         init_after_scf,set_charges,& 
@@ -96,7 +96,7 @@ module interface_classic
              this_mix_coef,diag_mat_in_wavet,&
              do_field_from_charges_in_wavet, this_nts_act, &
 ! used in scf
-             init_environment_scf,update_environment_scf,out_environment_scf,&
+             update_environment_scf,out_environment_scf,&
              this_BEM_W2,this_Ftest,this_eps_w0,this_eps_A,this_BEM_Modes,this_sfe_act,&
              do_BEM_quant_in_wavet,&
              this_Fmop,this_imod,this_nprint,this_max_mod_todiag,deallocate_BEM_public_in_wavet,&
@@ -261,7 +261,7 @@ module interface_classic
           call init_mdm(mu_t = mu, f_tp = f, morv=mut(:,1,1))
           allocate(this_mat_f0(this_nts_act,this_nts_act))
           this_mat_f0=mat_f0
-          this_fr0=fr_0
+          call get_qorf(this_fr0)
         else
           !> build the potential on the surface from all charges and dipoles
           allocate(pot(this_nts_act),potf(this_nts_act))
@@ -270,9 +270,9 @@ module interface_classic
           potf(:)=zero
           call do_pot_tdplas(c,mu,f,pot,potf)
           call init_mdm(pot_t = pot, potf_t = potf, morv=quantum_vts(:,1,1))
-          !SP07/05/26: commented the following, initial charges set in tdplas
-          !call set_qorf(pot)
+          !SP07/05/26 initial charges set in tdplas
           call get_qorf(this_q0)
+          write(6,*) "q0 init ", this_q0(10)
           deallocate(pot)
           deallocate(potf)
         end if
@@ -494,6 +494,7 @@ module interface_classic
           allocate(qorf(this_nts_act))
         end if
         !> get charges from td_contmed               
+        write(6,*) "get_qorf do_int_tdplas"
         call get_qorf(qorf)
         !> construct the interaction hamiltonian h_mdm
         call do_interaction_cont(qorf,h_mdm)
@@ -644,11 +645,12 @@ module interface_classic
        real(dbl), allocatable :: mf(:)        !< (1:3)      - field                               
        ! SP 180226 the following should stay in tdplas     
        allocate(mf(3))
-       call do_Rfield_from_dip(mu,mf)
+       call set_qorf_pot(mu,f)
+       call get_qorf(mf)
        !fr_0=(1.-this_mix_coef)*fr_0+this_mix_coef*matmul(this_mat_f0,mu)
        this_fr0=(1.-this_mix_coef)*this_fr0+this_mix_coef*mf
-       this_fx0=(1.-this_mix_coef)*this_fx0+this_mix_coef*f
        deallocate(mf)
+       call set_qorf(this_fr0)
        return
       end subroutine update_BEM_field
 
@@ -673,18 +675,20 @@ module interface_classic
        allocate(q(this_nts_act))
        ! With the following call all potential (mol+fqfm) is included
        call do_pot_tdplas(c,mu,f,pot,potf)
-       ! SP 11/05/24: shall we do the matmul operation in td_contmed? YES
-       call set_qorf(pot)
+       ! Set charges in TDPlas using the potential in pot                
+       call set_qorf_pot(pot,potf)
+       ! Get charges from TDPlas 
        call get_qorf(q)
+       write(6,*) "q and q0 ", q(10), this_q0(10)
+       this_mix_coef=0.05
        this_q0=(1.-this_mix_coef)*this_q0+this_mix_coef*q
-       call do_charges_from_pot(potf,q)
-       this_qx0=(1.-this_mix_coef)*this_qx0+this_mix_coef*q
        deallocate(pot,potf,q) 
        ! SC 12/8/2016: apparently for NP, charge compensation is needed
-       if (Fmdm.eq.'cnan'.or.Fmdm.eq.'qnan') then
-         this_q0=this_q0-sum(this_q0)/this_nts_act
-         this_qx0=this_qx0-sum(this_qx0)/this_nts_act
-       endif
+       !if (Fmdm.eq.'cnan'.or.Fmdm.eq.'qnan') then
+       !  this_q0=this_q0-sum(this_q0)/this_nts_act
+       !endif
+       write(6,*) "q and q0 set ", this_q0(10)
+       call set_qorf(this_q0)
        return
       end subroutine update_BEM_charges
 
@@ -1046,44 +1050,6 @@ module interface_classic
 #endif
 
       end subroutine get_vts_from_dip
-
-
-
-
-
-      subroutine init_environment_scf(c,f)
-        implicit none
-        complex(cmp), intent(in) :: c(n_ci) !> (1:n_ci)           - molecular wavefunction coefficients
-        real(dbl), intent(in) :: f(3)       !> (1:3)           - external field                     
-        real(dbl) :: mu(3)                  !> (1:3)           - molecular dipole                   
-        ! CHECK THIS:  are we forgetting about something for the initialisation? If not this is not needed and 
-        ! update_environment_scf can be called at the beginning of the scf cycle
-        ! WARNING!!!!! This has to be rewritten, pasted without logic
-        call prepare_mdm_for_scf
-        call update_environment_scf(c,f)
-        ! SP 15/05/24 before in propagate, now done in initialize
-        !trans_dipoles = mut
-        !energies=e_ci 
-        !if(Fmag.eq.'mag') then 
-        !    trans_mag=lt
-        !endif
-        !WARNING SP 020326: check the following lines to call maybe after scf!
-        !! compute the molecular dipole
-        ! call do_dip_from_coeff(c,mu,nstates)
-        ! if(this_Fprop.eq."dip") then
-        !  call init_after_scf(mu)
-        !else
-        !  call do_pot_from_coeff(c,pot)
-        !  call init_after_scf(pot)
-        !endif
-#ifdef TDPLAS
-        ! SP 130226 shall we use q0 or get it from td_contmed as follows?
-        !call preparing_for_scf(mix, pot_or_mu)
-        !call get_qr_fr(q_or_f)
-#else
-        stop "Error: TDPlas library has not been linked to WaveT!"
-#endif
-      end subroutine init_environment_scf
 
 
 

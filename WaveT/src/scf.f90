@@ -56,11 +56,13 @@
        endif
        thrv=10**(-this_thrshld+2)
        thre=10**(-this_thrshld)
-       if (myrank.eq.0) write(6,*) "Threshold ", thrv,thre
+       if (myrank.eq.0) write(6,*) "Thresholds ", thrv,thre
        ! Initialize/allocate
+       if (myrank.eq.0) write(6,*) "Initialising SCF "
        call init_scf 
-       if (Fmdm.ne."vac") call init_environment_scf(c,f)
+       if (Fmdm.ne."vac") call update_environment_scf(c,f)
        ! scf cycle
+       if (myrank.eq.0) write(6,*) "Starting SCF Cycle"
        do while (docycle.and.ncyc.le.this_ncycmax) 
          ! Build the diagonal part of the Hamiltonian 
          call do_htot_ene
@@ -86,8 +88,8 @@
            ! in case of degeneracy the variation of eigenvector
            ! can be erratic
            if (maxe.le.thre) docycle=.false.         
-           if (myrank.eq.0) write(6,*) "cycle ", ncyc, e_scf, e_ini
          endif
+         if (myrank.eq.0) write(6,*) "cycle ", ncyc, e_scf, e_ini
          eigt_cp=eigt_c
          eigv_cp=eigv_c
          ncyc=ncyc+1 

@@ -104,7 +104,7 @@
       private
 !SC 07/02/16: added output_gneq
       public init_mdm,prop_mdm,finalize_mdm,qtot,ref,get_gneq, &
-             get_ons,get_mdm_dip,set_qorf,&
+             get_ons,get_mdm_dip,set_qorf_pot,set_qorf,&
              init_after_scf,mpibcast_readio_mdm,fr_0,q0, &
              set_potential, init_potential, prop_chr, init_charges,&
              get_propagated_charges, get_corrected_propagated_charges,&
@@ -386,10 +386,41 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-      subroutine set_qorf(pot)
+      subroutine set_qorf_pot(pot,potf)
 
        real(dbl),intent(in):: pot(:)
-       call do_charges_from_pot(pot,qr_t)
+       real(dbl),intent(in):: potf(:)
+       integer(i4b) :: i
+
+       if (global_prop_Fint.eq."ons") then
+         call do_Rfield_from_dip(pot,fr_t)
+         if(global_medium_Floc.eq."loc") then 
+           fr_t=fr_t+potf
+         endif
+       else 
+         call do_charges_from_pot(pot,qr_t)
+         write(6,*) "q set ", qr_t(10)
+         if(global_medium_Floc.eq."loc") call do_charges_from_pot(potf,qx_t)
+       !q=q+(qtot0-sum(q))/pedra_surf_n_tessere
+       endif
+       return
+
+      end subroutine set_qorf_pot
+
+!------------------------------------------------------------------------
+! @brief Set charges
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+      subroutine set_qorf(q)
+
+       real(dbl),intent(in):: q(:)
+       if (global_prop_Fint.eq."ons") then
+         fr_t=q
+       else
+         qr_t=q
+       endif
        return
 
       end subroutine set_qorf
@@ -435,14 +466,19 @@
           q=fr_t-fr_0
           if(global_medium_Floc.eq."loc") q=q+fx_t  
          else 
+          write(6,*) "Qq ", qr_t(10),q0(10)
           q=qr_t-q0
-          if(global_medium_Floc.eq."loc") q=q+qx_t(:)
+          if(global_medium_Floc.eq."loc") then 
+            q=q+qx_t(:)
+            write(6,*) "Qqx ", qx_t(1)
+          endif
           ! SC 31/10/2016: avoid including interaction with an unwanted net charge
           q=q+(qtot0-sum(q))/pedra_surf_n_tessere
          endif
          if(global_sys_Fdeb.eq."off") q=0
          ! SP 18/05/20 test purposes
          if(global_sys_Ftest.eq."n-r") q=q0
+          write(6,*) "Qq net ", qr_t(10),q0(10),qtot0,sum(q)
          return
         end subroutine get_qorf
 
