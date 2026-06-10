@@ -680,7 +680,7 @@ module interface_classic
        ! Get charges from TDPlas 
        call get_qorf(q)
        write(6,*) "q and q0 ", q(10), this_q0(10)
-       this_mix_coef=0.05
+       this_mix_coef=0.01
        this_q0=(1.-this_mix_coef)*this_q0+this_mix_coef*q
        deallocate(pot,potf,q) 
        ! SC 12/8/2016: apparently for NP, charge compensation is needed
