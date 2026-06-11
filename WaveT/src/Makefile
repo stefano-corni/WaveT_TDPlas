@@ -171,13 +171,16 @@ main.o: main.f90
 main_spectra.o: main_spectra.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
+WTMathTools.o: WTMathTools.f90
+	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
+
 # dependencies
 
 random.o:
 
 constants.o:
 
-interface_classic.o: constants.o
+interface_classic.o: constants.o WTMathTools.o
 
 readio.o: random.o
 
@@ -204,6 +207,8 @@ vib_tool.o: readio.o vib.o
 coherence_tool.o:
 
 fft_tool.o:
+
+WTMathTools.o: readio.o constants.o
 
 pop_coh_tool.o:
 

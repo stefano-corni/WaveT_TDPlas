@@ -62,7 +62,7 @@
        endif
        if (this_Finit_int.eq."sce") then
          !> SCF initialisation 
-         call do_scf(c_i)
+         call do_scf
        elseif (this_Finit_int.eq."qmt") then
          !> Quantum Coupling initialisation 
          call do_QM_coupling(nstates,energies,trans_dipoles)

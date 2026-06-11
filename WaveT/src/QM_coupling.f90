@@ -81,8 +81,8 @@
        if (myrank.eq.0) write(6,*) "QM_coupling correcty initialized"
        !> Test: use potentials from dipoles    
        if(this_Ftest.eq."qmt") then
-         if (allocated(this_vts)) deallocate(this_vts)
-         allocate (this_vts(this_nts_act,n_ci,n_ci))
+         if (allocated(quantum_vts)) deallocate(quantum_vts)
+         allocate (quantum_vts(this_nts_act,n_ci,n_ci))
          call get_vts_from_dip
          if (myrank.eq.0) write(6,*) "Integrals from dipoles computed"
        endif
@@ -419,7 +419,7 @@
        do i=1,this_nmodes   
          do j=1,n_ci
            do k=j,n_ci
-             g(i,k,j)=dot_product(qg(i,:),this_vts(:,k,j))
+             g(i,k,j)=dot_product(qg(i,:),quantum_vts(:,k,j))
            enddo
          enddo
        enddo

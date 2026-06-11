@@ -18,7 +18,9 @@
       real(dbl) :: maxv                      !< Max values if eigenvectors differences wrt previous cycle                   
       real(dbl) :: maxe                      !< Max values if eigenvalues  differences wrt previous cycle       
       ! Working arrays
-      real(dbl), allocatable :: c_c(:)       !< Temporary array containing coefficients in old basis 
+      complex(cmp), allocatable :: c_old(:)  !< Temporary array containing coefficients in old basis 
+      complex(cmp), allocatable :: c_new(:)  !< Temporary array containing coefficients in old basis 
+       real(dbl) :: e_scf, e_ini                !< GS energies
 
       save
       private
@@ -35,14 +37,12 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-      subroutine do_scf(c)
+      subroutine do_scf
 
        implicit none
-       complex(cmp), intent(INOUT) :: c(:)      !< basis state coefficients
        integer(i4b) :: ncyc=1                   !< cycle number 
        logical :: docycle=.true.                !< choice on continue cycling
        real(dbl) :: thre,thrv                   !< thresholds
-       real(dbl) :: e_scf, e_ini                !< GS energies
        real(dbl) :: f(3)                        !< external field this should be fixed        
        integer(i4b):: max_p(1),i   
 
@@ -60,11 +60,12 @@
        ! Initialize/allocate
        if (myrank.eq.0) write(6,*) "Initialising SCF "
        call init_scf 
-       if (Fmdm.ne."vac") call update_environment_scf(c,f)
+       if (Fmdm.ne."vac") call update_environment_scf(c_i,f)
        ! scf cycle
        if (myrank.eq.0) write(6,*) "Starting SCF Cycle"
        do while (docycle.and.ncyc.le.this_ncycmax) 
          ! Build the diagonal part of the Hamiltonian 
+         Htot=zero
          call do_htot_ene
          if (Fmdm.ne."vac") call do_interaction(Htot)
          ! Diagonalize Hamiltonian           
@@ -72,14 +73,16 @@
          call diag_mat_in_wavet(eigt_c,eigv_c,n_ci)       
          write(6,*) "Eigv ", eigv_c(:)
          ! Transform the new state on the old basis      
-         ! c below contains new state on the old basis (complex)
-         ! c_c below contains new state (real)  
-         call do_c_oldbasis(eigt_c,c_c,c,n_ci)
+         call do_c_oldbasis
          ! compute scf and initial energies
-         call update_energies(e_scf,e_ini,eigv_c,n_ci)
+         call update_energies
          ! Update charges or field with new coefficients, 
-         ! update_environment takes complex coefficients
-         if (Fmdm.ne."vac") call update_environment_scf(c,f)
+         ! Test
+         !call transform_dipoles
+         !if(Fmdm.ne."vac") call transform_environment_scf(eigt_c)
+         !if (Fmdm.ne."vac") call update_environment_scf(c_new,f)
+         ! Test
+         if (Fmdm.ne."vac") call update_environment_scf(c_old,f)
          ! Check convergence                                
          if (ncyc.gt.2) then 
            call check_conv(maxe,maxv,n_ci)       
@@ -102,18 +105,14 @@
        ! Write-out integrals/properties in the new basis 
        call transform_dipoles
        if(Fmdm.ne."vac") call transform_environment_scf(eigt_c)
+       c_i=c_new
+       e_ci=eigv_c
        if (myrank.eq.0) then
           if(Fmdm.ne."vac") call out_environment_scf
           call out_dipoles
           call out_energies
        endif
-       ! find the new eigenvector that is most similar to the old one
-       ! c_c below contains new state (real)  
-       call do_c_oldbasis(eigt_c,c_c,c,n_ci)
        ! Update the initial coefficients      
-       do i=1,n_ci
-         c_i(i)=complex(c_c(i),0.d0)
-       end do
 
        return
 
@@ -130,8 +129,9 @@
        allocate(eigv_c(n_ci),eigt_c(n_ci,n_ci))
        allocate(eigv_cp(n_ci),eigt_cp(n_ci,n_ci))
        allocate(Htot(n_ci,n_ci))
-       allocate(c_c(n_ci))
-
+       allocate(c_old(n_ci))
+       allocate(c_new(n_ci))
+       eigv_c=e_ci
        return
 
       end subroutine init_scf
@@ -147,7 +147,8 @@
        deallocate(eigv_c,eigt_c)
        deallocate(eigv_cp,eigt_cp)
        deallocate(Htot)
-       deallocate(c_c)
+       deallocate(c_old)
+       deallocate(c_new)
 
        return
 
@@ -163,32 +164,38 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-      subroutine do_c_oldbasis(eigt,c,c_old,n)
+      subroutine do_c_oldbasis
 
        implicit none       
-       integer(i4b),intent(IN) :: n             
-       real(dbl), intent(IN) :: eigt(n,n)     !< eigenvalues-transformation matrix              
-       real(dbl), intent(OUT) :: c(n)         !< coefficients
-       complex(cmp), intent(OUT) :: c_old(n)     !< basis state coefficients
        integer(i4b):: max_p(1),i    
-       real(dbl), allocatable :: c_tmp(:)         !< coefficients
+       real(dbl), allocatable :: c_tmp(:)     !< coefficients
 
 #ifndef MPI
        myrank=0
 #endif
-       allocate(c_tmp(n))
+       allocate(c_tmp(n_ci))
+       c_tmp(:)=real(c_i(:))
        ! find the new eigenvector that is most similar to the old one
-       c_tmp=abs(matmul(c_i,eigt))
+       c_tmp=abs(matmul(c_tmp,eigt_c))
+       ! c_tmp here contains the coefficient of the old occupied state
+       ! for each of the new states
        max_p=maxloc(c_tmp)
+       ! max_p is the position of the maximum value in c_tmp
        if(this_Fwrite.eq."high") then 
           if (myrank.eq.0) write(6,*) 'maxloc',max_p(1)
        endif
-       c_old=0.d0
-       c_old(max_p(1))=1.d0
-       ! c_old below is the new state on the basis of the old states  
-       c_tmp=matmul(eigt_c,c_old)
-       do i=1,n
-          c(i)=complex(c_tmp(i),0.d0)
+       if (max_p(1).ne.1) stop
+       c_tmp=0.d0
+       c_tmp(max_p(1))=1.d0
+       ! c_tmp now has value equal 1 only for the new eigenvector that
+       ! is most similar to the old one
+       do i=1,n_ci
+          c_new(i)=complex(c_tmp(i),0.d0)
+       enddo
+       ! c_tmp below is the new state on the basis of the old states  
+       c_tmp=matmul(eigt_c,c_tmp)
+       do i=1,n_ci
+          c_old(i)=complex(c_tmp(i),0.d0)
        enddo
        ! write the state
        if(this_Fwrite.eq."high") then
@@ -196,7 +203,7 @@
              write(6,*) "State on the basis of original states"
          endif
          do i=1,n_ci
-          if (myrank.eq.0) write(6,*) i, c(i)
+          if (myrank.eq.0) write(6,*) i, c_old(i)
          enddo
          write(6,*)
        endif
@@ -215,6 +222,7 @@
       subroutine do_htot_ene
        integer(4)::i,j,k 
         do j=1,n_ci
+          !Htot(j,j)=Htot(j,j)+eigv_c(j)
           Htot(j,j)=Htot(j,j)+e_ci(j)
           if(this_Fwrite.eq."high") write(6,*) j,Htot(j,j)
         enddo
@@ -223,22 +231,6 @@
       end subroutine do_htot_ene
 
 
-!------------------------------------------------------------------------
-! @brief Compute dipoles from coefficients should probably go in a
-!        MathTools module
-!
-! @date Created: S. Pipolo
-! Modified:         
-!------------------------------------------------------------------------
-!      subroutine do_dip_from_coeff(c,m)
-!       complex(cmp), intent(in) :: c(n_ci) !> (1:n_ci) - molecular wavefunction coefficients
-!       complex(cmp), intent(out):: m(3) !> (1:n_ci)    - molecular dipole                   
-!       integer(4)::i, 
-!       do i=1,3
-!         mu(i)=dot_product(c,matmul(mut(i,:,:),c))
-!       enddo
-!       return
-!      end subroutine do_dip_from_coeff
 
 
 !------------------------------------------------------------------------
@@ -277,20 +269,17 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-      subroutine update_energies(e_scf,e_ini,eigv,n)
+      subroutine update_energies
 
        implicit none
-       integer(i4b),intent(IN) :: n             
-       real(dbl), intent(OUT) :: e_scf,e_ini  !< system energies                
-       real(dbl), intent(IN) :: eigv(n)       !< basis state coefficients
        integer(4) :: i
 
        e_scf=0.d0
        e_ini=0.d0
 
-       do i=1,n
-        e_scf=e_scf+abs(c_i(i))*abs(c_i(i))*eigv(i)
-        e_ini=e_ini+abs(c_i(i))*abs(c_i(i))*e_ci(i)
+       do i=1,n_ci
+        e_scf=e_scf+abs(c_new(i))*abs(c_new(i))*eigv_c(i)
+        e_ini=e_ini+abs(c_old(i))*abs(c_old(i))*e_ci(i)
        enddo
 
        return
@@ -396,7 +385,6 @@
        myrank=0
 #endif
 
-       e_ci=eigv_c
        open(unit=7,file="ci_energy_scf.inp",status="unknown", &
            form="formatted")
        do i=2,n_ci

@@ -17,11 +17,9 @@
 #endif
 #endif
 
-            real(dbl), allocatable :: quantum_vts(:,:,:)       !<transition potentials on tesserae from cis
-            real(dbl), allocatable :: quantum_vtsn(:)          !<nuclear potential on tesserae
             real(dbl)  :: tomega,mu_trans(3)
 
-            public  read_molecule_file,read_gau_out_medium
+            public  read_molecule_file
 
             contains
 
@@ -82,127 +80,8 @@
        end subroutine read_molecule_file
 
 
-!------------------------------------------------------------------------
-! @brief Read transition potentials on tesserae
-!
-! @date Created: S. Pipolo
-! Modified: E. Coccia
-! Modified: S.Corni (27/06/2020): now the state pair is read from ci_pot,
-!           we do not assume upper or lower triangular. Should work
-!           for current gamess version as well
-!------------------------------------------------------------------------
-      subroutine read_gau_out_medium(quantum_n_ci)
-       integer(i4b), intent(in)  :: quantum_n_ci
-       integer(i4b) :: i,j,its,nts
-       real(dbl)  :: scr
-
-       open(7,file="ci_pot.inp",status="old")
-       read(7,*) nts
-       allocate (quantum_vts(nts,quantum_n_ci,quantum_n_ci))
-       allocate (quantum_vtsn(nts))
-       quantum_vts=zero
-       quantum_vtsn=zero
-       ! V00
-       read(7,*)
-       do its=1,nts
-        read(7,*) quantum_vts(its,1,1),scr,quantum_vtsn(its)
-       enddo
-       !all the others
-10     read(7,*,end=20) i,j
-       i=i+1
-       j=j+1
-       if (i.le.quantum_n_ci.and.j.le.quantum_n_ci) then
-        do its=1,nts
-         read(7,*) quantum_vts(its,i,j)
-         quantum_vts(its,j,i)=quantum_vts(its,i,j)
-        enddo
-       else
-        do its=1,nts
-         read(7,*)
-        enddo
-       endif
-       goto 10
-20     close(7)
-       do i=1,quantum_n_ci
-        do its=1,nts
-         quantum_vts(its,i,i)=quantum_vts(its,i,i)+quantum_vtsn(its)
-        enddo
-       enddo
-       write (6,*) "Done reading in potentials from ci_pot.inp"
 
 
-       return
-
-      end subroutine read_gau_out_medium
-
-
-!         subroutine read_gau_out_medium()
-!
-!              integer(i4b)  :: nts
-!              integer(i4b) :: i,j, its
-!              real(dbl)    :: scr
-!
-!
-!              if((global_medium_FinitBEM.eq."rea").and.(global_prop_Fprop(1:3).eq."chr")) then
-!                    open(7,file="ci_pot.inp",status="old")
-!                    read(7,*) nts
-!                    allocate (quantum_vts(nts, quantum_n_ci, quantum_n_ci))
-!                    allocate (quantum_vtsn(nts))
-!                    ! V00
-!                    read(7,*)
-!                    do its=1, nts
-!                        read(7,*) quantum_vts(its,1,1),scr, quantum_vtsn(its)
-!                        quantum_vts(its,1,1)=quantum_vts(its,1,1)+quantum_vtsn(its)
-!                    enddo
-!                    !V0j
-!                    do j=2,quantum_n_ci_read
-!                        read(7,*)
-!                        if (j.le.quantum_n_ci) then
-!                            do its=1,nts
-!                                read(7,*) quantum_vts(its,1,j)
-!                            enddo
-!                            quantum_vts(:,j,1)=quantum_vts(:,1,j)
-!                        else
-!                            do its=1,nts
-!                                read(7,*)
-!                            enddo
-!                        endif
-!                    enddo
-!                    !Vij
-!                    do i=2,quantum_n_ci_read
-!                        do j=2,i
-!                            read(7,*)
-!                            if (i.le.quantum_n_ci.and.j.le.quantum_n_ci) then
-!                                do its=1,nts
-!                                    read(7,*) quantum_vts(its,i,j)
-!                                enddo
-!                                quantum_vts(:,j,i)=quantum_vts(:,i,j)
-!                            else
-!                                do its=1,nts
-!                                    read(7,*)
-!                                enddo
-!                            endif
-!                        enddo
-!                        ! add nuclear potential
-!                        if (i.le.quantum_n_ci) then
-!                            do its=1,nts
-!                                quantum_vts(its,i,i)=quantum_vts(its,i,i)+quantum_vtsn(its)
-!                            enddo
-!                        endif
-!                    enddo
-!
-!                    close(7)
-!            endif
-!
-!            return
-!
-!
-!
-!
-!
-!
-!
-!      end subroutine
 
 
 

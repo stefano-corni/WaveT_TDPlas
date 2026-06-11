@@ -20,8 +20,7 @@
              do_dip_from_charges,do_dip_from_coeff,do_pot_from_coeff, &
              do_pot_from_dip,do_vts_from_dip,mdl,vprod,inv_cmp,       &
              do_field_from_charges_cmp,diag_mat_nosym,                &
-             do_field_from_dip,mat_mult,cmat_mult!, &
-             !mat_mat_mult,do_cpot_from_coeff
+             do_field_from_dip,mat_mult,cmat_mult
 
       contains
 
@@ -464,54 +463,6 @@
       end subroutine do_pot_from_coeff
 
 
-!      subroutine do_cpot_from_coeff(c,cpot,vts)
-!------------------------------------------------------------------------
-! @brief Compute complex "potentials" on BEM surface from CIS
-! coefficientes
-!
-! @date Created: S. Pipolo
-! Modified: E. Coccia 5/7/18
-!------------------------------------------------------------------------
-
-!       complex(cmp), intent(IN)  :: c(quantum_n_ci)
-!       complex(cmp), intent(OUT) :: cpot(quantum_n_ci)
-!       real(dbl),    intent(IN)  :: vts(quantum_n_ci,quantum_n_ci)
-!       integer(i4b)              :: i,j,k
-!       complex(cmp)              :: ctmp(quantum_n_ci)
-
-!#ifndef OMP
-!       do k=1,quantum_n_ci
-!          if(global_prop_Fprop(1:3).eq."chr") cpot=exp(ui*quantum_e_ci(k))*matmul(vts,c)
-!          if(global_prop_Fprop(1:3).eq."osc") cpot=exp(ui*quantum_e_ci(k))*matmul(vts,c)
-!       enddo
-!#endif
-!#ifdef OMP
-!       if (global_Fopt_chr.eq.'omp') then
-!          if (global_prop_Fprop(1:3).eq."chr".or.global_prop_Fprop(1:3).eq."osc") then
-!             ctmp=0.d0
-!!$OMP PARALLEL REDUCTION(+:ctmp)
-!!$OMP DO
-!             do k=1,quantum_n_ci
-!                do j=1,quantum_n_ci
-!                   ctmp(k)=ctmp(k)+ vts(k,j)*c(j)
-!                enddo
-!             enddo
-!!$OMP END PARALLEL
-!             do k=1,quantum_n_ci
-!                cpot=exp(ui*quantum_e_ci(k))*ctmp
-!             enddo
-!          endif
-!       else
-!          do k=1,quantum_n_ci
-!             if(global_prop_Fprop(1:3).eq."chr") cpot=exp(ui*quantum_e_ci(k))*matmul(vts,c)
-!             if(global_prop_Fprop(1:3).eq."osc") cpot=exp(ui*quantum_e_ci(k))*matmul(vts,c)
-!          enddo
-!       endif
-!#endif
-
-!       return
-
-!      end subroutine
 
 
 !------------------------------------------------------------------------
@@ -655,14 +606,13 @@
 ! @date Created: E. Coccia 9/7/18
 ! Modified:
 !------------------------------------------------------------------------
-      function cmat_mult(a,b)
+      function cmat_mult(a,b,n)
 
        implicit none
 
-       real(dbl),    intent(in)    :: a(quantum_n_ci,quantum_n_ci)
-       complex(cmp), intent(in)    :: b(quantum_n_ci)
-       !complex(cmp)                :: cmat_mult(quantum_n_ci),tmp(quantum_n_ci)
-       complex(cmp)                :: cmat_mult(quantum_n_ci)
+       real(dbl),    intent(in)    :: a(n,n)
+       complex(cmp), intent(in)    :: b(n)
+       complex(cmp)                :: cmat_mult(n)
        complex(cmp)                :: tmp
 
        integer(i4b)                :: i,j
@@ -675,9 +625,9 @@
           !tmp=0.d0
 !$OMP PARALLEL reduction (+:tmp)
 !$OMP DO
-          do j=1,quantum_n_ci
+          do j=1,n
              tmp=0.d0
-             do i=1,quantum_n_ci
+             do i=1,n
                 !tmp(j) = tmp(j) + a(j,i)*b(i)
                 tmp = tmp + a(j,i)*b(i)
              enddo
@@ -695,48 +645,5 @@
       end function cmat_mult
 
 
-!      function mat_mat_mult(a,b)
-!------------------------------------------------------------------------
-! @brief Optimized matrix/matrix multiplication for tesserae-based
-! arrays
-!
-! @date Created: E. Coccia 6/12/18
-! Modified:
-!------------------------------------------------------------------------
-
-!       implicit none
-
-!       real(dbl),    intent(in)    :: a(pedra_surf_n_tessere,pedra_surf_n_tessere),b(pedra_surf_n_tessere,pedra_surf_n_tessere)
-!       real(dbl)                   :: mat_mat_mult(pedra_surf_n_tessere,pedra_surf_n_tessere),tmp
-
-!       integer(i4b)                :: i,j,k
-
-!#ifndef OMP
-!       mat_mat_mult=matmul(a,b)
-!       write(*,*) 'CIAO'
-!#endif
-!#ifdef OMP
-
-!       if (global_Fopt_chr.eq.'omp') then
-!!$OMP PARALLEL reduction (+:tmp)
-!!$OMP DO
-!         do j=1,pedra_surf_n_tessere
-!            do i=1,pedra_surf_n_tessere
-!               tmp=0.d0
-!               do k=1,pedra_surf_n_tessere
-!                  tmp=tmp+a(i,k)*b(k,j)
-!               enddo
-!               mat_mat_mult(i,j)=tmp
-!            enddo
-!         enddo
-!!$OMP END PARALLEL
-!       else
-!          mat_mat_mult=matmul(a,b)
-!       endif
-!#endif
-
-!       return
-
-!      end function mat_mat_mult
 
       end module

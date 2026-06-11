@@ -1322,7 +1322,7 @@
 
         implicit none
 
-        character*12,   intent(in)  :: filename
+        character(12),   intent(in)  :: filename
         integer(i4b),  intent(in)  :: channel   
         logical                    :: exist
 

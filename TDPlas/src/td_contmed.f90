@@ -478,7 +478,7 @@
          if(global_sys_Fdeb.eq."off") q=0
          ! SP 18/05/20 test purposes
          if(global_sys_Ftest.eq."n-r") q=q0
-          write(6,*) "Qq net ", qr_t(10),q0(10),qtot0,sum(q)
+          write(6,*) "Qq net ",q(10), qr_t(10),q0(10),qtot0,sum(q)
          return
         end subroutine get_qorf
 
@@ -549,21 +549,6 @@
          potf_0=potf
        endif
        if(global_sys_Ftest.eq."s-r") pot_0=zero
-       ! SP 7/5/2024: is this correct? shouldn't we read this from input
-       ! BEGIN: this shouldn't be done here but in the interface
-       !c_gs(:)=zeroc
-       !c_gs(1)=onec
-! SP 26/06/17: changed to use general MathTools
-       ! This should not be done here, the potential is determined in
-       ! the interface depending on the state of the molecule
-       !if(global_prop_Fint.eq.'ons') then
-       !  call do_dip_from_coeff(c_gs,dip,quantum_n_ci)
-       !  call do_pot_from_dip(dip,pot_0)
-       !else
-       !  call do_pot_from_coeff(c_gs,pot_0)
-       !endif
-       ! END
-       ! from here on this would be a init_pot_prop
       end subroutine init_potential
 
 !------------------------------------------------------------------------

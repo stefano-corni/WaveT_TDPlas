@@ -1,5 +1,6 @@
 module interface_classic
       use constants
+      use WTMathTools
       use readio
 #ifdef TDPLAS
       use tdplas, only: set_qorf,set_qorf_pot,global_prop_Fmdm_relax,&
@@ -12,14 +13,14 @@ module interface_classic
                         mpibcast_readio_mdm,quantum_init,global_qmodes_Fmop,global_qmodes_nprint,&
 ! used by main
                         global_sys_Fwrite,fr_0,BEM_Q0,mat_f0,global_prop_max_cycles,&
-                        global_prop_threshold,quantum_vtsn,global_prop_mix_coef,diag_mat,&
+                        global_prop_threshold,global_prop_mix_coef,&
                         do_field_from_charges,out_gcharges,get_qr_fr,&
 ! used in scf
                         BEM_W2,global_sys_Ftest,drudel_eps_w0,BEM_Modes,pedra_surf_spheres,drudel_eps_A,&
-                        do_BEM_quant,do_vts_from_dip,deallocate_BEM_public,global_qmodes_nmodes,&
+                        do_BEM_quant,deallocate_BEM_public,global_qmodes_nmodes,&
                         global_qmodes_qmmodes,&
 ! used by QM_coupling 
-                        q0,quantum_vts,pedra_surf_n_tessere,global_prop_Fprop,global_prop_Fint,&
+                        q0,pedra_surf_n_tessere,global_prop_Fprop,global_prop_Fint,&
                         pedra_surf_tessere,global_prop_Finit_int,pedra_surf_n_spheres,global_medium_Fbem,&
                         global_sys_Fdeb,do_charges_from_pot,global_prop_n_q,init_mdm_prop,get_qorf,&
                         get_qorf0,do_Rfield_from_dip
@@ -54,7 +55,8 @@ module interface_classic
       character(flg) :: this_Fmdm_relax, this_Fprop, this_Fint, this_Fwrite, &
                         this_Ftest, this_Finit_int, this_Fbem, this_Fmop
 
-      real(dbl), allocatable :: this_vts(:,:,:), this_vtsn(:) !<transition potentials on tesserae from cis
+      real(dbl), allocatable :: quantum_vts(:,:,:) !< medium contribution to the hamiltonian
+      real(dbl), allocatable :: quantum_vtsn(:) !< medium contribution to the hamiltonian
       real(dbl), allocatable :: h_mdm(:,:) !< medium contribution to the hamiltonian
       real(dbl), allocatable :: h_mdm_0(:,:) !< medium contribution to the hamiltonian
 
@@ -92,8 +94,8 @@ module interface_classic
 ! used by main and main_spectra
              mpibcast_read_medium,set_global_tdplas_in_wavet,&
 ! used by main
-             this_Fwrite,this_fr0,this_BEM_Q0,this_mat_f0,this_ncycmax,this_thrshld,this_vtsn,&
-             this_mix_coef,diag_mat_in_wavet,&
+             this_Fwrite,this_fr0,this_BEM_Q0,this_mat_f0,this_ncycmax,this_thrshld,quantum_vtsn,&
+             this_mix_coef,&
              do_field_from_charges_in_wavet, this_nts_act, &
 ! used in scf
              update_environment_scf,out_environment_scf,&
@@ -163,17 +165,13 @@ module interface_classic
         this_Fint=global_prop_Fint
         this_Ftest=global_sys_Ftest
         this_nts_act=pedra_surf_n_tessere
+        call read_gau_out_medium
         if(global_sys_Fdeb.eq."vmu") then
            call get_vts_from_dip
         elseif(this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then 
            ! SP 17/05/20 shape is not a standard f90 function
            shap=shape(quantum_vts)
-           if(shap(1).eq.this_nts_act) then
-              allocate(this_vts(this_nts_act,n_ci,n_ci))
-              this_vts=quantum_vts
-              allocate(this_vtsn(this_nts_act))
-              this_vtsn=quantum_vtsn
-           else
+           if(shap(1).ne.this_nts_act) then
               write(6,*) "Error: the number of tesserae for the potential is different than those in the cavity/NP"
               write(6,*) shap(1)," vs ",this_nts_act
               write(6,*) "This is usually due to incoerent ci_pot.inp and cavity.inp files. I stop here" 
@@ -252,7 +250,7 @@ module interface_classic
         h0=zero
         h_mdm=zero
         h_mdm_0=zero
-        call do_dip_from_coeff(c,mu,n_ci)
+        call do_dip_from_coeff(c,n_ci,mu,mut)
 #ifdef TDPLAS
         !> Prepare for interaction with continuum medium
         if(this_Fprop.eq."dip") then
@@ -379,7 +377,7 @@ module interface_classic
          call do_pot_from_dip(1,mol_cc,mu,this_nts_act,r,pot)
         else
          !> computing molecular potential from the coefficients
-         call do_pot_from_coeff(c,this_nts_act,this_vts,pot)
+         call do_pot_from_coeff(c,n_ci,this_nts_act,quantum_vts,pot)
         end if
         !> computing external potential in the long-wavelength limit
         call do_pot_from_field(f,this_nts_act,r,potf)
@@ -437,8 +435,8 @@ module interface_classic
           call do_fld_from_dip(1,mol_cc,mu,n_atoms,r_atoms,fld)
         else
           !> computing molecular potential from the coefficients
-          call do_pot_from_coeff(c,n_atoms,vint_atoms,pot)
-          call do_fld_from_coeff(c,n_atoms,fint_atoms,fld)
+          call do_pot_from_coeff(c,n_ci,n_atoms,vint_atoms,pot)
+          call do_fld_from_coeff(c,n_ci,n_atoms,fint_atoms,fld)
         end if
         !> computing external potential in the long-wavelength limit
         call do_pot_from_field(f,n_atoms,r_atoms,potf)
@@ -575,7 +573,7 @@ module interface_classic
         mu=zero
 #ifdef TDPLAS
         if((this_Fprop.eq."dip").or.(this_Fint.eq."ons")) then 
-          call do_dip_from_coeff(c,mu,n_ci)
+          call do_dip_from_coeff(c,n_ci,mu,mut)
         endif
         if(this_Fprop.eq."dip") then 
           call update_BEM_field(c,mu,f)
@@ -604,8 +602,8 @@ module interface_classic
         if(this_Fprop.ne."dip") then 
         ! transform vts to the SCF state basis
          do its=1,this_nts_act
-          this_vts(its,:,:)=matmul(this_vts(its,:,:),c)
-          this_vts(its,:,:)=matmul(transpose(c),this_vts(its,:,:))
+          quantum_vts(its,:,:)=matmul(quantum_vts(its,:,:),c)
+          quantum_vts(its,:,:)=matmul(transpose(c),quantum_vts(its,:,:))
          enddo
         endif
         return
@@ -773,13 +771,13 @@ module interface_classic
        ! V00
        write(7,*) i,j 
        do its=1,this_nts_act
-        write(7,*) this_vts(its,1,1)-this_vtsn(its),0.d0,this_vtsn(its)
+        write(7,*) quantum_vts(its,1,1)-quantum_vtsn(its),0.d0,quantum_vtsn(its)
        enddo
 
        do i=2,n_ci
           write(7,*) 0, i-1
           do its=1,this_nts_act
-             write(7,*) this_vts(its,1,i) 
+             write(7,*) quantum_vts(its,1,i) 
           enddo
        enddo
 
@@ -788,9 +786,9 @@ module interface_classic
               write(7,*)  i-1, j-1
               do its=1,this_nts_act
                  if (i.eq.j) then
-                     write(7,*) this_vts(its,i,j)-this_vtsn(its)
+                     write(7,*) quantum_vts(its,i,j)-quantum_vtsn(its)
                  else
-                     write(7,*) this_vts(its,i,j) 
+                     write(7,*) quantum_vts(its,i,j) 
                  endif
               enddo
            enddo
@@ -851,7 +849,7 @@ module interface_classic
             call do_pot_from_dip(1,mol_cc,mu,this_nts_act,r,pot)
            else
             ! computing molecular potential
-            call do_pot_from_coeff(c,this_nts_act,this_vts,pot)
+            call do_pot_from_coeff(c,n_ci,this_nts_act,quantum_vts,pot)
            end if
            ! computing external potential in the long-wavelength limit
            call do_pot_from_field(f,this_nts_act,r,potf)
@@ -1040,14 +1038,15 @@ module interface_classic
 
 
       subroutine get_vts_from_dip
-
        implicit none
-#ifdef TDPLAS
-       call do_vts_from_dip
-       this_vts=quantum_vts
-#else
-        stop "Error: TDPlas library has not been linked to WaveT!"
-#endif
+       real(dbl),allocatable :: pos(:,:)
+
+       allocate(pos(this_nts_act,3))
+       pos(:,1)=pedra_surf_tessere(:)%x
+       pos(:,2)=pedra_surf_tessere(:)%y
+       pos(:,3)=pedra_surf_tessere(:)%z
+       call do_vts_from_dip(quantum_vts,pos,mut,mol_cc,this_nts_act,n_ci)
+       deallocate(pos)
 
       end subroutine get_vts_from_dip
 
@@ -1070,8 +1069,6 @@ module interface_classic
        real(dbl), intent(in) :: pot_or_mut(:)
 
 #ifdef TDPLAS
-! SC 16/10/2020: vts in tdplas must be updated
-       quantum_vts=this_vts
        call init_after_scf(pot_or_mut)
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
@@ -1093,374 +1090,6 @@ module interface_classic
 
 ! begin - subroutines to calculate dipoles, field and potentials from coefficients, dipoles and fields
 
-!------------------------------------------------------------------------
-! @brief Compute dipole from CIS coefficients 
-!
-! @date Created: S. Pipolo
-! Modified: E. Coccia 5/7/18
-!------------------------------------------------------------------------
-      subroutine do_dip_from_coeff(c,dip,nc)
-
-       implicit none
-
-       integer(i4b), intent(IN)  :: nc  
-       complex(cmp), intent(IN)  :: c(nc)
-       real(dbl),    intent(OUT) :: dip(3)
-       integer(i4b)              :: its,j,k  
-       complex(cmp)              :: ctmp(nc) 
-
-#ifndef OMP
-       dip(1)=dot_product(c,matmul(mut(1,:,:),c))
-       dip(2)=dot_product(c,matmul(mut(2,:,:),c))
-       dip(3)=dot_product(c,matmul(mut(3,:,:),c))
-#endif
-#ifdef OMP
-      if (Fopt.eq.'omp') then
-         ctmp=0.d0
-!$OMP PARALLEL REDUCTION(+:ctmp) 
-!$OMP DO
-         do k=1,nc
-            do j=1,nc
-               ctmp(k)=ctmp(k)+ mut(1,k,j)*c(j)
-            enddo
-         enddo
-!$OMP END PARALLEL
-         dip(1)=dot_product(c,ctmp)
-
-         ctmp=0.d0
-!$OMP PARALLEL REDUCTION(+:ctmp) 
-!$OMP DO
-         do k=1,nc
-            do j=1,nc
-               ctmp(k)=ctmp(k)+ mut(2,k,j)*c(j)
-            enddo
-         enddo
-!$OMP END PARALLEL
-         dip(2)=dot_product(c,ctmp)
-
-         ctmp=0.d0
-!$OMP PARALLEL REDUCTION(+:ctmp) 
-!$OMP DO
-         do k=1,nc
-            do j=1,nc
-               ctmp(k)=ctmp(k)+ mut(3,k,j)*c(j)
-            enddo
-         enddo
-!$OMP END PARALLEL
-         dip(3)=dot_product(c,ctmp)
-      else
-         dip(1)=dot_product(c,matmul(mut(1,:,:),c))
-         dip(2)=dot_product(c,matmul(mut(2,:,:),c))
-         dip(3)=dot_product(c,matmul(mut(3,:,:),c))
-      endif 
-#endif
-
-      end subroutine do_dip_from_coeff
-
-!------------------------------------------------------------------------
-! @brief Compute potential (pot) on n points from CIS coefficientes (c) 
-!        and potential integrals (v)
-!
-! @date Created: S. Pipolo
-! Modified: E. Coccia 5/7/18
-!------------------------------------------------------------------------
-      subroutine do_pot_from_coeff(c,n,v,pot)
-
-       implicit none
-
-       complex(cmp), intent(IN)           :: c(n_ci)
-       integer(i4b), intent(IN)           :: n             
-       real(dbl),    intent(IN)           :: v(n,n_ci,n_ci)
-       real(dbl),    intent(INOUT)        :: pot(n)
-
-       integer(i4b)                       :: i,k,j  
-       complex(cmp), save, allocatable    :: ctmp(:)
-       complex(cmp), save                 :: cc
-
-#ifndef OMP
-       do i=1,n
-          pot(i)=pot(i)+dot_product(c,matmul(v(i,:,:),c))
-       enddo
-#endif
-
-#ifdef OMP
-       if (Fopt.eq.'omp') then
-          allocate(ctmp(n*n_ci))
-!$OMP PARALLEL REDUCTION (+:cc)
-!$OMP DO 
-          do i=1,n
-             do k=1,n_ci
-                cc=0.d0
-                do j=1,n_ci
-                   cc = cc + v(i,k,j)*c(j)
-                enddo
-                ctmp(k+(i-1)*n_ci) = cc
-             enddo
-          enddo
-!$OMP END PARALLEL
-!$OMP PARALLEL
-!$OMP DO
-          do i=1,n
-             pot(i)=pot(i)+dot_product(c,ctmp((i-1)*n_ci+1:i*n_ci))
-          enddo
-!$OMP END PARALLEL
-          deallocate(ctmp)
-       else
-!$OMP PARALLEL
-!$OMP DO
-          do i=1,n
-             pot(i)=pot(i)+dot_product(c,matmul(v(i,:,:),c))
-          enddo 
-!$OMP END PARALLEL
-       endif
-#endif
-
-      end subroutine do_pot_from_coeff
-
-!------------------------------------------------------------------------
-! @brief Compute the fiel (fld) on n points from CIS coefficientes (c) 
-!        and field integrals (f)
-!
-! @date Created: S. Pipolo
-! Modified: E. Coccia 5/7/18
-!------------------------------------------------------------------------
-      subroutine do_fld_from_coeff(c,n,f,fld)
-
-       implicit none
-
-       complex(cmp), intent(IN)        :: c(n_ci)
-       integer(i4b), intent(IN)        :: n             
-       real(dbl),    intent(IN)        :: f(3,n,n_ci,n_ci)
-       real(dbl),    intent(INOUT)       :: fld(3,n)
-
-       integer(i4b)                       :: i,k,j,l  
-       complex(cmp), save, allocatable    :: ctmp(:,:)
-       complex(cmp), save, allocatable    :: cc(:)
-
-#ifndef OMP
-       do i=1,n
-         do j=1,3
-           fld(j,i)=fld(j,i)+dot_product(c,matmul(f(j,i,:,:),c))
-         enddo
-       enddo
-#endif
-
-#ifdef OMP
-       if (Fopt.eq.'omp') then
-          allocate(ctmp(3,n*n_ci))
-          allocate(cc(3))
-!$OMP PARALLEL REDUCTION (+:cc)
-!$OMP DO 
-          do i=1,n
-             do k=1,n_ci
-                cc(:)=0.d0
-                do j=1,n_ci
-                   cc(:) = cc(:) + f(:,i,k,j)*c(j)
-                enddo
-                ctmp(:,k+(i-1)*n_ci) = cc(:)
-             enddo
-          enddo
-!$OMP END PARALLEL
-!$OMP PARALLEL
-!$OMP DO
-          do j=1,3
-           do i=1,n
-              fld(j,i)=fld(j,i)+dot_product(c,ctmp(j,(i-1)*n_ci+1:i*n_ci))
-           enddo
-          enddo
-!$OMP END PARALLEL
-          deallocate(ctmp)
-          deallocate(cc)
-       else
-!$OMP PARALLEL
-!$OMP DO
-          do i=1,n
-            do j=1,3
-              fld(j,i)=fld(j,i)+dot_product(c,matmul(f(j,i,:,:),c))
-            enddo
-          enddo
-!$OMP END PARALLEL
-       endif
-#endif
-
-      end subroutine do_fld_from_coeff
-
-!------------------------------------------------------------------------
-! @brief Compute the potential (pot) on n points od coordinates r 
-!        generated by an external electric field (fld)
-! (fld) 
-!
-! @date Created: S. Pipolo
-! Modified: 
-!------------------------------------------------------------------------
-      subroutine do_pot_from_field(fld,n,r,pot)
-
-       implicit none
-
-       real(dbl), intent(IN):: fld(3) 
-       integer(i4b), intent(IN):: n 
-       real(dbl), intent(IN):: r(3,n) 
-       real(dbl), intent(INOUT):: pot(n) 
-       integer(i4b) :: i  
-
-#ifdef OMP
-!$OMP PARALLEL REDUCTION(+:pot)
-!$OMP DO 
-#endif
-        do i=1,n
-          pot(i)=pot(i)-dot_product(fld,r(:,i))           
-        enddo
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
-#endif
-      end subroutine do_pot_from_field
-
-!------------------------------------------------------------------------
-! @brief Compute the potential (pot) on a number (n) of points of 
-!        coordinates r generate by nd dipoles (dip) at positions rd
-!
-! @date Created: S. Pipolo
-! Modified:
-!------------------------------------------------------------------------
-      subroutine do_pot_from_dip(nd,rd,dip,n,r,pot)
-
-       integer(i4b), intent(IN) :: nd
-       real(dbl), intent(IN) :: rd(3,nd)
-       real(dbl), intent(IN) :: dip(3,nd)
-       integer(i4b), intent(IN) :: n
-       real(dbl), intent(IN) :: r(3,n)
-       real(dbl), intent(OUT) :: pot(n)
-       real(dbl):: diff(3)  
-       real(dbl):: distm1 
-       integer(i4b) :: i,j  
-
-#ifdef OMP
-!$OMP PARALLEL REDUCTION(+:pot)
-!$OMP DO
-#endif
-       do i=1,n
-         do j=1,nd
-            diff(:)=-(rd(:,j)-r(:,i))
-            distm1=1/sqrt(dot_product(diff,diff))
-            pot(i)=pot(i)+dot_product(diff,dip(:,j))*distm1*distm1*distm1
-         enddo
-       enddo
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
-#endif
-      end subroutine do_pot_from_dip
-
-!------------------------------------------------------------------------
-! @brief Compute the potential (pot) on a number (n) of points of 
-!        coordinates r generate by nd dipoles (dip) at positions rd
-!
-! @date Created: S. Pipolo
-! Modified:
-!------------------------------------------------------------------------
-      subroutine do_fld_from_dip(nd,rd,dip,n,r,fld)
-
-       integer(i4b), intent(IN) :: nd
-       real(dbl), intent(IN) :: rd(3,nd)
-       real(dbl), intent(IN) :: dip(3,nd)
-       integer(i4b), intent(IN) :: n
-       real(dbl), intent(IN) :: r(3,n)
-       real(dbl), intent(OUT) :: fld(3,n)
-       real(dbl):: diff(3),f(3)  
-       real(dbl):: distm1 
-       integer(i4b) :: i,j  
-
-#ifdef OMP
-!$OMP PARALLEL REDUCTION(+:pot)
-!$OMP DO
-#endif
-       do i=1,n
-         do j=1,nd
-            diff(:)=-(rd(:,j)-r(:,i))
-            distm1=1/sqrt(dot_product(diff,diff))
-            diff(:)=diff(:)*distm1
-            f(:)=3*dot_product(diff,dip(:,j))*diff(:)-dip(:,j)
-            fld(:,i)=fld(:,i)+f(:)*distm1*distm1*distm1
-         enddo
-       enddo
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
-#endif
-      end subroutine do_fld_from_dip
-
-!------------------------------------------------------------------------
-! @brief Compute the potential (pot) on a number (n) of points of 
-!        coordinates r generate by nq charges q at positions rq
-!
-! @date Created: S. Pipolo
-! Modified:
-!------------------------------------------------------------------------
-      subroutine do_pot_from_charges(nq,rq,q,n,r,pot)
-
-       integer(i4b), intent(IN) :: nq
-       real(dbl), intent(IN) :: rq(3,nq)
-       real(dbl), intent(IN) :: q(nq)
-       integer(i4b), intent(IN) :: n
-       real(dbl), intent(IN) :: r(3,n)
-       real(dbl), intent(OUT) :: pot(n)
-       real(dbl):: diff(3)  
-       real(dbl):: dist
-       integer(i4b) :: i,j  
-
-#ifdef OMP
-!$OMP PARALLEL REDUCTION(+:pot)
-!$OMP DO
-#endif
-       do i=1,n
-         do j=1,nq
-            diff(:)=(rq(:,j)-r(:,i))
-            dist=sqrt(dot_product(diff,diff))
-            pot(i)=pot(i)+q(j)/dist
-         enddo
-       enddo
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
-#endif
-      end subroutine do_pot_from_charges
-
-!------------------------------------------------------------------------
-! @brief Compute the field (fld) on a number (n) of points of 
-!        coordinates r generated by nq charges q at positions rq
-!
-! @date Created: S. Pipolo
-! Modified:
-!------------------------------------------------------------------------
-      subroutine do_fld_from_charges(nq,rq,q,n,r,fld)
-
-       integer(i4b), intent(IN) :: nq      
-       real(dbl), intent(IN) :: rq(3,nq)
-       real(dbl), intent(IN) :: q(nq)
-       integer(i4b), intent(IN) :: n
-       real(dbl), intent(IN) :: r(3,n)
-       real(dbl), intent(OUT) :: fld(3,n)
-       real(dbl):: diff(3)  
-       real(dbl):: dist
-       integer(i4b) :: i,j  
-
-#ifdef OMP
-!$OMP PARALLEL REDUCTION(+:pot)
-!$OMP DO
-#endif
-       do i=1,n
-         do j=1,nq
-            diff(:)=-(rq(:,j)-r(:,i))
-            dist=sqrt(dot_product(diff,diff))
-            fld(:,i)=fld(:,i)+q(j)*diff(:)/dist/dist/dist
-         enddo
-       enddo
-#ifdef OMP
-!$OMP enddo
-!$OMP END PARALLEL
-#endif
-      end subroutine do_fld_from_charges
 
 subroutine export_mdm_qmcoup
    implicit none
@@ -1626,6 +1255,61 @@ end subroutine
         return
       end subroutine do_qandm_fqfm 
 
+
+
+
+
+!------------------------------------------------------------------------
+! @brief Read transition potentials on tesserae
+!
+! @date Created: S. Pipolo
+! Modified: E. Coccia
+! Modified: S.Corni (27/06/2020): now the state pair is read from ci_pot,
+!           we do not assume upper or lower triangular. Should work
+!           for current gamess version as well
+!------------------------------------------------------------------------
+      subroutine read_gau_out_medium
+       integer(i4b) :: i,j,its,nts
+       real(dbl)  :: scr
+
+       open(7,file="ci_pot.inp",status="old")
+       read(7,*) nts
+       allocate (quantum_vts(nts,n_ci,n_ci))
+       allocate (quantum_vtsn(nts))
+       quantum_vts=zero
+       quantum_vtsn=zero
+       ! V00
+       read(7,*)
+       do its=1,nts
+        read(7,*) quantum_vts(its,1,1),scr,quantum_vtsn(its)
+       enddo
+       !all the others
+10     read(7,*,end=20) i,j
+       i=i+1
+       j=j+1
+       if (i.le.n_ci.and.j.le.n_ci) then
+        do its=1,nts
+         read(7,*) quantum_vts(its,i,j)
+         quantum_vts(its,j,i)=quantum_vts(its,i,j)
+        enddo
+       else
+        do its=1,nts
+         read(7,*)
+        enddo
+       endif
+       goto 10
+20     close(7)
+       do i=1,n_ci
+        do its=1,nts
+         quantum_vts(its,i,i)=quantum_vts(its,i,i)+quantum_vtsn(its)
+        enddo
+       enddo
+       write (6,*) "Done reading in potentials from ci_pot.inp"
+
+
+       return
+
+      end subroutine read_gau_out_medium
 
 
 
