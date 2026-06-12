@@ -856,14 +856,14 @@
          ! SP 11/05/24: changed the following for coherence on
          ! initialisation
          !fqr_tp=-mat_mult(BEM_Qw,qr_t)+mat_mult(BEM_Qf,pot_tp)
-         fqr_tp=-mat_mult(BEM_Qw,qr_tp)+mat_mult(BEM_Qf,pot_tp)
+         fqr_tp=-mat_mult(BEM_Qw,qr_tp,pedra_surf_n_tessere)+mat_mult(BEM_Qf,pot_tp,pedra_surf_n_tessere)
          if(global_medium_Floc.eq."loc") then
            allocate(dqx_tp(pedra_surf_n_tessere))
            allocate(fqx_tp(pedra_surf_n_tessere))
            allocate(fqx_t(pedra_surf_n_tessere))
            dqx_tp(:)=zero
            ! SP 11/05/24 CHECK THIS, the following initilized for coherence with reaction field
-           fqr_tp=-mat_mult(BEM_Qw,qx_tp)+mat_mult(BEM_Qf,potf_tp)
+           fqr_tp=-mat_mult(BEM_Qw,qx_tp,pedra_surf_n_tessere)+mat_mult(BEM_Qf,potf_tp,pedra_surf_n_tessere)
            fqx_tp=zero
          endif
        endif
@@ -1232,7 +1232,7 @@
         qr_t(:)=qr_tp(:)
         dqr_t(:)=zero
         if (global_eps_Feps.eq."drl") then
-            fqr_tp=-mat_mult(BEM_Qw,qr_t)+mat_mult(BEM_Qf,pot_or_mut)
+            fqr_tp=-mat_mult(BEM_Qw,qr_t,pedra_surf_n_tessere)+mat_mult(BEM_Qf,pot_or_mut,pedra_surf_n_tessere)
             dqr_tp(:)=zero
         endif
         if(global_eps_Feps.eq."gen".and.global_medium_Fbem.eq."stan") then 
@@ -1404,7 +1404,7 @@
 !EC:  mat_mult optimizes quantum_n_ci**2-based statements
 !     mat_mult uses matmul or explicit loops (with OMP),
 !     according to the value of quantum_n_ci
-         qr_t=mat_mult(BEM_Q0,pot_tp)
+         qr_t=mat_mult(BEM_Q0,pot_tp,pedra_surf_n_tessere)
        endif
        qr_tp2=qr_tp
        qr_tp=qr_t
@@ -1571,14 +1571,14 @@
       ! Reaction Field
        qr_t=qr_tp+f1*dqr_tp+f2*fqr_tp
        ! SP: changed using $BEM_Qf=-ONS_ff(1)*S{-1}$
-       fqr_t=-ONS_fw*qr_t+mat_mult(BEM_Qf,pot_tp)
+       fqr_t=-ONS_fw*qr_t+mat_mult(BEM_Qf,pot_tp,pedra_surf_n_tessere)
        dqr_t=f3*dqr_tp+f4*(fqr_t+fqr_tp)-f5*fqr_tp
        fqr_tp=fqr_t
        dqr_tp=dqr_t
        ! Local Field
        if(global_medium_Floc.eq."loc") then
          qx_t=qx_tp+f1*dqx_tp+f2*fqx_tp
-         fqx_t=-ONS_fw*qx_t+mat_mult(BEM_Qf,potf_tp)
+         fqx_t=-ONS_fw*qx_t+mat_mult(BEM_Qf,potf_tp,pedra_surf_n_tessere)
          dqx_t=f3*dqx_tp+f4*(fqx_t+fqx_tp)-f5*fqx_tp
          fqx_tp=fqx_t
          dqx_tp=dqx_t
@@ -1604,13 +1604,13 @@
 !     according to the value of nts
 
       ! SP: Reaction Field eq.46 Corni et al. JPCA 2015
-      qr_t=qr_tp-quantum_dt*ONS_taum1*qr_tp+quantum_dt*ONS_taum1*mat_mult(BEM_Q0,pot_tp2)&
-                                 +mat_mult(BEM_Qd,pot_tp-pot_tp2)
+      qr_t=qr_tp-quantum_dt*ONS_taum1*qr_tp+quantum_dt*ONS_taum1*mat_mult(BEM_Q0,pot_tp2,pedra_surf_n_tessere)&
+                                 +mat_mult(BEM_Qd,pot_tp-pot_tp2,pedra_surf_n_tessere)
       ! Local Field analogous equation, BEM_Q0x=ONS_fx0*Sm1 and BEM_Qdx=ONS_fxd*Sm1
        if(global_medium_Floc.eq."loc") then
          call do_field_from_charges(qx_tp,fx_tp)
-         qx_t=qx_tp-quantum_dt*ONS_taum1*qx_tp+quantum_dt*ONS_taum1*mat_mult(BEM_Q0x,potf_tp2) &
-                                 +mat_mult(BEM_Qdx,potf_tp-potf_tp2)
+         qx_t=qx_tp-quantum_dt*ONS_taum1*qx_tp+quantum_dt*ONS_taum1*mat_mult(BEM_Q0x,potf_tp2,pedra_surf_n_tessere) &
+                                 +mat_mult(BEM_Qdx,potf_tp-potf_tp2,pedra_surf_n_tessere)
        endif
 
        return
@@ -1689,7 +1689,7 @@
 !     according to the value of nts
 
        !qr_t=qr_tp+f1*dqr_tp+f2*fqr_tp 
-       fqr_t=-mat_mult(BEM_Qw,qr_t)+mat_mult(BEM_Qf,pot_tp)
+       fqr_t=-mat_mult(BEM_Qw,qr_t,pedra_surf_n_tessere)+mat_mult(BEM_Qf,pot_tp,pedra_surf_n_tessere)
        dqr_t=f3*dqr_tp+f4*(fqr_t+fqr_tp)-f5*fqr_tp
        qr_t=qr_tp+f1*dqr_t+f2*fqr_t
        fqr_tp=fqr_t
@@ -1701,11 +1701,11 @@
          !qx_t=qx_tp+f1*dqx_tp+f2*fqx_tp
         if(global_medium_Fmdm.eq.'csol') then
          !fqx_t=-matmul(BEM_Qw,qx_t)+matmul(BEM_Qfx,potf_tp)
-         fqx_t=-mat_mult(BEM_Qw,qx_t)+mat_mult(BEM_Qfx,potf_tp)
+         fqx_t=-mat_mult(BEM_Qw,qx_t,pedra_surf_n_tessere)+mat_mult(BEM_Qfx,potf_tp,pedra_surf_n_tessere)
         else if((global_medium_Fmdm.eq.'cnan').or.&
                 (global_medium_Fmdm.eq.'qnan')) then
          !fqx_t=-matmul(BEM_Qw,qx_t)+matmul(BEM_Qf,potf_tp)
-         fqx_t=-mat_mult(BEM_Qw,qx_t)+mat_mult(BEM_Qf,potf_tp)
+         fqx_t=-mat_mult(BEM_Qw,qx_t,pedra_surf_n_tessere)+mat_mult(BEM_Qf,potf_tp,pedra_surf_n_tessere)
         endif
         dqx_t=f3*dqx_tp+f4*(fqx_t+fqx_tp)-f5*fqx_tp
         qx_t=qx_tp+f1*dqx_t+f2*fqx_t
@@ -1919,18 +1919,19 @@
 !     according to the value of nts
 
       ! Reaction Field
-       qr_t=qr_tp-quantum_dt*mat_mult(BEM_R,qr_tp)+quantum_dt*mat_mult(BEM_Qt,pot_tp) &
-                                    +mat_mult(BEM_Qd,pot_tp-pot_tp2)
+       qr_t=qr_tp-quantum_dt*mat_mult(BEM_R,qr_tp,pedra_surf_n_tessere)+quantum_dt*mat_mult(BEM_Qt,pot_tp,pedra_surf_n_tessere) &
+                                    +mat_mult(BEM_Qd,pot_tp-pot_tp2,pedra_surf_n_tessere)
       ! Local Field eq.47 JPCA 2015
        if(global_medium_Floc.eq."loc") then
         if(global_medium_Fmdm.eq.'csol') then
          ! GG: BEM matrices (except R) are different in the case of local-field for solvent external medium
-         qx_t=qx_tp-quantum_dt*mat_mult(BEM_R,qx_tp)+quantum_dt*mat_mult(BEM_Qtx,potf_tp) &
-                                     +mat_mult(BEM_Qdx,potf_tp-potf_tp2)
+         qx_t=qx_tp-quantum_dt*mat_mult(BEM_R,qx_tp,pedra_surf_n_tessere) & 
+                                     +quantum_dt*mat_mult(BEM_Qtx,potf_tp,pedra_surf_n_tessere) &
+                                     +mat_mult(BEM_Qdx,potf_tp-potf_tp2,pedra_surf_n_tessere)
         else if((global_medium_Fmdm.eq.'cnan').or.&
                 (global_medium_Fmdm.eq.'qnan')) then
-         qx_t=qx_tp-quantum_dt*mat_mult(BEM_R,qx_tp)+quantum_dt*mat_mult(BEM_Qt,potf_tp) &
-                                     +mat_mult(BEM_Qd,potf_tp-potf_tp2)
+         qx_t=qx_tp-quantum_dt*mat_mult(BEM_R,qx_tp,pedra_surf_n_tessere)+quantum_dt*mat_mult(BEM_Qt,potf_tp,pedra_surf_n_tessere) &
+                                     +mat_mult(BEM_Qd,potf_tp-potf_tp2,pedra_surf_n_tessere)
         endif
        endif
 
@@ -1953,18 +1954,18 @@
 !     according to the value of nts
 
       ! Reaction Field
-       qr_t=qr_tp-quantum_dt*taum1*qr_tp+quantum_dt*taum1*mat_mult(BEM_Q0,pot_tp) &
-                                  +mat_mult(BEM_Qd,pot_tp-pot_tp2)
+       qr_t=qr_tp-quantum_dt*taum1*qr_tp+quantum_dt*taum1*mat_mult(BEM_Q0,pot_tp,pedra_surf_n_tessere) &
+                                  +mat_mult(BEM_Qd,pot_tp-pot_tp2,pedra_surf_n_tessere)
       ! Local Field eq.47 JPCA 2015
        if(global_medium_Floc.eq."loc") then
         if(global_medium_Fmdm.eq.'csol') then
          ! GG: BEM matrices (except taum1) are different in the case of local-field for solvent external medium
-         qx_t=qx_tp-quantum_dt*taum1*qx_tp+quantum_dt*taum1*mat_mult(BEM_Q0x,potf_tp) &
-                                   +mat_mult(BEM_Qdx,potf_tp-potf_tp2)
+         qx_t=qx_tp-quantum_dt*taum1*qx_tp+quantum_dt*taum1*mat_mult(BEM_Q0x,potf_tp,pedra_surf_n_tessere) &
+                                   +mat_mult(BEM_Qdx,potf_tp-potf_tp2,pedra_surf_n_tessere)
         else if((global_medium_Fmdm.eq.'cnan').or.&
                 (global_medium_Fmdm.eq.'qnan')) then
-         qx_t=qx_tp-quantum_dt*taum1*qx_tp+quantum_dt*taum1*mat_mult(BEM_Q0,potf_tp) &
-                                   +mat_mult(BEM_Qd,potf_tp-potf_tp2)
+         qx_t=qx_tp-quantum_dt*taum1*qx_tp+quantum_dt*taum1*mat_mult(BEM_Q0,potf_tp,pedra_surf_n_tessere) &
+                                   +mat_mult(BEM_Qd,potf_tp-potf_tp2,pedra_surf_n_tessere)
         endif
        endif
 

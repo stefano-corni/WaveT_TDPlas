@@ -17,10 +17,10 @@
       save
       private
       public diag_mat,inv,do_pot_from_field,do_field_from_charges,    &
-             do_dip_from_charges,do_dip_from_coeff,do_pot_from_coeff, &
-             do_pot_from_dip,do_vts_from_dip,mdl,vprod,inv_cmp,       &
+             do_dip_from_charges,mat_mult,cmat_mult, &
+             do_pot_from_dip,mdl,vprod,inv_cmp,       &
              do_field_from_charges_cmp,diag_mat_nosym,                &
-             do_field_from_dip,mat_mult,cmat_mult
+             do_field_from_dip
 
       contains
 
@@ -341,127 +341,6 @@
       end subroutine do_dip_from_charges
 
 
-!------------------------------------------------------------------------
-! @brief Compute dipole from CIS coefficients
-!
-! @date Created: S. Pipolo
-! Modified: E. Coccia 5/7/18
-!------------------------------------------------------------------------
-      subroutine do_dip_from_coeff(c,dip,nc)
-
-       integer(i4b), intent(IN)  :: nc
-       complex(cmp), intent(IN)  :: c(nc)
-       real(dbl),    intent(OUT) :: dip(3)
-       integer(i4b)              :: its,j,k
-       complex(cmp)              :: ctmp(nc)
-
-#ifndef OMP
-       dip(1)=dot_product(c,matmul(quantum_mut(1,:,:),c))
-       dip(2)=dot_product(c,matmul(quantum_mut(2,:,:),c))
-       dip(3)=dot_product(c,matmul(quantum_mut(3,:,:),c))
-#endif
-#ifdef OMP
-      if (global_Fopt_chr.eq.'omp') then
-         ctmp=0.d0
-!$OMP PARALLEL REDUCTION(+:ctmp)
-!$OMP DO
-         do k=1,nc
-            do j=1,nc
-               ctmp(k)=ctmp(k)+ quantum_mut(1,k,j)*c(j)
-            enddo
-         enddo
-!$OMP END PARALLEL
-         dip(1)=dot_product(c,ctmp)
-
-         ctmp=0.d0
-!$OMP PARALLEL REDUCTION(+:ctmp)
-!$OMP DO
-         do k=1,nc
-            do j=1,nc
-               ctmp(k)=ctmp(k)+ quantum_mut(2,k,j)*c(j)
-            enddo
-         enddo
-!$OMP END PARALLEL
-         dip(2)=dot_product(c,ctmp)
-
-         ctmp=0.d0
-!$OMP PARALLEL REDUCTION(+:ctmp)
-!$OMP DO
-         do k=1,nc
-            do j=1,nc
-               ctmp(k)=ctmp(k)+ quantum_mut(3,k,j)*c(j)
-            enddo
-         enddo
-!$OMP END PARALLEL
-         dip(3)=dot_product(c,ctmp)
-      else
-         dip(1)=dot_product(c,matmul(quantum_mut(1,:,:),c))
-         dip(2)=dot_product(c,matmul(quantum_mut(2,:,:),c))
-         dip(3)=dot_product(c,matmul(quantum_mut(3,:,:),c))
-      endif
-#endif
-
-       return
-
-      end subroutine do_dip_from_coeff
-
-!------------------------------------------------------------------------
-! @brief Compute potential on BEM surface from CIS coefficientes
-!
-! @date Created: S. Pipolo
-! Modified: E. Coccia 5/7/18
-!------------------------------------------------------------------------
-      subroutine do_pot_from_coeff(c,pot)
-
-       complex(cmp), intent(IN)        :: c(quantum_n_ci)
-       real(dbl),    intent(OUT)       :: pot(pedra_surf_n_tessere)
-
-       integer(i4b)                       :: its,k,j
-       complex(cmp), save, allocatable    :: ctmp(:)
-       complex(cmp), save                 :: cc
-
-#ifndef OMP
-       do its=1,pedra_surf_n_tessere
-          pot(its)=dot_product(c,matmul(quantum_vts(its,:,:),c))
-       enddo
-#endif
-
-#ifdef OMP
-       if (global_Fopt_chr.eq.'omp') then
-          allocate(ctmp(pedra_surf_n_tessere*quantum_n_ci))
-!$OMP PARALLEL REDUCTION (+:cc)
-!$OMP DO
-          do its=1,pedra_surf_n_tessere
-             do k=1,quantum_n_ci
-                cc=0.d0
-                do j=1,quantum_n_ci
-                   cc = cc + quantum_vts(its,k,j)*c(j)
-                enddo
-                ctmp(k+(its-1)*quantum_n_ci) = cc
-             enddo
-          enddo
-!$OMP END PARALLEL
-!$OMP PARALLEL
-!$OMP DO
-          do its=1,pedra_surf_n_tessere
-             pot(its)=dot_product(c,ctmp((its-1)*quantum_n_ci+1:its*quantum_n_ci))
-          enddo
-!$OMP END PARALLEL
-          deallocate(ctmp)
-       else
-!$OMP PARALLEL
-!$OMP DO
-          do its=1,pedra_surf_n_tessere
-             pot(its)=dot_product(c,matmul(quantum_vts(its,:,:),c))
-          enddo
-!$OMP END PARALLEL
-       endif
-#endif
-
-       return
-
-      end subroutine do_pot_from_coeff
-
 
 
 
@@ -517,40 +396,6 @@
        return
 
       end subroutine do_pot_from_dip
-!------------------------------------------------------------------------
-! @brief Compute (transition) BEM potentials from dipoles
-!
-! @date Created: S. Pipolo
-! Modified:
-!------------------------------------------------------------------------
-      subroutine do_vts_from_dip
-
-       integer(4) :: i,j,its
-       real(dbl)  :: diff(3),dist,vts_dip
-
-       if(allocated(quantum_vts)) deallocate(quantum_vts)
-       allocate(quantum_vts(pedra_surf_n_tessere,quantum_n_ci,quantum_n_ci))
-       do its=1,pedra_surf_n_tessere
-          diff(1)=(quantum_mol_cc(1)-pedra_surf_tessere(its)%x)
-          diff(2)=(quantum_mol_cc(2)-pedra_surf_tessere(its)%y)
-          diff(3)=(quantum_mol_cc(3)-pedra_surf_tessere(its)%z)
-          dist=sqrt(dot_product(diff,diff))
-          do i=1,quantum_n_ci
-             do j=i,quantum_n_ci
-                vts_dip=-dot_product(quantum_mut(:,j,i),diff)/dist**3
-                quantum_vts(its,j,i)=vts_dip
-                quantum_vts(its,i,j)=vts_dip
-                !if(its.eq.pedra_surf_n_tessere) write (6,'(2i6,3f8.3,2e13.5)') i,j, &
-                !          pedra_surf_tessere(its)%x,pedra_surf_tessere(its)%y, &
-                !          pedra_surf_tessere(its)%z,vts_dip,quantum_vts(its,i,j)
-             enddo
-          enddo
-       enddo
-
-       return
-
-      end subroutine do_vts_from_dip
-
 
 !------------------------------------------------------------------------
 ! @brief Optimized matrix/vector multiplication for tesserae-based
@@ -559,13 +404,14 @@
 ! @date Created: E. Coccia 5/7/18
 ! Modified:
 !------------------------------------------------------------------------
-      function mat_mult(a,b)
+      function mat_mult(a,b,n)
 
        implicit none
 
-       real(dbl),    intent(in)    :: a(pedra_surf_n_tessere,pedra_surf_n_tessere),b(pedra_surf_n_tessere)
-       !real(dbl)                   :: mat_mult(pedra_surf_n_tessere),tmp(pedra_surf_n_tessere)
-       real(dbl)                   :: mat_mult(pedra_surf_n_tessere)
+       integer(i4b), intent(in)    :: n          
+       real(dbl),    intent(in)    :: a(n,n),b(n)
+       !real(dbl)                   :: mat_mult(n),tmp(n)
+       real(dbl)                   :: mat_mult(n)
        real(dbl)                   :: tmp
 
        integer(i4b)                :: i,j
@@ -579,9 +425,9 @@
           !tmp=0.d0
 !$OMP PARALLEL reduction (+:tmp)
 !$OMP DO
-          do j=1,pedra_surf_n_tessere
+          do j=1,n
              tmp=0.d0
-             do i=1,pedra_surf_n_tessere
+             do i=1,n
                 !tmp(j) = tmp(j) + a(j,i)*b(i)
                 tmp = tmp + a(j,i)*b(i)
              enddo
@@ -610,6 +456,7 @@
 
        implicit none
 
+       integer(i4b), intent(in)    :: n      
        real(dbl),    intent(in)    :: a(n,n)
        complex(cmp), intent(in)    :: b(n)
        complex(cmp)                :: cmat_mult(n)
@@ -643,6 +490,9 @@
        return
 
       end function cmat_mult
+
+
+
 
 
 
