@@ -8,7 +8,7 @@ program make_spectra
 !     read in the input parameter for the present evolution
       call read_input
       call set_global_tdplas_in_wavet(dt,Fmdm,mol_cc,n_ci,n_ci_read,c_i, &
-                                      e_ci,mut,fmax,omega,Ffld,n_out,n_f, &
+                                      e_ci,fmax,omega,Ffld,n_out,n_f, &
                                       tdelay,pshift,Fbin,Fopt, &
                                       restart,n_restart)
 

@@ -62,16 +62,19 @@
        call init_scf 
        if (Fmdm.ne."vac") call update_environment_scf(c_i,f)
        ! scf cycle
-       if (myrank.eq.0) write(6,*) "Starting SCF Cycle"
+       if (myrank.eq.0) then 
+         write(6,*) "Starting SCF Cycle"
+         write(6,*) "Cycle, e_scf, e_ini, Max_Diff_Eigenval, " 
+         write(6,*) "     Max_Diff_Eigenvec "
+       endif
        do while (docycle.and.ncyc.le.this_ncycmax) 
          ! Build the diagonal part of the Hamiltonian 
-         Htot=zero
+         Htot(:,:)=zero
          call do_htot_ene
          if (Fmdm.ne."vac") call do_interaction(Htot)
          ! Diagonalize Hamiltonian           
          eigt_c=Htot
          call diag_mat_in_wavet(eigt_c,eigv_c,n_ci)       
-         write(6,*) "Eigv ", eigv_c(:)
          ! Transform the new state on the old basis      
          call do_c_oldbasis
          ! compute scf and initial energies
@@ -92,14 +95,10 @@
            ! can be erratic
            if (maxe.le.thre) docycle=.false.         
          endif
-         if (myrank.eq.0) write(6,*) "cycle ", ncyc, e_scf, e_ini
+         if (myrank.eq.0) write(6,*) ncyc, e_scf, e_ini, maxe, maxv
          eigt_cp=eigt_c
          eigv_cp=eigv_c
          ncyc=ncyc+1 
-         if (myrank.eq.0) then
-            write(6,*) "Max Diff on Eigenvalue ", maxe
-            write(6,*) "Max Diff on Eigenvector ", maxv
-         endif
        enddo
        if (myrank.eq.0) write(6,*) "SCF Done"
        ! Write-out integrals/properties in the new basis 
@@ -223,7 +222,8 @@
        integer(4)::i,j,k 
         do j=1,n_ci
           !Htot(j,j)=Htot(j,j)+eigv_c(j)
-          Htot(j,j)=Htot(j,j)+e_ci(j)
+          !Htot(j,j)=Htot(j,j)+e_ci(j)
+          Htot(j,j)=+e_ci(j)
           if(this_Fwrite.eq."high") write(6,*) j,Htot(j,j)
         enddo
        return
@@ -274,12 +274,12 @@
        implicit none
        integer(4) :: i
 
-       e_scf=0.d0
-       e_ini=0.d0
+       e_scf=zero
+       e_ini=zero
 
        do i=1,n_ci
         e_scf=e_scf+abs(c_new(i))*abs(c_new(i))*eigv_c(i)
-        e_ini=e_ini+abs(c_old(i))*abs(c_old(i))*e_ci(i)
+        e_ini=e_ini+abs(c_new(i))*abs(c_new(i))*e_ci(i)
        enddo
 
        return

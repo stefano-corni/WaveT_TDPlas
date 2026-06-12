@@ -62,7 +62,7 @@
        ! Fmdm(1:3) means the first three letters of the char flag Fmdm 
       if (Fmdm.ne."vac") then
          call set_global_tdplas_in_wavet(dt,Fmdm,mol_cc,n_ci,n_ci_read,c_i, &
-                                         e_ci,mut,fmax,omega,Ffld,n_out,n_f, &
+                                         e_ci,fmax,omega,Ffld,n_out,n_f, &
                                          tdelay,pshift,Fbin,Fopt,&
                                          restart,n_restart)
          if (myrank.eq.0) call read_medium_input()

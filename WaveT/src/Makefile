@@ -41,7 +41,7 @@ TOOLSPATH=tools
 
 # objects
 
-WAVETOBJ = random.o constants.o readio.o spectra.o WTMathTools.o interface_classic.o scf.o QM_coupling.o dissipation.o initialise.o propagate.o
+WAVETOBJ = random.o constants.o readio.o spectra.o  WTMathTools.o interface_classic.o scf.o QM_coupling.o dissipation.o initialise.o propagate.o
 OBJ= $(WAVETOBJ) main.o
 OBJ_SPECTRA= $(WAVETOBJ) main_spectra.o
 OBJ_VIB= random.o constants.o readio.o $(TOOLSPATH)/vib.o $(TOOLSPATH)/vib_tool.o

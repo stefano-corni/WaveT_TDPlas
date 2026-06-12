@@ -270,7 +270,6 @@ module interface_classic
           call init_mdm(pot_t = pot, potf_t = potf, morv=quantum_vts(:,1,1))
           !SP07/05/26 initial charges set in tdplas
           call get_qorf(this_q0)
-          write(6,*) "q0 init ", this_q0(10)
           deallocate(pot)
           deallocate(potf)
         end if
@@ -459,6 +458,7 @@ module interface_classic
         implicit none
         real(dbl), intent(INOUT) :: h(n_ci,n_ci) !<   
 
+        h_mdm=zero
         !> compute that interaction with a continuum medium
 #ifdef TDPLAS
         call do_int_tdplas
@@ -492,7 +492,6 @@ module interface_classic
           allocate(qorf(this_nts_act))
         end if
         !> get charges from td_contmed               
-        write(6,*) "get_qorf do_int_tdplas"
         call get_qorf(qorf)
         !> construct the interaction hamiltonian h_mdm
         call do_interaction_cont(qorf,h_mdm)
@@ -645,7 +644,6 @@ module interface_classic
        allocate(mf(3))
        call set_qorf_pot(mu,f)
        call get_qorf(mf)
-       !fr_0=(1.-this_mix_coef)*fr_0+this_mix_coef*matmul(this_mat_f0,mu)
        this_fr0=(1.-this_mix_coef)*this_fr0+this_mix_coef*mf
        deallocate(mf)
        call set_qorf(this_fr0)
@@ -677,15 +675,12 @@ module interface_classic
        call set_qorf_pot(pot,potf)
        ! Get charges from TDPlas 
        call get_qorf(q)
-       write(6,*) "q and q0 ", q(10), this_q0(10)
-       this_mix_coef=0.01
        this_q0=(1.-this_mix_coef)*this_q0+this_mix_coef*q
        deallocate(pot,potf,q) 
        ! SC 12/8/2016: apparently for NP, charge compensation is needed
        !if (Fmdm.eq.'cnan'.or.Fmdm.eq.'qnan') then
        !  this_q0=this_q0-sum(this_q0)/this_nts_act
        !endif
-       write(6,*) "q and q0 set ", this_q0(10)
        call set_qorf(this_q0)
        return
       end subroutine update_BEM_charges
@@ -926,7 +921,7 @@ module interface_classic
 ! @date Created   : 
 ! Modified  :  
 !------------------------------------------------------------------------
-      subroutine set_global_tdplas_in_wavet(this_dt,this_mdm,this_mol_cc,this_n_ci,this_n_ci_read,this_c_i,this_e_ci,this_mut,&
+      subroutine set_global_tdplas_in_wavet(this_dt,this_mdm,this_mol_cc,this_n_ci,this_n_ci_read,this_c_i,this_e_ci,&
                                             this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
                                             this_Fbin,this_Fopt,this_res,this_n_res)
 
@@ -936,7 +931,6 @@ module interface_classic
         character(3)  , intent(in) :: this_mdm                        ! kind of medium
         integer(i4b)  , intent(in) :: this_n_ci,this_n_ci_read        ! number of CIS states
         real(dbl)     , intent(in) :: this_e_ci(:)                    ! CIS energies
-        real(dbl)     , intent(in) :: this_mut(:,:,:)                 ! CIS transition dipoles
         real(dbl)     , intent(in) :: this_mol_cc(3)                  ! molecule center
         real(dbl)     , intent(in) :: this_fmax(3,10),this_omega(10)  ! field amplitude and frequency
         real(dbl)     , intent(in) :: this_tdelay(10),this_pshift(10) ! time delay and phase shift
@@ -949,8 +943,7 @@ module interface_classic
         integer(i4b)  , intent(in) :: this_n_res                      ! frequency for restart
 
 #ifdef TDPLAS
-        call quantum_init(this_dt,this_mol_cc,this_n_ci,this_n_ci_read,this_mut,this_e_ci,this_c_i,&
-                          this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,&
+        call quantum_init(this_dt,this_mol_cc,this_fmax,this_omega,this_n_out,this_n_f,&
                           this_Fbin,this_Fopt, this_n_res)
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
@@ -1209,27 +1202,6 @@ end subroutine
       end subroutine get_m_or_v 
 !
 !
-
-!
-!!   Deal with restart
-!     if(global_prop_Fmdm_res.eq.'yesr') then
-!        h_int=0
-!        if(global_sys_Fdeb.ne."off") call do_interaction_h
-!        h_int(:,:)=h_int(:,:)+h_mdm(:,:)
-!
-!! Check where to put this
-!#ifndef MPI
-!       if (i.eq.1.and.global_sys_Fwrite.eq."high") then
-!        write(6,*) "h_mdm at the first propagation step"
-!        do j=1,n_ci
-!         do k=1,n_ci
-!          write (6,*) j,k,h_mdm(j,k)
-!         enddo
-!        enddo
-!       endif
-!#endif
-!! this is after do_c_oldbasis in 
-
 
 
 

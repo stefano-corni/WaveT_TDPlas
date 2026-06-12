@@ -399,7 +399,6 @@
          endif
        else 
          call do_charges_from_pot(pot,qr_t)
-         write(6,*) "q set ", qr_t(10)
          if(global_medium_Floc.eq."loc") call do_charges_from_pot(potf,qx_t)
        !q=q+(qtot0-sum(q))/pedra_surf_n_tessere
        endif
@@ -466,11 +465,9 @@
           q=fr_t-fr_0
           if(global_medium_Floc.eq."loc") q=q+fx_t  
          else 
-          write(6,*) "Qq ", qr_t(10),q0(10)
           q=qr_t-q0
           if(global_medium_Floc.eq."loc") then 
             q=q+qx_t(:)
-            write(6,*) "Qqx ", qx_t(1)
           endif
           ! SC 31/10/2016: avoid including interaction with an unwanted net charge
           q=q+(qtot0-sum(q))/pedra_surf_n_tessere
@@ -478,7 +475,6 @@
          if(global_sys_Fdeb.eq."off") q=0
          ! SP 18/05/20 test purposes
          if(global_sys_Ftest.eq."n-r") q=q0
-          write(6,*) "Qq net ",q(10), qr_t(10),q0(10),qtot0,sum(q)
          return
         end subroutine get_qorf
 
@@ -2800,7 +2796,6 @@
        call mpi_bcast(global_sys_Fwrite,           flg,MPI_CHARACTER,0,MPI_COMM_WORLD,tp_ierr_mpi)
        call mpi_bcast(global_sys_Ftest,            flg,MPI_CHARACTER,0,MPI_COMM_WORLD,tp_ierr_mpi)
        call mpi_bcast(global_sys_Fdeb,             flg,MPI_CHARACTER,0,MPI_COMM_WORLD,tp_ierr_mpi)
-       call mpi_bcast(quantum_Ffld,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,tp_ierr_mpi)
        call mpi_bcast(global_Fopt_chr,             flg,MPI_CHARACTER,0,MPI_COMM_WORLD,tp_ierr_mpi)
        call mpi_bcast(global_Fcalc,                flg,MPI_CHARACTER,0,MPI_COMM_WORLD,tp_ierr_mpi)
        call mpi_bcast(global_MPL_ord,              flg,MPI_CHARACTER,0,MPI_COMM_WORLD,tp_ierr_mpi)

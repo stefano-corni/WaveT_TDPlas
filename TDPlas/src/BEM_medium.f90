@@ -330,8 +330,8 @@
          endif
        elseif (global_ext_pert_Ftyp.eq."from_cipot") then
                 call read_molecule_file
-                call read_gau_out_medium(global_ext_pert_n_ci+1)
                 ! SP 12/06/26 need to read this from file
+                ! call read_gau_out_medium(global_ext_pert_n_ci+1)
                 !pot=quantum_vts(:,1,global_ext_pert_nstate+1)
        elseif (global_ext_pert_Ftyp.eq."dipole") then
             call read_molecule_file

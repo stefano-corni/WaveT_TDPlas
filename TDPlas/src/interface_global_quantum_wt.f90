@@ -25,20 +25,13 @@
 #endif
 
             ! block of global variables to be supplied by WaveT
-            character(flg)            :: quantum_Ffld                             ! shape of impulse                            #test pot
             character(flg)            :: quantum_Fbin                             ! binary output                               # prop_mdm per stampare
             character(flg)            :: quantum_Fopt                             ! OMP-optimized matrix/vector multiplication  # non serve perchè ci guarda da solo
             real(dbl)                 :: quantum_dt                               ! time step
-            integer(i4b)              :: quantum_n_ci, quantum_n_ci_read          ! number of CIS states
-            real(dbl), allocatable    :: quantum_e_ci(:)                          ! CIS energies                                #no
-            complex(cmp), allocatable :: quantum_c_i(:)                          ! CIS coefficients                             #no
-            real(dbl), allocatable    :: quantum_mut(:,:,:)                       ! CIS transition dipoles
             real(dbl)                 :: quantum_mol_cc(3)                        ! molecule center                              #
             real(dbl)                 :: quantum_fmax(3,10),quantum_omega(10)     ! field amplitude and frequency                #boh ref_mu
-            !real(dbl)                 :: quantum_tdelay(10),quantum_pshift(10)    ! time delay and phase shift
             integer(i4b)              :: quantum_n_out,quantum_n_f                ! auxiliaries for output
             integer(i4b)              :: quantum_nthr = 1                            ! number of threads
-            !character(1)              :: quantum_medium_res                       !restart for medium
             integer(i4b)              :: quantum_n_res                            ! frequency for restart
 
 
@@ -50,9 +43,8 @@
             contains
 
 
-            subroutine quantum_init(dt, mol_cc, n_ci, n_ci_read, mut, e_ci, c_i, &
-                                   fmax, omega, Ffld, n_out, n_f, &
-                                   Fbin,  Fopt, n_res)
+            subroutine quantum_init(dt,mol_cc,fmax, omega,n_out,n_f, &
+                                   Fbin,Fopt,n_res)
 !------------------------------------------------------------------------
 ! @brief Set global variables for medium
 !
@@ -62,36 +54,22 @@
                 implicit none
 
                 real(dbl)     , intent(in)  :: dt                                    ! time step
-                integer(i4b)  , intent(in)  :: n_ci, n_ci_read                     ! number of CIS states
-                real(dbl)     , intent(in)  :: e_ci(:)
-                complex(cmp)  , intent(in)  :: c_i(:)
-                real(dbl)     , intent(in)  :: mut(:,:,:)               ! CIS transition dipoles
                 real(dbl)     , intent(in)  :: mol_cc(3)                ! molecule center
                 real(dbl)     , intent(in)  :: fmax(3,10),omega(10)     ! field amplitude and frequency
-                character(3)  , intent(in)  :: Ffld                     ! shape of impulse
                 character(3)  , intent(in)  :: Fbin                     ! binary output
                 character(3)  , intent(in)  :: Fopt                     ! matrix/vector multiplication
                 integer(i4b)  , intent(in)  :: n_out,n_f                ! auxiliaries for output
                 integer(i4b)  , intent(in)  :: n_res                    ! frequency for restart
 
-                quantum_dt=dt
-                quantum_mol_cc=mol_cc
-                quantum_n_ci=n_ci
-                quantum_n_ci_read = n_ci_read
-                allocate(quantum_e_ci(quantum_n_ci))
-                allocate(quantum_c_i(quantum_n_ci))
-                quantum_e_ci = e_ci
-                quantum_c_i = c_i
-                allocate(quantum_mut(3,quantum_n_ci,quantum_n_ci))
-                quantum_mut=mut
-                quantum_fmax=fmax
-                quantum_omega=omega
-                quantum_Ffld=Ffld
-                quantum_n_out=n_out
-                quantum_n_f=n_f
-                quantum_Fbin=Fbin
-                quantum_Fopt=Fopt
-                quantum_n_res=n_res
+                quantum_dt=dt           ! Needed for propagation
+                quantum_mol_cc=mol_cc   ! Needed ?
+                quantum_fmax=fmax       ! Needed for testing lf against analytical results 
+                quantum_omega=omega     ! Needed for testing lf against analytical results 
+                quantum_n_out=n_out     ! Needed for writing medium output
+                quantum_n_f=n_f         ! Needed for writing medium output 
+                quantum_Fbin=Fbin       ! Needed for writing medium output 
+                quantum_Fopt=Fopt       ! Needed for optimizing speed       
+                quantum_n_res=n_res     ! Needed for writing restarts      
 
                 return
 
@@ -109,7 +87,6 @@
                 call check_tdplas_input_for_wt(user_input)
                 call init_tdplas(calculation_exe, nthr, user_input)
                 call check_global_var
-                call read_gau_out_medium(quantum_n_ci)
                 call write_out(calculation_exe)
             end subroutine
 
@@ -171,7 +148,7 @@
            user_input%propagation_software = "wavet"
            user_input%propagation_type     = "charge-ief"
            user_input%interaction_stride  = 1
-           user_input%mix_coef            = 0.2
+           user_input%mix_coef            = 0.05
            user_input%max_cycles          = 600
            user_input%threshold           = 10
            user_input%interaction_type    = "pcm"
