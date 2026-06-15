@@ -108,7 +108,7 @@
            nstates=n_ci 
          elseif (this_Finit_int.eq."qmt") then
            write(6,*) "System initialised with Quantum Coupling"
-           call do_BEM_quant_in_wavet
+           call initialize_QM_coupling
            if(global_sys_Ftest.eq."qmt") then 
              this_nmodes=3
              this_qmmodes(1)=2 

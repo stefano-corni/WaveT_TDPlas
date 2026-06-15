@@ -291,15 +291,6 @@
           endif
          enddo
        enddo
-!        open(8,file='test_mut.dat',status='replace')
-!          write(8,*) mut(:,:,:)
-!        close(8)
-!       write(6,*) "mut"
-!       do i=1,n_ci
-!        do j=1,n_ci
-!         write(6,'(2i4,3f8.4)') i,j,mut(:,i,j)
-!        enddo
-!       enddo
        close(7)
 !test
 ! MM 

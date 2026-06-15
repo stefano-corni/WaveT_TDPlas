@@ -60,16 +60,15 @@ module interface_classic
       real(dbl), allocatable :: h_mdm(:,:) !< medium contribution to the hamiltonian
       real(dbl), allocatable :: h_mdm_0(:,:) !< medium contribution to the hamiltonian
 
-      integer(i4b) :: this_nts_act, this_nesf_act,this_nprint,this_max_mod_todiag
+      integer(i4b) :: nts, this_nesf_act,this_nprint,this_max_mod_todiag
 
-      type(tess_pcm_in_wavet), target, allocatable :: this_cts_act(:)
+      type(tess_pcm_in_wavet), target, allocatable :: cts(:)
       type(sfera_in_wavet), allocatable :: this_sfe_act(:)
       integer(i4b) :: this_ncycmax !< maximum number of SCF cycles
       integer(i4b), allocatable :: this_imod(:) !<modes to print 
       real(dbl) :: this_thrshld    !< SCF threshold on (i) eigenvalues 10^-global_prop_thrshld (ii) eigenvectors 10^-(global_prop_thrshld+2)
       real(dbl), allocatable :: this_BEM_Q0(:,:)
-      real(dbl), allocatable :: this_BEM_W2(:)
-      real(dbl), allocatable :: this_BEM_Modes(:,:)
+      real(dbl), allocatable :: omega_p2(:)
       real(dbl), allocatable :: this_q0(:)             !< reaction BEM charges
       real(dbl), allocatable :: this_qx0(:)            !< local BEM charges 
       real(dbl), allocatable :: q0_fqfm(:),qx0_fqfm(:) !< reaction and local fwfm charges  
@@ -79,14 +78,18 @@ module interface_classic
       real(dbl), allocatable :: this_mat_f0(:,:) !< Onsager's total matrices needed for scf, free_energy and propagation
       real(dbl) :: this_mix_coef   !< SCF mixing ratio of old (1-global_prop_mix_coef) and new (global_prop_mix_coef) charges/field       
       real(dbl) :: this_eps_A,this_eps_w0
-      integer(i4b), allocatable :: this_qmmodes(:)
-      integer(i4b) :: this_nmodes
+      integer(i4b), allocatable :: qmmodes(:)
+      integer(i4b) :: nmodes
 ! Atomistic medium
       integer(i4b) :: n_atoms
       real(dbl), allocatable :: r_atoms(:,:)
       real(dbl), allocatable :: vint_atoms(:,:,:)
       real(dbl), allocatable :: fint_atoms(:,:,:,:)
-      public this_Fmdm_relax,export_mdm_qmcoup, &
+! Quantum plasmons
+      real(dbl), allocatable :: qg(:,:)      !<Charges associated to each mode    
+      real(dbl), allocatable :: wwe(:)        !<Plasmon coupling energy    
+
+      public this_Fmdm_relax, &
 ! used by dissipation
              set_q0charges,get_medium_dip,get_energies,init_environment,prop_medium,finalize_medium,this_Finit_int,this_Fprop,&
              init_after_scf_in_wavet,init_env_prop,& ! used bypropagate (also this_mix_coef)
@@ -96,13 +99,13 @@ module interface_classic
 ! used by main
              this_Fwrite,this_fr0,this_BEM_Q0,this_mat_f0,this_ncycmax,this_thrshld,quantum_vtsn,&
              this_mix_coef,&
-             do_field_from_charges_in_wavet, this_nts_act, &
+             do_field_from_charges_in_wavet, nts, &
 ! used in scf
              update_environment_scf,out_environment_scf,&
-             this_BEM_W2,this_Ftest,this_eps_w0,this_eps_A,this_BEM_Modes,this_sfe_act,&
-             do_BEM_quant_in_wavet,&
+             omega_p2,this_Ftest,this_eps_w0,this_eps_A,this_sfe_act,&
+             initialize_QM_coupling,&
              this_Fmop,this_imod,this_nprint,this_max_mod_todiag,deallocate_BEM_public_in_wavet,&
-             this_qmmodes,this_nmodes,get_m_or_v
+             qmmodes,nmodes,get_m_or_v, do_plasmon_charges,do_qm_couplings
 ! used by QM_coupling 
 ! module variables this_q0 and this_fr0 contain the updated values of reaction cherges and filed during an SCF run
       contains
@@ -164,16 +167,16 @@ module interface_classic
         this_Fmdm_relax = global_prop_Fmdm_relax
         this_Fint=global_prop_Fint
         this_Ftest=global_sys_Ftest
-        this_nts_act=pedra_surf_n_tessere
+        nts=pedra_surf_n_tessere
         call read_gau_out_medium
         if(global_sys_Fdeb.eq."vmu") then
            call get_vts_from_dip
         elseif(this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then 
            ! SP 17/05/20 shape is not a standard f90 function
            shap=shape(quantum_vts)
-           if(shap(1).ne.this_nts_act) then
+           if(shap(1).ne.nts) then
               write(6,*) "Error: the number of tesserae for the potential is different than those in the cavity/NP"
-              write(6,*) shap(1)," vs ",this_nts_act
+              write(6,*) shap(1)," vs ",nts
               write(6,*) "This is usually due to incoerent ci_pot.inp and cavity.inp files. I stop here" 
               stop
            endif
@@ -192,14 +195,14 @@ module interface_classic
          this_sfe_act(ii)%z=pedra_surf_spheres(ii)%z
          this_sfe_act(ii)%r=pedra_surf_spheres(ii)%r
         end do
-        allocate(this_cts_act(this_nts_act))
-        !this_cts_act=pedra_surf_tessere
-        do ii=1, this_nts_act
-         this_cts_act(ii)%x=pedra_surf_tessere(ii)%x
-         this_cts_act(ii)%y=pedra_surf_tessere(ii)%y
-         this_cts_act(ii)%z=pedra_surf_tessere(ii)%z
-         this_cts_act(ii)%rsfe=pedra_surf_tessere(ii)%rsfe
-         this_cts_act(ii)%n(:)=pedra_surf_tessere(ii)%n(:)
+        allocate(cts(nts))
+        !cts=pedra_surf_tessere
+        do ii=1, nts
+         cts(ii)%x=pedra_surf_tessere(ii)%x
+         cts(ii)%y=pedra_surf_tessere(ii)%y
+         cts(ii)%z=pedra_surf_tessere(ii)%z
+         cts(ii)%rsfe=pedra_surf_tessere(ii)%rsfe
+         cts(ii)%n(:)=pedra_surf_tessere(ii)%n(:)
         end do
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
@@ -257,13 +260,13 @@ module interface_classic
           !> build in principle the field coming from all dipoles
           !> initializing medium with molecular dipole and external field
           call init_mdm(mu_t = mu, f_tp = f, morv=mut(:,1,1))
-          allocate(this_mat_f0(this_nts_act,this_nts_act))
+          allocate(this_mat_f0(nts,nts))
           this_mat_f0=mat_f0
           call get_qorf(this_fr0)
         else
           !> build the potential on the surface from all charges and dipoles
-          allocate(pot(this_nts_act),potf(this_nts_act))
-          allocate(this_q0(this_nts_act),this_qx0(this_nts_act))
+          allocate(pot(nts),potf(nts))
+          allocate(this_q0(nts),this_qx0(nts))
           pot(:)=zero
           potf(:)=zero
           call do_pot_tdplas(c,mu,f,pot,potf)
@@ -314,7 +317,7 @@ module interface_classic
           call init_mdm_prop(mu_t = mu, f_tp = f)
         else
           !> build the potential on the surface from all charges and dipoles
-          allocate(pot(this_nts_act),potf(this_nts_act))
+          allocate(pot(nts),potf(nts))
           pot(:)=zero
           potf(:)=zero
           call do_pot_tdplas(c,mu,f,pot,potf)
@@ -363,29 +366,29 @@ module interface_classic
         complex(cmp), intent(in) :: c(n_ci)    !< (1:n_ci)        - molecular wavefunction coefficients
         real(dbl)   , intent(in) :: mu(3)   !< (1:3)              - molecular dipole
         real(dbl)   , intent(in) :: f(3)    !< (1:3)              - external field
-        real(dbl)   , intent(OUT):: pot(this_nts_act)  !< (1:this_nts_act)   - potential on continuum surface
-        real(dbl)   , intent(OUT):: potf(this_nts_act)  !< (1:this_nts_act)   - potential on continuum surface
+        real(dbl)   , intent(OUT):: pot(nts)  !< (1:nts)   - potential on continuum surface
+        real(dbl)   , intent(OUT):: potf(nts)  !< (1:nts)   - potential on continuum surface
         real(dbl), allocatable   :: r(:,:)  !< auxiliary 3d vector array
-        allocate(r(3,this_nts_act))
-        r(1,:)=this_cts_act(:)%x
-        r(2,:)=this_cts_act(:)%y
-        r(3,:)=this_cts_act(:)%z
+        allocate(r(3,nts))
+        r(1,:)=cts(:)%x
+        r(2,:)=cts(:)%y
+        r(3,:)=cts(:)%z
         !> prepare the potetial acting on the medium for initialisation
         if(this_Fint.eq."ons") then
          !> computing molecular potential from its dipole and not the coefficients                     
-         call do_pot_from_dip(1,mol_cc,mu,this_nts_act,r,pot)
+         call do_pot_from_dip(1,mol_cc,mu,nts,r,pot)
         else
          !> computing molecular potential from the coefficients
-         call do_pot_from_coeff(c,n_ci,this_nts_act,quantum_vts,pot)
+         call do_pot_from_coeff(c,n_ci,nts,quantum_vts,pot)
         end if
         !> computing external potential in the long-wavelength limit
-        call do_pot_from_field(f,this_nts_act,r,potf)
+        call do_pot_from_field(f,nts,r,potf)
 #ifdef fqfw 
         ! SP 6/5/2024: in the following routines pot is updated so that it contains the total pontential
         ! of the molecule charge density and the fwfm system that determines the apparent
         ! surface charges
-        call do_pot_from_charges(n_atoms,r_atoms,q_disc,this_nts_act,r,pot)
-        call do_pot_from_dip(n_atoms,r_atoms,m_disc,this_nts_act,r,pot)
+        call do_pot_from_charges(n_atoms,r_atoms,q_disc,nts,r,pot)
+        call do_pot_from_dip(n_atoms,r_atoms,m_disc,nts,r,pot)
 #endif  
         deallocate(r)
       end subroutine do_pot_tdplas
@@ -403,9 +406,9 @@ module interface_classic
         complex(cmp), intent(in) :: c(n_ci)    !< (1:n_ci)           - molecular wavefunction coefficients
         real(dbl)   , intent(in) :: mu(3)   !< (1:3)              - molecular dipole
         real(dbl)   , intent(in) :: f(3)    !< (1:3)              - external field
-        real(dbl)   , intent(OUT):: pot(n_atoms)  !< (1:this_nts_act)   - potential on continuum surface
-        real(dbl)   , intent(OUT):: fld(3,n_atoms)  !< (1:this_nts_act)   - potential on continuum surface
-        real(dbl)   , intent(OUT):: potf(3,n_atoms)  !< (1:this_nts_act)   - potential on continuum surface
+        real(dbl)   , intent(OUT):: pot(n_atoms)  !< (1:nts)   - potential on continuum surface
+        real(dbl)   , intent(OUT):: fld(3,n_atoms)  !< (1:nts)   - potential on continuum surface
+        real(dbl)   , intent(OUT):: potf(3,n_atoms)  !< (1:nts)   - potential on continuum surface
         real(dbl), allocatable      :: r(:,:)  !< auxiliary 3d vector array
         real(dbl), allocatable      :: qorf(:) !< (1:pedra_surf_n_tessere)     - charges or field  
 #ifdef TDPLAS
@@ -413,16 +416,16 @@ module interface_classic
           allocate(qorf(3))
           stop "Coupling with fqfw not implemented for dipole propagation"
         else
-          allocate(qorf(this_nts_act))
-          allocate(r(3,this_nts_act))
-          r(1,:)=this_cts_act(:)%x
-          r(2,:)=this_cts_act(:)%y
-          r(3,:)=this_cts_act(:)%z
+          allocate(qorf(nts))
+          allocate(r(3,nts))
+          r(1,:)=cts(:)%x
+          r(2,:)=cts(:)%y
+          r(3,:)=cts(:)%z
           !> get charges from td_contmed               
           call get_qorf(qorf)
           !> compute potential and field from          
-          call do_pot_from_charges(this_nts_act,r,qorf,n_atoms,r_atoms,pot)
-          call do_fld_from_charges(this_nts_act,r,qorf,n_atoms,r_atoms,fld)
+          call do_pot_from_charges(nts,r,qorf,n_atoms,r_atoms,pot)
+          call do_fld_from_charges(nts,r,qorf,n_atoms,r_atoms,fld)
         end if
         deallocate(r)
 #endif  
@@ -489,7 +492,7 @@ module interface_classic
           allocate(qorf(3))
         else
           !> allocate and initialise arrays and prepare for calls
-          allocate(qorf(this_nts_act))
+          allocate(qorf(nts))
         end if
         !> get charges from td_contmed               
         call get_qorf(qorf)
@@ -531,29 +534,11 @@ module interface_classic
 !------------------------------------------------------------------------
      subroutine prepare_mdm_for_scf
         implicit none
-          allocate(this_BEM_Q0(this_nts_act,this_nts_act))
+          allocate(this_BEM_Q0(nts,nts))
           this_BEM_Q0=BEM_Q0
         return
       end subroutine prepare_mdm_for_scf
 
-!------------------------------------------------------------------------
-! @brief Prepare medium for quantum coupling
-!
-! @date Created   : S. Pipolo  
-! Modified  :  
-!------------------------------------------------------------------------
-     ! Now called by propagate, afterward should be called by initialize
-     subroutine prepare_mdm_for_quantum
-          if(this_Fbem.eq.'diag') then
-            allocate(this_BEM_W2(this_nts_act))
-            this_BEM_W2=BEM_W2
-          end if
-          if(Fmdm.eq."qnan") then
-           allocate(this_BEM_Modes(this_nts_act,this_nts_act))
-           this_BEM_Modes=BEM_Modes
-          end if
-        return
-      end subroutine prepare_mdm_for_quantum
 
 
 !------------------------------------------------------------------------
@@ -600,7 +585,7 @@ module interface_classic
 
         if(this_Fprop.ne."dip") then 
         ! transform vts to the SCF state basis
-         do its=1,this_nts_act
+         do its=1,nts
           quantum_vts(its,:,:)=matmul(quantum_vts(its,:,:),c)
           quantum_vts(its,:,:)=matmul(transpose(c),quantum_vts(its,:,:))
          enddo
@@ -666,9 +651,9 @@ module interface_classic
        real(dbl), allocatable   :: potf(:)  !< (1:pedra_surf_n_tessere)     - field potential
        real(dbl), allocatable   :: q(:)     !< (1:pedra_surf_n_tessere)     - charges
        integer(i4b)::i    
-       allocate(pot(this_nts_act))
-       allocate(potf(this_nts_act))
-       allocate(q(this_nts_act))
+       allocate(pot(nts))
+       allocate(potf(nts))
+       allocate(q(nts))
        ! With the following call all potential (mol+fqfm) is included
        call do_pot_tdplas(c,mu,f,pot,potf)
        ! Set charges in TDPlas using the potential in pot                
@@ -679,7 +664,7 @@ module interface_classic
        deallocate(pot,potf,q) 
        ! SC 12/8/2016: apparently for NP, charge compensation is needed
        !if (Fmdm.eq.'cnan'.or.Fmdm.eq.'qnan') then
-       !  this_q0=this_q0-sum(this_q0)/this_nts_act
+       !  this_q0=this_q0-sum(this_q0)/nts
        !endif
        call set_qorf(this_q0)
        return
@@ -728,15 +713,15 @@ module interface_classic
 !------------------------------------------------------------------------
       subroutine out_charges(q)
        implicit none
-       real(dbl), intent(IN):: q(this_nts_act)     
+       real(dbl), intent(IN):: q(nts)     
        integer(i4b) its
 #ifndef MPI
        myrank=0
 #endif
        open(unit=7,file="charges0_scf.inp",status="unknown", &
             form="formatted")
-         write (7,*) this_nts_act
-         do its=1,this_nts_act
+         write (7,*) nts
+         do its=1,nts
           write (7,'(E22.8,F22.10)') q(its)
          enddo
        close(unit=7)
@@ -760,18 +745,18 @@ module interface_classic
 #endif
        open(unit=7,file="ci_pot_scf.inp",status="unknown", &
           form="formatted")
-       write(7,*) this_nts_act
+       write(7,*) nts
        i=0
        j=0
        ! V00
        write(7,*) i,j 
-       do its=1,this_nts_act
+       do its=1,nts
         write(7,*) quantum_vts(its,1,1)-quantum_vtsn(its),0.d0,quantum_vtsn(its)
        enddo
 
        do i=2,n_ci
           write(7,*) 0, i-1
-          do its=1,this_nts_act
+          do its=1,nts
              write(7,*) quantum_vts(its,1,i) 
           enddo
        enddo
@@ -779,7 +764,7 @@ module interface_classic
        do i=2,n_ci
            do j=2,i
               write(7,*)  i-1, j-1
-              do its=1,this_nts_act
+              do its=1,nts
                  if (i.eq.j) then
                      write(7,*) quantum_vts(its,i,j)-quantum_vtsn(its)
                  else
@@ -830,24 +815,24 @@ module interface_classic
            ! Get charges from external codes 
            call prop_mdm(i, mu_t = mu, f_tp = f)
           else
-           allocate(pot(this_nts_act))
-           allocate(potf(this_nts_act))
+           allocate(pot(nts))
+           allocate(potf(nts))
            pot=zero
            potf=zero
-           allocate(r(3,this_nts_act))
-           r(1,:)=this_cts_act(:)%x
-           r(2,:)=this_cts_act(:)%y
-           r(3,:)=this_cts_act(:)%z
+           allocate(r(3,nts))
+           r(1,:)=cts(:)%x
+           r(2,:)=cts(:)%y
+           r(3,:)=cts(:)%z
            if(this_Fint.eq."ons") then
             ! computing molecular potential corresponding to a point-like dipole
             !call do_pot_from_dip(mu,pot)
-            call do_pot_from_dip(1,mol_cc,mu,this_nts_act,r,pot)
+            call do_pot_from_dip(1,mol_cc,mu,nts,r,pot)
            else
             ! computing molecular potential
-            call do_pot_from_coeff(c,n_ci,this_nts_act,quantum_vts,pot)
+            call do_pot_from_coeff(c,n_ci,nts,quantum_vts,pot)
            end if
            ! computing external potential in the long-wavelength limit
-           call do_pot_from_field(f,this_nts_act,r,potf)
+           call do_pot_from_field(f,nts,r,potf)
            ! propagating medium with molecular and external potentials
            ! SP 15/05/20 changed this_Ftest with global_sys_Ftest
            if(global_sys_Ftest.eq."n-r") then
@@ -979,7 +964,7 @@ module interface_classic
        implicit none
 
        real(dbl),intent(out):: f(3)  
-       real(dbl),intent(in):: q(this_nts_act)  
+       real(dbl),intent(in):: q(nts)  
 
 #ifdef TDPLAS
        call do_field_from_charges(q,f)
@@ -992,24 +977,6 @@ module interface_classic
 
 
 
-
-      subroutine do_BEM_quant_in_wavet
-
-       implicit none
-       integer(i4b) :: i
-
-#ifdef TDPLAS
-       call do_BEM_quant
-       this_nmodes=global_qmodes_nmodes
-       allocate(this_qmmodes(this_nmodes))
-       do i=1,this_nmodes
-         this_qmmodes(i)=global_qmodes_qmmodes(i)
-       enddo
-#else
-        stop "Error: TDPlas library has not been linked to WaveT!"
-#endif
-
-      end subroutine do_BEM_quant_in_wavet
 
 
 
@@ -1034,24 +1001,143 @@ module interface_classic
        implicit none
        real(dbl),allocatable :: pos(:,:)
 
-       allocate(pos(this_nts_act,3))
+       allocate(pos(nts,3))
        pos(:,1)=pedra_surf_tessere(:)%x
        pos(:,2)=pedra_surf_tessere(:)%y
        pos(:,3)=pedra_surf_tessere(:)%z
-       call do_vts_from_dip(quantum_vts,pos,mut,mol_cc,this_nts_act,n_ci)
+       call do_vts_from_dip(quantum_vts,pos,mut,mol_cc,nts,n_ci)
        deallocate(pos)
 
       end subroutine get_vts_from_dip
 
+!
+!
+!------------------------------------------------------------------------
+!>     @brief initializes and allocates the variables for qm coupling 
+!>     @date Created: 25 Sep 2019
+!>     @author S.Pipolo
+!>     @param Hqm_evl  
+!----------------------------------------------------------------------------
+      subroutine initialize_QM_coupling
+       implicit none
+       integer(i4b) :: i
+#ifdef TDPLAS
+       call do_BEM_quant
+       nmodes=global_qmodes_nmodes
+       allocate(qmmodes(nmodes))
+       allocate(qg(nmodes,nts))
+       allocate(wwe(nmodes))
+       do i=1,nmodes
+         qmmodes(i)=global_qmodes_qmmodes(i)
+       enddo
+       this_nprint=global_qmodes_nprint
+       !> Test: use potentials from dipoles    
+       if(this_Ftest.eq."qmt") then
+         if (allocated(quantum_vts)) deallocate(quantum_vts)
+         allocate (quantum_vts(nts,n_ci,n_ci))
+         call get_vts_from_dip
+         if (myrank.eq.0) write(6,*) "Integrals from dipoles computed"
+       endif
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
+      end subroutine initialize_QM_coupling
+!
+!
+!------------------------------------------------------------------------
+!>     @brief computes the molecule-environment quantum couplig elements "g"
+!>     @date Created: 25 Sep 2019
+!>     @author S.Pipolo
+!>     @param Hqm_evl  
+!----------------------------------------------------------------------------
+      subroutine do_qm_couplings(nmodes,n,g)
+      implicit none
+       integer(i4b),intent(in) :: nmodes,n
+       real(dbl),intent(out) :: g(nmodes,n,n)
+       integer(i4b) :: i,j,k   
+#ifndef MPI
+       myrank=0
+#endif
+       do i=1,nmodes   
+         do j=1,n
+           do k=j,n
+             g(i,k,j)=dot_product(qg(i,:),quantum_vts(:,k,j))
+           enddo
+         enddo
+       enddo
+      return
+      end subroutine
+!
+!
+!------------------------------------------------------------------------
+!>     @brief computes the molecule-environment quantum couplig elements "g"
+!>     @date Created: 25 Sep 2019
+!>     @author S.Pipolo
+!>     @param Hqm_evl  
+!----------------------------------------------------------------------------
+      subroutine do_plasmon_charges(nmodes,omega_p,we)  
+      implicit none
+       integer(i4b),intent(in) :: nmodes
+       real(dbl),intent(out) :: omega_p(nmodes)
+       real(dbl),intent(out) :: we(nmodes)
+       integer(i4b) :: i   
+#ifndef MPI
+       myrank=0
+#endif
+       do i=1,nmodes  
+         omega_p(i)=sqrt(BEM_W2(qmmodes(i))) 
+         we(i)=sqrt((omega_p(i)**2-this_eps_w0**2)/(two*omega_p(i)))
+         qg(i,:)=BEM_Modes(qmmodes(i),:)*we(i)
+       enddo
+       call out_gcharges
+       wwe=we
+      return
+      end subroutine
+!
+!
+!------------------------------------------------------------------------
+!>     @brief Build field-perturbation to Plexciton Hamiltonian: \f$ \mathcal{H}_{\text{MF}}+\mathcal{H}_{\text{PF}} \f$
+!>     @date Created: 02 May 2017
+!>     @author S.Pipolo 
+!>     @note One mode coupled at a time
+!>     @param 
+!----------------------------------------------------------------------------
+      subroutine do_plexd_matrix(nmodes,n,plexd)  
+      implicit none
+       integer(i4b),intent(in) :: n,nmodes
+       real(dbl),intent(out) :: plexd(3,n*nmodes,n*nmodes)
+       integer(4)::i,j,k,p,s !< indices    
+       real(dbl), allocatable:: gF(:) !< semiclassical particle-field couplings
+       allocate(gF(3)) 
+       !> Building \f$ \mathcal{H}_{\text{MF}} \f$ block
+       do j=1,n
+         do k=j,n
+           plexd(:,k,j)=mut(:,k,j)
+           plexd(:,j,k)=plexd(:,k,j)
+         enddo
+       enddo
+       do i=1,nmodes   
+         !> Building \f$ \mathcal{H}_{\text{PF}} \f$ couplings
+         gF(1)=-dot_product(BEM_Modes(qmmodes(i),:),cts(:)%x)*wwe(i)
+         gF(2)=-dot_product(BEM_Modes(qmmodes(i),:),cts(:)%y)*wwe(i)
+         gF(3)=-dot_product(BEM_Modes(qmmodes(i),:),cts(:)%z)*wwe(i)
+         do j=1,n
+           p=i*n+j
+           do k=j,n
+             s=i*n+k
+             !> Adding \f$ \mathcal{H}_{\text{MF}} \f$ subblocks
+             plexd(:,s,p)=plexd(:,k,j)
+             plexd(:,p,s)=plexd(:,s,p)
+           enddo
+           !> Adding \f$ \mathcal{H}_{\text{PF}} \f$ subblocks
+           plexd(:,p,j)=plexd(:,p,j)+gF(:)
+           plexd(:,j,p)=plexd(:,j,p)+gF(:)
+         enddo
+       enddo
+       deallocate(gF) 
+      return
+      end subroutine
 
-
-
-
-      subroutine init_environment_quantum
-        implicit none
-        call prepare_mdm_for_quantum
-        return
-      end subroutine init_environment_quantum
 
 
 
@@ -1069,30 +1155,11 @@ module interface_classic
 
       end subroutine init_after_scf_in_wavet
 
-      subroutine out_gcharges_in_wavet 
-
-       implicit none
-
-#ifdef TDPLAS
-       call out_gcharges
-#else
-        stop "Error: TDPlas library has not been linked to WaveT!"
-#endif                                                                  
-      end subroutine out_gcharges_in_wavet                           
 
 
 ! begin - subroutines to calculate dipoles, field and potentials from coefficients, dipoles and fields
 
 
-subroutine export_mdm_qmcoup
-   implicit none
-   integer(i4b) :: i
-         this_nprint=global_qmodes_nprint
-         allocate(this_BEM_W2(this_nts_act))
-         this_BEM_W2=BEM_W2
-         allocate(this_BEM_Modes(this_nts_act,this_nts_act))
-         this_BEM_Modes=BEM_Modes
-end subroutine
 
 !------------------------------------------------------------------------
 ! @brief Computes the modulus of a vector
