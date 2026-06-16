@@ -110,12 +110,12 @@
            write(6,*) "System initialised with Quantum Coupling"
            call initialize_QM_coupling
            if(global_sys_Ftest.eq."qmt") then 
-             this_nmodes=3
-             this_qmmodes(1)=2 
-             this_qmmodes(2)=3 
-             this_qmmodes(3)=4 
+             nmodes=3
+             qmmodes(1)=2 
+             qmmodes(2)=3 
+             qmmodes(3)=4 
            endif
-           nstates=n_ci*(this_nmodes+1)
+           nstates=n_ci*nmodes
          else
            write(6,*)"WARNING: No initialisation specified, "
            write(6,*)"  using input file initialisation. "
