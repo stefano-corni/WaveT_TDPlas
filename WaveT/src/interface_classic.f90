@@ -102,7 +102,7 @@ module interface_classic
 ! used in scf
              update_environment_scf,out_environment_scf,&
              omega_p2,this_Ftest,this_eps_w0,&
-             initialize_QM_coupling,&
+             initialize_qc_interface,&
              this_Fmop,this_imod,this_nprint,this_max_mod_todiag,deallocate_BEM_public_in_wavet,&
              qmmodes,nmodes,get_m_or_v, do_plasmon_charges,do_qm_couplings
 ! used by QM_coupling 
@@ -1009,18 +1009,15 @@ module interface_classic
 !>     @author S.Pipolo
 !>     @param Hqm_evl  
 !----------------------------------------------------------------------------
-      subroutine initialize_QM_coupling
+      subroutine initialize_qc_interface
        implicit none
-       integer(i4b) :: i
 #ifdef TDPLAS
        call do_BEM_quant
        nmodes=global_qmodes_nmodes
        allocate(qmmodes(nmodes))
        allocate(qg(nmodes,nts))
        allocate(wwe(nmodes))
-       do i=1,nmodes
-         qmmodes(i)=global_qmodes_qmmodes(i)
-       enddo
+       qmmodes(:)=global_qmodes_qmmodes(:)
        this_nprint=global_qmodes_nprint
        !> Test: use potentials from dipoles    
        if(this_Ftest.eq."qmt") then
@@ -1032,7 +1029,7 @@ module interface_classic
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
 #endif
-      end subroutine initialize_QM_coupling
+      end subroutine initialize_qc_interface
 !
 !
 !------------------------------------------------------------------------

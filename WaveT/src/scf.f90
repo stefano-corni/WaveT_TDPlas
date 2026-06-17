@@ -1,6 +1,5 @@
       Module scf            
       use constants
-      use initialise
       use readio    
       use interface_classic
       use, intrinsic :: iso_c_binding
@@ -38,10 +37,12 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-      subroutine do_scf(c,ene)
+      subroutine do_scf(n,ene,dip,f0)
        implicit none
-       real(dbl), intent(out) ::   c(nstates)   !< Hamiltonian matrix in SCF cycle
-       real(dbl), intent(out) :: ene(nstates)   !< Hamiltonian matrix in SCF cycle
+       integer(i4b), intent(in) :: n      !< number of states
+       real(dbl), intent(in)    :: f0(3)     !< field at time0  
+       real(dbl), intent(out)   :: dip(3,n,n) !< Transition dipoles              
+       real(dbl), intent(out)   :: ene(n)   !< Energies                        
        integer(i4b) :: ncyc=1                   !< cycle number 
        logical :: docycle=.true.                !< choice on continue cycling
        real(dbl) :: thre,thrv                   !< thresholds
@@ -62,7 +63,7 @@
        ! Initialize/allocate
        if (myrank.eq.0) write(6,*) "Initialising SCF "
        call init_scf 
-       if (Fmdm.ne."vac") call update_environment_scf(c_i,f)
+       if (Fmdm.ne."vac") call update_environment_scf(c_i,f0)
        ! scf cycle
        if (myrank.eq.0) then 
          write(6,*) "Starting SCF Cycle"
@@ -73,6 +74,7 @@
          ! Build the diagonal part of the Hamiltonian 
          Htot(:,:)=zero
          call do_htot_ene
+         if(mdl(f0).gt.0.) call do_H_int(Htot,mut,f0,n_ci)
          if (Fmdm.ne."vac") call do_interaction(Htot)
          ! Diagonalize Hamiltonian           
          eigt=Htot
@@ -112,8 +114,9 @@
           call out_energies
        endif
        ! Update the coefficients and energies
-       c(:)=c_new(:)
+       !c(:)=c_new(:)
        ene(:)=eigv(:)
+       dip(:,:,:)=mut(:,:,:)
        return
 
       end subroutine do_scf

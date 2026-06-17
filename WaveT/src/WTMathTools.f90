@@ -23,8 +23,8 @@
        do_pot_from_dip,        &
        do_fld_from_dip,        &
        do_pot_from_charges,    &
-       do_fld_from_charges     
-                                
+       do_fld_from_charges,    &
+       do_H_int                         
       contains
 
 
@@ -615,6 +615,25 @@
       end subroutine do_fld_from_charges
 
 
+!
+!------------------------------------------------------------------------
+!>    @brief build semiclassical interaction matrix
+!>    @date Created: 09 Feb 2019
+!>    @author S.Pipolo 
+!----------------------------------------------------------------------------
+      subroutine do_H_int(H,m,f,n)
+       integer(i4b), intent(in) :: n      
+       real(dbl), intent(in)  :: f(3)  
+       real(dbl),  intent(inout) :: H(n,n)  
+       real(dbl),  intent(in) :: m(3,n,n)
+       integer(i4b)::j,k
+       do j=1,n
+         do k=1,n
+           H(k,j)=H(k,j)-dot_product(m(:,k,j),f(:))
+         enddo
+       enddo
+      return
+      end subroutine
 
 
       end module

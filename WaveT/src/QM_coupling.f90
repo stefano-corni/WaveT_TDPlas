@@ -29,7 +29,6 @@
 !------------------------------------------------------------------------------
       Module QM_coupling    
       use constants    
-      use initialise
       use interface_classic
       use readio       
       use, intrinsic :: iso_c_binding
@@ -66,8 +65,9 @@
 !>    @author S.Pipolo
 !>    @note this routine should change to accomodate quantum external fields
 !----------------------------------------------------------------------------
-      subroutine do_QM_coupling(nstates_qm,energies_qm,trans_dipoles_qm)
+      subroutine do_QM_coupling(nstates_qm,energies_qm,trans_dipoles_qm,f0)
        implicit none 
+       real(dbl), intent(in)    :: f0(3)     !< field at time0  
        integer(i4b), intent(in) :: nstates_qm  
        real(dbl), dimension(nstates_qm), intent(out) :: energies_qm
        real(dbl), dimension(3,nstates_qm,nstates_qm), intent(out)  :: &
@@ -75,8 +75,10 @@
 #ifndef MPI
        myrank=0
 #endif
+       Hqm_dim=nstates_qm
+       call initialize_qc_interface
        !> Allocate and initialize matrices here
-       call init_QM_coupling(nstates_qm)
+       call init
        if (myrank.eq.0) write(6,*) "QM_coupling correcty initialized"
        !> compute charges associated to each mode
        call do_plasmon_charges(nmodes,omega_p,we)
@@ -94,12 +96,12 @@
          if (myrank.eq.0) write(6,*) &
                 "Plexciton dipole integrals built"
          !> If a field is present at time zero, diagonalize Perturbed Plexciton matrix in presence of a static field.
-         if(mdl(fmax(:,1)).gt.0.) call do_Hqm_int(fmax(:,1))
-         Hqm_evt=Hqm+Hqm_int
+         if(mdl(f0).gt.0.) call do_H_int(Hqm,plexd,f0,Hqm_dim)
+         Hqm_evt=Hqm
          call diag_mat_in_wavet(Hqm_evt,Hqm_evl,Hqm_dim)
-         if (myrank.eq.0.and.mdl(fmax(:,1)).le.0.) write(6,*) &
+         if (myrank.eq.0.and.mdl(f0).le.0.) write(6,*) &
                 "Plexcitons matrix diagonalized"
-         if (myrank.eq.0.and.mdl(fmax(:,1)).gt.0.) write(6,*) &
+         if (myrank.eq.0.and.mdl(f0).gt.0.) write(6,*) &
                 "Perturbed Plexcitons matrix diagonalized"
          !> If propagate, transform Plexcitons integrals in plexciton basis (pexciton dipole integrals)
          call transform_plexd
@@ -127,11 +129,9 @@
 !     Modified  :
 !     @param Hqm_dim,Hqm,Hqm_evt,Hqm_evl
 !----------------------------------------------------------------------------
-      subroutine init_QM_coupling(nstates_ini)
+      subroutine init
       implicit none
-       integer(i4b), intent(in) :: nstates_ini 
        !FQBEM='prop' !enforces use of correct QM_coupling flag
-       Hqm_dim=nstates_ini
        allocate(g(nmodes,n_ci,n_ci))
        allocate(we(nmodes))
        allocate(omega_p(nmodes))
@@ -147,7 +147,7 @@
        allocate(Hqm_evl(Hqm_dim))
        write(*,*) "QM initialization done"
       return
-      end subroutine init_QM_coupling
+      end subroutine init
 !
 !
 !------------------------------------------------------------------------
@@ -202,6 +202,7 @@
        enddo
       return
       end subroutine
+!
 !
 !
 !------------------------------------------------------------------------

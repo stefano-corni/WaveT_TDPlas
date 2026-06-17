@@ -7,6 +7,7 @@
       use scf
       use interface_classic
       use initialise
+      use WTMathTools
 #ifdef OMP
       use omp_lib
 #endif
@@ -260,9 +261,10 @@
 ! @date Created   : 
 ! Modified  : E. Coccia 16 Jan 2018
 !------------------------------------------------------------------------
-      subroutine create_field 
+      subroutine create_field(f00)
 
        implicit none
+       real(dbl), intent(out) :: f00(3)
 
        integer(i4b) :: i,j,i_max,n_tot
        real(dbl) :: t_a,ti,tf,arg
@@ -490,7 +492,7 @@
        
 
         close(7)
- 
+        f00(:)=f(:,1) 
         return
 
       end subroutine create_field

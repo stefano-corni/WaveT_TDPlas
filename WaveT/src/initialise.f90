@@ -48,8 +48,9 @@
 !>    @author S.Pipolo
 !>    @note 
 !----------------------------------------------------------------------------
-      subroutine init_Hspace
+      subroutine init_Hspace(f0)
        implicit none 
+       real(dbl), intent(in) :: f0(3)      !< Initial field 
        integer :: ici
 #ifndef MPI
        myrank=0
@@ -62,10 +63,10 @@
        endif
        if (this_Finit_int.eq."sce") then
          !> SCF initialisation 
-         call do_scf(energies,trans_dipoles)
+         call do_scf(nstates,energies,trans_dipoles,f0)
        elseif (this_Finit_int.eq."qmt") then
          !> Quantum Coupling initialisation 
-         call do_QM_coupling(nstates,energies,trans_dipoles)
+         call do_QM_coupling(nstates,energies,trans_dipoles,f0)
        else
          !> Input initialisation as in ci_*.inp 
          energies=e_ci
@@ -107,8 +108,7 @@
            write(6,*)"System initialised as from input files"
            nstates=n_ci 
          elseif (this_Finit_int.eq."qmt") then
-           write(6,*) "System initialised with Quantum Coupling"
-           call initialize_QM_coupling
+           write(6,*) "System initialised in plexciton states"
            if(global_sys_Ftest.eq."qmt") then 
              nmodes=3
              qmmodes(1)=2 

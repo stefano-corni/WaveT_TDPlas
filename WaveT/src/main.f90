@@ -1,6 +1,6 @@
       program tdcis
 
-       use constants, only: myrank,nproc,ierr_mpi,nthreads
+       use constants
        use readio  
        use spectra
        use dissipation 
@@ -15,6 +15,7 @@
 #endif
        implicit none
        integer :: st,current,rate
+       real(dbl) :: f00(3)
 #ifndef MPI 
        myrank=0
 #endif
@@ -74,14 +75,14 @@
        !> Create the field 
        call init_spectra
        !> Create the field 
-       call create_field
+       call create_field(f00)
 #ifndef MPI 
        call system_clock(current)
        write(6,'("Done reading input & setting up the field, took", &
              F10.3,"s")') real(current-st)/real(rate)
 #endif
        !> Initialize system wavefunction and Hilbert space
-       call init_Hspace      
+       call init_Hspace(f00)      
        !> Propagate wavefunction 
        call prop
        ! SP 10/07/17: commented the following, do_spectra gives errors 
