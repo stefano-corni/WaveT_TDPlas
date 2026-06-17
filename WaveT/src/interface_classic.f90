@@ -63,7 +63,6 @@ module interface_classic
       integer(i4b) :: nts, this_nesf_act,this_nprint,this_max_mod_todiag
 
       type(tess_pcm_in_wavet), target, allocatable :: cts(:)
-      type(sfera_in_wavet), allocatable :: this_sfe_act(:)
       integer(i4b) :: this_ncycmax !< maximum number of SCF cycles
       integer(i4b), allocatable :: this_imod(:) !<modes to print 
       real(dbl) :: this_thrshld    !< SCF threshold on (i) eigenvalues 10^-global_prop_thrshld (ii) eigenvectors 10^-(global_prop_thrshld+2)
@@ -77,7 +76,7 @@ module interface_classic
       real(dbl) :: this_fx0(3)                         !< Reaction field at time 0 defined with Finit_mdm, here because used in scf
       real(dbl), allocatable :: this_mat_f0(:,:) !< Onsager's total matrices needed for scf, free_energy and propagation
       real(dbl) :: this_mix_coef   !< SCF mixing ratio of old (1-global_prop_mix_coef) and new (global_prop_mix_coef) charges/field       
-      real(dbl) :: this_eps_A,this_eps_w0
+      real(dbl) :: this_eps_w0
       integer(i4b), allocatable :: qmmodes(:)
       integer(i4b) :: nmodes
 ! Atomistic medium
@@ -102,7 +101,7 @@ module interface_classic
              do_field_from_charges_in_wavet, nts, &
 ! used in scf
              update_environment_scf,out_environment_scf,&
-             omega_p2,this_Ftest,this_eps_w0,this_eps_A,this_sfe_act,&
+             omega_p2,this_Ftest,this_eps_w0,&
              initialize_QM_coupling,&
              this_Fmop,this_imod,this_nprint,this_max_mod_todiag,deallocate_BEM_public_in_wavet,&
              qmmodes,nmodes,get_m_or_v, do_plasmon_charges,do_qm_couplings
@@ -185,16 +184,8 @@ module interface_classic
         this_thrshld=global_prop_threshold
         this_mix_coef=global_prop_mix_coef 
         this_eps_w0=drudel_eps_w0
-        this_eps_A=drudel_eps_A
+        
         this_nesf_act=pedra_surf_n_spheres
-        allocate(this_sfe_act(this_nesf_act))
-        !this_sfe_act=pedra_surf_spheres
-        do ii=1, this_nesf_act
-         this_sfe_act(ii)%x=pedra_surf_spheres(ii)%x
-         this_sfe_act(ii)%y=pedra_surf_spheres(ii)%y
-         this_sfe_act(ii)%z=pedra_surf_spheres(ii)%z
-         this_sfe_act(ii)%r=pedra_surf_spheres(ii)%r
-        end do
         allocate(cts(nts))
         !cts=pedra_surf_tessere
         do ii=1, nts
@@ -1349,6 +1340,24 @@ module interface_classic
        return
 
       end subroutine read_gau_out_medium
+
+
+!------------------------------------------------------------------------
+! @brief Provide sphere parameters for test QM_coupling
+!
+! @date Created: S. Pipolo
+!------------------------------------------------------------------------
+      subroutine grep_sphere_parameters(r,d,sp,wl)
+       real(dbl), intent(out)  :: r,d,wl
+       real(dbl), intent(out)  :: sp(3)
+       d=sqrt(pedra_surf_spheres(1)%x**2+pedra_surf_spheres(1)%y**2+pedra_surf_spheres(1)%z**2)
+       r=pedra_surf_spheres(1)%r
+       wl=sqrt(drudel_eps_A/3)
+       sp(1)=pedra_surf_spheres(1)%x 
+       sp(2)=pedra_surf_spheres(1)%y 
+       sp(3)=pedra_surf_spheres(1)%z 
+       return
+      end subroutine grep_sphere_parameters
 
 
 

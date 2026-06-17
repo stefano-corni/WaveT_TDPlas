@@ -29,6 +29,7 @@
 !------------------------------------------------------------------------------
       Module QM_coupling    
       use constants    
+      use initialise
       use interface_classic
       use readio       
       use, intrinsic :: iso_c_binding
@@ -54,8 +55,7 @@
 
       save
       private
-      public do_QM_coupling, & ! subroutines
-             Hqm_evt,Hqm_evl,plexd   ! variables   
+      public do_QM_coupling
 !
 !
       contains
@@ -242,6 +242,9 @@
        open(7,file="Hqm_matrix.dat",status="unknown")
        open(8,file="Hqm_energies.dat",status="unknown")
        open(9,file="Hqm_vectors.dat",status="unknown")
+       open(10,file="ci_mut_qc.inp",status="unknown",form="formatted")
+       open(3,file="ci_energy_qc.inp",status="unknown",form="formatted")
+       open(4,file="ci_ini_qc.inp",status="unknown",form="formatted")
        write(8,*) "Plexciton , molecule  and plasmon energies "
        write(my_fmt,'(a,i0,a)') "(",Hqm_dim,"F10.6)"
        write(7,*) "Super-matrix: ", my_fmt
@@ -256,11 +259,32 @@
          else
            write(8,"(i0,F10.6,2a)") i, Hqm_evl(i), " - ", " - "
          endif
+         ! ci_energy_qc.inp
+         Hqm_evl(i)=Hqm_evl(i)-Hqm_evl(1)
+         if(i.gt.1) write(7,'(A,I6,X,A,f15.8)') 'Root',i-1,':',Hqm_evl(i)/ev_to_au
+         ! ci_ini_qc.inp
+         if(i.eq.1) write(7,'(f15.8)') one
+         if(i.gt.1) write(7,'(f15.8)') zero
+         ! ci_mut_qc.inp 1st part
+         write(7,"(A,I6,X,A,I6,X,3(E15.8,X))") 'States', 0, 'and',i-1, &
+                & plexd(1,1,i),plexd(2,1,i),plexd(3,1,i)
+         ! matrix
          write(9,my_fmt) (Hqm_evt(i,j), j=1,Hqm_dim)
        enddo
+       ! ci_mut_qc.inp 2nd part
+       do i=2,Hqm_dim
+         do j=2,i   
+           write(7,"(A,I6,X,A,I6,X,3(E15.8,X))") 'States', j-1, & 
+              & 'and',i-1,plexd(1,i,j),plexd(2,i,j),plexd(3,i,j)
+         enddo
+       enddo
+       Hqm_evl(1)=zero                 
        close(7)
        close(8) 
        close(9) 
+       close(10) 
+       close(3) 
+       close(4) 
        !call out_gcharges_in_wavet
       return
       end subroutine out_QM_coupling
@@ -313,12 +337,7 @@
        allocate(sp(3),tot(n_ci,n_ci),ref(n_ci,n_ci))
        open(7,file="g.mat",status="unknown")
        write(7,*) "# Test for dipolar-mode couplings" 
-       d=sqrt(this_sfe_act(1)%x**2+this_sfe_act(1)%y**2+this_sfe_act(1)%z**2)
-       r=cts(1)%rsfe
-       wl=sqrt(this_eps_A/3)
-       sp(1)=this_sfe_act(1)%x 
-       sp(2)=this_sfe_act(1)%y 
-       sp(3)=this_sfe_act(1)%z 
+       call grep_sphere_parameters(r,d,sp,wl)
        write(7,*) "# Sphere radius distance (bohr) and position"
        write(7,"(5F15.4)") r,d,sp(1),sp(2),sp(3)
        write(7,*) "# g=dot_product(BEM_Modes(p,:),vts(:,i,j))*we" 
@@ -359,4 +378,5 @@
        stop
       return
       end subroutine
+
       end module

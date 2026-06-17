@@ -188,11 +188,11 @@ readio.o: random.o
 
 spectra.o: readio.o
 
-QM_coupling.o: constants.o interface_classic.o 
+QM_coupling.o: constants.o readio.o interface_classic.o initialise.o
 
-scf.o: constants.o readio.o interface_classic.o 
+scf.o: constants.o readio.o interface_classic.o initialise.o
 
-initialise.o: constants.o readio.o interface_classic.o scf.o QM_coupling.o
+initialise.o: constants.o readio.o 
 
 dissipation.o: random.o constants.o readio.o interface_classic.o
 

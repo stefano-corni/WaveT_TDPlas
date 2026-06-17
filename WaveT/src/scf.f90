@@ -1,5 +1,6 @@
       Module scf            
       use constants
+      use initialise
       use readio    
       use interface_classic
       use, intrinsic :: iso_c_binding
@@ -11,10 +12,10 @@
       implicit none
 
       real(dbl), allocatable :: Htot(:,:)    !< Hamiltonian matrix in SCF cycle
-      real(dbl), allocatable :: eigt_c(:,:)  !< Eigenvectors of Htot at current cycle
-      real(dbl), allocatable :: eigv_c(:)    !< Eigenvalues of Htot at current cycle
-      real(dbl), allocatable :: eigt_cp(:,:) !< Eigenvectors of Htot at previous cycle
-      real(dbl), allocatable :: eigv_cp(:)   !< Eigenvalues of Htot at previous cycle
+      real(dbl), allocatable :: eigt(:,:)  !< Eigenvectors of Htot at current cycle
+      real(dbl), allocatable :: eigv(:)    !< Eigenvalues of Htot at current cycle
+      real(dbl), allocatable :: eigtp(:,:) !< Eigenvectors of Htot at previous cycle
+      real(dbl), allocatable :: eigvp(:)   !< Eigenvalues of Htot at previous cycle
       real(dbl) :: maxv                      !< Max values if eigenvectors differences wrt previous cycle                   
       real(dbl) :: maxe                      !< Max values if eigenvalues  differences wrt previous cycle       
       ! Working arrays
@@ -37,9 +38,10 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-      subroutine do_scf
-
+      subroutine do_scf(c,ene)
        implicit none
+       real(dbl), intent(out) ::   c(nstates)   !< Hamiltonian matrix in SCF cycle
+       real(dbl), intent(out) :: ene(nstates)   !< Hamiltonian matrix in SCF cycle
        integer(i4b) :: ncyc=1                   !< cycle number 
        logical :: docycle=.true.                !< choice on continue cycling
        real(dbl) :: thre,thrv                   !< thresholds
@@ -73,8 +75,8 @@
          call do_htot_ene
          if (Fmdm.ne."vac") call do_interaction(Htot)
          ! Diagonalize Hamiltonian           
-         eigt_c=Htot
-         call diag_mat_in_wavet(eigt_c,eigv_c,n_ci)       
+         eigt=Htot
+         call diag_mat_in_wavet(eigt,eigv,n_ci)       
          ! Transform the new state on the old basis      
          call do_c_oldbasis
          ! compute scf and initial energies
@@ -82,7 +84,7 @@
          ! Update charges or field with new coefficients, 
          ! Test
          !call transform_dipoles
-         !if(Fmdm.ne."vac") call transform_environment_scf(eigt_c)
+         !if(Fmdm.ne."vac") call transform_environment_scf(eigt)
          !if (Fmdm.ne."vac") call update_environment_scf(c_new,f)
          ! Test
          if (Fmdm.ne."vac") call update_environment_scf(c_old,f)
@@ -96,23 +98,22 @@
            if (maxe.le.thre) docycle=.false.         
          endif
          if (myrank.eq.0) write(6,*) ncyc, e_scf, e_ini, maxe, maxv
-         eigt_cp=eigt_c
-         eigv_cp=eigv_c
+         eigtp=eigt
+         eigvp=eigv
          ncyc=ncyc+1 
        enddo
        if (myrank.eq.0) write(6,*) "SCF Done"
        ! Write-out integrals/properties in the new basis 
        call transform_dipoles
-       if(Fmdm.ne."vac") call transform_environment_scf(eigt_c)
-       c_i=c_new
-       e_ci=eigv_c
+       if(Fmdm.ne."vac") call transform_environment_scf(eigt)
        if (myrank.eq.0) then
           if(Fmdm.ne."vac") call out_environment_scf
           call out_dipoles
           call out_energies
        endif
-       ! Update the initial coefficients      
-
+       ! Update the coefficients and energies
+       c(:)=c_new(:)
+       ene(:)=eigv(:)
        return
 
       end subroutine do_scf
@@ -125,12 +126,12 @@
 !------------------------------------------------------------------------
       subroutine init_scf
 
-       allocate(eigv_c(n_ci),eigt_c(n_ci,n_ci))
-       allocate(eigv_cp(n_ci),eigt_cp(n_ci,n_ci))
+       allocate(eigv(n_ci),eigt(n_ci,n_ci))
+       allocate(eigvp(n_ci),eigtp(n_ci,n_ci))
        allocate(Htot(n_ci,n_ci))
        allocate(c_old(n_ci))
        allocate(c_new(n_ci))
-       eigv_c=e_ci
+       eigv=e_ci
        return
 
       end subroutine init_scf
@@ -143,8 +144,8 @@
 !------------------------------------------------------------------------
       subroutine finalize_scf
 
-       deallocate(eigv_c,eigt_c)
-       deallocate(eigv_cp,eigt_cp)
+       deallocate(eigv,eigt)
+       deallocate(eigvp,eigtp)
        deallocate(Htot)
        deallocate(c_old)
        deallocate(c_new)
@@ -175,7 +176,7 @@
        allocate(c_tmp(n_ci))
        c_tmp(:)=real(c_i(:))
        ! find the new eigenvector that is most similar to the old one
-       c_tmp=abs(matmul(c_tmp,eigt_c))
+       c_tmp=abs(matmul(c_tmp,eigt))
        ! c_tmp here contains the coefficient of the old occupied state
        ! for each of the new states
        max_p=maxloc(c_tmp)
@@ -192,7 +193,7 @@
           c_new(i)=complex(c_tmp(i),0.d0)
        enddo
        ! c_tmp below is the new state on the basis of the old states  
-       c_tmp=matmul(eigt_c,c_tmp)
+       c_tmp=matmul(eigt,c_tmp)
        do i=1,n_ci
           c_old(i)=complex(c_tmp(i),0.d0)
        enddo
@@ -221,7 +222,7 @@
       subroutine do_htot_ene
        integer(4)::i,j,k 
         do j=1,n_ci
-          !Htot(j,j)=Htot(j,j)+eigv_c(j)
+          !Htot(j,j)=Htot(j,j)+eigv(j)
           !Htot(j,j)=Htot(j,j)+e_ci(j)
           Htot(j,j)=+e_ci(j)
           if(this_Fwrite.eq."high") write(6,*) j,Htot(j,j)
@@ -249,11 +250,11 @@
        mxv=zero                
        mxe=zero          
        do i=1,Mdim   
-         diff=sqrt((eigv_c(i)-eigv_cp(i))**2)
+         diff=sqrt((eigv(i)-eigvp(i))**2)
          if(diff.gt.mxe) mxe=diff
          do j=1,Mdim   
 ! SC 24/4/2016: changed below, otherwise a change of sign result in non-convergence
-           diff=abs(eigt_c(j,i)**2-eigt_cp(j,i)**2)
+           diff=abs(eigt(j,i)**2-eigtp(j,i)**2)
            if(diff.gt.mxv) mxv=diff
          enddo
        enddo
@@ -278,7 +279,7 @@
        e_ini=zero
 
        do i=1,n_ci
-        e_scf=e_scf+abs(c_new(i))*abs(c_new(i))*eigv_c(i)
+        e_scf=e_scf+abs(c_new(i))*abs(c_new(i))*eigv(i)
         e_ini=e_ini+abs(c_new(i))*abs(c_new(i))*e_ci(i)
        enddo
 
@@ -307,13 +308,13 @@
        myrank=0
 #endif
        do i=1,3
-        mut(i,:,:)=matmul(mut(i,:,:),eigt_c)
-        mut(i,:,:)=matmul(transpose(eigt_c),mut(i,:,:))
+        mut(i,:,:)=matmul(mut(i,:,:),eigt)
+        mut(i,:,:)=matmul(transpose(eigt),mut(i,:,:))
        enddo
        if (Fmag.eq.'mag') then
           do i=1,3
-             lt(i,:,:)=matmul(lt(i,:,:),eigt_c)
-             lt(i,:,:)=matmul(transpose(eigt_c),lt(i,:,:))
+             lt(i,:,:)=matmul(lt(i,:,:),eigt)
+             lt(i,:,:)=matmul(transpose(eigt),lt(i,:,:))
           enddo
        endif
        return 
@@ -387,12 +388,17 @@
 
        open(unit=7,file="ci_energy_scf.inp",status="unknown", &
            form="formatted")
+       open(unit=8,file="ci_ini_scf.inp",status="unknown", &
+           form="formatted")
+       write(8,'(f15.8)') one 
        do i=2,n_ci
-        e_ci(i)=e_ci(i)-e_ci(1)
-        write(7,'(A,I6,X,A,f15.8)') 'Root',i-1,':',e_ci(i)/ev_to_au
+       eigv(i)=eigv(i)-eigv(1)
+        write(7,'(A,I6,X,A,f15.8)') 'Root',i-1,':',eigv(i)/ev_to_au
+        write(8,'(f15.8)') zero
        enddo
-       e_ci(1)=0.d0
+       eigv(1)=zero
        close(unit=7)
+       close(unit=8)
        if (myrank.eq.0) then
        write(6,*) "Written out the SCF energies,", &
                " GS has been given zero energy!"

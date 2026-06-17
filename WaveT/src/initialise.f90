@@ -13,10 +13,10 @@
 !------------------------------------------------------------------------------
       Module initialise    
       use constants    
-      use interface_classic
       use readio       
-      use scf            
-      use QM_coupling
+      use interface_classic
+      use QM_coupling      
+      use scf              
       use, intrinsic :: iso_c_binding
 #ifdef OMP
       use omp_lib
@@ -62,7 +62,7 @@
        endif
        if (this_Finit_int.eq."sce") then
          !> SCF initialisation 
-         call do_scf
+         call do_scf(energies,trans_dipoles)
        elseif (this_Finit_int.eq."qmt") then
          !> Quantum Coupling initialisation 
          call do_QM_coupling(nstates,energies,trans_dipoles)
