@@ -177,7 +177,7 @@
         subroutine check_tdplas_input_for_wt(user_input)
             type(tdplas_user_input) ::  user_input
 
-            if((user_input%medium_type.ne."nanop").and.(user_input%medium_type.ne."sol")) call wavet_error("medium_type")
+            !if((user_input%medium_type.ne."nanop").and.(user_input%medium_type.ne."sol")) call wavet_error("medium_type")
             if(user_input%propagation_software.ne."wavet") call wavet_error("propagation_software")
 
 

@@ -149,8 +149,7 @@
         allocate(m_or_v(pedra_surf_n_tessere))
         m_or_v=morv
         if(.not.allocated(mu_mdm))allocate(mu_mdm(3,1))
-        ! SP: the following call should be split in do_BEM and do_BEM_prop
-        call do_BEM_prop !in BEM_medium
+        call do_BEM !in BEM_medium
 ! SC 03/05/2016: create a new BEM_Q0=BEM_Qw^-1*BEM_Qf that should avoid
 !                spurious charge dynamics for stationary states
 !        call init_BEM_Q0
@@ -236,6 +235,8 @@
       integer(i4b) :: its,k,j
 
        t=(i-1)*quantum_dt
+       !> Build matrices for propagation
+       call do_BEM_prop 
        if (global_prop_Fprop.eq."dip") then
        ! Dipole propagation:
          mu_tp = mu_t

@@ -1013,11 +1013,18 @@ module interface_classic
        implicit none
 #ifdef TDPLAS
        call do_BEM_quant
+       write(6,*) "Done BEM quantum"
        nmodes=global_qmodes_nmodes
        allocate(qmmodes(nmodes))
        allocate(qg(nmodes,nts))
        allocate(wwe(nmodes))
        qmmodes(:)=global_qmodes_qmmodes(:)
+       if(global_sys_Ftest.eq."qmt") then 
+         nmodes=3
+         qmmodes(1)=2 
+         qmmodes(2)=3 
+         qmmodes(3)=4 
+       endif
        this_nprint=global_qmodes_nprint
        !> Test: use potentials from dipoles    
        if(this_Ftest.eq."qmt") then

@@ -95,7 +95,7 @@
 !     @brief Init routine of initialise   
 !     @date Created   : S.Pipolo 02 May 2017
 !     Modified  :
-!     @param Hqm_dim,Hqm,Hqm_evt,Hqm_evl
+!     @param 
 !----------------------------------------------------------------------------
       subroutine init_initialise
        implicit none
@@ -109,13 +109,7 @@
            nstates=n_ci 
          elseif (this_Finit_int.eq."qmt") then
            write(6,*) "System initialised in plexciton states"
-           if(global_sys_Ftest.eq."qmt") then 
-             nmodes=3
-             qmmodes(1)=2 
-             qmmodes(2)=3 
-             qmmodes(3)=4 
-           endif
-           nstates=n_ci*nmodes
+           nstates=n_ci*(nmodes+1)
          else
            write(6,*)"WARNING: No initialisation specified, "
            write(6,*)"  using input file initialisation. "

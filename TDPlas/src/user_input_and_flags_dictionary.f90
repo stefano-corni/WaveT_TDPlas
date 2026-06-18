@@ -113,10 +113,10 @@
                  [Character(flg) :: "charge", "dipole", "non"],                         &
                  [Character(flg) :: "chr", "dip", "non"])
 
-      call  dict_entry_init(dict_Fbem, 3,                                               &
+      call  dict_entry_init(dict_Fbem, 4,                                               &
                  [Character(flg) :: "bem_type", "global_medium_Fbem"],                  &
-                 [Character(flg) :: "diagonal", "standard", "non"],                     &
-                 [Character(flg) :: "diag", "stan", "non"])
+                 [Character(flg) :: "diagonal", "standard", "cpcm", "non"],             &
+                 [Character(flg) :: "diag", "stan", "cpcm", "non"])
 
       call  dict_entry_init(dict_read_write, 3,                                         &
                  [Character(flg) :: "bem_read_write", "global_medium_read_write"],      &

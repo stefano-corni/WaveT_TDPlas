@@ -82,7 +82,7 @@
 
       save
       private
-      public BEM_L,BEM_T,ONS_ff,ONS_fw,                                &
+      public BEM_L,BEM_T,ONS_ff,ONS_fw,do_BEM,                         &
              BEM_Sm12,MPL_F0,MPL_Ft0,MPL_Fd,MPL_Fx0,MPL_Ftx0,MPL_Fxd,  &
              MPL_Tauxm1,MPL_Taum1,mat_f0,mat_fd,MPL_Ff,MPL_Fw,         &
              ONS_f0,ONS_fd,ONS_taum1,ONS_fx0,ONS_fxd,ONS_tauxm1,       &
@@ -101,6 +101,53 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !------------------------------------------------------------------------
+! @brief Gneral BEM driver routine 
+! @author S. Pipolo
+! @date Created: 
+! @note Modified: G. Gil
+!------------------------------------------------------------------------
+      subroutine do_BEM
+
+#ifndef MPI
+       tp_myrank=0
+#endif
+       !> Allocate matrices and Read/write S D matrices
+       call init_BEM
+       !> Specific for 
+       if(global_eps_Feps.eq."gen".and.global_medium_Fbem.eq."stan") &
+          call mpibcast_pole_file()
+
+       if(global_medium_Fbem.eq.'diag') then 
+         !> Allocate matrices and Prepare for BEM_diagonal
+         call init_BEM_diagonal
+         call do_BEM_diagonal
+         !> Allocate matrices and Prepare for BEM_standard
+       elseif(global_medium_Fbem.eq.'diag') then
+         call init_BEM_standard
+         call do_BEM_standard
+#ifdef MPI
+         call mpi_finalize(tp_ierr_mpi)
+#endif
+       elseif(global_medium_Fbem.eq.'cpcm') then
+         call do_BEM_cpcm    
+       else
+         stop
+       endif
+       !> Write out matrices 
+       if(global_sys_Fwrite.eq."high") then 
+         if(global_out_Fgamess.eq.'yes')  call out_BEM_gamess
+         if(global_medium_Floc=='loc') call out_BEM_lf
+         call out_BEM_mat
+       endif
+       !call finalize_BEM
+       write(6,*) "Done with BEM matrices"
+       return
+
+      end subroutine
+
+
+
+!------------------------------------------------------------------------
 ! @brief BEM driver routine for propagation
 !
 ! @date Created: S. Pipolo
@@ -113,157 +160,51 @@
 #ifndef MPI
        tp_myrank=0
 #endif
-       !Cavity read/write and S D matrices
-       call init_BEM
-       if(global_eps_Feps.eq."gen".and.global_medium_Fbem.eq."stan") &
-          call mpibcast_pole_file()
-       if(global_medium_Fbem.eq.'diag') then
-         call init_BEM_diagonal
-       endif
-       if(global_out_Fgamess.eq.'yes') then
-         allocate(BEM_Qd(pedra_surf_n_tessere,pedra_surf_n_tessere))
-         allocate(BEM_Q0(pedra_surf_n_tessere,pedra_surf_n_tessere))
-         if(global_medium_Floc=='loc'.and.global_medium_Fmdm.eq.'csol') then
-             allocate(BEM_Qdx(pedra_surf_n_tessere,pedra_surf_n_tessere))
-             allocate(BEM_Q0x(pedra_surf_n_tessere,pedra_surf_n_tessere))
-         endif
-         !Standard or Diagonal BEM
-         if(global_medium_Fbem.eq.'stan') then
-           call init_BEM_standard
-           call do_BEM_standard
-           if (tp_myrank.eq.0)write(6,*) "Standard BEM is experimental"
-#ifdef MPI
-       call mpi_finalize(tp_ierr_mpi)
-#endif
-         elseif(global_medium_Fbem.eq.'diag') then
-             call do_BEM_diagonal
-         endif
-         !Write out matrices for gamess
-         call out_BEM_gamess
-         if(global_medium_Floc=='loc') then
-             call out_BEM_lf
-         end if
-         call finalize_BEM
-       endif
-       if((global_prop_Fprop.eq."chr-ief").or.&
-          (global_prop_Fprop.eq."chr-ied").or.&
-          (global_prop_Fprop.eq."chr-ons")) then
-         if(.not.allocated(BEM_Qd)) allocate(BEM_Qd(pedra_surf_n_tessere,pedra_surf_n_tessere))
-         if(.not.allocated(BEM_Q0)) allocate(BEM_Q0(pedra_surf_n_tessere,pedra_surf_n_tessere))
-         if(global_medium_Floc.eq.'loc'.and.global_medium_Fmdm.eq.'csol') then
-           allocate(BEM_Qdx(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           allocate(BEM_Q0x(pedra_surf_n_tessere,pedra_surf_n_tessere))
-         endif
-       endif
-       if((global_prop_Fprop.eq."chr-ief").or.&
-          (global_prop_Fprop.eq."chr-ied")) then
-         !Standard or Diagonal BEM
-         if(global_medium_Fbem.eq.'stan') then
-           call init_BEM_standard
-           call do_BEM_standard
-           if (tp_myrank.eq.0)write(6,*) "Standard BEM is experimental"
-#ifdef MPI
-       call mpi_finalize(tp_ierr_mpi)
-#endif
-         elseif(global_medium_Fbem.eq.'diag') then
-           call do_BEM_diagonal
-           !Save Modes for quantum BEM
-           if(global_medium_Fmdm.eq."qnan") then
-             allocate(BEM_Modes(pedra_surf_n_tessere,pedra_surf_n_tessere))
-             BEM_Modes=TSm12
-           endif
-         endif
-       endif
-         !Write out matrices for gamess
-         if(global_sys_Fwrite.eq."high") call out_BEM_gamess
-         if(global_sys_Fwrite.eq."high") call out_BEM_mat
          !Build propagation Matrices
-       if(global_prop_Fprop.ne."non") then
-         if(global_eps_Feps.eq."deb") then
-           allocate(BEM_R(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           allocate(BEM_Qt(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           if((global_medium_Floc.eq.'loc').and.&
-              (global_medium_Fmdm.eq.'csol')) then
-                 allocate(BEM_Qtx(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           endif
-           if(global_medium_Fbem.eq.'stan') call do_propBEM_std_deb
-           if(global_medium_Fbem.eq.'diag') call do_propBEM_dia_deb
-         elseif(global_eps_Feps.eq."drl") then
-           allocate(BEM_Qw(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           allocate(BEM_Qf(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           if((global_medium_Floc.eq.'loc').and.&
-              (global_medium_Fmdm.eq.'csol')) then
-                 allocate(BEM_Qfx(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           endif
-           if(global_medium_Fbem.eq.'stan') call do_propBEM_std_drl
-           if(global_medium_Fbem.eq.'diag') call do_propBEM_dia_drl
-         elseif(global_eps_Feps.eq."gen") then
-           allocate(BEM_Qg(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           allocate(BEM_Qw(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           allocate(BEM_Qf(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           allocate(BEM_Qdf(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           allocate(BEM_Qdf_2g(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           if((global_medium_Floc.eq.'loc').and.&
-              (global_medium_Fmdm.eq.'csol')) then
-            allocate(BEM_Qfx(pedra_surf_n_tessere,pedra_surf_n_tessere))
-            allocate(BEM_Qdfx(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           allocate(BEM_Qdfx_2g(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           endif
-           if(global_medium_Fbem.eq.'stan') call do_propBEM_std_gen
-           if(global_medium_Fbem.eq.'diag') call do_propBEM_dia_gen
+       if(global_eps_Feps.eq."deb") then
+         allocate(BEM_R(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         allocate(BEM_Qt(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         if((global_medium_Floc.eq.'loc').and.&
+            (global_medium_Fmdm.eq.'csol')) then
+               allocate(BEM_Qtx(pedra_surf_n_tessere,pedra_surf_n_tessere))
          endif
+         if(global_medium_Fbem.eq.'stan') call do_propBEM_std_deb
+         if(global_medium_Fbem.eq.'diag') call do_propBEM_dia_deb
+       elseif(global_eps_Feps.eq."drl") then
+         allocate(BEM_Qw(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         allocate(BEM_Qf(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         if((global_medium_Floc.eq.'loc').and.&
+            (global_medium_Fmdm.eq.'csol')) then
+               allocate(BEM_Qfx(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         endif
+         if(global_medium_Fbem.eq.'stan') call do_propBEM_std_drl
+         if(global_medium_Fbem.eq.'diag') call do_propBEM_dia_drl
+       elseif(global_eps_Feps.eq."gen") then
+         allocate(BEM_Qg(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         allocate(BEM_Qw(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         allocate(BEM_Qf(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         allocate(BEM_Qdf(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         allocate(BEM_Qdf_2g(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         if((global_medium_Floc.eq.'loc').and.&
+            (global_medium_Fmdm.eq.'csol')) then
+          allocate(BEM_Qfx(pedra_surf_n_tessere,pedra_surf_n_tessere))
+          allocate(BEM_Qdfx(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         allocate(BEM_Qdfx_2g(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         endif
+         if(global_medium_Fbem.eq.'stan') call do_propBEM_std_gen
+         if(global_medium_Fbem.eq.'diag') call do_propBEM_dia_gen
        endif
        !Write out propagation matrices
-         if(global_sys_Fwrite.eq."high") call out_BEM_propmat
-         if(global_prop_Fprop.eq."chr-ons") then
-          allocate(Sm1(pedra_surf_n_tessere,pedra_surf_n_tessere))
-          ! Form $S^{-1}$ matrix
-          Sm1=inv(BEM_S)
-          pedra_surf_n_spheres=1
-          if(global_eps_Feps.eq."deb") then
-            call do_propfact_ons_deb
-          elseif(global_eps_Feps.eq."drl") then
-            allocate(ONS_ff(pedra_surf_n_spheres))
-            call do_propfact_ons_drl
-          endif
-          ! SP: Computing matrices needed for initialization and propgation eq.2 JPCA 2015
-          BEM_Q0=-ONS_f0*Sm1
-          BEM_Qd=-ONS_fd*Sm1
-          if(global_eps_Feps.eq."drl") then
-           !allocate(BEM_Qf(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           BEM_Qf=-ONS_ff(1)*Sm1
-          endif
-          if(global_medium_Floc.eq.'loc') then
-            BEM_Q0x=ONS_fx0*Sm1
-            BEM_Qdx=ONS_fxd*Sm1
-          endif
-         endif
-       if(global_medium_Fmdm.eq."qnan") then
-          if (global_medium_Fbem.eq.'diag') then
-             allocate(BEM_Qd(pedra_surf_n_tessere,pedra_surf_n_tessere))
-             allocate(BEM_Q0(pedra_surf_n_tessere,pedra_surf_n_tessere))
-             call do_BEM_diagonal
-             allocate(BEM_Modes(pedra_surf_n_tessere,pedra_surf_n_tessere))
-             BEM_Modes=TSm12
-             call out_gcharges
-             write(*,*) "Printing quantum plasmons charges"
-          else
-             write(*,*) "Quantum nanoparticle requires BEM diagonal"
-             write(*,*) "Please specify bem_type=""diag"""
-             if (allocated(BEM_Qd)) deallocate(BEM_Qd)
-             if (allocated(BEM_Q0)) deallocate(BEM_Q0)
-             stop
-          endif
-       endif
+       if(global_sys_Fwrite.eq."high") call out_BEM_propmat
 
-       if (allocated(Sm1)) deallocate(Sm1)
        !Deallocate private arrays
        call finalize_BEM
        return
 
       end subroutine
-
-
+!
+!
+!      
 !------------------------------------------------------------------------
 ! @brief BEM driver routine for frequency calculation (old do_freq_mat)
 !
@@ -278,12 +219,6 @@
 
        ! Cavity read/write and S D matrices
        call init_BEM
-       allocate(BEM_Qd(pedra_surf_n_tessere,pedra_surf_n_tessere))
-       allocate(BEM_Q0(pedra_surf_n_tessere,pedra_surf_n_tessere))
-       if(global_medium_Floc=='loc'.and.global_medium_Fmdm.eq.'csol') then
-         allocate(BEM_Qdx(pedra_surf_n_tessere,pedra_surf_n_tessere))
-         allocate(BEM_Q0x(pedra_surf_n_tessere,pedra_surf_n_tessere))
-       end if
        ! Using Diagonal BEM
        call init_BEM_diagonal
        call do_BEM_diagonal
@@ -350,8 +285,9 @@
        return
 
       end subroutine do_BEM_freq
-
-
+!
+!
+!
 !------------------------------------------------------------------------
 ! @brief BEM driver routine for quantum BEM calculation
 !
@@ -360,23 +296,28 @@
 !------------------------------------------------------------------------
       subroutine do_BEM_quant
 
-       ! Cavity read/write and S D matrices
-       call init_BEM
-       allocate(BEM_Qd(pedra_surf_n_tessere,pedra_surf_n_tessere))
-       allocate(BEM_Q0(pedra_surf_n_tessere,pedra_surf_n_tessere))
-       ! Diagonal BEM
-       call init_BEM_diagonal
-       call do_BEM_diagonal
-       !Save Modes for quantum BEM
-
+       !> Building standard BEM matrixes in the diagonal form
+       if (global_medium_Fbem.ne.'diag') then
+         write(6,*) "Quantum nanoparticle requires diagonal BEM"
+         write(6,*) "Please specify bem_type=""diag"""
+         stop
+       endif
+       write(6,*) "Before do_BEM"                           
+       call do_BEM
+       write(6,*) "After  do_BEM"                           
+       !> Save Modes for quantum BEM
        allocate(BEM_Modes(pedra_surf_n_tessere,pedra_surf_n_tessere))
        BEM_Modes=TSm12
-       call finalize_BEM
+       write(6,*) "Before gcharges"                           
        call out_gcharges
+       write(6,*) "After    harges"                           
+       call finalize_BEM
        return
 
       end subroutine do_BEM_quant
-
+!
+!
+!      
 !------------------------------------------------------------------------
 ! @brief BEM initialization routine: cavity read/write and S and D
 ! matrices
@@ -391,22 +332,16 @@
 #ifndef MPI
        tp_myrank=0
 #endif
+       allocate(BEM_Qd(pedra_surf_n_tessere,pedra_surf_n_tessere))
+       allocate(BEM_Q0(pedra_surf_n_tessere,pedra_surf_n_tessere))
+       if(global_medium_Floc=='loc'.and.global_medium_Fmdm.eq.'csol') then
+           allocate(BEM_Qdx(pedra_surf_n_tessere,pedra_surf_n_tessere))
+           allocate(BEM_Q0x(pedra_surf_n_tessere,pedra_surf_n_tessere))
+       endif
        allocate(scrd3(3))
        sgn=one
        if(global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq."qnan") sgn=-one
        if (global_medium_read_write.eq.'wri') then
-       ! Write out geometric info and stop
-         ! Build the cavity/nanoparticle surface
-         !if(pedra_surf_Fcav.eq.'fil') then
-         !  call read_cavity_full_file
-         !elseif(pedra_surf_Fcav.eq.'gms') then
-         !  call read_gmsh_file(pedra_surf_Finv)
-         !else
-         !  if(global_medium_Fmdm(2:4).eq.'sol') call pedra_int('act')
-         !  if(global_medium_Fmdm(2:4).eq.'nan') call pedra_int('met')
-         !endif
-         ! write out the cavity/nanoparticle surface
-         !call output_surf
          if (tp_myrank.eq.0) then
             call output_surf
             write(6,*) "Created output file with surface points"
@@ -524,87 +459,86 @@
 
 
 
-subroutine clean_all_ocpy_BEM
- if(allocated(BEM_S)) deallocate(BEM_S)
- if(allocated(BEM_D)) deallocate(BEM_D)
- if(allocated(BEM_L)) deallocate(BEM_L)
- if(allocated(BEM_T)) deallocate(BEM_T)
- if(allocated(BEM_W2)) deallocate(BEM_W2)
- if(allocated(BEM_Modes)) deallocate(BEM_Modes)
- if(allocated(K0)) deallocate(K0)
- if(allocated(Kd)) deallocate(Kd)
- if(allocated(K0x)) deallocate(K0x)
- if(allocated(Kdx)) deallocate(Kdx)
- if(allocated(fact1)) deallocate(fact1)
- if(allocated(fact2)) deallocate(fact2)
- if(allocated(fact2x)) deallocate(fact2x)
- if(allocated(Sm12T)) deallocate(Sm12T)
- if(allocated(TSm12)) deallocate(TSm12)
- if(allocated(TSp12)) deallocate(TSp12)
- if(allocated(BEM_Sm12)) deallocate(BEM_Sm12)
- if(allocated(Sp12)) deallocate(Sp12)
- if(allocated(BEM_Q0)) deallocate(BEM_Q0)
- if(allocated(BEM_Qd)) deallocate(BEM_Qd)
- if(allocated(BEM_Qt)) deallocate(BEM_Qt)
- if(allocated(BEM_R)) deallocate(BEM_R)
- if(allocated(BEM_Qw)) deallocate(BEM_Qw)
- if(allocated(BEM_Qf)) deallocate(BEM_Qf)
- if(allocated(BEM_Qg)) deallocate(BEM_Qg)
- if(allocated(BEM_2G)) deallocate(BEM_2G)
- if(allocated(BEM_Qtx)) deallocate(BEM_Qtx)
- if(allocated(BEM_Qfx)) deallocate(BEM_Qfx)
- if(allocated(MPL_Ff)) deallocate(MPL_Ff)
- if(allocated(MPL_Fw)) deallocate(MPL_Fw)
- if(allocated(MPL_F0)) deallocate(MPL_F0)
- if(allocated(MPL_Fx0)) deallocate(MPL_Fx0)
- if(allocated(MPL_Ft0)) deallocate(MPL_Ft0)
- if(allocated(MPL_Ftx0)) deallocate(MPL_Ftx0)
- if(allocated(MPL_Fd)) deallocate(MPL_Fd)
- if(allocated(MPL_Fxd)) deallocate(MPL_Fxd)
- if(allocated(MPL_Taum1)) deallocate(MPL_Taum1)
- if(allocated(MPL_Tauxm1)) deallocate(MPL_Tauxm1)
- if(allocated(mat_f0)) deallocate(mat_f0)
- if(allocated(mat_fd)) deallocate(mat_fd)
- if(allocated(ONS_ff)) deallocate(ONS_ff)
- if(allocated(lambda)) deallocate(lambda)
- if(allocated(q_omega)) deallocate(q_omega)
- if(allocated(Kdiag_omega)) deallocate(Kdiag_omega)
- if(allocated(scrd3)) deallocate(scrd3)
- if(allocated(BEM_2ppDA)) deallocate(BEM_2ppDA)
- if(allocated(BEM_2ppDAx)) deallocate(BEM_2ppDAx)
- if(allocated(BEM_Sm1)) deallocate(BEM_Sm1)
- if(allocated(BEM_ADt)) deallocate(BEM_ADt)
- if(allocated(gg)) deallocate(gg)
- if(allocated(w2)) deallocate(w2)
- if(allocated(kf)) deallocate(kf)
- if(allocated(sin_delta)) deallocate(sin_delta)
- if(allocated(cos_delta)) deallocate(cos_delta)
- if(allocated(kf_prime)) deallocate(kf_prime)
- if(allocated(kf0)) deallocate(kf0)
- if(allocated(fact3)) deallocate(fact3)
- if(allocated(fact3x)) deallocate(fact3x)
- if(allocated(BEM_Qdf)) deallocate(BEM_Qdf)
- if(allocated(BEM_Qdfx)) deallocate(BEM_Qdfx)
- if(allocated(BEM_Qdf_2g)) deallocate(BEM_Qdf_2g)
- if(allocated(BEM_Qdfx_2g)) deallocate(BEM_Qdfx_2g)
- if(allocated(poles)) deallocate(poles)
- if(allocated(poles_eps%omega_p)) deallocate(poles_eps%omega_p)
- if(allocated(poles_eps%gamma_p)) deallocate(poles_eps%gamma_p)
- if(allocated(poles_eps%eps_omega_p))deallocate(poles_eps%eps_omega_p)
- if(allocated(poles_eps%re_deps_domega_p))deallocate(poles_eps%re_deps_domega_p)
- if(allocated(poles_eps%im_deps_domega_p))deallocate(poles_eps%im_deps_domega_p)
- if(allocated(poles_eps%A_coeff_p))deallocate(poles_eps%A_coeff_p)
- ONS_fw = 0
- ONS_f0 = 0
- ONS_fd = 0
- ONS_fx0 = 0
- ONS_fxd = 0
- ONS_taum1 = 0
- ONS_tauxm1 = 0
- sgn = 0
- npoles = 0
-                                                                                 
-end subroutine
+       subroutine clean_all_ocpy_BEM
+        if(allocated(BEM_S)) deallocate(BEM_S)
+        if(allocated(BEM_D)) deallocate(BEM_D)
+        if(allocated(BEM_L)) deallocate(BEM_L)
+        if(allocated(BEM_T)) deallocate(BEM_T)
+        if(allocated(BEM_W2)) deallocate(BEM_W2)
+        if(allocated(BEM_Modes)) deallocate(BEM_Modes)
+        if(allocated(K0)) deallocate(K0)
+        if(allocated(Kd)) deallocate(Kd)
+        if(allocated(K0x)) deallocate(K0x)
+        if(allocated(Kdx)) deallocate(Kdx)
+        if(allocated(fact1)) deallocate(fact1)
+        if(allocated(fact2)) deallocate(fact2)
+        if(allocated(fact2x)) deallocate(fact2x)
+        if(allocated(Sm12T)) deallocate(Sm12T)
+        if(allocated(TSm12)) deallocate(TSm12)
+        if(allocated(TSp12)) deallocate(TSp12)
+        if(allocated(BEM_Sm12)) deallocate(BEM_Sm12)
+        if(allocated(Sp12)) deallocate(Sp12)
+        if(allocated(BEM_Q0)) deallocate(BEM_Q0)
+        if(allocated(BEM_Qd)) deallocate(BEM_Qd)
+        if(allocated(BEM_Qt)) deallocate(BEM_Qt)
+        if(allocated(BEM_R)) deallocate(BEM_R)
+        if(allocated(BEM_Qw)) deallocate(BEM_Qw)
+        if(allocated(BEM_Qf)) deallocate(BEM_Qf)
+        if(allocated(BEM_Qg)) deallocate(BEM_Qg)
+        if(allocated(BEM_2G)) deallocate(BEM_2G)
+        if(allocated(BEM_Qtx)) deallocate(BEM_Qtx)
+        if(allocated(BEM_Qfx)) deallocate(BEM_Qfx)
+        if(allocated(MPL_Ff)) deallocate(MPL_Ff)
+        if(allocated(MPL_Fw)) deallocate(MPL_Fw)
+        if(allocated(MPL_F0)) deallocate(MPL_F0)
+        if(allocated(MPL_Fx0)) deallocate(MPL_Fx0)
+        if(allocated(MPL_Ft0)) deallocate(MPL_Ft0)
+        if(allocated(MPL_Ftx0)) deallocate(MPL_Ftx0)
+        if(allocated(MPL_Fd)) deallocate(MPL_Fd)
+        if(allocated(MPL_Fxd)) deallocate(MPL_Fxd)
+        if(allocated(MPL_Taum1)) deallocate(MPL_Taum1)
+        if(allocated(MPL_Tauxm1)) deallocate(MPL_Tauxm1)
+        if(allocated(mat_f0)) deallocate(mat_f0)
+        if(allocated(mat_fd)) deallocate(mat_fd)
+        if(allocated(ONS_ff)) deallocate(ONS_ff)
+        if(allocated(lambda)) deallocate(lambda)
+        if(allocated(q_omega)) deallocate(q_omega)
+        if(allocated(Kdiag_omega)) deallocate(Kdiag_omega)
+        if(allocated(scrd3)) deallocate(scrd3)
+        if(allocated(BEM_2ppDA)) deallocate(BEM_2ppDA)
+        if(allocated(BEM_2ppDAx)) deallocate(BEM_2ppDAx)
+        if(allocated(BEM_Sm1)) deallocate(BEM_Sm1)
+        if(allocated(BEM_ADt)) deallocate(BEM_ADt)
+        if(allocated(gg)) deallocate(gg)
+        if(allocated(w2)) deallocate(w2)
+        if(allocated(kf)) deallocate(kf)
+        if(allocated(sin_delta)) deallocate(sin_delta)
+        if(allocated(cos_delta)) deallocate(cos_delta)
+        if(allocated(kf_prime)) deallocate(kf_prime)
+        if(allocated(kf0)) deallocate(kf0)
+        if(allocated(fact3)) deallocate(fact3)
+        if(allocated(fact3x)) deallocate(fact3x)
+        if(allocated(BEM_Qdf)) deallocate(BEM_Qdf)
+        if(allocated(BEM_Qdfx)) deallocate(BEM_Qdfx)
+        if(allocated(BEM_Qdf_2g)) deallocate(BEM_Qdf_2g)
+        if(allocated(BEM_Qdfx_2g)) deallocate(BEM_Qdfx_2g)
+        if(allocated(poles)) deallocate(poles)
+        if(allocated(poles_eps%omega_p)) deallocate(poles_eps%omega_p)
+        if(allocated(poles_eps%gamma_p)) deallocate(poles_eps%gamma_p)
+        if(allocated(poles_eps%eps_omega_p))deallocate(poles_eps%eps_omega_p)
+        if(allocated(poles_eps%re_deps_domega_p))deallocate(poles_eps%re_deps_domega_p)
+        if(allocated(poles_eps%im_deps_domega_p))deallocate(poles_eps%im_deps_domega_p)
+        if(allocated(poles_eps%A_coeff_p))deallocate(poles_eps%A_coeff_p)
+        ONS_fw = 0
+        ONS_f0 = 0
+        ONS_fd = 0
+        ONS_fx0 = 0
+        ONS_fxd = 0
+        ONS_taum1 = 0
+        ONS_tauxm1 = 0
+        sgn = 0
+        npoles = 0
+       end subroutine
 
 !------------------------------------------------------------------------
 ! @brief Calculate propagation Onsager matrices from factors including
@@ -707,7 +641,8 @@ end subroutine
            enddo
          endif
        else
-         if (tp_myrank.eq.0)write(6,*) "Higher multipoles not implemented "
+         if (tp_myrank.eq.0) write(6,*) & 
+                 & "Higher multipoles not implemented "
 #ifdef MPI
          call mpi_finalize(tp_ierr_mpi)
 #endif
@@ -906,6 +841,44 @@ end subroutine
        return
 
       end subroutine green_s
+!
+!      
+!
+!------------------------------------------------------------------------
+! @brief Compute BEM matrices within the cpcm model   
+! @author S. Pipolo
+! @date Created: 18/06/2026
+! @note 
+!------------------------------------------------------------------------
+      subroutine do_BEM_cpcm    
+       implicit none
+       real(dbl), allocatable :: Sm1(:,:)  !< $S^{-1}$ Onsager matrix
+
+         allocate(Sm1(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         ! Form $S^{-1}$ matrix
+         Sm1=inv(BEM_S)
+         pedra_surf_n_spheres=1
+         if(global_eps_Feps.eq."deb") then
+           call do_propfact_ons_deb
+         elseif(global_eps_Feps.eq."drl") then
+           allocate(ONS_ff(pedra_surf_n_spheres))
+           call do_propfact_ons_drl
+         endif
+         ! SP: Computing matrices needed for initialization and propgation eq.2 JPCA 2015
+         BEM_Q0=-ONS_f0*Sm1
+         BEM_Qd=-ONS_fd*Sm1
+         if(global_eps_Feps.eq."drl") then
+          BEM_Qf=-ONS_ff(1)*Sm1
+         endif
+         if(global_medium_Floc.eq.'loc') then
+           BEM_Q0x=ONS_fx0*Sm1
+           BEM_Qdx=ONS_fxd*Sm1
+         endif
+       deallocate(Sm1)
+       !Deallocate private arrays
+
+       return
+      end subroutine do_BEM_cpcm    
 
 !------------------------------------------------------------------------
 ! @brief Compute BEM matrices within diagonal approach
@@ -936,7 +909,7 @@ end subroutine
        allocate(scr1(pedra_surf_n_tessere,pedra_surf_n_tessere))
        allocate(scr2(pedra_surf_n_tessere,pedra_surf_n_tessere))
        allocate(scr3(pedra_surf_n_tessere,pedra_surf_n_tessere))
-   if(global_medium_bem_sym.eq."yes") then
+      if(global_medium_bem_sym.eq."yes") then
        allocate(eigv(pedra_surf_n_tessere))
        allocate(eigt(pedra_surf_n_tessere,pedra_surf_n_tessere),eigt_t(pedra_surf_n_tessere,pedra_surf_n_tessere))
 
@@ -953,7 +926,8 @@ end subroutine
           if(eigv(i).le.0.d0) then
             write(6,*) "WARNING:",i," eig of S is negative or zero!"
             write(6,*) "    It is set to 1e-8"
-            write(6,*) "Please use a more symmetric mesh or set bem_symmetric = 'non' "
+            write(6,*) "Please use a more symmetric mesh or &
+                         & set bem_symmetric = 'non' "
             eigv(i)=1.d-8
           endif
           scr1(:,i)=eigt(:,i)*sqrt(eigv(i))
@@ -1084,7 +1058,7 @@ end subroutine
       ! SC 05/11/2016 write out the transition charges in pqr format
        if(global_sys_Fwrite.eq."high".and.tp_myrank.eq.0) call output_charge_pqr
 
-      ! Do BEM_Q0 and and BEM_Qd
+      ! Do BEM_Q0 and BEM_Qd
 
 
 !$OMP PARALLEL
@@ -1122,7 +1096,7 @@ end subroutine
        endif
        !Print matrices in output
        if(global_sys_Fwrite.eq."high".and.tp_myrank.eq.0) call out_BEM_diagmat
-    elseif(global_medium_bem_sym.eq."non") then
+      elseif(global_medium_bem_sym.eq."non") then
 
         allocate(BEM_WI(pedra_surf_n_tessere))   
         do i=1,pedra_surf_n_tessere
@@ -1160,59 +1134,60 @@ end subroutine
        BEM_VLc=scrc
        BEM_VRc=matmul(BEM_Sm1,BEM_VRc)
        if(pedra_surf_n_particles.eq.1.or.global_medium_Fnorm.eq."tot") then
-           do i=2,pedra_surf_n_tessere
-              vl_tot=0
-              vr_tot=0
-              do j=1,pedra_surf_n_tessere
-                  vl_tot=vl_tot+BEM_VLc(i,j)
-                  vr_tot=vr_tot+BEM_VRc(j,i)
-              enddo
-              do j=1,pedra_surf_n_tessere
-                  re=real(BEM_VLc(i,j))-real(vl_tot)/pedra_surf_n_tessere
-                  im=aimag(BEM_VLc(i,j))-aimag(vl_tot)/pedra_surf_n_tessere
-                  BEM_VLc(i,j)=cmplx(re,im)
-                  re=real(BEM_VRc(j,i))-real(vr_tot)/pedra_surf_n_tessere
-                  im=aimag(BEM_VRc(j,i))-aimag(vr_tot)/pedra_surf_n_tessere
-                  BEM_VRc(j,i)=cmplx(re,im)
-              enddo
+         do i=2,pedra_surf_n_tessere
+           vl_tot=0
+           vr_tot=0
+           do j=1,pedra_surf_n_tessere
+               vl_tot=vl_tot+BEM_VLc(i,j)
+               vr_tot=vr_tot+BEM_VRc(j,i)
            enddo
+           do j=1,pedra_surf_n_tessere
+             re=real(BEM_VLc(i,j))-real(vl_tot)/pedra_surf_n_tessere
+             im=aimag(BEM_VLc(i,j))-aimag(vl_tot)/pedra_surf_n_tessere
+             BEM_VLc(i,j)=cmplx(re,im)
+             re=real(BEM_VRc(j,i))-real(vr_tot)/pedra_surf_n_tessere
+             im=aimag(BEM_VRc(j,i))-aimag(vr_tot)/pedra_surf_n_tessere
+             BEM_VRc(j,i)=cmplx(re,im)
+           enddo
+         enddo
        else
-           do k=1,pedra_surf_n_particles
-              if (k.eq.1) then 
-                      init=pedra_surf_n_particles+1
-              else
-                      init=pedra_surf_comp(k,2)
-              endif
-              do i=init,pedra_surf_comp(k,3)
-                   vl_tot=0
-                   vr_tot=0
-                   do j=pedra_surf_comp(k,2),pedra_surf_comp(k,3)
-                         vl_tot=vl_tot+BEM_VLc(i,j)
-                         vr_tot=vr_tot+BEM_VRc(j,i)
-                   enddo
-                   do j=1,pedra_surf_n_tessere
-                        re=real(BEM_VLc(i,j))-real(vl_tot)/pedra_surf_comp(k,1)
-                        im=aimag(BEM_VLc(i,j))-aimag(vl_tot)/pedra_surf_comp(k,1)
-                        BEM_VLc(i,j)=cmplx(re,im)
-                        re=real(BEM_VRc(j,i))-real(vr_tot)/pedra_surf_comp(k,1)
-                        im=aimag(BEM_VRc(j,i))-aimag(vr_tot)/pedra_surf_comp(k,1)
-                        BEM_VRc(j,i)=cmplx(re,im)
-                   enddo
-              enddo
+         do k=1,pedra_surf_n_particles
+           if (k.eq.1) then 
+             init=pedra_surf_n_particles+1
+           else
+             init=pedra_surf_comp(k,2)
+           endif
+           do i=init,pedra_surf_comp(k,3)
+             vl_tot=0
+             vr_tot=0
+             do j=pedra_surf_comp(k,2),pedra_surf_comp(k,3)
+               vl_tot=vl_tot+BEM_VLc(i,j)
+               vr_tot=vr_tot+BEM_VRc(j,i)
+             enddo
+             do j=1,pedra_surf_n_tessere
+               re=real(BEM_VLc(i,j))-real(vl_tot)/pedra_surf_comp(k,1)
+               im=aimag(BEM_VLc(i,j))-aimag(vl_tot)/pedra_surf_comp(k,1)
+               BEM_VLc(i,j)=cmplx(re,im)
+               re=real(BEM_VRc(j,i))-real(vr_tot)/pedra_surf_comp(k,1)
+               im=aimag(BEM_VRc(j,i))-aimag(vr_tot)/pedra_surf_comp(k,1)
+               BEM_VRc(j,i)=cmplx(re,im)
+             enddo
            enddo
+         enddo
        endif
 
        deallocate(scrc,scr2,scr3,BEM_WI)
-    endif
+      endif
 
        deallocate(scr1)
        if (tp_myrank.eq.0) write(6,*) "Done BEM diagonal"
-
-
        return
-
-      end subroutine
-
+      end subroutine do_BEM_diagonal
+!
+!      
+!
+!
+!
       subroutine deallocate_BEM_end_propagation
 
           if(allocated(sin_delta)) deallocate (sin_delta)
@@ -1392,24 +1367,24 @@ end subroutine
 
        allocate(fact1(pedra_surf_n_tessere),fact2(pedra_surf_n_tessere))
        allocate(Kd(pedra_surf_n_tessere),K0(pedra_surf_n_tessere))
-        if(global_medium_Floc.eq.'loc'.and.global_medium_Fmdm.eq.'csol') then
-        allocate(fact2x(pedra_surf_n_tessere),fact3x(pedra_surf_n_tessere))
-        allocate(Kdx(pedra_surf_n_tessere),K0x(pedra_surf_n_tessere))
+       if(global_medium_Floc.eq.'loc'.and.global_medium_Fmdm.eq.'csol') then
+         allocate(fact2x(pedra_surf_n_tessere),fact3x(pedra_surf_n_tessere))
+         allocate(Kdx(pedra_surf_n_tessere),K0x(pedra_surf_n_tessere))
        endif
        allocate(BEM_L(pedra_surf_n_tessere))
        allocate(BEM_W2(pedra_surf_n_tessere))
        allocate(BEM_2G(pedra_surf_n_tessere))
        allocate(BEM_T(pedra_surf_n_tessere,pedra_surf_n_tessere))
        if(global_medium_bem_sym.eq."yes") then
-           allocate(BEM_Sm12(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           allocate(Sp12(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           allocate(Sm12T(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           allocate(TSm12(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           allocate(TSp12(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         allocate(BEM_Sm12(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         allocate(Sp12(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         allocate(Sm12T(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         allocate(TSm12(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         allocate(TSp12(pedra_surf_n_tessere,pedra_surf_n_tessere))
        elseif(global_medium_bem_sym.eq."non") then
-           allocate(BEM_VRc(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           allocate(BEM_VLc(pedra_surf_n_tessere,pedra_surf_n_tessere))
-           allocate(BEM_Lc(pedra_surf_n_tessere))
+         allocate(BEM_VRc(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         allocate(BEM_VLc(pedra_surf_n_tessere,pedra_surf_n_tessere))
+         allocate(BEM_Lc(pedra_surf_n_tessere))
        endif
 
        allocate(fact3(pedra_surf_n_tessere))
@@ -1464,32 +1439,35 @@ end subroutine
 ! SP 16/07/17: added drudel_eps_w0 to Kdiag_omega
        if(drudel_eps_w0.eq.zero) drudel_eps_w0=1.d-8
        if (global_ext_pert_print_field.eq."yes") then
-           open(8,file="grid.inp", status="old")
-           read(8,*) grid_dim
-           allocate(grid(grid_dim,3))
-           do i=1,grid_dim
-              read(8,*) idum, grid(i,1), grid(i,2), grid(i,3)
-              write(namef,'(a12,i0,a4)')"field_point_",i,".dat"
-              open(20+i,file=namef,status="unknown")
-              write (20+i,*)"freq re(Ex) re(Ey) re(Ez) im(Ex) im(Ey) &
-                            im(Ez)  E_tot  E_tot/E_0"
-           enddo
-           close(8)
+         open(8,file="grid.inp", status="old")
+         read(8,*) grid_dim
+         allocate(grid(grid_dim,3))
+         do i=1,grid_dim
+           read(8,*) idum, grid(i,1), grid(i,2), grid(i,3)
+           write(namef,'(a12,i0,a4)')"field_point_",i,".dat"
+           open(20+i,file=namef,status="unknown")
+           write (20+i,*)"freq re(Ex) re(Ey) re(Ez) im(Ex) im(Ey) &
+                         im(Ez)  E_tot  E_tot/E_0"
+         enddo
+         close(8)
        endif
        if (global_ext_pert_print_surface_charges.eq."yes") then
-               open(9, file="surface_charges_real.pqr", status="unknown")
-               open(10, file="surface_charges_imag.pqr", status="unknown")
-               open(11, file="surface_charges_abs.pqr", status="unknown")
+         open(9, file="surface_charges_real.pqr", status="unknown")
+         open(10, file="surface_charges_imag.pqr", status="unknown")
+         open(11, file="surface_charges_abs.pqr", status="unknown")
        endif
 
        open(7,file="dipole_freq.dat",status="unknown")
        if(global_ext_pert_Ftyp.eq."field") then
-        write (7,*)"freq re(mux) re(muy) re(muz) im(mux) im(muy) im(muz)"
+        write (7,*)"freq re(mux) re(muy) re(muz) &
+                   & im(mux) im(muy) im(muz)"
        elseif (global_ext_pert_Ftyp.eq."molecule") then
         if (global_ext_pert_Feet.eq."non") then
-           write (7,*)"freq re(mux) re(muy) re(muz) im(mux) im(muy) im(muz) Gamma_met Shift_met "
+           write (7,*)"freq re(mux) re(muy) re(muz) im(mux) &
+                 & im(muy) im(muz) Gamma_met Shift_met "
         elseif (global_ext_pert_Feet.eq."yes") then
-           write (7,*) "freq re(mux) re(muy) re(muz) im(mux) im(muy) im(muz) Gamma_met Shift_met Re(V)  Im(V)"
+           write (7,*) "freq re(mux) re(muy) re(muz) im(mux) &
+               & im(muy) im(muz) Gamma_met Shift_met Re(V)  Im(V)"
         endif
        endif
 !
@@ -1515,57 +1493,57 @@ end subroutine
 !$OMP END PARALLEL
           
           if(global_medium_bem_sym.eq."yes") then
-              q_omega=matmul(BEM_Sm12,pot)
-              q_omega=matmul(transpose(BEM_T),q_omega)
-              q_omega=Kdiag_omega*q_omega
-              q_omega=matmul(BEM_T,q_omega)
-              q_omega=-matmul(BEM_Sm12,q_omega)
-           elseif(global_medium_bem_sym.eq."non") then
-              q_omega=matmul(BEM_VLc,pot)
-              q_omega=Kdiag_omega*q_omega
-              q_omega=matmul(BEM_VRc,q_omega)
-              q_omega=-matmul(BEM_Sm1,q_omega)
-           endif
-           if(global_medium_Fnorm.eq."tot") then
+            q_omega=matmul(BEM_Sm12,pot)
+            q_omega=matmul(transpose(BEM_T),q_omega)
+            q_omega=Kdiag_omega*q_omega
+            q_omega=matmul(BEM_T,q_omega)
+            q_omega=-matmul(BEM_Sm12,q_omega)
+          elseif(global_medium_bem_sym.eq."non") then
+            q_omega=matmul(BEM_VLc,pot)
+            q_omega=Kdiag_omega*q_omega
+            q_omega=matmul(BEM_VRc,q_omega)
+            q_omega=-matmul(BEM_Sm1,q_omega)
+          endif
+          if(global_medium_Fnorm.eq."tot") then
+            q_tot=0
+            do its=1,pedra_surf_n_tessere
+              q_tot=q_tot+q_omega(its)
+            enddo
+            do its=1,pedra_surf_n_tessere
+              re_q=real(q_omega(its))-real(q_tot)/pedra_surf_n_tessere
+              im_q=aimag(q_omega(its))-aimag(q_tot)/pedra_surf_n_tessere
+              q_omega(its)=cmplx(re_q,im_q)
+            enddo
+          elseif(global_medium_Fnorm.eq."sep") then
+            do k=1,pedra_surf_n_particles
               q_tot=0
-              do its=1,pedra_surf_n_tessere
-                 q_tot=q_tot+q_omega(its)
+              do its=pedra_surf_comp(k,2),pedra_surf_comp(k,3)
+                q_tot=q_tot+q_omega(its)
               enddo
-              do its=1,pedra_surf_n_tessere
-                 re_q=real(q_omega(its))-real(q_tot)/pedra_surf_n_tessere
-                 im_q=aimag(q_omega(its))-aimag(q_tot)/pedra_surf_n_tessere
-                 q_omega(its)=cmplx(re_q,im_q)
+              do its=pedra_surf_comp(k,2),pedra_surf_comp(k,3)
+                re_q=real(q_omega(its))-real(q_tot)/pedra_surf_comp(k,1)
+                im_q=aimag(q_omega(its))-aimag(q_tot)/pedra_surf_comp(k,1)
+                q_omega(its)=cmplx(re_q,im_q)
               enddo
-           elseif(global_medium_Fnorm.eq."sep") then
-              do k=1,pedra_surf_n_particles
-                 q_tot=0
-                 do its=pedra_surf_comp(k,2),pedra_surf_comp(k,3)
-                       q_tot=q_tot+q_omega(its)
-                 enddo
-                 do its=pedra_surf_comp(k,2),pedra_surf_comp(k,3)
-                       re_q=real(q_omega(its))-real(q_tot)/pedra_surf_comp(k,1)
-                       im_q=aimag(q_omega(its))-aimag(q_tot)/pedra_surf_comp(k,1)
-                       q_omega(its)=cmplx(re_q,im_q)
-                 enddo
-              enddo
-           endif
+            enddo
+          endif
 
           if(global_ext_pert_print_surface_charges.eq."yes") then
-              write (9,'("Frequency: ",1e15.6)') dielectric_func_omegas(i)
-              write (10,'("Frequency: ",1e15.6)') dielectric_func_omegas(i)
-              write (11,'("Frequency: ",1e15.6)') dielectric_func_omegas(i)
-              do its=1,pedra_surf_n_tessere
-                  write (9,'("ATOM ",I6,"  H  ",I6,"  H  ",3F11.3,F15.5,"  1.5")') &
-                  its,its,pedra_surf_tessere(its)%x,pedra_surf_tessere(its)%y, &
-                  pedra_surf_tessere(its)%z, real(q_omega(its))
-                  write (10,'("ATOM ",I6,"  H  ",I6,"  H  ",3F11.3,F15.5,"  1.5")') &
-                  its,its,pedra_surf_tessere(its)%x,pedra_surf_tessere(its)%y, &
-                  pedra_surf_tessere(its)%z, aimag(q_omega(its))
-                  abs_val=sqrt(real(q_omega(its))**2+aimag(q_omega(its))**2)
-                  write (11,'("ATOM ",I6,"  H  ",I6,"  H  ",3F11.3,F15.5,"  1.5")') &
-                  its,its,pedra_surf_tessere(its)%x,pedra_surf_tessere(its)%y, &
-                  pedra_surf_tessere(its)%z, abs_val
-              enddo
+            write (9,'("Frequency: ",1e15.6)') dielectric_func_omegas(i)
+            write (10,'("Frequency: ",1e15.6)') dielectric_func_omegas(i)
+            write (11,'("Frequency: ",1e15.6)') dielectric_func_omegas(i)
+            do its=1,pedra_surf_n_tessere
+              write (9,'("ATOM ",I6,"  H  ",I6,"  H  ",3F11.3,F15.5,"  1.5")') &
+              its,its,pedra_surf_tessere(its)%x,pedra_surf_tessere(its)%y, &
+              pedra_surf_tessere(its)%z, real(q_omega(its))
+              write (10,'("ATOM ",I6,"  H  ",I6,"  H  ",3F11.3,F15.5,"  1.5")') &
+              its,its,pedra_surf_tessere(its)%x,pedra_surf_tessere(its)%y, &
+              pedra_surf_tessere(its)%z, aimag(q_omega(its))
+              abs_val=sqrt(real(q_omega(its))**2+aimag(q_omega(its))**2)
+              write (11,'("ATOM ",I6,"  H  ",I6,"  H  ",3F11.3,F15.5,"  1.5")') &
+              its,its,pedra_surf_tessere(its)%x,pedra_surf_tessere(its)%y, &
+              pedra_surf_tessere(its)%z, abs_val
+            enddo
           endif
 
           mu_omega=0.d0
@@ -1573,63 +1551,62 @@ end subroutine
 !$OMP PARALLEL REDUCTION(+:mu_omega)
 !$OMP DO
           do its=1,pedra_surf_n_tessere
-             mu_omega(1)=mu_omega(1)+q_omega(its)*(pedra_surf_tessere(its)%x)
-             mu_omega(2)=mu_omega(2)+q_omega(its)*(pedra_surf_tessere(its)%y)
-             mu_omega(3)=mu_omega(3)+q_omega(its)*(pedra_surf_tessere(its)%z)
+            mu_omega(1)=mu_omega(1)+q_omega(its)*(pedra_surf_tessere(its)%x)
+            mu_omega(2)=mu_omega(2)+q_omega(its)*(pedra_surf_tessere(its)%y)
+            mu_omega(3)=mu_omega(3)+q_omega(its)*(pedra_surf_tessere(its)%z)
           enddo
 !$OMP enddo
 !$OMP END PARALLEL
           if(global_ext_pert_print_field.eq."yes") then
-                do j=1,grid_dim
-                    quantum_mol_cc=grid(j,:)
-                    call do_field_from_charges_cmp(q_omega, field_point)
-                    E_tot = (real(field_point(1))+global_ext_pert_direction(1))**2+(aimag(field_point(1)))**2
-                    E_tot = E_tot+(real(field_point(2))+global_ext_pert_direction(2))**2+(aimag(field_point(2)))**2
-                    E_tot = E_tot+(real(field_point(3))+global_ext_pert_direction(3))**2+(aimag(field_point(3)))**2
-                    E_tot = sqrt(E_tot)
-                    E_0 = sqrt(global_ext_pert_direction(1)**2+global_ext_pert_direction(2)**2+global_ext_pert_direction(3)**2)
-                    write(20+j,'(9e15.6)') dielectric_func_omegas(i),real(field_point(:)),aimag(field_point(:)), E_tot, E_tot/E_0
-                enddo
+            do j=1,grid_dim
+              quantum_mol_cc=grid(j,:)
+              call do_field_from_charges_cmp(q_omega, field_point)
+              E_tot = (real(field_point(1))+global_ext_pert_direction(1))**2+(aimag(field_point(1)))**2
+              E_tot = E_tot+(real(field_point(2))+global_ext_pert_direction(2))**2+(aimag(field_point(2)))**2
+              E_tot = E_tot+(real(field_point(3))+global_ext_pert_direction(3))**2+(aimag(field_point(3)))**2
+              E_tot = sqrt(E_tot)
+              E_0 = sqrt(global_ext_pert_direction(1)**2+global_ext_pert_direction(2)**2+global_ext_pert_direction(3)**2)
+              write(20+j,'(9e15.6)') dielectric_func_omegas(i),real(field_point(:)),aimag(field_point(:)), E_tot, E_tot/E_0
+            enddo
           endif
 
 
           if(global_ext_pert_Ftyp.eq."field") then
-              write (7,'(7e15.6)') dielectric_func_omegas(i),real(mu_omega(:)),aimag(mu_omega(:))
+            write (7,'(7e15.6)') dielectric_func_omegas(i),real(mu_omega(:)),aimag(mu_omega(:))
           else
-              gamma_met=-2.d0*dot_product(aimag(q_omega),pot)
-              shift_met=dot_product(real(q_omega),pot)
-              if (global_ext_pert_Feet.eq."non") then
-               write (7,'(9e15.6)') dielectric_func_omegas(i),real(mu_omega(:)), & 
-                                aimag(mu_omega(:)), gamma_met,shift_met
-              elseif (global_ext_pert_Feet.eq."yes") then
-               v_eet=dot_product(q_omega,pot2)   
-               write (7,'(9e15.6)') dielectric_func_omegas(i),real(mu_omega(:)), & 
-                                aimag(mu_omega(:)),gamma_met,shift_met, &
-                                real(v_eet),aimag(v_eet)
-              endif      
-              if (global_ext_pert_Ftyp.eq."from_cipot".or.global_ext_pert_Ftyp.eq."dipole") then
-                       if (global_ext_pert_pl_type.eq."from_cienergy") then
-                           if (dielectric_func_omegas(i).gt.(tomega-0.0002).and.dielectric_func_omegas(i).lt.(tomega+0.0002)) then
-                               mu_ind_abs= mu_omega
-                               mu_ind_emi= mu_omega
-                               call do_pl_intensity(gamma_met,mu_ind_abs,mu_ind_emi)
-                           endif
-                       elseif (global_ext_pert_pl_type.eq."from_omega") then
-                            pl_omega_emi=global_ext_pert_pl_omega_emi
-                            pl_omega_abs=global_ext_pert_pl_omega_abs
-                            tomega=pl_omega_emi
-                 if (dielectric_func_omegas(i).gt.(pl_omega_emi-0.0002).and.dielectric_func_omegas(i).lt.(pl_omega_emi+0.0002)) then
-                               gamma_met_emi=gamma_met
-                               mu_ind_emi = mu_omega
-                             endif
-                 if (dielectric_func_omegas(i).gt.(pl_omega_abs-0.0002).and.dielectric_func_omegas(i).lt.(pl_omega_abs+0.0002)) then
-                               mu_ind_abs = mu_omega
-                               call do_pl_intensity(gamma_met_emi,mu_ind_abs,mu_ind_emi)
-                           endif
-                       endif
-               endif    
+            gamma_met=-2.d0*dot_product(aimag(q_omega),pot)
+            shift_met=dot_product(real(q_omega),pot)
+            if (global_ext_pert_Feet.eq."non") then
+             write (7,'(9e15.6)') dielectric_func_omegas(i),real(mu_omega(:)), & 
+                              aimag(mu_omega(:)), gamma_met,shift_met
+            elseif (global_ext_pert_Feet.eq."yes") then
+             v_eet=dot_product(q_omega,pot2)   
+             write (7,'(9e15.6)') dielectric_func_omegas(i),real(mu_omega(:)), & 
+                              aimag(mu_omega(:)),gamma_met,shift_met, &
+                              real(v_eet),aimag(v_eet)
+            endif      
+            if (global_ext_pert_Ftyp.eq."from_cipot".or.global_ext_pert_Ftyp.eq."dipole") then
+              if (global_ext_pert_pl_type.eq."from_cienergy") then
+                if (dielectric_func_omegas(i).gt.(tomega-0.0002).and.dielectric_func_omegas(i).lt.(tomega+0.0002)) then
+                  mu_ind_abs= mu_omega
+                  mu_ind_emi= mu_omega
+                  call do_pl_intensity(gamma_met,mu_ind_abs,mu_ind_emi)
+                endif
+              elseif (global_ext_pert_pl_type.eq."from_omega") then
+                pl_omega_emi=global_ext_pert_pl_omega_emi
+                pl_omega_abs=global_ext_pert_pl_omega_abs
+                tomega=pl_omega_emi
+                if (dielectric_func_omegas(i).gt.(pl_omega_emi-0.0002).and.dielectric_func_omegas(i).lt.(pl_omega_emi+0.0002)) then
+                  gamma_met_emi=gamma_met
+                  mu_ind_emi = mu_omega
+                endif
+                if (dielectric_func_omegas(i).gt.(pl_omega_abs-0.0002).and.dielectric_func_omegas(i).lt.(pl_omega_abs+0.0002)) then
+                  mu_ind_abs = mu_omega
+                  call do_pl_intensity(gamma_met_emi,mu_ind_abs,mu_ind_emi)
+                endif
+              endif
+            endif    
           endif
-
        enddo
 
        do i=1,grid_dim
@@ -1690,7 +1667,9 @@ end subroutine
         return
 
       end subroutine do_propBEM_dia_deb
-
+!
+!
+!
       subroutine do_propBEM_std_deb
 !------------------------------------------------------------------------
 ! @brief Propagation of matrices for diagonal BEM (debye)
@@ -1716,8 +1695,9 @@ end subroutine
        return
 
       end subroutine
-
-
+!
+!      
+!
 !------------------------------------------------------------------------
 ! @brief Propagation of matrices for diagonal BEM (drude-lorentz)
 !
@@ -1725,14 +1705,11 @@ end subroutine
 ! Modified: G. Gil
 !------------------------------------------------------------------------
       subroutine do_propBEM_dia_drl
-
-
        integer(i4b) :: i
        real(8), allocatable :: scr1(:,:)
 
        allocate(scr1(pedra_surf_n_tessere,pedra_surf_n_tessere))
 !      Form the Q_w and Q_f for drude-lorentz propagation
-
 !$OMP PARALLEL
 !$OMP DO
        do i=1,pedra_surf_n_tessere
@@ -1740,9 +1717,7 @@ end subroutine
        enddo
 !$OMP enddo
 !$OMP END PARALLEL
-
        BEM_Qw=matmul(scr1,TSp12)
-
 !$OMP PARALLEL
 !$OMP DO
        do i=1,pedra_surf_n_tessere
@@ -1750,7 +1725,6 @@ end subroutine
        enddo
 !$OMP enddo
 !$OMP END PARALLEL
-
        BEM_Qf=-matmul(scr1,TSm12)
        if(global_medium_Floc.eq.'loc'.and.global_medium_Fmdm.eq.'csol') then
         do i=1,pedra_surf_n_tessere
@@ -1758,7 +1732,6 @@ end subroutine
         enddo
         BEM_Qfx=-matmul(scr1,TSm12)
        endif
-
 !$OMP PARALLEL
 !$OMP DO
        do i=1,pedra_surf_n_tessere
@@ -1766,7 +1739,6 @@ end subroutine
        enddo
 !$OMP enddo
 !$OMP END PARALLEL
-
        BEM_Qdf_2g=-matmul(scr1,TSm12)
        if(global_medium_Floc.eq.'loc'.and.global_medium_Fmdm.eq.'csol') then
         do i=1,pedra_surf_n_tessere
@@ -1774,7 +1746,6 @@ end subroutine
         enddo
         BEM_Qdfx_2g=-matmul(scr1,TSm12)
        endif
-
       ! addition with respect to do_propBEM_dia_drl
 !$OMP PARALLEL
 !$OMP DO
@@ -1783,41 +1754,31 @@ end subroutine
        enddo
 !$OMP enddo
 !$OMP END PARALLEL
-
        BEM_Qg=matmul(scr1,TSp12)
-
        deallocate(scr1)
-
        return
-
       end subroutine do_propBEM_dia_drl
-
-      subroutine do_propBEM_std_drl
+!
+!
 !------------------------------------------------------------------------
 ! @brief Propagation of matrices for diagonal BEM (drude-lorentz)
 !
 ! @date Created: G. Gil
 ! Modified:
 !------------------------------------------------------------------------
+      subroutine do_propBEM_std_drl
 
       real(dbl) :: factor
       integer(i4b) :: i
-
 !      Form the Q_w and Q_f for drude-lorentz propagation
-
-      factor = -drudel_eps_A/(twp*two)
-
+       factor = -drudel_eps_A/(twp*two)
        BEM_Qw= factor * BEM_2ppDA
        do i=1,pedra_surf_n_tessere
-        BEM_Qw(i,i)=BEM_Qw(i,i) + drudel_eps_w0*drudel_eps_w0
+         BEM_Qw(i,i)=BEM_Qw(i,i) + drudel_eps_w0*drudel_eps_w0
        enddo
-
        BEM_Qf= factor * matmul(BEM_Sm1,BEM_2ppDA)
-
        if(global_medium_Floc.eq.'loc'.and.global_medium_Fmdm.eq.'csol') BEM_Qfx= -factor * matmul(BEM_Sm1,BEM_2ppDAx)
-
        return
-
       end subroutine
 
 
@@ -1911,22 +1872,17 @@ end subroutine
 
       end subroutine do_propBEM_dia_gen
 
-      subroutine do_propBEM_std_gen
 !------------------------------------------------------------------------------
 ! @brief Propagation of matrices for diagonal BEM (general dielectric function)
 !
 ! @date Created: G. Gil
 ! Modified:
 !------------------------------------------------------------------------------
-
+      subroutine do_propBEM_std_gen
 !      Form the Q_f for general dielectric function propagation
-
        BEM_Qf= -matmul(BEM_Sm1,BEM_2ppDA)
-
        if(global_medium_Floc.eq.'loc'.and.global_medium_Fmdm.eq.'csol') BEM_Qfx= matmul(BEM_Sm1,BEM_2ppDAx)
-
        return
-
       end subroutine
 
 !------------------------------------------------------------------------
@@ -2328,7 +2284,8 @@ end subroutine
         enddo
        enddo
        close(7)
-       if (tp_myrank.eq.0)write(6,*) "Written the static matrix for gamess"
+       if (tp_myrank.eq.0) & 
+           &write(6,*) "Written the static matrix for gamess"
        open(7,file="np_bem.mdy",status="unknown")
        do j=1,pedra_surf_n_tessere
         do i=1,pedra_surf_n_tessere
@@ -2336,7 +2293,8 @@ end subroutine
         enddo
        enddo
        close(7)
-       if (tp_myrank.eq.0)write(6,*)"Written the dynamic matrix for gamess"
+       if (tp_myrank.eq.0) & 
+          &write(6,*)"Written the dynamic matrix for gamess"
 
        return
 
@@ -2403,7 +2361,8 @@ end subroutine
         enddo
        enddo
        close(7)
-       if (tp_myrank.eq.0)write(6,*) 'Static loc-field mat in gamess form'
+       if (tp_myrank.eq.0) write(6,*) &
+              & 'Static loc-field mat in gamess form'
        open(7,file="np_bem.mld",status="unknown")
        do j=1,pedra_surf_n_tessere
         do i=1,pedra_surf_n_tessere
@@ -2411,7 +2370,8 @@ end subroutine
         enddo
        enddo
        close(7)
-       if (tp_myrank.eq.0)write(6,*)'Dynamic loc-field mat in gamess form'
+       if (tp_myrank.eq.0) write(6,*) & 
+              & 'Dynamic loc-field mat in gamess form'
 
        return
 
