@@ -67,7 +67,6 @@ module interface_classic
       integer(i4b), allocatable :: this_imod(:) !<modes to print 
       real(dbl) :: this_thrshld    !< SCF threshold on (i) eigenvalues 10^-global_prop_thrshld (ii) eigenvectors 10^-(global_prop_thrshld+2)
       real(dbl), allocatable :: this_BEM_Q0(:,:)
-      real(dbl), allocatable :: omega_p2(:)
       real(dbl), allocatable :: this_q0(:)             !< reaction BEM charges
       real(dbl), allocatable :: this_qx0(:)            !< local BEM charges 
       real(dbl), allocatable :: q0_fqfm(:),qx0_fqfm(:) !< reaction and local fwfm charges  
@@ -101,7 +100,7 @@ module interface_classic
              do_field_from_charges_in_wavet, nts, &
 ! used in scf
              update_environment_scf,out_environment_scf,&
-             omega_p2,this_Ftest,this_eps_w0,&
+             this_Ftest,this_eps_w0,&
              initialize_qc_interface,&
              this_Fmop,this_imod,this_nprint,this_max_mod_todiag,deallocate_BEM_public_in_wavet,&
              qmmodes,nmodes,get_m_or_v, do_plasmon_charges,do_qm_couplings
@@ -1015,15 +1014,17 @@ module interface_classic
        call do_BEM_quant
        write(6,*) "Done BEM quantum"
        nmodes=global_qmodes_nmodes
+       if(global_sys_Ftest.eq."qmt") nmodes=3
        allocate(qmmodes(nmodes))
        allocate(qg(nmodes,nts))
        allocate(wwe(nmodes))
-       qmmodes(:)=global_qmodes_qmmodes(:)
        if(global_sys_Ftest.eq."qmt") then 
          nmodes=3
          qmmodes(1)=2 
          qmmodes(2)=3 
          qmmodes(3)=4 
+       else
+         qmmodes(:)=global_qmodes_qmmodes(:)       
        endif
        this_nprint=global_qmodes_nprint
        !> Test: use potentials from dipoles    
@@ -1354,12 +1355,12 @@ module interface_classic
       subroutine grep_sphere_parameters(r,d,sp,wl)
        real(dbl), intent(out)  :: r,d,wl
        real(dbl), intent(out)  :: sp(3)
-       d=sqrt(pedra_surf_spheres(1)%x**2+pedra_surf_spheres(1)%y**2+pedra_surf_spheres(1)%z**2)
-       r=pedra_surf_spheres(1)%r
        wl=sqrt(drudel_eps_A/3)
        sp(1)=pedra_surf_spheres(1)%x 
        sp(2)=pedra_surf_spheres(1)%y 
        sp(3)=pedra_surf_spheres(1)%z 
+       r=cts(1)%rsfe
+       d=sqrt(dot_product(sp,sp))
        return
       end subroutine grep_sphere_parameters
 

@@ -366,9 +366,9 @@
        enddo
        write(7,*) ""
        write(7,*) "# Dipolar resonance frequency (a.u.)"
-       write(7,*) "#  p          omega_p            sqrt(A/3)" 
-       do i=2,4        
-         write(7,"(i5, 2E20.12)")i, omega_p2(i), wl 
+       write(7,*) "#  p          omega_p^2           sqrt(A/3)" 
+       do i=1,nmodes
+         write(7,"(i5, 2E20.12)")i, omega_p(i)*omega_p(i), wl 
        enddo
        close(7)
        if (myrank.eq.0) then 

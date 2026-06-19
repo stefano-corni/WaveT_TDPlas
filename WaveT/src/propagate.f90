@@ -67,7 +67,6 @@
        write(name_mu,'(a5,i0,a4)') "mu_t_",n_f,".dat"
        if (Fmag.eq.'mag') then
           write(name_m,'(a4,i0,a4)') "m_t_",n_f,".dat"
-          write(*,*) "sono il primo m_t"
        endif
        if (Fres.eq.'Yesr') then
           if (Fbin.ne.'bin') then
@@ -162,11 +161,9 @@
        int_rad_int=0.d0
        if(Frad.eq."arl".or.Fdis.ne."nodis") &
                                call seed_random_number_sc(iseed)
+       !> Initialize medium for propagation
        if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") then
-           call cpu_time(start)
            call init_env_prop(c_prev,mu_prev,f_prev,h_int)
-           call cpu_time(finish)
-           write(*,*) '("Time = ",f6.3," seconds.")',finish-start
        endif
        if (Fres.eq.'Nonr') then
           call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)          

@@ -122,7 +122,7 @@
          call init_BEM_diagonal
          call do_BEM_diagonal
          !> Allocate matrices and Prepare for BEM_standard
-       elseif(global_medium_Fbem.eq.'diag') then
+       elseif(global_medium_Fbem.eq.'stan') then
          call init_BEM_standard
          call do_BEM_standard
 #ifdef MPI
@@ -131,6 +131,7 @@
        elseif(global_medium_Fbem.eq.'cpcm') then
          call do_BEM_cpcm    
        else
+         write(6,*)"BEM type not supported, check the bem_type keyword!"
          stop
        endif
        !> Write out matrices 
@@ -218,18 +219,7 @@
        integer(i4b):: i,its
 
        ! Cavity read/write and S D matrices
-       call init_BEM
-       ! Using Diagonal BEM
-       call init_BEM_diagonal
-       call do_BEM_diagonal
-       ! Write out matrices
-       if(global_out_Fgamess.eq.'yes') then
-           call out_BEM_gamess
-           ! Write out local-field matrices
-           if(global_medium_Floc=='loc'.and.global_medium_Fmdm.eq.'csol') then
-               call out_BEM_lf
-           end if
-       endif
+       call do_BEM
        ! Calculate potential on tesserae
        allocate(pot(pedra_surf_n_tessere))
        !call do_pot_from_field(fmax(:,1),pot)
@@ -302,16 +292,11 @@
          write(6,*) "Please specify bem_type=""diag"""
          stop
        endif
-       write(6,*) "Before do_BEM"                           
-       call do_BEM
-       write(6,*) "After  do_BEM"                           
        !> Save Modes for quantum BEM
        allocate(BEM_Modes(pedra_surf_n_tessere,pedra_surf_n_tessere))
        BEM_Modes=TSm12
-       write(6,*) "Before gcharges"                           
        call out_gcharges
-       write(6,*) "After    harges"                           
-       call finalize_BEM
+       !call finalize_BEM
        return
 
       end subroutine do_BEM_quant

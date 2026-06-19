@@ -57,9 +57,8 @@
 #endif
        call init_initialise  
        if (Fmdm.ne."vac") then
-         ! SP: better define initial external field, this is the linearly polarized one
          write(6,*) "Initializing the environment"
-         call init_environment(c_i,fmax(:,1))
+         call init_environment(c_i,f0)
        endif
        if (this_Finit_int.eq."sce") then
          !> SCF initialisation 

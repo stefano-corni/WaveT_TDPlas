@@ -149,6 +149,7 @@
         allocate(m_or_v(pedra_surf_n_tessere))
         m_or_v=morv
         if(.not.allocated(mu_mdm))allocate(mu_mdm(3,1))
+        mu_mdm=zero
         call do_BEM !in BEM_medium
 ! SC 03/05/2016: create a new BEM_Q0=BEM_Qw^-1*BEM_Qf that should avoid
 !                spurious charge dynamics for stationary states
@@ -156,11 +157,6 @@
         call init_potential(pot_t,potf_t)
         call init_charges
       endif
-      !> get molecular GS dipole mut(:,1,1) or potential vts (:,1,1)
-      ! SP: used for free-ene and the initialisation of spheroid's RF
-      ! CHECK THIS, the initialisation shoudl be done on the state
-      ! specified in input
-      ! call get_m_or_v(m_or_v)
       return
       end subroutine init_mdm
 
@@ -181,6 +177,50 @@
       real(dbl), optional, intent(in)    :: potf_t(:)        !< (1:pedra_surf_n_tessere)     - external  potential
       integer(i4b) :: its,i,j
       character(20) :: name_f
+
+      ! OPEN FILES
+      write(name_f,'(a9,i0,a4)') "medium_t_",quantum_n_f,".dat"
+      if (global_prop_Fmdm_res.eq.'nonr') then
+      if (quantum_Fbin.ne.'bin') then
+         open (file_med,file=name_f,status="unknown")
+         write(file_med,*) "# step  time  dipole(x) dipole(y) dipole(z)"
+      else
+         open (file_med,file=name_f,status="unknown",form="unformatted")
+      endif
+      elseif (global_prop_Fmdm_res.eq.'yesr') then
+         open (file_med,file=name_f,status="unknown",position='append')
+      endif
+      if(global_prop_Fprop.ne."dip") then  
+        call do_BEM_prop 
+          call init_potential_prop(pot_t,potf_t)
+          call init_charges_prop
+        endif
+        ! SC: predifine the factors used in the VV propagator, used for
+        ! Drude-Lorentz
+        call init_vv_propagator
+        ! SC set the initial values of the solvent component of the 
+        ! neq free energies
+        g_neq1=zero
+        g_neq2=zero
+        if(global_prop_Fmdm_res.eq.'yesr') then
+          qr_t=qr_tp2
+          qx_t=qx_tp2
+          qr_t=qr_tp
+          qx_t=qx_tp
+        endif
+      else 
+        f_tp2=f_tp
+        ! For dipole propagation everything is done in init_mdm 
+      endif
+      if (quantum_Fbin.eq.'bin') then
+         call out_mdm_bin(1)
+      else
+         call out_mdm(1)
+      endif
+
+
+
+
 
 ! OPEN FILES
       write(name_f,'(a9,i0,a4)') "medium_t_",quantum_n_f,".dat"
@@ -214,6 +254,11 @@
         qx_t=qx_tp
       endif
 
+
+
+
+
+
       return
       end subroutine init_mdm_prop
 
@@ -236,7 +281,6 @@
 
        t=(i-1)*quantum_dt
        !> Build matrices for propagation
-       call do_BEM_prop 
        if (global_prop_Fprop.eq."dip") then
        ! Dipole propagation:
          mu_tp = mu_t
@@ -312,19 +356,11 @@
        if((global_prop_Fprop.eq."chr-ief").or.&
           (global_prop_Fprop.eq."chr-ied").or.&
           (global_prop_Fprop.eq."chr-ons")) then
+         write(6,*) "Deallocating BEM"
          call deallocate_BEM_public
        elseif (global_prop_Fprop.eq."dip".or.global_prop_Fint.eq."ons") then
          call deallocate_MPL_public
        endif
-       !if (global_prop_Fmdm_res.eq.'Yesr') then
-       !   if (global_prop_Fint.eq.'pcm') then
-       !      deallocate(qr_i)
-       !      if (global_medium_Floc.eq.'loc') then
-       !         deallocate(qx_i)
-       !      endif
-       !   endif
-       !endif
-
        close (file_med)
 
        return
@@ -744,7 +780,9 @@
        if(global_eps_Feps.eq."gen".and.global_medium_Fbem.eq."stan" ) then
           allocate(qr_tp_p(pedra_surf_n_tessere,npoles))
           do ipoles=1,npoles
-             qr_tp_p(:,ipoles)=kf0(ipoles)*matmul(BEM_Qf,pot_0)
+             ! SP WARNING!!!: checking this initialisation
+             !qr_tp_p(:,ipoles)=kf0(ipoles)*matmul(BEM_Qf,pot_0)
+             qr_tp_p(:,ipoles)=kf0(ipoles)*matmul(BEM_Q0,pot_0)
              q0(:)=q0(:)+qr_tp_p(:,ipoles)
           enddo
        endif
