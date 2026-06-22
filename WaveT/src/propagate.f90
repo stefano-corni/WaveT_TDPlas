@@ -171,11 +171,18 @@
              call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
           endif
           call add_int_vac(f_prev,h_int)
-! SP 16/07/17: added call to output at step 0 to have full output in outfiles
+          ! SP 16/07/17: added call to output at step 1 to have full output in outfiles
           if (Fbin.ne.'bin') call out_header
           call output(1,c,f_prev,h_int)
        elseif (Fres.eq.'Yesr') then
           if (Fdis.ne."nodis") call random_seq(restart_i)
+       endif
+       ! SP 19/06/26: added call for ropagation at step 1
+       if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") then
+         i=1
+         !write(*,*) "mu_prev ", mu_prev
+         !stop
+         call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
        endif
 ! EC 20/12/16
 ! Dissipation according to the Markovian SSE (eq 25 J. Phys: Condens.
@@ -914,8 +921,8 @@
           f_prev=f(:,2)
           h_int=zero
           if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") then
-             i=2
-             call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+            i=2
+            call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
           endif
           call add_int_vac(f_prev,h_int)
           call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)

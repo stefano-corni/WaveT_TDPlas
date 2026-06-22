@@ -825,7 +825,7 @@ module interface_classic
            call do_pot_from_field(f,nts,r,potf)
            ! propagating medium with molecular and external potentials
            ! SP 15/05/20 changed this_Ftest with global_sys_Ftest
-           if(global_sys_Ftest.eq."n-r") then
+           if(global_sys_Ftest.eq."n-r".or.global_sys_Ftest.eq."s-r") then
             call prop_mdm(i, mu_t = mu, pot_t = pot, potf_t = potf)
            else
             call prop_mdm(i, pot_t = pot, potf_t = potf)

@@ -181,70 +181,28 @@
       ! OPEN FILES
       write(name_f,'(a9,i0,a4)') "medium_t_",quantum_n_f,".dat"
       if (global_prop_Fmdm_res.eq.'nonr') then
-      if (quantum_Fbin.ne.'bin') then
-         open (file_med,file=name_f,status="unknown")
-         write(file_med,*) "# step  time  dipole(x) dipole(y) dipole(z)"
-      else
-         open (file_med,file=name_f,status="unknown",form="unformatted")
-      endif
+        if (quantum_Fbin.ne.'bin') then
+          open (file_med,file=name_f,status="unknown")
+          write(file_med,*)"# step  time  dipole(x) dipole(y) dipole(z)"
+        else
+          open(file_med,file=name_f,status="unknown",form="unformatted")
+        endif
       elseif (global_prop_Fmdm_res.eq.'yesr') then
          open (file_med,file=name_f,status="unknown",position='append')
       endif
       if(global_prop_Fprop.ne."dip") then  
         call do_BEM_prop 
-          call init_potential_prop(pot_t,potf_t)
-          call init_charges_prop
-        endif
-        ! SC: predifine the factors used in the VV propagator, used for
-        ! Drude-Lorentz
-        call init_vv_propagator
-        ! SC set the initial values of the solvent component of the 
-        ! neq free energies
-        g_neq1=zero
-        g_neq2=zero
-        if(global_prop_Fmdm_res.eq.'yesr') then
-          qr_t=qr_tp2
-          qx_t=qx_tp2
-          qr_t=qr_tp
-          qx_t=qx_tp
-        endif
+        call init_potential_prop(pot_t,potf_t)
+        call init_charges_prop
       else 
         f_tp2=f_tp
         ! For dipole propagation everything is done in init_mdm 
       endif
-      if (quantum_Fbin.eq.'bin') then
-         call out_mdm_bin(1)
-      else
-         call out_mdm(1)
-      endif
-
-
-
-
-
-! OPEN FILES
-      write(name_f,'(a9,i0,a4)') "medium_t_",quantum_n_f,".dat"
-      if (global_prop_Fmdm_res.eq.'nonr') then
-      if (quantum_Fbin.ne.'bin') then
-         open (file_med,file=name_f,status="unknown")
-         write(file_med,*) "# step  time  dipole(x) dipole(y) dipole(z)"
-      else
-         open (file_med,file=name_f,status="unknown",form="unformatted")
-      endif
-      elseif (global_prop_Fmdm_res.eq.'yesr') then
-         open (file_med,file=name_f,status="unknown",position='append')
-      endif
-      if(global_prop_Fprop.eq."dip") then
-        f_tp2=f_tp
-      else
-        call init_potential_prop(pot_t,potf_t)
-        call init_charges_prop
-      endif
-! SC: predifine the factors used in the VV propagator, used for
-! Drude-Lorentz
+      ! SC: predifine the factors used in the VV propagator, used for
+      ! Drude-Lorentz
       call init_vv_propagator
-! SC set the initial values of the solvent component of the 
-! neq free energies
+      ! SC set the initial values of the solvent component of the 
+      ! neq free energies
       g_neq1=zero
       g_neq2=zero
       if(global_prop_Fmdm_res.eq.'yesr') then
@@ -253,12 +211,6 @@
         qr_t=qr_tp
         qx_t=qx_tp
       endif
-
-
-
-
-
-
       return
       end subroutine init_mdm_prop
 
@@ -317,7 +269,7 @@
          endif
        endif
        ! SP 230916: added to perform tests on the local/reaction field
-       !if(global_sys_Ftest.eq."s-r".or.global_sys_Ftest.eq."n-r") mu_tp=mu_t
+       if(global_sys_Ftest.eq."s-r".or.global_sys_Ftest.eq."n-r") mu_tp=mu_t
        if(global_sys_Ftest.eq."n-r") then
          call do_ref(mu_t)
        elseif(global_sys_Ftest.eq."n-l".or.global_sys_Ftest.eq."s-r".or.global_sys_Ftest.eq."s-l") then
@@ -325,11 +277,11 @@
        end if
        ! SP 24/02/16  Write output
        if (mod(i,quantum_n_out).eq.0.or.i.eq.1) then
-          if (quantum_Fbin.eq.'bin') then
-             call out_mdm_bin(i)
-          else
-             call out_mdm(i)
-          endif
+         if (quantum_Fbin.eq.'bin') then
+           call out_mdm_bin(i)
+         else
+           call out_mdm(i)
+         endif
        endif
        ! Calculate medium's dipole from charges
        if (global_prop_Fprop.eq."dip") then
@@ -499,19 +451,18 @@
        real(dbl),intent(out):: q(:)
   
          if (global_prop_Fint.eq."ons") then
-          q=fr_t-fr_0
-          if(global_medium_Floc.eq."loc") q=q+fx_t  
+           q=fr_t-fr_0
+           if(global_medium_Floc.eq."loc") q=q+fx_t  
+           if(global_sys_Ftest.eq."n-r") q=fr_0
          else 
-          q=qr_t-q0
-          if(global_medium_Floc.eq."loc") then 
-            q=q+qx_t(:)
-          endif
-          ! SC 31/10/2016: avoid including interaction with an unwanted net charge
-          q=q+(qtot0-sum(q))/pedra_surf_n_tessere
+           q=qr_t-q0
+           if(global_medium_Floc.eq."loc") then 
+             q=q+qx_t(:)
+           endif
+           q=q+(qtot0-sum(q))/pedra_surf_n_tessere
+           if(global_sys_Ftest.eq."n-r") q=q0
          endif
          if(global_sys_Fdeb.eq."off") q=0
-         ! SP 18/05/20 test purposes
-         if(global_sys_Ftest.eq."n-r") q=q0
          return
         end subroutine get_qorf
 
@@ -529,13 +480,11 @@
           q=fr_0
           if(global_medium_Floc.eq."loc") q=q+fx_0  
          else 
-          q=q0
-          if(global_medium_Floc.eq."loc") q=q+qx0(:)
-          q=q+(qtot0-sum(q))/pedra_surf_n_tessere
+           q=q0
+           if(global_medium_Floc.eq."loc") q=q+qx0(:)
+           q=q+(qtot0-sum(q))/pedra_surf_n_tessere
          endif
          if(global_sys_Fdeb.eq."off") q=0
-         ! SP 18/05/20 test purposes
-         if(global_sys_Ftest.eq."n-r") q=q0
          return
         end subroutine get_qorf0
 
@@ -551,9 +500,9 @@
        real(dbl),intent(out):: q(:)
   
          if (global_prop_Fint.eq."ons") then
-          q=fr_t
+           q=fr_t
          else 
-          q=qr_t
+           q=qr_t
          endif
          return
         end subroutine get_qr_fr
