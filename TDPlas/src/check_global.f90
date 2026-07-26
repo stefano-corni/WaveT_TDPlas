@@ -4,6 +4,9 @@
 
         use global_tdplas
         use pedra_friends
+#ifdef MPI
+        use mpi
+#endif        
 
         implicit none
 
@@ -119,8 +122,9 @@
 
             subroutine check_global_ext_pert()
               if(global_ext_pert_Ftyp.ne."field".and.global_ext_pert_Ftyp.ne."molecule"&
-                  &.and.global_ext_pert_Ftyp.ne."from_cipot".and.global_ext_pert_Ftyp.ne."dipole") then
-                call mpi_error("ERROR: only field, molecule, from_cipot or dipole calculations are allowed for", & 
+                  &.and.global_ext_pert_Ftyp.ne."from_cipot".and.global_ext_pert_Ftyp.ne."dipole"&
+                   &.and.global_ext_pert_Ftyp.ne."raman") then
+                call mpi_error("ERROR: only field, molecule, from_cipot, raman or dipole calculations are allowed for", & 
                         "frequency tdplas"," ")
               endif 
             end subroutine

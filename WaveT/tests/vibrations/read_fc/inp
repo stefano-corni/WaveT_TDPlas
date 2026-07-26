@@ -1,0 +1,12 @@
+&vibrations
+nstates=2
+nvib=3
+nvib_inp=3
+nmodes=108
+nmodes_gs=108
+computefc=.false.
+diptype='fcht'
+calctype='raman'
+medium='vac'
+/
+

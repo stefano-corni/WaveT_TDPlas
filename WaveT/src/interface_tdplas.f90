@@ -25,6 +25,7 @@ module interface_tdplas
 ! used only here in interface_tdplas
                         
 #endif
+
 #ifdef MPI
       use mpi
 #endif
@@ -286,6 +287,10 @@ module interface_tdplas
 !------------------------------------------------------------------------
       subroutine prop_medium(i,c,mu,f,h)
 
+#ifdef MPI
+      use mpi
+#endif
+
         implicit none
 
         complex(cmp), intent(in) :: c(:)    !< (1:n_ci)           - molecular wavefunction coefficients
@@ -317,15 +322,24 @@ module interface_tdplas
          end if
          ! computing external potential in the long-wavelength limit
          call do_pot_from_field(f,potf)
+
          ! propagating medium with molecular and external potentials
          ! SP 15/05/20 changed this_Ftest with global_sys_Ftest
          if(global_sys_Ftest.eq."n-r") then
           call prop_mdm(i, mu_t = mu, pot_t = pot, potf_t = potf, h_int = h)
          else
+          !write(*,*) 'uella 1', myrank
           call prop_mdm(i, pot_t = pot, potf_t = potf, h_int = h)
+          !write(*,*) 'uella 2', myrank
+#ifdef MPI
+         call mpi_finalize(ierr_mpi)
+         stop
+#endif
          end if
          deallocate(pot)
          deallocate(potf)
+
+
         end if
 #else
         stop "Error: TDPlas library has not been linked to WaveT!"
@@ -657,7 +671,7 @@ module interface_tdplas
        integer(i4b)                       :: its,k,j  
        complex(cmp), save, allocatable    :: ctmp(:)
        complex(cmp), save                 :: cc
-
+#ifdef TDPLAS
 #ifndef OMP
        do its=1,this_nts_act
           pot(its)=dot_product(c,matmul(this_vts(its,:,:),c))
@@ -695,7 +709,9 @@ module interface_tdplas
 !$OMP END PARALLEL
        endif
 #endif
-
+#else
+      stop "Error: TDPlas library has not been linked to WaveT"
+#endif
       end subroutine do_pot_from_coeff
 
 !------------------------------------------------------------------------
@@ -713,6 +729,7 @@ module interface_tdplas
        real(dbl), intent(out):: pot(this_nts_act) 
        integer(i4b) :: its  
 
+#ifdef TDPLAS      
        ! Field
        pot(:)=zero
 #ifdef OMP
@@ -728,6 +745,10 @@ do its=1,this_nts_act
 !$OMP enddo
 !$OMP END PARALLEL
 #endif
+#else
+      stop "Error: TDPlas library has not been linked to WaveT"
+#endif
+
       end subroutine do_pot_from_field
 
 !------------------------------------------------------------------------
@@ -745,6 +766,7 @@ do its=1,this_nts_act
        real(dbl):: dist
        integer(i4b) :: its  
 
+#ifdef TDPLAS       
        pot(:)=zero
 #ifdef OMP
 !$OMP PARALLEL REDUCTION(+:pot)
@@ -761,16 +783,25 @@ do its=1,this_nts_act
 !$OMP enddo
 !$OMP END PARALLEL
 #endif
+#else
+      stop "Error: TDPlas library has not been linked to WaveT"
+#endif
+
       end subroutine do_pot_from_dip
 
 subroutine export_mdm_qmcoup
    implicit none
    integer(i4b) :: i
+#ifdef TDPLAS
          this_nprint=global_qmodes_nprint
          allocate(this_BEM_W2(this_nts_act))
          this_BEM_W2=BEM_W2
          allocate(this_BEM_Modes(this_nts_act,this_nts_act))
          this_BEM_Modes=BEM_Modes
+#else
+      stop "Error: TDPlas library has not been linked to WaveT"
+#endif
+
 end subroutine
 
 !------------------------------------------------------------------------

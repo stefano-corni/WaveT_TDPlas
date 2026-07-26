@@ -89,7 +89,7 @@
        !> compute charges associated to each mode
        call do_gcharges
        !> write out charges 
-       call out_gcharges
+       call out_gcharges_in_wavet
        !> compute plexcitons couplings g
        call do_couplings
        if(this_Ftest.eq."qmt") then

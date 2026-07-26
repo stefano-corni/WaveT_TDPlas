@@ -29,13 +29,15 @@
       !character(flg) :: FQBEM                        !< Flag driving the QM calculation mode
       real(dbl), allocatable :: energies(:)           !<Energies of the states     
       real(dbl), allocatable :: trans_dipoles(:,:,:)  !<Transition dipoles between states
+      real(dbl), allocatable :: trans_mag(:,:,:)      !<Mag. Trans. dipoles between states - MM - test
       complex(cmp), allocatable :: coeff0(:)          !<Initial coefficients 
       integer(i4b) :: nstates                         !<Dimension of Hilbert space
 
       save
       private
       public init_propagation, & ! subroutines
-             energies, trans_dipoles, nstates, coeff0   ! variables   
+             energies, trans_dipoles, nstates, coeff0, &   ! variables   
+             trans_mag ! MM
 !
 !
       contains
@@ -62,6 +64,9 @@
        else
          energies=e_ci
          trans_dipoles=mut
+         if (Fmag.eq.'mag') then
+            trans_mag=lt !MM
+         endif
          !> Input initialisation as in ci_*.inp 
        endif
        ! The following lines need to be moified in order to initialize
@@ -93,6 +98,7 @@
        if (this_Finit_int.eq."scf") then
          write(6,*) "System initialised with self-consistent procedure"
          nstates=n_ci 
+#ifdef TDPLAS         
        elseif (this_Finit_int.eq."qmt") then
          write(6,*) "System initialised with Quantum Coupling"
          if(global_sys_Ftest.eq."qmt") then 
@@ -102,18 +108,28 @@
            this_qmmodes(3)=4 
          endif
          nstates=n_ci*(this_nmodes+1)
+#else
+      stop "Error: TDPlas library has not been linked to WaveT"
+#endif
        else
-         write(6,*) "System initialised as in input files"
+
+               !write(6,*) "System initialised as in input files"
          nstates=n_ci 
          !stop
        endif
-       write(6,*) "Hilbert Space with ",nstates, " states."
+       !write(6,*) "Hilbert Space with ",nstates, " states."
        allocate(energies(nstates))
        allocate(coeff0(nstates))
        allocate(trans_dipoles(3,nstates,nstates))
+       if (Fmag.eq.'mag') then
+          allocate(trans_mag(3,nstates,nstates)) !MM
+       endif
        coeff0=zeroc
        energies=zero
        trans_dipoles=zero
+       if (Fmag.eq.'mag') then !MM
+          trans_mag=zero
+       endif
       return
       end subroutine init_initialise
 !

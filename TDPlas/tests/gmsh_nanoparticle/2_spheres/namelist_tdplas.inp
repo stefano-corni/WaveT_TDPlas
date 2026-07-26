@@ -8,8 +8,10 @@ medium_pol='charge'
 bem_type='diagonal'
 bem_read_write='write'
 /
+
 &SURFACE
-create_cavity = 'gms'
+surface_type = 'mesh'
+input_mesh = 'gms'
 /
 
 &EPS_FUNCTION
@@ -19,6 +21,8 @@ eps_gm=0.00757576
 eps_w0=0.  
 f_vel=0. 
 /
+
 &print_charges
 /
-
+&QUANTUM_COUPLING
+/

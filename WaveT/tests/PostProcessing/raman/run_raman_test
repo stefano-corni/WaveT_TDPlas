@@ -1,0 +1,19 @@
+#!/bin/bash
+#SBATCH -J r_100
+#SBATCH --ntasks 1
+#SBATCH --cpus-per-task 1
+#SBATCH --time=10:00:00
+#SBATCH --partition=gibbs
+#SBATCH --account=gibbs
+
+export SCM_TMPDIR=/local/scratch/corni
+
+NSCM=$SLURM_TASKS
+
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/local/share/intel10/cce/10.1.018/lib
+export LD_LIBRARY_PATH
+
+source /local/home/corni/giulia/ENV/bin/activate
+
+python3 /local/home/corni/giulia/Porphine/Propagation/raman_time.py input_raman out_100
+

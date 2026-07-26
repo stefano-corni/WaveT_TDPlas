@@ -112,6 +112,10 @@
                             call mpi_error("ERROR: epsilon model is Drude-Lorentz but epsilon coefficients were not provided", &
                                            "Chose the desired model and provide epsilon values accordingly", " ")
                         endif
+                        if(user_input%bem_type.ne."diagonal") then
+                            call mpi_error("ERROR: with Drude-Lorentz epsilon model BEM diagonal must be used, put", &
+                            "bem_type='diagonal'"," ")
+                        endif
 
                     case("debye")
                         if((user_input%eps_A.gt.zero).or.(user_input%eps_gm.gt.zero).or.&

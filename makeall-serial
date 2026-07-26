@@ -4,5 +4,6 @@ cp Makefile-serial Makefile
 make 
 cd -
 cd $WORK_DIR/WaveT/src
-make serial
+cp Makefile-serial Makefile
+make serial 
 

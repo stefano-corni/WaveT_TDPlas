@@ -1,0 +1,34 @@
+&general 
+n_ci=3,                ! Number of excited states to use
+n_ci_read=5            ! Number of excited states to read
+mol_cc= 0. 0. 0.       ! Molecule centre of mass
+medium='sol'           ! Solvent as external medium
+n_f=1                  ! Number to append to output files
+dt=0.20                ! Time step in atomic units
+n_step=1000            ! Number of steps
+n_out=50               ! Frequency of output printing
+/ 
+
+&field 
+Ffld='pip'             ! Pi pulse shape: cos^2(pi(t-t0)/(2s)) * cos(w(t-t0))
+omega(1)=0.262961      ! Pulse frequency in atomic units 
+sigma(1)=20,           ! Amplitude (s) in atomic units
+t_mid=250              ! Centre of the pulse (t0) in atomic units
+radiative='non'        ! Radiative damping not applied
+npulse=1               ! Number of pulses
+fmax(1,1) = 0.         ! Pulse intensity along x in atomic units
+fmax(2,1) = 0.         ! Pulse intensity along y in atomic units
+fmax(3,1) = 0.         ! Pulse intensity along z in atomic units
+/
+
+&sse dissipative='non' ! Dissipation is not included, coherent dynamics
+/
+
+&spectra 
+start=80                 ! Initial time step considered for the spectra calculations
+tau= 20000. 20000.      ! Damping of the molecule and the nanoparticle dipole moments
+dir_ft= 1. 0. 0.        ! x y and z direction of the Fourier transform
+/
+
+
+

@@ -1,60 +1,41 @@
+#FC = mpiifort
 FC = gfortran
-#FFLAGS_XEON= -O3 -ftz -align -arch pn4 -tune pn4 -xN -tpp7
-#FFLAGS_PAR= -parallel -par_threshold75 -par_report3
-#FFLAGS_HYD= -O3 -ftz -align -xHost
-#FFLAGS_HYD_PAR= -O3 -ftz -align -xHost -parallel -par_threshold75 -par_report3
-#FFLAGS_DEB= -debug -C -traceback
-#FFLAGS_P3= -O3 -ftz -align -arch pn3 -tune pn3 -tpp6
-#FFLAGS_P4= -O3 -ftz -align -arch pn4 -tune pn4 -tpp7 -xN
-#FFLAGS_MIO= -O3 -ftz -align -arch pn4 -tune pn4 -tpp7 -xB -ipo
-#FFLAGS_WS= -O3 -ftz -align -xP -no-prec-div -ipo
-#FFLAGS_LAP= -O3 -ftz -align -xAVX -no-prec-div 
-#FFLAGS_GF= -O3
-#MPI= -DPARALLEL
-LDLAGS= 
-OMP= -fopenmp -DOMP
-#FFLAGS= $(FFLAGS_GF_DEB)
-#LIBS =  -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread
-#INC = -I/usr/include/ -I/unimore/prod/fftw-3.3.4/include/
+# open mp flags
+ # comment first line and uncommment the second for ifort
 
-#FC = ifort
-#FFLAGS_XEON= -O3 -ftz -align -arch pn4 -tune pn4 -xN -tpp7
-#FFLAGS_PAR= -parallel -par_threshold75 -par_report3
-#FFLAGS_DEB= -debug -C -g
-#FFLAGS_DEB= -debug -traceback -C -g -diag-disable  warn -parallel -par_threshold75 -par_report3
-#FFLAGS_DEB_PAR= -g -diag-disable  warn -parallel -par_threshold75 -par_report3
-#FFLAGS_P3= -O3 -ftz -align -arch pn3 -tune pn3 -tpp6
-#FFLAGS_P4= -O3 -ftz -align -arch pn4 -tune pn4 -tpp7 -xN
-#FFLAGS_MIO= -O3 -ftz -align -xAVX
-#FFLAGS_HYD= -O3 -ftz -align -xHost
-#FFLAGS_HYD_PAR= -O3 -ftz -align -xHost -parallel -par_threshold75 -par_report3 #-check bounds 
-#FFLAGS_WS= -O3 -ftz -align -xP -no-prec-div -ipo
-#FFLAGS_GF= -O3 
-#LDLAGS=
-#OMP= -openmp -DOMP
-#FFLAGS= -O3 -ftz -align all ${OMP} -heap-arrays 1024 #-check bounds #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+ OMP= -fopenmp -DOMP
+ #OMP= -qopenmp -DOMP
 
-# mpi flags
-MPI= 
+ # mpi flags
 
-# actual flags used in the compilation
-#FFLAGS= -O3 ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+ #MPI= -DMPI
 
-#FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
-FFLAGS= -Og -g -fimplicit-none -fcheck=all -fbacktrace ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+ # other flags - to clean up?
 
-# preprocessor flag
-# comment the first and uncomment the second if compiler is ifort
+ #LDLAGS=
 
-CPP= -cpp
+ # actual flags used in the compilation
+ #FFLAGS= -O3 ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+ FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+ #FFLAGS= -O3 -ftz -align all ${OMP} ${MPI} -heap-arrays 1024 -check bounds 
+
+ # preprocessor flag
+ # comment the first and uncomment the second if compiler is ifort
+
+ CPP= -cpp
 #CPP= -fpp
 
-# libraries to be linked
+#LIBS = -qmkl -lfftw3 -lm
+#INC = -I/home/coccia/Libs/fftw-3.3.8
+#INC = -I/home/coccia/Codes/WaveT_nondipole/WaveT/WaveT/src
 
-LIBS = -L/usr/lib -llapack -lblas -lfftw3 -L/usr/local/lib/
-INC = -I/usr/local/include/ -I.
-LIBSPAR= -L/opt/scali/lib64 -lfmpi -lmpi
-INCPAR= -I/opt/scali/include64 -I/usr/local/lib
+#LIBS = -L/share/lib64 -llapack -lblas -lpthread -lfftw3 #FOR PADOVA
+#INC =  -I/usr/include #FOR PADOVA
+
+INC = -I/usr/include/x86_64-linux-gnu
+LIBS = -L/usr/lib/x86_64-linux-gnu -llapack -lblas -lfftw3
+LIBSPAR= #-L/opt/scali/lib64 -lfmpi -lmpi
+INCPAR= #-I/opt/scali/include64 -I/local/home/corni/emanuele/fftw-3.3.4/include/
 
 # executable and tools directories
 
@@ -66,7 +47,7 @@ TOOLSPATH=tools
 WAVETOBJ = random.o constants.o readio.o spectra.o interface_tdplas.o scf.o QM_coupling.o dissipation.o initialise.o propagate.o
 OBJ= $(WAVETOBJ) main.o
 OBJ_SPECTRA= $(WAVETOBJ) main_spectra.o
-OBJ_VIB= constants.o readio.o $(TOOLSPATH)/vib.o $(TOOLSPATH)/vib_tool.o
+OBJ_VIB= random.o constants.o readio.o $(TOOLSPATH)/vib.o $(TOOLSPATH)/vib_tool.o
 OBJ_COH= constants.o $(TOOLSPATH)/coherence_tool.o
 OBJ_FFT= constants.o $(TOOLSPATH)/fft_tool.o
 OBJ_POP_COH= constants.o $(TOOLSPATH)/pop_coh_tool.o
@@ -84,7 +65,7 @@ ifeq ($(TDPLASLINK),YES)
 
 # tdplas directory
 
-TDPLAS=../../TDPlas/src/
+TDPLAS= ../../TDPlas/src/
 
 # tdplas library file
 
@@ -116,7 +97,7 @@ $(BINPATH)/WaveT-serial.x: main.o
 	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/WaveT-parallel.x: main.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(INCPAR) $(TDPLASLIB) $(LIBS) $(LIBSPAR) $(LIBSF) $(LIB_CURIE)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(INCPAR) $(TDPLASLIB) $(LIBS) $(LIBSPAR) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/make_vib.x: $(OBJ_VIB)
 	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_VIB)
@@ -213,7 +194,7 @@ initialise.o: constants.o readio.o interface_tdplas.o scf.o QM_coupling.o
 
 dissipation.o: random.o constants.o readio.o interface_tdplas.o
 
-propagate.o: spectra.o dissipation.o interface_tdplas.o initialise.o
+propagate.o: random.o spectra.o dissipation.o interface_tdplas.o initialise.o
 
 main_spectra.o: readio.o spectra.o interface_tdplas.o
 

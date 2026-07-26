@@ -1,4 +1,6 @@
-&general n_ci=5,n_ci_read=5 
+&general 
+n_ci=5,
+n_ci_read=5 
 mol_cc= 0. 0. 0.
 medium='sol'
 n_f=1 
@@ -22,7 +24,8 @@ fmax(3,1)= 0.
 &sse dissipative='non'
 /
 
-&spectra start=80, 
+&spectra 
+start=80, 
 tau= 2000.0 2000.0
 dir_ft= 1. 1. 1. 
 /

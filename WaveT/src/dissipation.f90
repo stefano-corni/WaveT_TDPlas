@@ -19,7 +19,11 @@ module dissipation
   save 
   private
   public norm, dtot, dsp, dnr, dde, add_dis_m, add_dis_nm, loss_norm
-  public quan_jump, add_h_rnd, define_h_dis, rnd_noise, add_h_rnd2, disp 
+  !Commented by: Manuel Sanchez 09/04/2026
+  !public quan_jump, add_h_rnd, define_h_dis, build_gamma_sum_from_gamma_nr, build_rp_random_matrix, build_gamma_nr_matrix, sqrt_gamma_nr_matrix, rnd_noise, add_h_rnd2, disp
+  public quan_jump, define_h_dis, build_gamma_sum_from_gamma_nr, &
+         build_rp_random_matrix, build_gamma_nr_matrix, &
+         sqrt_gamma_nr_matrix, disp
   public random_seq
 !
   contains
@@ -596,84 +600,147 @@ module dissipation
 
   end subroutine set_pair
 
+!------------------------------------------------------------------------
+! @brief Build the nonradiative Gamma matrix from channel rates nr_gam.
+!        Mapping from channel index to state pair is done via set_pair.
+!
+! @date Created   : Manuel Sanchez 07/04/2026
+! Modified  :
+!------------------------------------------------------------------------
+  subroutine build_gamma_nr_matrix(gamma_nr,nci)
+
+   implicit none
+   integer(i4b), intent(in)    :: nci
+   real(dbl),    intent(inout) :: gamma_nr(nci,nci)
+   integer(i4b)                :: istate, ig, ie
+
+   gamma_nr = zero
+
+   do istate=1,nf
+      call set_pair(istate,ig,ie)
+      gamma_nr(ig,ie) = nr_gam(istate)
+   enddo
+
+   return
+
+  end subroutine build_gamma_nr_matrix
+
+!------------------------------------------------------------------------
+! @brief Build Rp as the element-wise square root of gamma_nr.
+!
+! @date Created   : Manuel Sanchez 09/04/2026
+! Modified  :
+!------------------------------------------------------------------------
+  subroutine sqrt_gamma_nr_matrix(gamma_nr,Rp,nci)
+
+   implicit none
+   integer(i4b), intent(in)    :: nci
+   real(dbl),    intent(in)    :: gamma_nr(nci,nci)
+   real(dbl),    intent(inout) :: Rp(nci,nci)
+   integer(i4b)                :: i,j
+
+   Rp = zero
+
+   do i=1,nci
+      do j=1,nci
+         if (gamma_nr(i,j).lt.zero) then
+            write(*,*) 'Negative element in gamma_nr at (i,j)=', i, j
+            stop
+         endif
+         Rp(i,j) = sqrt(gamma_nr(i,j))
+      enddo
+   enddo
+
+   return
+
+  end subroutine sqrt_gamma_nr_matrix
+
+!------------------------------------------------------------------------
+! @brief Build gamma_sum from gamma_nr as column-wise sums:
+! gamma_sum(i) = sum_j gamma_nr(j,i)
+!
+! @date Created   : Manuel Sanchez 09/04/2026
+! Modified  :
+!------------------------------------------------------------------------
+  subroutine build_gamma_sum_from_gamma_nr(gamma_nr,gamma_sum,nci)
+
+   implicit none
+   integer(i4b), intent(in)    :: nci
+   real(dbl),    intent(in)    :: gamma_nr(nci,nci)
+   real(dbl),    intent(inout) :: gamma_sum(nci)
+   integer(i4b)                :: i
+
+   do i=1,nci
+      gamma_sum(i) = sum(gamma_nr(:,i))
+   enddo
+
+   return
+
+  end subroutine build_gamma_sum_from_gamma_nr
+
+
+
 
 !------------------------------------------------------------------------
 ! @brief Random term in the Hamiltonian for the stochastic propagation 
 ! Random events: dissipation, nonradiative and dephasing
 !
 ! @date Created   : E. Coccia 19 Jan 2017
-! Modified  :
+! Modified  : Manuel Sanchez 02/04/2026
 ! @param w(:), w_prev(:), h_rnd(:,:)
 !------------------------------------------------------------------------
-  subroutine add_h_rnd(h_rnd,nci,w,w_prev) 
+  !subroutine add_h_rnd(h_rnd,nci,w,w_prev) 
 
-   implicit none
-   integer, intent(in)        :: nci
-   real(dbl), intent(in)        :: w(3*nci), w_prev(3*nci)
-   complex(cmp), intent(inout) :: h_rnd(nci,nci)
-   integer                    :: i
-   real(dbl)                    :: rate, rtmp, itmp 
-   real(dbl)                    :: wrnd(3*nci)
+   !implicit none
+   !integer, intent(in)        :: nci
+   !real(dbl), intent(in)        :: w(3*nci), w_prev(3*nci)
+   !complex(cmp), intent(inout) :: h_rnd(nci,nci)
+   ! integer                    :: i
+   ! real(dbl)                  :: rate, rtmp, itmp 
+   ! real(dbl)                  :: wrnd(3*nci)
+   ! Disabled by request: routine kept as no-op stub.
+   !h_rnd = zeroc
+   !
+   ! Original implementation kept commented:
+   ! if (Fdis.eq."mar-EuMar".or.Fdis.eq."mar-RuKu4".or.Fdis.eq."mar-HeuSt") then
+   !    wrnd=w
+   ! endif
+   ! h_rnd=zeroc
+   ! itmp=0.d0
+   ! do i=2, nci
+   !    rtmp=0.d0
+   !    rtmp = rtmp + sqrt(sp_gam(i-1)*tmom2(i-1))*wrnd(i)
+   !    if (Fdis_rel.eq."dip") then
+   !       rate = sqrt(nr_gam(i-1)*tmom2(i-1))
+   !    elseif (Fdis_rel.eq."mat") then
+   !       rate = sqrt(nr_gam(i-1))
+   !    endif
+   !    rtmp = rtmp + rate*wrnd(i+nci)
+   !    h_rnd(1,i) = cmplx(rtmp,itmp)
+   ! enddo
+   ! if (Fdis_deph.eq."exp") then
+   !    do i=1, nci
+   !       rtmp = sqrt(de_gam(i))*cos(delta(i))*wrnd(i+2*nci)
+   !       itmp = sqrt(de_gam(i))*sin(delta(i))*wrnd(i+2*nci)
+   !       h_rnd(i,i) = h_rnd(1,1) + cmplx(rtmp,itmp)
+   !    enddo
+   ! elseif (Fdis_deph.eq."i-0") then
+   !    do i=2,nci
+   !       h_rnd(i,i) = sqrt(de_gam(i-1))*wrnd(i+2*nci)
+   !       h_rnd(1,1) = h_rnd(1,1) + h_rnd(i,i)
+   !    enddo
+   ! endif
 
+   !return
 
-!   if (tdis.eq.0) then
-   if (Fdis.eq."mar-EuMar") then
-      wrnd=w
-!   elseif (tdis.eq.1) then
-   elseif (Fdis.eq."mar-LeiMa") then
-      wrnd=w+w_prev
-   endif 
-
-! Matrix elements of S_alpha in the basis of the system eigenstates 
-   h_rnd=zeroc
-
-   itmp=0.d0
-   do i=2, nci
-      rtmp=0.d0 
-! Relaxation via spontaneous emission (sp)
-! S_alpha = sqrt(sp_gam_alpha) d_(alpha,0)  |Phi_0> <Phi_alpha| 
-      rtmp = rtmp + sqrt(sp_gam(i-1)*tmom2(i-1))*wrnd(i)
-! Relaxation via nonradiative processes (nr)
-! S_alpha = sqrt(nr_gam_alpha) d_(alpha,0)  |Phi_0> <Phi_alpha|
-!      if (nr_typ.eq.0) then
-      if (Fdis_rel.eq."dip") then
-         rate = sqrt(nr_gam(i-1)*tmom2(i-1))
-!      elseif (nr_typ.eq.1) then
-      else
-         rate = sqrt(nr_gam(i-1))
-      endif
-      rtmp = rtmp + rate*wrnd(i+nci)
-      h_rnd(1,i) = cmplx(rtmp,itmp)
-   enddo
-
-
-!   if (idep.eq.0) then
-   if (Fdis_deph.eq."exp") then
-      do i=1, nci
-! Pure dephasing (de)
-! S_alpha = sqrt(de_gam_alpha) |Phi_alpha> <Phi_alpha|
-         rtmp = sqrt(de_gam(i))*cos(delta(i))*wrnd(i+2*nci)
-         itmp = sqrt(de_gam(i))*sin(delta(i))*wrnd(i+2*nci) 
-         h_rnd(i,i) = h_rnd(1,1) + cmplx(rtmp,itmp)
-      enddo
-!   elseif (idep.eq.1) then 
-   elseif (Fdis_deph.eq."i-0") then 
-      do i=2,nci
-          h_rnd(i,i) = sqrt(de_gam(i-1))*wrnd(i+2*nci)
-          h_rnd(1,1) = h_rnd(1,1) + h_rnd(i,i)
-      enddo 
-   endif  
-
-   return
-
-  end subroutine add_h_rnd
+  !end subroutine add_h_rnd
 
 !------------------------------------------------------------------------    
 ! @brief Define the Markovian (imar=0) or non-Markovian (imar=1)
 ! dissipative term in the system Hamiltonian
 !
 ! @date Created   : E. Coccia 20 Jan 2017
-! Modified  :
+! Modified  : Manuel Sanchez 02/04/2026
 ! @param h_dis
 !------------------------------------------------------------------------
   subroutine define_h_dis(h_dis,nci)
@@ -685,7 +752,7 @@ module dissipation
 
    h_dis=zero
 
-   if (Fdis.eq."mar-qjump".or.Fdis.eq."mar-EuMar".or.Fdis.eq."mar-LeiMa") then 
+   if (Fdis.eq."mar-qjump".or.Fdis.eq."mar-EuMar".or.Fdis.eq."mar-RuKu4".or.Fdis.eq."mar-HeuSt") then 
       call add_dis_m(h_dis,n_ci)
    elseif (Fdis.eq."nma") then 
       call add_dis_nm(h_dis,n_ci) 
@@ -696,54 +763,60 @@ module dissipation
   end subroutine define_h_dis
 
 !------------------------------------------------------------------------
+! @brief Build a random matrix with the same shape as Rp:
+! Rn(i,j) = rp(i,j) * random_normal()
+! Modified  : Manuel Sanchez 02/04/2026
+!------------------------------------------------------------------------
+  subroutine build_rp_random_matrix(rp,Rn,nci)
+
+   implicit none
+   integer, intent(in)       :: nci
+   real(dbl), intent(in)     :: rp(nci,nci)
+   real(dbl), intent(inout)  :: Rn(nci,nci)
+   integer                   :: i,j
+
+   do i=1,nci
+      do j=1,nci
+         Rn(i,j) = rp(i,j)*random_normal()
+      enddo
+   enddo
+
+   return
+
+  end subroutine build_rp_random_matrix
+
+!------------------------------------------------------------------------
 ! @brief Define the random fluctuating term in the
 ! stochastic propagator
 !
 ! @date Created   : E. Coccia 20 Jan 2017
-! Modified  :
+! Modified  : Manuel Sanchez 02/04/2026
 ! @param w(:), w_rnd(:)
 !------------------------------------------------------------------------
-  subroutine rnd_noise(w,w_prev,nci,first)
+  !subroutine rnd_noise(w,w_prev,nci,first)
 
-   implicit none
-   integer, intent(in)    :: nci
-   real(dbl), intent(inout) :: w(3*nci), w_prev(3*nci)
-   logical, intent(in)    :: first
-   integer                :: i,j
+   !implicit none
+   !integer, intent(in)    :: nci
+   !real(dbl), intent(inout) :: w(3*nci), w_prev(3*nci)
+   !logical, intent(in)    :: first
+   ! integer                :: i,j
+   ! Disabled by request: routine kept as no-op stub.
+   !w = 0.d0
+   !w_prev = 0.d0
+   !
+   ! Original implementation kept commented:
+   ! if (Fdis.eq."mar-EuMar".or.Fdis.eq."mar-RuKu4".or.Fdis.eq."mar-HeuSt") then
+   !    w=0.d0
+   !    do i=1,3*nci
+   !       do j=1,nrnd
+   !          w(i) = w(i) + random_normal()
+   !       enddo
+   !    enddo
+   ! endif
 
-!   if (tdis.eq.1) then
-   if (Fdis.eq."mar-LeiMa") then
-      if (first) then
-         w=0.d0
-         w_prev=0.d0
-         do i=1,3*nci 
-            do j=1,nrnd
-               w(i) = w(i) + random_normal()
-               w_prev(i) = w_prev(i) + random_normal()
-            enddo
-         enddo
-      else 
-         do i=1,3*nci
-            w_prev(i) =  w(i)
-            w(i) = 0.d0             
-            do j=1, nrnd
-               w(i) = w(i) + random_normal()
-            enddo
-         enddo
-      endif
-!   elseif (tdis.eq.0) then
-   elseif (Fdis.eq."mar-EuMar") then
-      w=0.d0
-      do i=1,3*nci
-         do j=1,nrnd
-            w(i) = w(i) + random_normal()
-         enddo
-      enddo
-   endif
+   !return
 
-   return
-
- end subroutine rnd_noise
+ !end subroutine rnd_noise
 
 !------------------------------------------------------------------------
 ! @brief Define the square of the dissipation/dephasing operator 
@@ -753,45 +826,35 @@ module dissipation
 ! Modified  :
 ! @param h_rnd2(:,:)
 !------------------------------------------------------------------------
- subroutine add_h_rnd2(h_rnd2,nci)
+ !subroutine add_h_rnd2(h_rnd2,nci)
 
-   implicit none
-   integer, intent(in)        :: nci
-   complex(cmp), intent(inout) :: h_rnd2(nci,nci)
-   integer                    :: i
-   real(dbl)                    :: rtmp, itmp 
+   !implicit none
+   !integer, intent(in)        :: nci
+   !complex(cmp), intent(inout) :: h_rnd2(nci,nci)
+   ! integer                    :: i
+   ! real(dbl)                  :: rtmp, itmp 
+   ! Disabled by request: routine kept as no-op stub.
+   !h_rnd2 = zeroc
+   !
+   ! Original implementation kept commented:
+   ! h_rnd2=zeroc
+   ! if (Fdis_deph.eq."exp") then
+   !    do i=1, nci
+   !       rtmp = de_gam(i)*cos(2.d0*delta(i))
+   !       itmp = de_gam(i)*sin(2.d0*delta(i))
+   !       h_rnd2(i,i) = h_rnd2(i,i) + cmplx(rtmp,itmp)
+   !    enddo
+   ! elseif (Fdis_deph.eq."i-0") then
+   !    do i=2,nci
+   !       h_rnd2(i,i) = h_rnd2(i,i) + de_gam(i-1)
+   !    enddo
+   !    h_rnd2(1,1) = h_rnd2(1,1) + sum(de_gam)
+   ! endif
+   ! h_rnd2 = 0.5d0*h_rnd2
 
-! Matrix elements of S^2_alpha in the basis of the system eigenstates 
-   h_rnd2=zeroc
+   !return
 
-! Sp and nr dissipation
-! S^2_alpha = 0 (alpha.ne.0, by construction) 
-! S^2_alpha = 1 (alpha.eq.0) FALSE
-  !h_rnd2(1,1) = 1.d0  
-
-! Pure dephasing (de)
-! S^2_alpha = de_gam_alpha exp(i 2*delta_alpha) |Phi_alpha> <Phi_alpha|
-   !if (idep.eq.0) then
-   if (Fdis_deph.eq."exp") then
-      do i=1, nci
-         rtmp = de_gam(i)*cos(2.d0*delta(i))
-         itmp = de_gam(i)*sin(2.d0*delta(i)) 
-         h_rnd2(i,i) = h_rnd2(i,i) + cmplx(rtmp,itmp)
-      enddo
-   !elseif (idep.eq.1) then
-   elseif (Fdis_deph.eq."i-0") then 
-! S^2_alpha = de_gam_alpha * (|Phi_alpha> <Phi_alpha| + |Phi_0> <Phi_0|)
-     do i=2,nci
-        h_rnd2(i,i) = h_rnd2(i,i) + de_gam(i-1)
-     enddo 
-     h_rnd2(1,1) = h_rnd2(1,1) + sum(de_gam) 
-   endif 
-
-   h_rnd2 = 0.5d0*h_rnd2
-
-   return
-
-  end subroutine add_h_rnd2
+  !end subroutine add_h_rnd2
 
 !------------------------------------------------------------------------
 ! @brief Element-by-element multiplication 

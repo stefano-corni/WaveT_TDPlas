@@ -318,7 +318,7 @@
 
        real(dbl), allocatable :: pot(:),pot2(:)
        complex(cmp) :: mu_omega(3)
-       integer(i4b):: i,its
+       integer(i4b):: i,its,istate,estate,ramanid
 
        ! Cavity read/write and S D matrices
        call init_BEM
@@ -342,7 +342,8 @@
        ! Calculate potential on tesserae
        allocate(pot(pedra_surf_n_tessere))
        !call do_pot_from_field(fmax(:,1),pot)
-
+       allocate(Kdiag_omega(pedra_surf_n_tessere))
+       allocate(q_omega(pedra_surf_n_tessere))
        pot(:)=zero
        !SC 7/12/2020: modified to either use n homogeneous field...
        if (global_ext_pert_Ftyp.eq."field") then
@@ -373,18 +374,31 @@
            close(888)
          endif
        elseif (global_ext_pert_Ftyp.eq."from_cipot") then
-                call read_molecule_file
-                call read_gau_out_medium(global_ext_pert_n_ci+1)
-                pot=quantum_vts(:,1,global_ext_pert_nstate+1)
+            call read_molecule_file
+            call read_gau_out_medium(global_ext_pert_n_ci+1)
+            pot=quantum_vts(:,1,global_ext_pert_nstate+1)
+       elseif (global_ext_pert_Ftyp.eq."raman") then
+            call read_molecule_file
+            call read_gau_out_medium(global_ext_pert_n_ci+1)
+            pot=quantum_vts(:,1,global_ext_pert_nstate+1)
+            ramanid=70
+            open(ramanid,file="dipole_max.dat",status="unknown")
+               do estate=0,global_ext_pert_n_ci
+                  do istate=0,estate
+                    pot=quantum_vts(:,istate+1,estate+1)
+                    call do_charge_freq(pot,pot2,mu_omega,istate,estate,ramanid)
+                  enddo
+               enddo
+            close(ramanid)
        elseif (global_ext_pert_Ftyp.eq."dipole") then
             call read_molecule_file
             call do_pot_from_dip(mu_trans,pot)
 
        endif
 ! 
-       allocate(Kdiag_omega(pedra_surf_n_tessere))
-       allocate(q_omega(pedra_surf_n_tessere))
-       call do_charge_freq(pot,pot2,mu_omega)
+       !allocate(Kdiag_omega(pedra_surf_n_tessere))
+       !allocate(q_omega(pedra_surf_n_tessere))
+       if (global_ext_pert_Ftyp.ne."raman") call do_charge_freq(pot,pot2,mu_omega,1,1,1)
        deallocate(pot,q_omega,Kdiag_omega)
        if (global_ext_pert_Feet.eq."yes") deallocate(pot2)
        !Deallocate private arrays
@@ -1317,11 +1331,6 @@ end subroutine
 !        Drude-Lorentz dielectric function
          Kd=zero
          fact2(:)=(twp-sgn*BEM_L(:))*drudel_eps_A/(two*twp)
-! SC: the first eigenvector should be 0 for the NP
-         if ((global_medium_Fmdm.eq.'cnan').or.&
-             (global_medium_Fmdm.eq.'qnan')) then
-                fact2(1)=0.d0
-         endif
          ! SC: no spurious negative square frequencies
 
          do i=1,pedra_surf_n_tessere
@@ -1332,6 +1341,12 @@ end subroutine
              BEM_L(i)=-twp
            endif
          enddo
+
+         ! SC: the first eigenvector should be 0 for the NP
+         if ((global_medium_Fmdm.eq.'cnan').or.&
+             (global_medium_Fmdm.eq.'qnan')) then
+                fact2(1)=0.d0
+         endif
 
          if (drudel_eps_w0.eq.zero) drudel_eps_w0=1.d-8
          BEM_W2(:)=fact2(:)+drudel_eps_w0*drudel_eps_w0
@@ -1997,12 +2012,12 @@ end subroutine
 ! @date Created: S. Pipolo
 ! Modified: E. Coccia 4/12/18
 !------------------------------------------------------------------------
-
-      subroutine do_charge_freq(pot,pot2,mu_omega)
+      subroutine do_charge_freq(pot,pot2,mu_omega,istate,estate,ramanid)
 
        real(dbl),       intent(in)  :: pot(:)
        real(dbl),       intent(in)  :: pot2(:)
        complex(cmp),    intent(out) :: mu_omega(3)
+       integer(4),      intent(in)  :: istate,estate,ramanid
        complex(cmp) :: eps, v_eet, mu_ind_abs(3), mu_ind_emi(3)
        real(dbl)  :: gamma_met, shift_met, re_q, im_q, abs_val
        real(dbl) :: a,b,pl_omega_abs,pl_omega_emi, gamma_met_emi, E_tot, E_0
@@ -2028,12 +2043,13 @@ end subroutine
            close(8)
        endif
        if (global_ext_pert_print_surface_charges.eq."yes") then
-               open(9, file="surface_charges_real.pqr", status="unknown")
-               open(10, file="surface_charges_imag.pqr", status="unknown")
-               open(11, file="surface_charges_abs.pqr", status="unknown")
+             open(9, file="surface_charges_real.pqr", status="unknown")
+             open(10, file="surface_charges_imag.pqr", status="unknown")
+             open(11, file="surface_charges_abs.pqr", status="unknown")
        endif
 
-       open(7,file="dipole_freq.dat",status="unknown")
+       if(global_ext_pert_Ftyp.ne."raman") open(7,file="dipole_freq.dat",status="unknown")
+
        if(global_ext_pert_Ftyp.eq."field") then
         write (7,*)"freq re(mux) re(muy) re(muz) im(mux) im(muy) im(muz)"
        elseif (global_ext_pert_Ftyp.eq."molecule") then
@@ -2044,8 +2060,12 @@ end subroutine
         endif
        endif
 !
-!
-       do i=1,dielectric_func_n_omega
+       if(global_ext_pert_Ftyp.eq."raman") then
+          idum = 2
+       else
+          idum = 1
+       endif
+       do i=idum,dielectric_func_n_omega
 
 !$OMP PARALLEL
            select case( global_eps_Feps )
@@ -2074,8 +2094,7 @@ end subroutine
            elseif(global_medium_bem_sym.eq."non") then
               q_omega=matmul(BEM_VLc,pot)
               q_omega=Kdiag_omega*q_omega
-              q_omega=matmul(BEM_VRc,q_omega)
-              q_omega=-matmul(BEM_Sm1,q_omega)
+              q_omega=-matmul(BEM_VRc,q_omega)
            endif
            if(global_medium_Fnorm.eq."tot") then
               q_tot=0
@@ -2146,6 +2165,8 @@ end subroutine
 
           if(global_ext_pert_Ftyp.eq."field") then
               write (7,'(7e15.6)') dielectric_func_omegas(i),real(mu_omega(:)),aimag(mu_omega(:))
+          elseif(global_ext_pert_Ftyp.eq."raman") then
+              write (ramanid,'(2i8,6e15.6)') istate,estate,real(mu_omega(:)),aimag(mu_omega(:))
           else
               gamma_met=-2.d0*dot_product(aimag(q_omega),pot)
               shift_met=dot_product(real(q_omega),pot)

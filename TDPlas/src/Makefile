@@ -20,7 +20,7 @@ OMP= -fopenmp -DOMP
 #OMP= -qopenmp -DOMP
 
 # mpi flags (not used here)
-MPI= 
+#MPI= -DMPI
 
 LDLAGS=
 #LDLAGS= --static --disable-shared --enable-static
@@ -33,16 +33,25 @@ LDLAGS=
 FFLAGS= -Og -g -fcheck-array-temporaries ${OMP} -fbounds-check #debug flag list to check coherence of array dimension 
 #FFLAGS= -Og -g ${OMP} -fPIC -m64 #-heap-arrays 1024  
 
+#FFLAGS= -O3 -ftz -align all ${OMP} ${MPI} -heap-arrays 1024 -check bounds 
+
 # preprocessor flag
 # comment the first and uncomment the second if compiler is ifort
 CPP=-cpp
 #CPP= -fpp
 
+#LIBS = -qmkl
+#INC = -I/home/coccia/Libs/fftw-3.3.8
+
 # libraries to be linked - paths to be set by the user
-LIBS = -L/usr/lib -llapack -lblas -lpthread #FOR PADOVA
-#LIBS = -L/usr/lib -llapack  -lblas -lfftw3 #MARTA PC
+#LIBS = -L/share/lib64 -llapack -lblas -lpthread -lfftw3 #FOR PADOVA
+#INC =  -I/usr/include #FOR PADOVA
+
 #LIBS =  -Wl,--start-group -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -Wl,--end-group#FOR HYDRA
-INC =  -I/usr/local/include
+#INC =  -I/usr/local/include
+INC = -I/usr/include/x86_64-linux-gnu
+LIBS = -L/usr/lib/x86_64-linux-gnu -llapack  -lblas
+
 # executable directory
 BINPATH=../bin
 # tdplas library file
