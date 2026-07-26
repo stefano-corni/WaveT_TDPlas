@@ -101,9 +101,6 @@
       real(dbl), allocatable :: BEM_Q0_super(:,:),BEM_Q0x_super(:,:)
       real(dbl), allocatable :: gauging_vector(:),gauging_vector_dum(:)
 
-      real(dbl), allocatable :: BEM_Sdum_act_p(:,:)
-      real(dbl) :: scaling, center(3)
-
       save
       private
       public BEM_L,BEM_T,ONS_ff,ONS_fw,                                &
@@ -1515,7 +1512,7 @@ end subroutine
        tp_myrank=0
 #endif
        if (global_eps_Feps.eq."non") then
-           call mpi_error("ERROR: in input epsilon_omega = non but you are trying to", &
+            call mpi_error("ERROR: in input epsilon_omega = non but you are trying to", &
                           "calculate bem matrices. Something is wrong in your input", &
                           " and there should be a check. Apologies! ")
        endif
@@ -1577,7 +1574,6 @@ end subroutine
        elseif(global_eps_Feps.eq."gen") then
          do i=1,pedra_surf_n_tessere
            scr2(i,i)= scr2(i,i) + one/sum(kf0)
-           !scr2(i,i)= sum(kf0) * scr2(i,i) + one
          enddo
        endif
 
@@ -1592,7 +1588,6 @@ end subroutine
 
        if ( global_eps_Feps.eq."gen" ) then
                BEM_Q0=-matmul(scr2,matmul(BEM_Sm1,BEM_2ppDA))
-               !BEM_Q0=-sum(kf0) * matmul(scr2,matmul(BEM_Sm1,BEM_2ppDA))
        else
                BEM_Q0=-matmul(BEM_Sm1,matmul(scr2,BEM_2ppDA))
        endif
@@ -1607,11 +1602,11 @@ end subroutine
             scr3 = scr1
        endif
 
-       if(global_eps_Feps.eq."deb".and.global_medium_Fmdm.ne.'cmix') then
+       if(global_eps_Feps.eq."deb") then
          fact_eps = (debye_eps_d+one) / (debye_eps_d-one)
-       elseif(global_eps_Feps.eq."drl".and.global_medium_Fmdm.ne.'cmix') then
+       elseif(global_eps_Feps.eq."drl") then
          fact_eps = (drudel_eps_d+one) / (drudel_eps_d-one)
-       elseif (global_eps_Feps.eq."gen".and.global_medium_Fmdm.eq.'cmix') then
+       elseif (global_eps_Feps.eq."gen") then
          fact_eps = (readf_eps_d+one) / (readf_eps_d-one)
        endif
 
@@ -1720,7 +1715,7 @@ end subroutine
        ! Form eps0 dependent matrix term
 
        do i=1,pedra_dum_n_tessere
-         scr2(i,i)= sum(kf0_dum) * scr2(i,i) + one
+         scr2(i,i)= scr2(i,i) + one/sum(kf0_dum)
        enddo
 
        ! inverse
@@ -1734,7 +1729,7 @@ end subroutine
 
        ! Form Q0
 
-       BEM_Q0_dum=-sum(kf0_dum) * matmul(scr2,matmul(BEM_Sm1_dum,BEM_2ppDA_dum))
+       BEM_Q0_dum=-matmul(scr2,matmul(BEM_Sm1_dum,BEM_2ppDA_dum))
 
        ! Form epsd dependent matrix term
 

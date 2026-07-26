@@ -116,6 +116,12 @@
       real(dbl), allocatable :: qr_dum_tp2(:),qx_dum_tp2(:)     !< reaction and external BEM charges in the iteration before the last
       real(dbl), allocatable :: std_f1_dum(:),std_f3_dum(:),std_f5_dum(:)
 
+      real(dbl), allocatable :: BEM_2pmDA_dum(:,:)
+      real(dbl) :: center(3)
+
+      real(dbl), allocatable :: qx_dip(:,:)
+      real(dbl), allocatable :: qr_dip(:,:)
+
       save
       private
 !SC 07/02/16: added output_gneq
@@ -569,6 +575,14 @@
           (global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq.'cmix').and.&
           global_prop_Fprop.ne."chr-ons") then
 
+         center=zero
+         do its=1,pedra_surf_n_tessere
+         center(1)=center(1)+pedra_surf_tessere(its)%x
+         center(2)=center(2)+pedra_surf_tessere(its)%y
+         center(3)=center(3)+pedra_surf_tessere(its)%z
+         enddo
+         center=center/pedra_surf_n_tessere
+
          allocate(pot_tp(pedra_surf_n_tessere))
          pot_tp=matmul(transpose(BEM_Z),pot_t)
 
@@ -827,8 +841,9 @@
        if(global_medium_Fmdm.eq.'cnan'.or.global_medium_Fmdm.eq.'qnan'.or.global_medium_Fmdm.eq.'cmix') then
          qtot0=sum(q0)
          !write(*,*) "qtot", qtot
-         !q0=q0-qtot0/pedra_surf_n_tessere
+         q0=q0-qtot0/pedra_surf_n_tessere
          qtot0=zero
+         q0_dum=q0_dum-sum(q0_dum)/pedra_dum_n_tessere
        endif
        g_eq_gs=0.5d0*dot_product(q0,pot_0)
        if (tp_myrank.eq.0) then
@@ -916,28 +931,23 @@
           allocate(dfqr_t_p(pedra_surf_n_tessere))
           allocate(dfqr_tp_p(pedra_surf_n_tessere))
 
-          qr_tp=zero
+          qr_tp=q0
           do ipoles=1,npoles
              qr_tp_p(:,ipoles)=kf0(ipoles)/sum(kf0) * q0(:)
-             !write(*,*) "sum(qr_tp_p)", ipoles, sum(qr_tp_p(:,ipoles))
-             !qr_tp_p(:,ipoles)=qr_tp_p(:,ipoles)-sum(qr_tp_p(:,ipoles))/pedra_surf_n_tessere
-             qr_tp(:)=qr_tp(:)+qr_tp_p(:,ipoles)
           enddo
+     
           if (npoles.ne.1) then
                   do ipoles=1,npoles-1
-                      fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles) + kf(ipoles)/sum(kf0) * qr_tp(:)
-                      fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/pedra_surf_n_tessere
+                      fqr_tp_p(:,ipoles)=zero
                   enddo
                   if (typ_prop.eq."0") then
-                          fqr_tp_p(:,npoles)=-w2(npoles)*qr_tp_p(:,npoles) + kf(npoles)/sum(kf0) * qr_tp(:)
-                          fqr_tp_p(:,npoles)=fqr_tp_p(:,npoles)-sum(fqr_tp_p(:,npoles))/pedra_surf_n_tessere
+                          fqr_tp_p(:,npoles)=zero
                   else
                           fqr_tp_p(:,npoles)=one/sum(kf0) * qr_tp(:)
                   endif
           else
                   ipoles=1
-                  fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles) + kf(ipoles)/sum(kf0) * qr_tp(:)
-                  fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/pedra_surf_n_tessere
+                  fqr_tp_p(:,ipoles)=zero
           endif
           fqr_tp2_p(:)=zero
           fqr_tp3_p(:)=zero
@@ -955,29 +965,22 @@
           allocate(dfqr_dum_t_p(pedra_dum_n_tessere))
           allocate(dfqr_dum_tp_p(pedra_dum_n_tessere))
 
-          qr_dum_tp=zero
+          qr_dum_tp=q0_dum
           do ipoles=1,npoles_dum
              qr_dum_tp_p(:,ipoles)=kf0_dum(ipoles)/sum(kf0_dum) * q0_dum(:)
-             qr_dum_tp(:)=qr_dum_tp(:)+qr_dum_tp_p(:,ipoles)
           enddo
           if (npoles_dum.ne.1) then
                   do ipoles=1,npoles_dum-1
-                      fqr_dum_tp_p(:,ipoles)=-w2_dum(ipoles)*qr_dum_tp_p(:,ipoles)+&
-                                             kf_dum(ipoles)/sum(kf0_dum) * qr_dum_tp(:)
-                      fqr_dum_tp_p(:,ipoles)=fqr_dum_tp_p(:,ipoles)-sum(fqr_dum_tp_p(:,ipoles))/pedra_dum_n_tessere
+                      fqr_dum_tp_p(:,ipoles)=zero
                   enddo
                   if (typ_prop.eq."0") then
-                          fqr_dum_tp_p(:,npoles_dum)=-w2_dum(npoles_dum)*qr_dum_tp_p(:,npoles_dum)+&
-                                             kf_dum(npoles_dum)/sum(kf0_dum) * qr_dum_tp(:)
-                          fqr_dum_tp_p(:,ipoles)=fqr_dum_tp_p(:,ipoles)-sum(fqr_dum_tp_p(:,ipoles))/pedra_dum_n_tessere
+                          fqr_dum_tp_p(:,npoles_dum)=zero
                   else
                           fqr_dum_tp_p(:,npoles_dum)=one/sum(kf0_dum) * qr_dum_tp(:)
                   endif
           else
                   ipoles=1
-                  fqr_dum_tp_p(:,ipoles)=-w2_dum(ipoles)*qr_dum_tp_p(:,ipoles)+&
-                                         kf_dum(ipoles)/sum(kf0_dum) * qr_dum_tp(:)
-                  fqr_dum_tp_p(:,ipoles)=fqr_dum_tp_p(:,ipoles)-sum(fqr_dum_tp_p(:,ipoles))/pedra_dum_n_tessere
+                  fqr_dum_tp_p(:,ipoles)=zero
           endif
           fqr_dum_tp2_p(:)=zero
           fqr_dum_tp3_p(:)=zero
@@ -1047,6 +1050,22 @@
          qr = qr_tp
          if(global_medium_Floc.eq."loc") qx = qx_tp
        endif
+
+       allocate(qx_dip(1:25000,3))
+       qx_dip(1,1)=dot_product(qx_tp(:),(pedra_surf_tessere(:)%x-center(1)))
+       if( tp_myrank == 0 ) open(777,file='qx_dipole_x.dat')
+       qx_dip(1,2)=dot_product(qx_tp(:),(pedra_surf_tessere(:)%y-center(2)))
+       if( tp_myrank == 0 ) open(776,file='qx_dipole_y.dat')
+       qx_dip(1,3)=dot_product(qx_tp(:),(pedra_surf_tessere(:)%z-center(3)))
+       if( tp_myrank == 0 ) open(775,file='qx_dipole_z.dat')
+
+       allocate(qr_dip(1:25000,3))
+       qr_dip(1,1)=dot_product(qr_tp(:),(pedra_surf_tessere(:)%x-center(1)))
+       if( tp_myrank == 0 ) open(7771,file='qr_dipole_x.dat')
+       qr_dip(1,2)=dot_product(qr_tp(:),(pedra_surf_tessere(:)%y-center(2)))
+       if( tp_myrank == 0 ) open(7772,file='qr_dipole_y.dat')
+       qr_dip(1,3)=dot_product(qr_tp(:),(pedra_surf_tessere(:)%z-center(3)))
+       if( tp_myrank == 0 ) open(7773,file='qr_dipole_z.dat')
 
        return
 
@@ -1453,6 +1472,9 @@
 
       real(dbl), allocatable :: qaux(:)
 
+      integer(i4b), save :: step=2
+      integer(i4b) :: ii
+
 #ifndef MPI
        tp_myrank=0
 #endif
@@ -1582,8 +1604,25 @@
          if(global_medium_Floc.eq."loc") qx = qx_tp
        endif
 
-       !write(*,*) "sum(qx_tp)", sum(qx_tp)
-       !write(*,*) "sum(qr_tp)", sum(qr_tp)
+       qx_dip(step,1)=dot_product(qx_tp(:),(pedra_surf_tessere(:)%x-center(1)))
+       qr_dip(step,1)=dot_product(qr_tp(:),(pedra_surf_tessere(:)%x-center(1)))
+       qx_dip(step,2)=dot_product(qx_tp(:),(pedra_surf_tessere(:)%y-center(2)))
+       qr_dip(step,2)=dot_product(qr_tp(:),(pedra_surf_tessere(:)%y-center(2)))
+       qx_dip(step,3)=dot_product(qx_tp(:),(pedra_surf_tessere(:)%z-center(3)))
+       qr_dip(step,3)=dot_product(qr_tp(:),(pedra_surf_tessere(:)%z-center(3)))
+
+       if( tp_myrank == 0 .and. mod(step,5000) == 0 ) then
+
+          write(777,*) (qx_dip(ii,1), ii=step-5000+1,step)
+          write(7771,*) (qr_dip(ii,1), ii=step-5000+1,step)
+          write(776,*) (qx_dip(ii,2), ii=step-5000+1,step)
+          write(7772,*) (qr_dip(ii,2), ii=step-5000+1,step)
+          write(775,*) (qx_dip(ii,3), ii=step-5000+1,step)
+          write(7773,*) (qr_dip(ii,3), ii=step-5000+1,step)
+
+       endif
+
+       step=step+1
 
        return
 
@@ -2007,9 +2046,6 @@
         qr_t_p(:,pidx)=qr_tp_p(:,pidx)+std_f1(pidx)*dqr_t_p(:,pidx)+f2*fqr_t_p(:,pidx)
         fqr_tp_p(:,pidx)=fqr_t_p(:,pidx)
         dqr_tp_p(:,pidx)=dqr_t_p(:,pidx)
-        !write(*,*) "sum(qr_t_p)", pidx, sum(qr_t_p(:,pidx))
-        ! next line new - GG:08/09/2023
-        !qr_t_p(:,pidx)=qr_t_p(:,pidx)-sum(qr_t_p(:,pidx))/pedra_surf_n_tessere
         qr_tp_p(:,pidx)=qr_t_p(:,pidx)
         qr_t(:) = qr_t(:) + qr_t_p(:,pidx)
       ! Local Field
@@ -2023,7 +2059,6 @@
         endif
         dqx_t_p(:,pidx)=std_f3(pidx)*dqx_tp_p(:,pidx)+f4*(fqx_t_p(:,pidx)+fqx_tp_p(:,pidx))-std_f5(pidx)*fqx_tp_p(:,pidx)
         qx_t_p(:,pidx)=qx_tp_p(:,pidx)+std_f1(pidx)*dqx_t_p(:,pidx)+f2*fqx_t_p(:,pidx)
-        !write(*,*) "sum(qx_t_p)", pidx, sum(qx_t_p(:,pidx))
         if(global_medium_Fnorm.eq."tot") then 
                 qx_t_p(:,pidx)=qx_t_p(:,pidx)-sum(qx_t_p(:,pidx))/pedra_surf_n_tessere
         elseif(global_medium_Fnorm.eq."sep") then
@@ -2043,6 +2078,7 @@
         qx_t(:) = qx_t(:) + qx_t_p(:,pidx)
        endif
        enddo
+
        if (typ_prop.ne."0") then
            pidx=npoles
            if (typ_prop.eq."1") then
@@ -2065,8 +2101,6 @@
                    fqr_t_p(:,pidx)=matmul(BEM_ADt,qr_t)+matmul(BEM_Qf,pot_tp)
                    qr_t_p(:,pidx)=kf0(pidx)*matmul(BEM_ADtm1,fqr_tp_p(:,pidx))
            endif
-           !write(*,*) "sum(qr_t_p)", pidx, sum(qr_t_p(:,pidx))
-           ! next line new - GG:08/09/2023
            qr_t_p(:,pidx)=qr_t_p(:,pidx)-sum(qr_t_p(:,pidx))/pedra_surf_n_tessere
            qr_tp_p(:,pidx)=qr_t_p(:,pidx)
            qr_t(:) = qr_t(:) + qr_t_p(:,pidx)
@@ -2102,7 +2136,6 @@
                         qx_t_p(:,pidx)=kf0(pidx)*matmul(BEM_ADtm1,fqx_tp_p(:,pidx))
                    endif
                endif
-               !write(*,*) "sum(qx_t_p)", pidx, sum(qx_t_p(:,pidx))
                qx_t_p(:,pidx)=qx_t_p(:,pidx)-sum(qx_t_p(:,pidx))/pedra_surf_n_tessere
                fqx_tp_p(:,pidx)=fqx_t_p(:,pidx)
                qx_tp_p(:,pidx)=qx_t_p(:,pidx)
@@ -2111,7 +2144,7 @@
        endif
 
        ! next lines new - GG:08/09/2023
-       !qr_tp=qr_tp-sum(qr_tp)/pedra_surf_n_tessere
+       !qr_t=qr_t-sum(qr_t)/pedra_surf_n_tessere
        !qx_tp=qx_tp-sum(qx_tp)/pedra_surf_n_tessere
 
        return
@@ -3151,13 +3184,17 @@
         real(dbl), allocatable :: qr_now(:), qx_now(:)
         real(dbl), allocatable :: qr_dum_now(:), qx_dum_now(:)
         real(dbl), allocatable :: qr_prev(:)
+        real(dbl), allocatable :: qrnp_prev(:)
+        real(dbl), allocatable :: qrsol_prev(:)
 
         logical, optional, intent(out) :: converged
 
+        real(dbl) :: qr_dip
+        logical, save :: firsttime = .true.
         integer :: its
         integer :: ntsad
         integer :: nconv
-        real(dbl) :: mix = 0.7
+
 
         if(pedra_surf_Fdum.eq."yes".and.&
            (global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq.'cmix').and.&
@@ -3167,9 +3204,10 @@
           if(global_medium_Fmdm.ne.'cmix') then
            allocate(qaux(1:pedra_surf_n_tessere))
            qaux=matmul(BEM_Q0,pot_aux)
-           !qaux=qaux-sum(qaux)/pedra_surf_n_tessere
+           qaux=qaux-sum(qaux)/pedra_surf_n_tessere
            allocate(qr_now(pedra_dum_n_tessere))
            qr_now=matmul(BEM_Z,qaux)
+           qr_now=qr_now-sum(qr_now)/pedra_surf_n_tessere
            if(global_medium_Floc.eq."loc") then
             qaux=matmul(BEM_Q0,potf) !< BEM_Q0x for nanoparticle is the same            
             qaux=qaux-sum(qaux)/pedra_surf_n_tessere
@@ -3209,7 +3247,7 @@
            endif
            do its=1, pedra_dum_n_tessere
              if(abs(qr(its)-qr_prev(its)).lt.1e-3) nconv = nconv + 1
-             !qr(its) = (1.0d0-mix) * qr(its) + mix * qr_prev(its)
+             if(.not.firsttime) qr(its) = (1.0d0-global_prop_mix_coef) * qr(its) + global_prop_mix_coef * qr_prev(its)
            enddo
            write(*,*) "Converged BEM charges: ", nconv
            qr_prev=qr
@@ -3222,17 +3260,18 @@
           allocate(qr_now(pedra_surf_n_tessere))
           qr_now=matmul(BEM_Q0,pot)
           !write(*,*) "sum(qr)", sum(qr_now)
-          !qr_now=qr_now-sum(qr_now)/pedra_surf_n_tessere
+          qr_now=qr_now-sum(qr_now)/pedra_surf_n_tessere
           if(global_medium_Floc.eq."loc") then
           if(global_medium_Fmdm.eq."csol") then
             qx=matmul(BEM_Q0x,potf)
           else if(global_medium_Fmdm.eq."cnan") then
             qx=matmul(BEM_Q0,potf) !< BEM_Q0x for nanoparticle is the same
           endif
-          !qx=qx-sum(qx)/pedra_surf_n_tessere
+          qx=qx-sum(qx)/pedra_surf_n_tessere
           endif
         endif
-
+        if(firsttime) firsttime = .false.
+  
         return
 
       end subroutine calc_charges
