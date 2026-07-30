@@ -28,7 +28,7 @@
       implicit none
       real(dbl), allocatable :: Dinp(:),Finp(:)
       complex(cmp), allocatable :: Minp(:)
-      real(dbl) :: dw,fac,absD,refD,phiF,phiD,modF,modD    
+      real(dbl) :: dw,fac,absD,refD,phiF,phiD,modF,modD,eps_modF,max_modF ! Added by Manuel Sanchez 2026-04-23
       real(dbl) :: Deq(3),Deq_np(3),wmax    
       complex(cmp) :: Meq(3) 
       integer(i4b) :: i,isp,vdim,istart,nsp,imax  
@@ -60,13 +60,13 @@
         endif
         dw=2*pi/dble(vdim)/dt
         imax=int(vdim/two)
-        do i=1,int(vdim/two)
-           wmax=(i-1)*dw
-           if (wmax.gt.30.d0/au_to_ev) then
-              imax=i
-              exit 
-           endif
-        enddo 
+        !do i=1,int(vdim/two)
+        !   wmax=(i-1)*dw
+        !   if (wmax.gt.30.d0/au_to_ev) then
+        !      imax=i
+        !      exit 
+        !   endif
+        !enddo 
         ! The minus sign is for the electronic negative charge
         Deq(:)=Sdip(:,1,1+istart)
         if (nspectra.gt.1) then
@@ -119,6 +119,8 @@
           call dfftw_plan_dft_r2c_1d(plan,vdim,Finp,Foutp,FFTW_ESTIMATE)
           call dfftw_execute_dft_r2c(plan, Finp, Foutp)
           call dfftw_destroy_plan(plan)
+          max_modF=maxval(abs(Foutp)) ! Added by Manuel Sanchez 2026-04-23
+          eps_modF=max(1.d-40,1.d-5*max_modF) ! Added by Manuel Sanchez 2026-04-23
 
           if (isp.eq.1) &
               write(fname,'(a7,i0,a4)') "sp_mol_",n_f,".dat"
@@ -131,10 +133,15 @@
           do i=2,imax  
             modD=sqrt(real(Doutp(i))**2+aimag(Doutp(i))**2)
             modF=sqrt(real(Foutp(i))**2+aimag(Foutp(i))**2)
-            phiD=atan2(aimag(Doutp(i)),real(Doutp(i)))
-            phiF=atan2(aimag(Foutp(i)),real(Foutp(i)))
-            absD=-(modD/modF)*sin(phiD-phiF)
-            refD=(modD/modF)*cos(phiD-phiF)
+            if (modF.lt.eps_modF) then ! Added by Manuel Sanchez 2026-04-23
+               absD=zero 
+               refD=zero 
+            else ! Added by Manuel Sanchez 2026-04-23
+               phiD=atan2(aimag(Doutp(i)),real(Doutp(i)))
+               phiF=atan2(aimag(Foutp(i)),real(Foutp(i)))
+               absD=-(modD/modF)*sin(phiD-phiF)
+               refD=(modD/modF)*cos(phiD-phiF)
+            endif 
             !src=1./Foutp(i)
             !absD=aimag(Doutp(i)*src)
             !refD=real(Doutp(i)*src)
@@ -153,10 +160,15 @@
              do i=2,imax
                 modD=sqrt(real(Moutp(i))**2+aimag(Moutp(i))**2)
                 modF=sqrt(real(Foutp(i))**2+aimag(Foutp(i))**2)
-                phiD=atan2(aimag(Moutp(i)),real(Moutp(i))) + 0.5d0*pi
-                phiF=atan2(aimag(Foutp(i)),real(Foutp(i)))
-                absD=(modD/modF)*sin(phiD-phiF)/((i-1)*dw)
-                refD=(modD/modF)*cos(phiD-phiF)/((i-1)*dw)
+                if (modF.lt.eps_modF) then ! Added by Manuel Sanchez 2026-04-23
+                   absD=zero ! Added by Manuel Sanchez 2026-04-23
+                   refD=zero ! Added by Manuel Sanchez 2026-04-23
+                else ! Added by Manuel Sanchez 2026-04-23
+                   phiD=atan2(aimag(Moutp(i)),real(Moutp(i))) + 0.5d0*pi
+                   phiF=atan2(aimag(Foutp(i)),real(Foutp(i)))
+                   absD=(modD/modF)*sin(phiD-phiF)/((i-1)*dw)
+                   refD=(modD/modF)*cos(phiD-phiF)/((i-1)*dw)
+                endif ! Added by Manuel Sanchez 2026-04-23
                 !src=im/((i-1)*dw*Foutp(i))
                 !absD=aimag(Moutp(i)*src)
                 !refD=real(Moutp(i)*src)

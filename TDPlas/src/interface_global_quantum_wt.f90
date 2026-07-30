@@ -130,6 +130,12 @@
            user_input%spheroid_axis_z(nsmax)     = zero
            user_input%inversion                  = "non"
            user_input%find_spheres               = "yes"
+           user_input%dummy_surface              = "no"
+           user_input%dum_spheres_number         = 0
+           user_input%dum_sphere_position_x(nsmax)   = zero
+           user_input%dum_sphere_position_y(nsmax)   = zero
+           user_input%dum_sphere_position_z(nsmax)   = zero
+           user_input%dum_sphere_radius(nsmax)       = zero
 
            user_input%epsilon_omega     = "non"
            user_input%eps_A             = -1.0

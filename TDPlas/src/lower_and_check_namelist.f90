@@ -45,25 +45,29 @@ module lower_and_check_namelist
                                                           input_mesh, &
                                                           object_shape, &
                                                           inversion,    &
-                                                          find_spheres)
+                                                          find_spheres, &
+                                                          dummy_surface )
 
         character(flg)   :: surface_type
         character(flg)   :: object_shape
         character(flg)   :: input_mesh
         character(flg)   :: inversion
         character(flg)   :: find_spheres
+        character(flg)   :: dummy_surface
 
         call To_lower(surface_type)
         call To_lower(input_mesh)
         call To_lower(object_shape)
         call To_lower(inversion)
         call To_lower(find_spheres)
+        call To_lower(dummy_surface)
 
         call d_entry_check_allowed_val(dict_Fsurf, surface_type)
         call d_entry_check_allowed_val(dict_Fcav, input_mesh)
         call d_entry_check_allowed_val(dict_Fshape, object_shape)
         call d_entry_check_allowed_val(dict_Finv, inversion)
         call d_entry_check_allowed_val(dict_Ffind, find_spheres)
+        call d_entry_check_allowed_val(dict_Fdum, dummy_surface)
     end subroutine
 
     subroutine lower_and_check_allowed_values_medium_nml(medium_type,  &

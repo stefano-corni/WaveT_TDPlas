@@ -38,8 +38,7 @@ echo "++ Arguments: $arg"
 
 ######## test wavet executable name, to be added in a future
 #### WAVET_PROGRAM_NAME set at compilation time
-#wavet="${WAVET_PROGRAM_NAME:-WaveT.x}"
-wavet="${WAVET_PROGRAM_NAME}"
+wavet="${WAVET_PROGRAM_PATH}"
 echo "using binary " $wavet 
 
 
@@ -56,19 +55,37 @@ fi
 
 
 #### check that the input file is present
-test -f tdcis.inp || {
-  echo "FAILURE: in file not present"
-  exit 1
-}
 
 
 #### run the test depending on test type 
 case "$type" in
 (standard)
-  $mpi $wavet < tdcis.inp > out.dat 2> err
+  #### check that the input file is present
+  test -f tdcis.inp || {
+  echo "FAILURE: in file not present"
+  exit 1
+  }
+  $mpi $wavet/WaveT-serial.x < tdcis.inp > out.dat 2> err
   ;;
 (tdplas)
-  $mpi $wavet < tdcis.inp > out.dat 2> err
+  #### check that the input file is present
+  test -f tdcis.inp || {
+  echo "FAILURE: in file not present"
+  exit 1
+  }
+  $mpi $wavet/WaveT-serial.x < tdcis.inp > out.dat 2> err
+  ;;
+(vib)
+  $mpi $wavet/make_vib.x < inp > out.dat 2> err
+  ;;
+(popcoh)
+  $mpi $wavet/make_pop_coh.x < pop_coh.inp > out.dat 2> err
+  ;;
+(makecoh)
+  $mpi $wavet/make_coherence.x < inp > out.dat 2> err
+  ;;
+(spectra)
+  $mpi $wavet/make_spectra.x < tdcis.inp > out.dat 2> err
   ;;
 (*) echo "FAILURE: unknown test type" ; exit 1 ;;
 esac

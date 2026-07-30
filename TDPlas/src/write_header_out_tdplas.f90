@@ -114,6 +114,8 @@ module write_header_out_tdplas
                 write(6,*) "Nanoparticle as external medium"
             case ('qnan')
                 write(6,*) "Quantum Nanoparticle as external medium"
+            case ('cmix')
+                write(6,*) "Nanoparticle and solvent as external medium"
             end select
 
         select case(global_medium_Floc)
@@ -184,6 +186,7 @@ module write_header_out_tdplas
           write(6,*) "n_omega: ", dielectric_func_n_omega, ", omega_ini: ", &
                      dielectric_func_omega_ini, ", omega_end: ", dielectric_func_omega_end
         end if
+        if(global_medium_Fmdm.ne.'cmix') then
         select case(global_eps_Feps)
             case("drl")
                 write(6,*) "Drude-Lorentz model for dielectric function is used"
@@ -198,6 +201,10 @@ module write_header_out_tdplas
             case("gold")
                 write(6,*) "Generic internal dielectric function model for gold is used"
         end select
+        else
+          write(6,*) "Dielectric functions is read from file "
+          write(6,*) "No namelist keyword are used. "
+        endif
     end subroutine    
 
     subroutine poles_write()
@@ -360,6 +367,9 @@ module write_header_out_tdplas
             case('from_cipot')
                 write(6,*) "The applied perturbation is an extenal potential read from"
                 write(6,*) "ci_pot.inp choosing the excited state of interest from input"
+            case('raman')
+                write(6,*) "The applied perturbation is an extenal potential read from"
+                write(6,*) "ci_pot.inp between all states for raman calculation"
             case('dipole')
                 write(6,*) "The applied perturbation is an extenal potential generated from"
                 write(6,*) "the dipole moment of the molecule"

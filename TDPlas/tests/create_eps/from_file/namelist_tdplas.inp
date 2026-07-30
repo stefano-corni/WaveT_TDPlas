@@ -1,0 +1,21 @@
+&SYSTEM
+/
+
+&OUT_MATRIX
+/
+
+&SURFACE
+surface_type='mesh'
+input_mesh='read_file'
+/
+
+&EPS_FUNCTION
+epsilon_omega='general'
+/
+
+&DO_EPS
+n_omega = 12 
+omega_ini = 0.01
+omega_end = 0.35
+/
+

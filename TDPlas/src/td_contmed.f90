@@ -79,7 +79,6 @@
       real(dbl), allocatable :: fqx_t_p(:,:),fqx_tp_p(:,:)      !< force on the external medium dipole (vv propagator)
       real(dbl), allocatable :: fqx_tp2_p(:),fqx_tp3_p(:)       !< force on the external medium dipole (vv propagator type 2)
       real(dbl), allocatable :: dfqx_t_p(:),dfqx_tp_p(:)        !< derivative of force on external medium dipole (vv propagator type 2)
-      real(dbl), allocatable :: sum_r(:),sum_x(:)               !< sum of external and reaction charges on poles and tesserae
       ! Fields and potentials
       real(dbl) :: fr_t(3),fr_tp(3)                     !< reaction field on the molecule centre of charge
       real(dbl) :: dfr_t(3)                             !< reaction field difference (fr_t-fr_tp)
@@ -100,6 +99,10 @@
 
       real(dbl), allocatable :: qr_tp2(:),qx_tp2(:)     !< reaction and external BEM charges in the iteration before the last
 
+      real(dbl) :: center(3)
+      real(dbl), allocatable :: qx_dip(:,:)
+      real(dbl), allocatable :: qr_dip(:,:)
+
       save
       private
 !SC 07/02/16: added output_gneq
@@ -107,11 +110,13 @@
              get_ons,get_mdm_dip,set_qorf_pot,set_qorf,&
              init_after_scf,mpibcast_readio_mdm,fr_0,q0, &
              set_potential, init_potential, prop_chr, init_charges,&
+             init_potential_prop, init_charges_prop,&
              get_propagated_charges, get_corrected_propagated_charges,&
              init_vv_propagator,get_qr_fr,deallocate_potential,       &
              get_qorf,get_qorf0,set_charges,       &
              finalize_prop, clean_all_ocpy_tdcont, &
-             do_charges_from_pot, do_Rfield_from_dip,init_mdm_prop
+             do_charges_from_pot, do_Rfield_from_dip,init_mdm_prop,&
+             calc_charges,set_mu_tp
 
       contains
 !
@@ -131,8 +136,8 @@
 
       real(dbl), optional, intent(in)    ::  mu_t(:)         !< (1:3)           - molecular dipole
       real(dbl), optional, intent(in)    ::  f_tp(:)         !< (1:3)           - external field
-      real(dbl), optional, intent(in)    :: pot_t(:)         !< (1:pedra_surf_n_tessere)     - molecular potential
-      real(dbl), optional, intent(in)    :: potf_t(:)        !< (1:pedra_surf_n_tessere)     - external  potential
+      real(dbl), optional, intent(in)    ::  pot_t(:)        !< (1:pedra_surf_n_tessere)     - molecular potential
+      real(dbl), optional, intent(in)    ::  potf_t(:)       !< (1:pedra_surf_n_tessere)     - external  potential
       real(dbl), intent(in)    :: morv(:)        !< mut(:,1,1) or pot(:,1,1)
       integer(i4b) :: its,i,j
 
@@ -235,7 +240,7 @@
        !> Build matrices for propagation
        if (global_prop_Fprop.eq."dip") then
        ! Dipole propagation:
-         mu_tp = mu_t
+         if(global_sys_Ftest.ne."s-r".and.global_sys_Ftest.ne."n-r") mu_tp = mu_t
          !call prop_dip(f_tp)
          call do_gneq(mu_t,dfr_t,fr_t,fr_0,mat_fd,3,-1)
          if(global_medium_Fmdm.eq."cnan".or.global_medium_Fmdm.eq."qnan") then
@@ -283,18 +288,29 @@
            call out_mdm(i)
          endif
        endif
+
        ! Calculate medium's dipole from charges
        if (global_prop_Fprop.eq."dip") then
          call prop_dip(f_tp)
        else
-         call prop_chr
+         call prop_chr(pot_t,potf_t,qr_t,qx_t)
        endif      
        ! EC 28/11/17 Write restart
        if (mod(i,quantum_n_res).eq.0) call wrt_restart_mdm(i)
+
        return
 
       end subroutine prop_mdm
 
+      subroutine set_mu_tp(mu)
+
+      real(dbl),intent(in) :: mu(3)
+
+      mu_tp = mu
+
+      return 
+
+      end subroutine set_mu_tp
 
 !------------------------------------------------------------------------
 ! @brief Medium finalization called by WaveT or other programs
@@ -512,12 +528,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!! Initialization/deallocation !!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!
+!     
 !------------------------------------------------------------------------
 ! @brief Initialize potentials from potentials coming fron interface
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
       subroutine init_potential(pot,potf)
 
@@ -525,7 +541,13 @@
        real(dbl), intent(IN) :: potf(:)
        !> allocate and defnie the potentials at time 0
        allocate(pot_0(pedra_surf_n_tessere))
-       pot_0=pot
+       if(pedra_surf_Fdum.eq."yes".and.&
+          global_medium_Fmdm.eq."cnan".and.&
+          global_prop_Fprop.ne."chr-ons") then
+         pot_0=matmul(transpose(BEM_Z),pot)
+       else
+         pot_0=pot
+       endif
        if(global_medium_Floc.eq."loc") then
          allocate(potf_0(pedra_surf_n_tessere))
          potf_0=potf
@@ -584,8 +606,6 @@
         if(allocated(dqr_tp_p))deallocate(dqr_tp_p)
         if(allocated(fqr_tp_p))deallocate(fqr_tp_p)
         if(allocated(fqr_t_p))deallocate(fqr_t_p)
-        if(allocated(sum_r))deallocate(sum_r)
-        if(allocated(sum_x))deallocate(sum_x)
         if(allocated(dqr_tp))deallocate(dqr_tp)
         if(allocated(fqr_tp))deallocate(fqr_tp)
         if(allocated(fqr_t))deallocate(fqr_t)
@@ -645,8 +665,6 @@
        if(allocated(dqx_tp_p))deallocate(dqx_tp_p)
        if(allocated(fqx_t_p))deallocate(fqx_t_p)
        if(allocated(fqx_tp_p))deallocate(fqx_tp_p)
-       if(allocated(sum_r))deallocate(sum_r)
-       if(allocated(sum_x))deallocate(sum_x)
        if(allocated(BEM_f1))deallocate(BEM_f1)
        if(allocated(BEM_f3))deallocate(BEM_f3)
        if(allocated(BEM_f5))deallocate(BEM_f5)
@@ -689,22 +707,27 @@
        file_med=11 
       end subroutine
 
-      
-
 !------------------------------------------------------------------------
 ! @brief Initialize charges for propagation
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
-      subroutine init_charges
+
+      subroutine init_charges(qr,qx)
 
        implicit none
+
+       real(dbl), optional, intent(out) :: qr(:) !< (1:nts_act)
+       real(dbl), optional, intent(out) :: qx(:) !< (1:nts_act)
 
        integer(i4b):: its
        real(dbl), allocatable :: qd(:)
 
        integer(i4b) :: ipoles
+
+       real(dbl), allocatable :: qaux(:)
+       real(dbl), allocatable :: fullpotaux(:)
 
 #ifndef MPI
        tp_myrank=0
@@ -714,6 +737,7 @@
        if (.not.allocated(qr_t)) allocate(qr_t(pedra_surf_n_tessere))
        if (.not.allocated(q0)) allocate (q0(pedra_surf_n_tessere))
        q0(:)=zero
+
        ! init the state and the RF before propagation
 !SP 29/05/16: pot_0 replaces quantum_vts(:,1,1) to allow treating global_prop_Fprop=ief and global_prop_Fint=ons
        select case(global_medium_Finit)
@@ -721,8 +745,7 @@
           q0(:)=zero
           qtot0=zero
         case ('fro')
-          q0(:)=matmul(BEM_Q0,pot_0)
-          qtot0=sum(q0)
+           q0(:)=matmul(BEM_Q0,pot_0)
         case ('rea')
           call read_charges_gau
        end select
@@ -752,6 +775,42 @@
        endif
        qr_t=q0
        if(global_medium_Floc.eq."loc") qx_t=qx0
+       if(pedra_surf_Fdum.eq."yes".and.&
+          global_medium_Fmdm.eq."cnan".and.&
+          global_prop_Fprop.ne."chr-ons") then
+         ! dummy charges in dummy surface from polarization charges in actual surface
+         qr=matmul(BEM_Z,q0)
+         ! same for the local field
+         if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z,qx0)
+       else
+         qr=q0
+         if(global_medium_Floc.eq."loc") qx=qx0         
+       endif
+
+       center=zero
+       do its=1,pedra_surf_n_tessere
+        center(1)=center(1)+pedra_surf_tessere(its)%x
+        center(2)=center(2)+pedra_surf_tessere(its)%y
+        center(3)=center(3)+pedra_surf_tessere(its)%z
+       enddo
+       center=center/pedra_surf_n_tessere
+
+       allocate(qx_dip(1:25000,3))
+       qx_dip(1,1)=dot_product(qx_t(:),(pedra_surf_tessere(:)%x-center(1)))
+       if( tp_myrank == 0 ) open(777,file='qx_dipole_x.dat')
+       qx_dip(1,2)=dot_product(qx_t(:),(pedra_surf_tessere(:)%y-center(2)))
+       if( tp_myrank == 0 ) open(776,file='qx_dipole_y.dat')
+       qx_dip(1,3)=dot_product(qx_t(:),(pedra_surf_tessere(:)%z-center(3)))
+       if( tp_myrank == 0 ) open(775,file='qx_dipole_z.dat')
+
+       allocate(qr_dip(1:25000,3))
+       qr_dip(1,1)=dot_product(qr_t(:),(pedra_surf_tessere(:)%x-center(1)))
+       if( tp_myrank == 0 ) open(7771,file='qr_dipole_x.dat')
+       qr_dip(1,2)=dot_product(qr_t(:),(pedra_surf_tessere(:)%y-center(2)))
+       if( tp_myrank == 0 ) open(7772,file='qr_dipole_y.dat')
+       qr_dip(1,3)=dot_product(qr_t(:),(pedra_surf_tessere(:)%z-center(3)))
+       if( tp_myrank == 0 ) open(7773,file='qr_dipole_z.dat')
+
        return
 
       end subroutine init_charges
@@ -778,8 +837,12 @@
        allocate(qd(pedra_surf_n_tessere))
        allocate(qr_tp(pedra_surf_n_tessere))
        allocate(dqr_t(pedra_surf_n_tessere))
+
 ! SC 31/10/2016: in case of nanoparticle, normalize initial charges to zero
        if(global_medium_Fmdm.eq.'cnan'.or.global_medium_Fmdm.eq.'qnan') then
+         qtot0=sum(q0)
+         !write(*,*) "qtot", qtot
+         q0=q0-qtot0/pedra_surf_n_tessere
          qtot0=zero
        endif
        g_eq_gs=0.5d0*dot_product(q0,pot_0)
@@ -821,6 +884,7 @@
        qr_tp2(:)=qr_tp(:)
        qr_t(:)=qr_tp(:)
        dqr_t(:)=zero
+
        if(global_prop_Fint.eq."ons") call do_field_from_charges(qr_t,fr_0)
        if(global_medium_Floc.eq."loc") then
          allocate(qx_tp(pedra_surf_n_tessere))
@@ -832,6 +896,7 @@
          qx_t(:)=qx_tp(:)
          dqx_t(:)=zero
        endif
+
        if(global_eps_Feps.eq."drl") then
          allocate(dqr_tp(pedra_surf_n_tessere))
          allocate(fqr_tp(pedra_surf_n_tessere))
@@ -863,33 +928,30 @@
           allocate(fqr_tp3_p(pedra_surf_n_tessere))
           allocate(dfqr_t_p(pedra_surf_n_tessere))
           allocate(dfqr_tp_p(pedra_surf_n_tessere))
-          allocate(sum_r(npoles))
-          allocate(sum_x(npoles))
-          qr_tp(:)=zero
+
+          qr_tp=q0
           do ipoles=1,npoles
-             qr_tp_p(:,ipoles)=kf0(ipoles)*(matmul(BEM_Qf,pot_0)+matmul(BEM_ADt,q0) )
-             qr_tp(:)=qr_tp(:)+qr_tp_p(:,ipoles)
+             qr_tp_p(:,ipoles)=kf0(ipoles)/sum(kf0) * q0(:)
           enddo
+     
           if (npoles.ne.1) then
                   do ipoles=1,npoles-1
-                      fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+kf(ipoles)*(matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp))
-                      fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/pedra_surf_n_tessere
+                      fqr_tp_p(:,ipoles)=zero
                   enddo
                   if (typ_prop.eq."0") then
-                          fqr_tp_p(:,npoles)=-w2(npoles)*qr_tp_p(:,npoles)+kf(npoles)*(matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp))
-                          fqr_tp_p(:,npoles)=fqr_tp_p(:,npoles)-sum(fqr_tp_p(:,npoles))/pedra_surf_n_tessere
+                          fqr_tp_p(:,npoles)=zero
                   else
-                          fqr_tp_p(:,npoles)=matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp)
+                          fqr_tp_p(:,npoles)=one/sum(kf0) * qr_tp(:)
                   endif
           else
                   ipoles=1
-                  fqr_tp_p(:,ipoles)=-w2(ipoles)*qr_tp_p(:,ipoles)+kf(ipoles)*(matmul(BEM_Qf,pot_tp)+matmul(BEM_ADt,qr_tp))
-                  fqr_tp_p(:,ipoles)=fqr_tp_p(:,ipoles)-sum(fqr_tp_p(:,ipoles))/pedra_surf_n_tessere
+                  fqr_tp_p(:,ipoles)=zero
           endif
           !SP 11/05/24: CHECK THIS
           fqr_tp2_p(:)=zero
           fqr_tp3_p(:)=zero
           dqr_tp_p(:,:)=zero
+
           if(global_medium_Floc.eq."loc") then
             allocate(qx_t_p(pedra_surf_n_tessere,npoles))
             allocate(qx_tp_p(pedra_surf_n_tessere,npoles))
@@ -1196,6 +1258,7 @@
       subroutine init_after_scf(pot_or_mut)
 
        implicit none
+
        integer(4) :: ipoles
        real(dbl), intent(in) :: pot_or_mut(:)
 
@@ -1306,6 +1369,7 @@
 !             DGEMV shoud be efficient for big matrices
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+!------------------------------------------------------------------------
 ! @brief Potential propagation                                                                         
 !                                                                                                      
 ! @date Created: M. Rosa                                                                               
@@ -1321,19 +1385,43 @@
               potf_tp = potf_t                                                                         
           endif                 
       end subroutine
+
 !------------------------------------------------------------------------
 ! @brief Potential and charges propagation
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: G. Gil
 !------------------------------------------------------------------------
-      subroutine prop_chr
+
+      subroutine prop_chr(pot,potf,qr,qx)
 
        implicit none
+
+       real(dbl), intent(in) :: pot(:) !< (1:nts_act)
+       real(dbl), intent(in) :: potf(:) !< (1:nts_act)
+
+       real(dbl), intent(out) :: qr(:) !< (1:nts_act)
+       real(dbl), intent(out) :: qx(:) !< (1:nts_act)
+
+       real(dbl), allocatable :: qaux(:)
+
+       integer(i4b), save :: step=2
+       integer(i4b) :: ii
 
 #ifndef MPI
        tp_myrank=0
 #endif
+
+       if(pedra_surf_Fdum.eq."yes".and.&
+          global_medium_Fmdm.eq."cnan".and.&
+          global_prop_Fprop.ne."chr-ons") then
+         ! dummy charges in dummy surface reproducing molecular potential outside
+         pot_tp=matmul(transpose(BEM_Z),pot)
+         if(global_medium_Floc.eq."loc") potf_tp=potf
+       else
+         pot_tp = pot
+         potf_tp = potf
+       endif
 
        ! Propagate
        if(global_sys_Ftest.eq."s-r") pot_tp=m_or_v !Only for debug purposes
@@ -1390,6 +1478,9 @@
 !     according to the value of quantum_n_ci
          qr_t=mat_mult(BEM_Q0,pot_tp,pedra_surf_n_tessere)
        endif
+
+
+
        qr_tp2=qr_tp
        qr_tp=qr_t
        pot_tp2=pot_tp
@@ -1398,6 +1489,39 @@
          qx_tp=qx_t
          potf_tp2=potf_tp
        endif
+
+       if(pedra_surf_Fdum.eq."yes".and.&
+          global_medium_Fmdm.eq."cnan".and.&
+          global_prop_Fprop.ne."chr-ons") then
+         ! dummy charges in dummy surface from polarization charges in actual surface
+         qr=matmul(BEM_Z,qr_tp)
+         ! same for the local field
+         if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z,qx_tp)
+       else
+         qr = qr_tp
+         if(global_medium_Floc.eq."loc") qx = qx_tp
+       endif
+
+       qx_dip(step,1)=dot_product(qx_tp(:),(pedra_surf_tessere(:)%x-center(1)))
+       qr_dip(step,1)=dot_product(qr_tp(:),(pedra_surf_tessere(:)%x-center(1)))
+       qx_dip(step,2)=dot_product(qx_tp(:),(pedra_surf_tessere(:)%y-center(2)))
+       qr_dip(step,2)=dot_product(qr_tp(:),(pedra_surf_tessere(:)%y-center(2)))
+       qx_dip(step,3)=dot_product(qx_tp(:),(pedra_surf_tessere(:)%z-center(3)))
+       qr_dip(step,3)=dot_product(qr_tp(:),(pedra_surf_tessere(:)%z-center(3)))
+
+       if( tp_myrank == 0 .and. mod(step,5000) == 0 ) then
+
+          write(777,*) (qx_dip(ii,1), ii=step-5000+1,step)
+          write(7771,*) (qr_dip(ii,1), ii=step-5000+1,step)
+          write(776,*) (qx_dip(ii,2), ii=step-5000+1,step)
+          write(7772,*) (qr_dip(ii,2), ii=step-5000+1,step)
+          write(775,*) (qx_dip(ii,3), ii=step-5000+1,step)
+          write(7773,*) (qr_dip(ii,3), ii=step-5000+1,step)
+
+       endif
+
+       step=step+1
+
        return
 
       end subroutine prop_chr
@@ -1452,6 +1576,7 @@
 
 
         end subroutine init_vv_propagator
+
 !------------------------------------------------------------------------
 ! @brief Initialization for velocity Verlet propagation (vv)
 !
@@ -1534,8 +1659,7 @@
 
        return
 
-      end subroutine
-
+      end subroutine init_vv_propagator_gen_std
 
 !------------------------------------------------------------------------
 ! @brief Drude-Lorentz propagation of charges with Onsager-BEM equations
@@ -1600,7 +1724,7 @@
        return
 
       end subroutine prop_ons_deb
-!
+
 !------------------------------------------------------------------------
 !> Drude-Lorentz propagation global_prop_Fprop=chr-ief standard algorithm
 !------------------------------------------------------------------------
@@ -1678,7 +1802,9 @@
        qr_t=qr_tp+f1*dqr_t+f2*fqr_t
        fqr_tp=fqr_t
        dqr_tp=dqr_t
-
+       write(*,*) 'fqr_t', sum(fqr_t)
+       write(*,*) 'dqr_t', sum(dqr_t)
+       write(*,*) 'qr_t', sum(qr_t)
 
       ! Local Field
        if(global_medium_Floc.eq."loc") then
@@ -1797,8 +1923,8 @@
        if(global_medium_Floc.eq."loc") then
         if(global_medium_Fmdm.eq.'csol') then
          fqx_t_p(:,pidx)=-w2(pidx)*qx_tp_p(:,pidx)+kf(pidx)*(matmul(BEM_Qfx,potf_tp)+matmul(BEM_ADt,qx_tp))
-        else if((global_medium_Fmdm.eq.'cnan').or.&
-                (global_medium_Fmdm.eq.'qnan')) then
+        else if(global_medium_Fmdm.eq.'cnan'.or.&
+                global_medium_Fmdm.eq.'qnan') then
          fqx_t_p(:,pidx)=-w2(pidx)*qx_tp_p(:,pidx)+kf(pidx)*matmul(BEM_Qf,potf_tp)+kf(pidx)*matmul(BEM_ADt,qx_tp)
         endif
         dqx_t_p(:,pidx)=std_f3(pidx)*dqx_tp_p(:,pidx)+f4*(fqx_t_p(:,pidx)+fqx_tp_p(:,pidx))-std_f5(pidx)*fqx_tp_p(:,pidx)
@@ -1822,7 +1948,8 @@
         qx_t(:) = qx_t(:) + qx_t_p(:,pidx)
        endif
        enddo
-       if (typ_prop.ne."0".and.npoles.ne.1) then
+
+       if (typ_prop.ne."0") then
            pidx=npoles
            if (typ_prop.eq."1") then
                 !derivative method
@@ -1844,24 +1971,25 @@
                    fqr_t_p(:,pidx)=matmul(BEM_ADt,qr_t)+matmul(BEM_Qf,pot_tp)
                    qr_t_p(:,pidx)=kf0(pidx)*matmul(BEM_ADtm1,fqr_tp_p(:,pidx))
            endif
+           qr_t_p(:,pidx)=qr_t_p(:,pidx)-sum(qr_t_p(:,pidx))/pedra_surf_n_tessere
            qr_tp_p(:,pidx)=qr_t_p(:,pidx)
            qr_t(:) = qr_t(:) + qr_t_p(:,pidx)
            if(global_medium_Floc.eq."loc") then
                if (typ_prop.eq."1") then
                    !derivative method
-                    if(global_medium_Fmdm.eq.'csol') then
-                         fqx_t_p(:,pidx)=matmul(BEM_Qfx,potf_tp)+matmul(BEM_ADt,qx_tp)
-                    else if(global_medium_Fmdm.eq.'cnan'.or.global_medium_Fmdm.eq.'qnan') then
-                         fqx_t_p(:,pidx)=matmul(BEM_Qf,potf_tp)+matmul(BEM_ADt,qx_tp)
-                    endif
-                    qx_t_p(:,pidx)=qx_tp_p(:,pidx)+kf0(pidx)*(fqx_t_p(:,pidx)-fqx_tp_p(:,pidx))
+                   if(global_medium_Fmdm.eq.'csol') then
+                        fqx_t_p(:,pidx)=matmul(BEM_Qfx,potf_tp)+matmul(BEM_ADt,qx_tp)
+                   else if(global_medium_Fmdm.eq.'cnan'.or.global_medium_Fmdm.eq.'qnan') then
+                        fqx_t_p(:,pidx)=matmul(BEM_Qf,potf_tp)+matmul(BEM_ADt,qx_tp)
+                   endif
+                   qx_t_p(:,pidx)=qx_tp_p(:,pidx)+kf0(pidx)*(fqx_t_p(:,pidx)-fqx_tp_p(:,pidx))
                elseif (typ_prop.eq."2") then
                    !second order method
-                    if(global_medium_Fmdm.eq.'csol') then
-                         fqx_t_p(:,pidx)=matmul(BEM_Qfx,potf_tp)+matmul(BEM_ADt,qx_tp)
-                    else if(global_medium_Fmdm.eq.'cnan'.or.global_medium_Fmdm.eq.'qnan') then
-                         fqx_t_p(:,pidx)=matmul(BEM_Qf,potf_tp)+matmul(BEM_ADt,qx_tp)
-                    endif
+                   if(global_medium_Fmdm.eq.'csol') then
+                        fqx_t_p(:,pidx)=matmul(BEM_Qfx,potf_tp)+matmul(BEM_ADt,qx_tp)
+                   else if(global_medium_Fmdm.eq.'cnan'.or.global_medium_Fmdm.eq.'qnan') then
+                        fqx_t_p(:,pidx)=matmul(BEM_Qf,potf_tp)+matmul(BEM_ADt,qx_tp)
+                   endif
                    dfqx_t_p(:)=3*fqx_t_p(:,pidx)-8*fqx_tp_p(:,pidx)+7*fqx_tp2_p(:)-2*fqx_tp3_p(:)
                    qx_t_p(:,pidx)=qx_tp_p(:,pidx)+quantum_dt*dqx_tp_p(:,pidx)+kf(pidx)/(2*w2(pidx))*dfqx_t_p(:)
                    dqx_t_p(:,pidx)=dqx_tp_p(:,pidx)+kf(pidx)/(2*quantum_dt*w2(pidx))*(dfqx_t_p(:)+dfqx_tp_p(:))
@@ -1871,12 +1999,12 @@
                    dfqx_tp_p(:)=dfqx_t_p(:)
                elseif (typ_prop.eq."3") then
                    if(global_medium_Fmdm.eq.'csol') then
-                         fqx_t_p(:,pidx)= matmul(BEM_Qfx,potf_tp)+matmul(BEM_ADt,qx_t)
-                         qx_t_p(:,pidx)=kf0(pidx)*matmul(BEM_ADtm1,fqx_tp_p(:,pidx))
-                    else if(global_medium_Fmdm.eq.'cnan'.or.global_medium_Fmdm.eq.'qnan') then
-                         fqx_t_p(:,pidx)=matmul(BEM_ADt,qx_t)+matmul(BEM_Qf,potf_tp)
-                         qx_t_p(:,pidx)=kf0(pidx)*matmul(BEM_ADtm1,fqx_tp_p(:,pidx))
-                    endif
+                        fqx_t_p(:,pidx)= matmul(BEM_Qfx,potf_tp)+matmul(BEM_ADt,qx_t)
+                        qx_t_p(:,pidx)=kf0(pidx)*matmul(BEM_ADtm1,fqx_tp_p(:,pidx))
+                   else if(global_medium_Fmdm.eq.'cnan'.or.global_medium_Fmdm.eq.'qnan') then
+                        fqx_t_p(:,pidx)=matmul(BEM_ADt,qx_t)+matmul(BEM_Qf,potf_tp)
+                        qx_t_p(:,pidx)=kf0(pidx)*matmul(BEM_ADtm1,fqx_tp_p(:,pidx))
+                   endif
                endif
                qx_t_p(:,pidx)=qx_t_p(:,pidx)-sum(qx_t_p(:,pidx))/pedra_surf_n_tessere
                fqx_tp_p(:,pidx)=fqx_t_p(:,pidx)
@@ -1884,9 +2012,14 @@
                qx_t(:) = qx_t(:) + qx_t_p(:,pidx)
            endif
        endif
+
+       ! next lines new - GG:08/09/2023
+       !qr_t=qr_t-sum(qr_t)/pedra_surf_n_tessere
+       !qx_tp=qx_tp-sum(qx_tp)/pedra_surf_n_tessere
+
        return
 
-      end subroutine
+      end subroutine prop_vv_ief_gen_std
 
 !------------------------------------------------------------------------
 ! @brief Debye propagation global_prop_Fprop=chr-ief
@@ -2467,7 +2600,7 @@
 
       end subroutine read_charges_gau
 
-
+!------------------------------------------------------------------------
 ! @brief Return propagated charges
 !
 ! @date Created: M. Rosa
@@ -2539,12 +2672,14 @@
 ! @date Created   : E. Coccia 28 Nov 2017
 ! Modified  : G. Gil 02 Jul 2018
 !------------------------------------------------------------------------
+
       subroutine wrt_restart_mdm(istep)
 
        implicit none
 
        integer(i4b), intent(IN)     :: istep
        integer(i4b)     :: i
+
        open(778, file='restart_mdm')
 
 !        if (global_prop_Fint.eq.'ons') then
@@ -2771,6 +2906,51 @@
 
       end subroutine read_medium_restart
 
+      subroutine calc_charges(pot,potf,qr,qx)
+
+        implicit none
+
+        real(dbl), intent(in) :: pot(:)
+        real(dbl), intent(in) :: potf(:)
+        real(dbl), intent(out) :: qr(:) 
+        real(dbl), intent(out) :: qx(:) 
+
+        real(dbl), allocatable :: pot_aux(:)
+        real(dbl), allocatable :: qaux(:)
+
+        if(pedra_surf_Fdum.eq."yes".and.&
+           global_medium_Fmdm.eq."cnan".and.&
+           global_prop_Fprop.ne."chr-ons") then
+          allocate(pot_aux(pedra_surf_n_tessere))
+          pot_aux=matmul(transpose(BEM_Z),pot)
+          allocate(qaux(1:pedra_surf_n_tessere))
+          qaux=matmul(BEM_Q0,pot_aux)
+          deallocate(pot_aux)
+          qaux=qaux-sum(qaux)/pedra_surf_n_tessere
+          qr=matmul(BEM_Z,qaux)
+          if(global_medium_Floc.eq."loc") then
+           qaux=matmul(BEM_Q0,potf) !< BEM_Q0x for nanoparticle is the same            
+           qaux=qaux-sum(qaux)/pedra_surf_n_tessere
+           qx=matmul(BEM_Z,qaux)
+          endif
+          deallocate(qaux)
+        else
+          qr=matmul(BEM_Q0,pot)
+          if(global_medium_Fmdm.eq."cnan") qr=qr-sum(qr)/pedra_surf_n_tessere
+          if(global_medium_Floc.eq."loc") then
+           if(global_medium_Fmdm.eq."csol") then
+            qx=matmul(BEM_Q0x,potf)
+           else if(global_medium_Fmdm.eq."cnan") then
+            qx=matmul(BEM_Q0,potf) !< BEM_Q0x for nanoparticle is the same
+           endif
+           qx=qx-sum(qx)/pedra_surf_n_tessere
+          endif
+        endif
+  
+        return
+
+      end subroutine calc_charges
+
 !------------------------------------------------------------------------
 ! @brief Broadcast input data
 !
@@ -2838,7 +3018,6 @@
        call mpi_bcast(drudel_f_vel,                     1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
        call mpi_bcast(debye_tau_deb,                    1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
        call mpi_bcast(thrshld,                   1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
-       call mpi_bcast(mix_coef,                  1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
        if (general_prop_Fprop.eq.'dip') then
           call mpi_bcast(sph_surf_min,           sph_surf_nsph,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
           call mpi_bcast(sph_surf_maj,           sph_surf_nsph,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,tp_ierr_mpi)
@@ -2855,7 +3034,5 @@
        return
 
       end subroutine mpibcast_readio_mdm
-
-
 
       end module

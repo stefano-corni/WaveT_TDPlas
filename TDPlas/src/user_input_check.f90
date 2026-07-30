@@ -33,6 +33,14 @@
                         call mpi_error('ERROR: surface created with cavity but spheres/spheroids shape asked', " ", " ")
                     endif
                 endif
+
+                if (user_input%dummy_surface.eq."yes") then
+                 if(user_input%dum_spheres_number.eq.0) &
+                  call mpi_error('ERROR: dummy surface needs to be built from spheres but no dummy spheres are detected', " ", " ")
+                elseif(user_input%dummy_surface.eq."no") then
+                 if(user_input%dum_spheres_number.ne.0) &
+                  call mpi_error('ERROR: there are dummy spheres detected but no dummy surface has to be built', " ", " ")
+                endif
             end subroutine
 
             !independent
@@ -75,6 +83,8 @@
 
                 type(tdplas_user_input) ::  user_input
 
+                if(user_input%medium_type.ne.'cmix') then
+
                 select case(user_input%epsilon_omega)
                     case("non")
                         if((user_input%eps_d.gt.zero).or.(user_input%tau_deb.gt.zero).or.&
@@ -101,6 +111,10 @@
                            (user_input%eps_w0.lt.zero).or.(user_input%f_vel.lt.zero)) then
                             call mpi_error("ERROR: epsilon model is Drude-Lorentz but epsilon coefficients were not provided", &
                                            "Chose the desired model and provide epsilon values accordingly", " ")
+                        endif
+                        if(user_input%bem_type.ne."diagonal") then
+                            call mpi_error("ERROR: with Drude-Lorentz epsilon model BEM diagonal must be used, put", &
+                            "bem_type='diagonal'"," ")
                         endif
 
                     case("debye")
@@ -133,6 +147,15 @@
                                            " ")
                         end if
                 end select
+
+                else
+                  if((user_input%tau_deb.gt.zero).or.&
+                     (user_input%eps_A.gt.zero).or.(user_input%eps_gm.gt.zero).or.&
+                     (user_input%eps_w0.gt.zero).or.(user_input%f_vel.gt.zero)) &
+                      call mpi_error("ERROR: epsilon read from 'eps.inp' and 'poles.inp' file,", &
+                                           "only eps_0 and eps_d parameters can be provided", " ")
+                endif
+
             end subroutine
 
 

@@ -12,7 +12,14 @@ program make_spectra
                                       tdelay,pshift,Fbin,Fopt, &
                                       restart,n_restart)
 
-      if (Fmdm.ne."vac") call read_medium_input
+      if (Fmdm.ne."vac") then
+         call set_global_tdplas_in_wavet(dt,Fmdm,mol_cc,n_ci,n_ci_read,c_i, &
+                                         e_ci,fmax,omega,Ffld,n_out,n_f, &
+                                         tdelay,pshift,Fbin,Fopt, &
+                                         restart,n_restart)
+         call read_medium_input
+      endif
+
       call init_spectra
 
 !     calculate spectra               

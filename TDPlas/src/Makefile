@@ -44,19 +44,21 @@ CPP=-cpp
 #INC = -I/home/coccia/Libs/fftw-3.3.8
 
 # libraries to be linked - paths to be set by the user
-#LIBS = -L/usr/lib -llapack -lblas -lpthread #FOR PADOVA
-#LIBS = -L/usr/lib -llapack  -lblas -lfftw3 #MARTA PC
+#LIBS = -L/share/lib64 -llapack -lblas -lpthread -lfftw3 #FOR PADOVA
+#INC =  -I/usr/include #FOR PADOVA
+
 #LIBS =  -Wl,--start-group -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -Wl,--end-group#FOR HYDRA
 #INC =  -I/usr/local/include
 INC = -I/usr/include/x86_64-linux-gnu
 LIBS = -L/usr/lib/x86_64-linux-gnu -llapack  -lblas
+
 # executable directory
 BINPATH=../bin
 # tdplas library file
 
 TDPLASLIB= libtdplas.a
 
-# QM code to be interfaced with TDPlas = wt, ocpy
+# QM code to be interfaced with TDPlas = wt, ocpy, octopus
 QMCODE= wt
 QMCODE_OK= $(shell echo $(QMCODE) | tr A-Z a-z)
 INTERFACE_MODULE= interface_global_quantum_$(QMCODE_OK)
@@ -64,8 +66,7 @@ INTERFACE_MODULE= interface_global_quantum_$(QMCODE_OK)
 
 # objects to be linked with executables
  
-OBJ = tdplas.o tdplas_constants.o auxiliary_functions.o cavity_types.o dictionary_entry.o readio_tdplas_mod.o read_inputfile_tdplas.o check_global.o lower_and_check_namelist.o init.o global_quantum.o global_tdplas.o  debye_epsilon.o drudel_epsilon.o readfile_freq.o readfile_epsilon.o dielectric_function.o  sphe_surface.o pedra_friends.o user_input_type.o user_input_read_namelist.o user_input_check.o user_input_and_flags_dictionary.o write_header_out_tdplas.o MathTools.o BEM_medium.o td_contmed.o 
-
+OBJ = tdplas.o tdplas_types.o tdplas_constants.o auxiliary_functions.o cavity_types.o dictionary_entry.o readio_tdplas_mod.o read_inputfile_tdplas.o check_global.o lower_and_check_namelist.o init.o global_quantum.o global_tdplas.o  debye_epsilon.o drudel_epsilon.o readfile_freq.o readfile_epsilon.o dielectric_function.o  sphe_surface.o pedra_friends.o user_input_type.o user_input_read_namelist.o user_input_check.o user_input_and_flags_dictionary.o write_header_out_tdplas.o MathTools.o BEM_medium.o td_contmed.o 
 
 # compilation rules
 
@@ -92,6 +93,8 @@ $(TDPLASLIB): $(OBJ)
 	ar rcs $@ $^
 	ranlib $@
 
+tdplas_types.o: tdplas_types.f90
+	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
 tdplas_constants.o: tdplas_constants.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
@@ -186,6 +189,10 @@ main_eps.o: main_eps.f90
 
 # dependencies
 
+tdplas_types.o:
+
+tdplas_constants.o: tdplas_types.o
+
 auxiliary_functions.o: tdplas_constants.o
 
 
@@ -245,7 +252,7 @@ BEM_medium.o: tdplas_constants.o global_quantum.o readfile_freq.o pedra_friends.
 
 td_contmed.o: tdplas_constants.o global_quantum.o pedra_friends.o sphe_surface.o global_tdplas.o MathTools.o BEM_medium.o readfile_epsilon.o drudel_epsilon.o debye_epsilon.o readfile_freq.o 
 
-tdplas.o: tdplas_constants.o auxiliary_functions.o cavity_types.o dictionary_entry.o read_inputfile_tdplas.o readio_tdplas_mod.o check_global.o lower_and_check_namelist.o init.o global_quantum.o global_tdplas.o  debye_epsilon.o drudel_epsilon.o readfile_epsilon.o dielectric_function.o  sphe_surface.o pedra_friends.o user_input_type.o user_input_read_namelist.o user_input_check.o user_input_and_flags_dictionary.o write_header_out_tdplas.o MathTools.o BEM_medium.o td_contmed.o  
+tdplas.o: tdplas_types.o tdplas_constants.o auxiliary_functions.o cavity_types.o dictionary_entry.o read_inputfile_tdplas.o readio_tdplas_mod.o check_global.o lower_and_check_namelist.o init.o global_quantum.o global_tdplas.o  debye_epsilon.o drudel_epsilon.o readfile_epsilon.o dielectric_function.o  sphe_surface.o pedra_friends.o user_input_type.o user_input_read_namelist.o user_input_check.o user_input_and_flags_dictionary.o write_header_out_tdplas.o MathTools.o BEM_medium.o td_contmed.o  
 
 main_tdplas.o: tdplas.o
 

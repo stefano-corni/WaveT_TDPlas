@@ -1,0 +1,38 @@
+#
+# Number of tesserae / sphere = 60
+#
+ GEPOL-GB: COUNTING TESSERAE
+ GEPOL-GB: GENERATING TESSERAE
+
+ TOTAL NUMBER OF SPHERES=    1
+ SPHERE             CENTER  (X,Y,Z) (A)               RADIUS (A)      AREA(A*A)
+   1    0.000000000    0.000000000    0.000000000    5.291772492
+
+ TOTAL NUMBER OF TESSERAE=      60
+ SURFACE AREA=        351.89426816(A**2)    CAVITY VOLUME=        620.71480282 (A**3)
+ Essential output written.
+ tdplas calculation: FREQ and PROPAGATION namelist are n used
+ Solvent as external medium
+ Local field effects are included
+ Medium polarization described by apparent charges
+ This is a Classical BEM run
+ This run just writes matrices and boundary
+ Medium polarization frozen to molecule in its GS
+ Charges are not normalized
+ Diagonalization of symmetric matrix S^-1/2DAS^1/2+S^1/2AD*S^-1/2
+ Building surface from spheres.
+ Cavity tessere number          60
+ Debye model for dielectric function is used
+ Used keyword: tau_deb:    139320.39999999999      , eps_d:    1.8060000000000000      , eps_0:    35.840000000000003     
+ This run just writes matrices and boundary
+ Writes out matrix for gamess calculations of states
+Done reading input, took     0.005s
+ Created output file with surface points
+ Matrixes S D have been written out
+ BEM correctly initialized
+ Done BEM diagonal
+ Written the static matrix for gamess
+ Written the dynamic matrix for gamess
+ Static loc-field mat in gamess form
+ Dynamic loc-field mat in gamess form
+Done , total elapsed time     0.212s

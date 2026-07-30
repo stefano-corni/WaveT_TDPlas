@@ -43,5 +43,5 @@
       integer(i4b)              :: ierr_mpi
       !Variable for OMP calculations
       integer(i4b)              :: nthreads
-
+      public
       end module constants 

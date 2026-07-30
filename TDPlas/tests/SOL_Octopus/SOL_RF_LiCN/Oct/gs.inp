@@ -1,0 +1,13 @@
+CalculationMode = gs
+UnitsOutput = eV_Angstrom
+
+XYZCoordinates = 'LiCN.xyz'
+
+radius = 12.0*angstrom
+spacing = 0.18*angstrom
+
+PCMCalculation = yes
+PCMStaticEpsilon = 35.688
+PCMCavity = 'cavity_oct.inp'
+
+FromScratch = yes

@@ -26,7 +26,7 @@ program twodfft
  character*20               :: filename,detector
  character*100              :: cdum
 
- include 'fftw3.f03'
+ include '../fftw3.f03'
 
  namelist /fft/ dscan1,dim2,dt1,dt3,dir,sigma3,w1min,w1max,w3min,w3max,&
                 tmid,detector,field,lo_fmax,lo_sigma,lo_w,lo_tmid,nfout

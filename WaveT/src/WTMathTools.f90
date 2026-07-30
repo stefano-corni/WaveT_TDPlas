@@ -524,7 +524,7 @@
        integer(i4b) :: i,j  
 
 #ifdef OMP
-!$OMP PARALLEL REDUCTION(+:pot)
+!$OMP PARALLEL PRIVATE(i,j,diff,f,distm1)
 !$OMP DO
 #endif
        do i=1,n
@@ -598,7 +598,7 @@
        integer(i4b) :: i,j  
 
 #ifdef OMP
-!$OMP PARALLEL REDUCTION(+:pot)
+!$OMP PARALLEL PRIVATE(i,j,diff,dist)
 !$OMP DO
 #endif
        do i=1,n

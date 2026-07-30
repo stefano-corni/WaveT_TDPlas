@@ -50,6 +50,7 @@
 
                     call read_eps_function_nml(user_input)
                     call read_do_eps_nml(user_input)
+                    call read_surface_nml(user_input)
 
             end select
 

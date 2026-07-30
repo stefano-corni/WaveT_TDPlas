@@ -11,14 +11,16 @@
 
       save
 !
-      integer(i4b) :: n_f,n_ci,n_ci_read,n_step,n_out,ncit 
+      integer(i4b) :: n_f,n_ci,n_ci_read,n_step,n_out,ncit,nmap 
       !integer(i4b) :: imar !imar=0 Markvian, imar=1, nonMarkovian
       integer(i4b) :: i_sp=0,i_nr=0,i_de=0 !counters for quantum jump occurrences
       integer(i4b) :: nrnd !the time step for Euler-Maruyama is dt/nrnd
 ! SP 17/07/17: Changed to char flags
       integer(i4b) :: nr_typ !input integer for type of decay for the internal conversion
       integer(i4b) :: idep   !input integer for the dephasing operator
-      integer(i4b) :: tdis   !input integer for Euler tdis=0, Matthews tdis=1 
+      integer(i4b) :: tdis   !input: tdis=0 EuMar, 1 RuKu4, 2 HeuSt (continuous stochastic scheme) 
+      integer(i4b) :: ndelay ! number of delay times considered to build 2D map
+      integer(i4b) :: dstart ! index of the first delay time used for twodspectra
 ! SP270917: added for merging to newer master
       integer(i4b)              :: npulse    !number of pulses
       integer(i4b), allocatable :: irel(:,:) !mapping for intermediate relaxations  
@@ -29,10 +31,14 @@
       integer(i4b)              :: diff_step ! effective number of steps for restart
       integer(i4b)              :: restart_seed  ! seed for restart
       !integer(i4b), allocatable :: pop(:) !Array for the postprocessing input
-      integer(i4b)              :: pop(nstmax) 
+      integer(i4b)              :: pop(nstmax)
+      integer(i4b), allocatable :: deg(:)
 
       real(dbl), allocatable    :: mut_np2(:,:) !squared dipole from NP
       real(dbl)                 :: tdelay(npulsemax), pshift(npulsemax)  ! time delay and phase shift with two pulses
+      real(dbl)                 :: de_delay    ! variation of delay time between first and second pulse for 2d calc
+      real(dbl)                 :: map_phase(12,3) ! ausiliary map used in 2d calc
+      complex(cmp)              :: mat_c_inv(12,2) ! inverse of map_phase
       !real(dbl), allocatable    :: c_i(:),e_ci(:)  ! energy from cis
       real(dbl), allocatable    :: e_ci(:)  ! energy from cis
       complex(cmp), allocatable :: c_i(:),c_i_t(:),c_i_prev(:),c_i_prev2(:) ! coefficients from cis
@@ -64,14 +70,14 @@
       character(flg) :: Fdis_rel  !< Flag for decay for internal conversion, relaxation via dipole "dip" or matrix "mat"
       character(flg) :: Fdis_deph !< Flag for dephasing operator: exp(i delta_i)|i><i| "exp" or |i><i|-|0><0| "i-0" 
       character(flg) :: Fdis !< Flag for dissipation type: 
-                             !! Markovian     : quantum jumps "mar-qjump", Euler-Maruyama "mar-EuMar", Leimkuhler-Matthews "mar-LeiMa"
+                             !! Markovian     : "mar-qjump", "mar-EuMar", "mar-RuKu4", "mar-HeuSt" (see tdis when dis_prop=euler)
                              !! Non-Markovian : quantum jumps "nma-qjump", Continuous stochastic propagator "nma-cstoc"
                              !! Random        : random energy term "ernd" 
       ! qjump works for the Markovian case
       ! Stochastic propagation from:
       ! Appl. Math. Res. Express vol. 2013 34-56 (2013)
       ! IMA J. Numer. Anal. vol. 36 13-79 (2016)
-      real(dbl) :: t_mid,sigma(npulsemax),dir_ft(3),fmax(3,npulsemax),omega(npulsemax),mol_cc(3)
+      real(dbl) :: t_mid,sigma(npulsemax),dir_ft(3),fmax(3,npulsemax),omega(npulsemax),mol_cc(3),t_ap
       character(flg) :: Ffld !< Field type 
       character(flg) :: Fmdm !< Flag for medium type, this will be defined in readio_medium after separation
       character(flg) :: Frad !< Flag for radiative damping 
@@ -85,6 +91,7 @@
       character(flg) :: Fwrt !< Flag for SSE output
       character(flg) :: Fmag !< Flag for magnetic interaction
       character(flg) :: Flig !< Flag for linear or circular polarization
+      character(flg) :: gauge !< Gauge for light-matter interaction ("lg" or "vg") ! Added by Manuel Sanchez 2026-04-21
 ! Flags read from input file
       character(flg) :: medium,radiative,dissipative,lsim,absorber,binary,out_sse
       character(flg) :: dis_prop,prop_type
@@ -95,6 +102,7 @@
       character(flg) :: all_pop ! flags for the postprocessing input
       character(flg) :: all_coh ! flags for the postprocessing input
       character(flg) :: write_bin ! flags for the postprocessing input
+      character(flg) :: twod ! flags for activate 2d calculation   
       integer(i4b) :: iseed  ! seed for random number generator
       integer(i4b) :: nexc   ! number of excited states
       integer(i4b) :: nrel   ! number of relaxation channels
@@ -116,23 +124,24 @@
       public read_input,n_ci,n_ci_read,n_step,dt,           &
              Ffld,t_mid,sigma,omega,fmax,restart,           & 
              Fmdm,mol_cc,tau,start,c_i,e_ci,mut,            &
-             Frad,n_out,iseed,n_f,dir_ft,full,              &
+             Frad,n_out,iseed,n_f,dir_ft,full,nmap,         &
 ! SP 17/07/17: Changed to char flags
              tdis,nr_gam,de_gam,sp_gam,tmom2,nexc,delta,    &
              deallocate_dis,i_sp,i_nr,i_de,nrnd,sp_fact,    &
 !             nr_typ,idep,imar,de_gam1,krnd,ernd       
              de_gam1,krnd,Fdis,Fdis_deph,Fdis_rel,nf,irel,  &
-             npulse,tdelay,pshift,nrel,Fful,  &
+             npulse,tdelay,pshift,nrel,Fful,mat_c_inv,      &
              Fexp,Fres,restart_t,restart_i,n_restart,       &
              c_i_t,c_i_prev,c_i_prev2,mu_i_prev,mu_i_prev2, &
              mu_i_prev3,mu_i_prev4,mu_i_prev5,restart_seed, &
-             n_jump,Fsim,diff_step,mpibcast_readio,         &
+             n_jump,Fsim,diff_step,mpibcast_readio,dstart,  &
              mpibcast_e_dip,mpibcast_sse,mpibcast_restart,  &
              nspectra,Fabs,ion_rate,mpibcast_ion_rate,Fbin, &
              ncit,Fopt,ik,Fwrt,tar,all_pop,all_coh,pop,coh, &
-             write_bin,Ip,prop_type,                        &
-             Fmag,lt,e_dir,m_i_prev,m_i_prev2, &
-             m_i_prev3,m_i_prev4,m_i_prev5,Flig,f0,pini,pfin 
+             write_bin,Ip,prop_type,twod,de_delay,ndelay,gauge,&
+             Fmag,lt,e_dir,m_i_prev,m_i_prev2,map_phase,t_ap,&
+             m_i_prev3,m_i_prev4,m_i_prev5,Flig,f0,pini,pfin,&
+             mpibcast_twod 
              
 !
       contains
@@ -156,10 +165,10 @@
        !Molecular parameters 
        namelist /general/n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,& 
                          dt,n_step,n_out,propa,n_restart,lsim,absorber,&
-                         binary,ncit,Ip
+                         binary,ncit,Ip,twod,de_delay,dstart,ndelay
        !External field paramaters
-       namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
-                        npulse,tdelay,pshift,Fmag,e_dir,Flig,f0,pini,pfin
+      namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
+                       npulse,tdelay,pshift,Fmag,e_dir,Flig,f0,pini,pfin,t_ap,gauge ! Added by Manuel Sanchez 2026-04-21
        !Stochastic Schroedinger equation
        namelist /sse/ dissipative,idep,dis_prop,prop_type,nrnd,tdis,nr_typ,krnd,out_sse
        !Namelist spectra
@@ -204,7 +213,12 @@
           stop 
        endif
        call write_nml_field() 
-
+       ! Namelist 2D
+       if (twod.eq."yes") then 
+            pshift=pshift*pi
+            call init_twod_maps()
+       endif
+       
        !Namelist sse
        call init_nml_sse()
        read(*,nml=sse)
@@ -218,11 +232,14 @@
        read(*,nml=spectra) 
        call write_nml_spectra() 
 
+       if (Fdis_rel.eq.'ene'.or.Fdis_rel.eq.'egl') full='f'
+
        if (Fdis.ne."nodis") call read_dis_params
 
        if (Fres.eq.'Yesr') call read_restart()
 
-       if (Fdis.ne.'nodis'.or.Fexp.ne.'exp') then 
+       !if (Fdis.ne.'nodis'.or.Fexp.ne.'exp') then 
+       if (Fexp.ne.'exp') then
            Fabs='non'
            write(*,*) 'Absorber switched off with SSE or full Euler'
        endif
@@ -331,7 +348,7 @@
        if (Fres.eq.'Nonr') then
           open(7,file="ci_ini.inp",status="old")
           do i=1,n_ci
-             read(7,*) rtmp 
+             read(7,*) rtmp
              c_i(i) = dcmplx(rtmp,0.d0)   
           enddo
           c_i=c_i/sqrt(dot_product(c_i,c_i))
@@ -477,11 +494,12 @@
       subroutine read_dis_params()
      
        implicit none
-        integer     :: i,j,k,idum,ierr0,ierr1,ierr2,ierr3,ierr4,err,kk   
+        integer     :: i,ii,j,k,idum,ierr0,ierr1,ierr2,ierr3,ierr4,err,kk   
         real(dbl)   :: term   
         real(dbl)   :: rdum
         real(dbl)   :: rx,ry,rz
         real(dbl)   :: ix,iy,iz
+        real(dbl)   :: tmp
 
        open(8,file='nr_rate.inp',status="old",iostat=ierr0,err=100)
        open(9,file='de_rate.inp',status="old",iostat=ierr1,err=101)
@@ -515,8 +533,8 @@
           stop
        endif
 
-       if (nr_typ.ne.0.and.nr_typ.ne.1) then
-          write(*,*) 'Invalid value for nr_typ, must be 0 or 1'
+       if (nr_typ.ne.0.and.nr_typ.ne.1.and.nr_typ.ne.2.and.nr_typ.ne.3) then
+          write(*,*) 'Invalid value for nr_typ, must be 0, 1, 2 or 3'
 #ifdef MPI
           call mpi_finalize(ierr_mpi)
 #endif
@@ -810,7 +828,7 @@
        ! Threshold value for doing matmul or explicit loop in prop()
        ncit=150
        ! Iionization energy (effective only when absorber='y')
-       Ip=0.d0 
+       Ip=0.d0
 
        return
 
@@ -853,13 +871,24 @@
        e_dir(3)=0.d0
        ! Linear polarization
        Flig='lin'
+      ! Default gauge: length gauge ! Added by Manuel Sanchez 2026-04-21
+       gauge='lg' ! Added by Manuel Sanchez 2026-04-21
        ! Field amplitude for circular polarization
        f0=0.d0
        ! Initial point for trapezoidal pulse
        pini=10
        ! Final point for trapezoidal pulse
        pfin=20
-
+       ! Apodization for sinc pulse
+       t_ap = 99999.d0
+               ! 2D calculation
+       twod='no'
+       ! Variation of first delay time
+       de_delay=0.0
+       ! Number of delay time considered
+       ndelay=1
+       ! Starting number of first delay time scan
+       dstart=0
 
        return
 
@@ -881,10 +910,35 @@
        ! Direction for the signal 
        dir_ft=0.d0
        dir_ft(3)=1.d0
-
        return
 
       end subroutine init_nml_spectra
+
+!------------------------------------------------------------------------                                                                                                                     
+! @brief Initialize variables in the namelist for 2D spectra                                                                                                                                  
+!                                                                                                                                                                                             
+! @date Created   : G. Dall'Osto 30 Apr 2025                                                                                                                                                  
+! Modified  :                                                                                                                                                                                 
+! @param 2d                                                                                                                                                                                   
+!------------------------------------------------------------------------
+        subroutine init_twod_maps()
+
+        ! Definition of map phases
+        map_phase(:,1)= [0.0, 0.0, 0.5, 0.5, 1.0, 1.0, 1.5, 0.0, 0.0, 0.5, 1.5, 1.5]
+        map_phase(:,2)= [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        map_phase(:,3)= [0.0, 0.5, 1.0, 0.5, 0.0, 0.5, 1.5, 1.5, 1.0, 1.5, 1.0, 0.5]
+
+        map_phase = map_phase*pi
+        mat_c_inv(:,1) = (/ (0.0, 0.0), (1.0, -1.0), (1.0, 1.0),   &
+                            (-1.0,0.0), (0.0, 0.0), (0.0, 0.0),    &
+                            (-1.0, 0.0), (1.0, 1.0), (-2.0, 0.0)  ,&
+                            (0.0, -1.0),(1.0, -1.0), (0.0, 1.0) /)
+         mat_c_inv(:,2) = (/ (1.0, 1.0), (-1.0, -1.0), (1.0, -1.0), &
+                            (0.0, 0.0),(-1.0, -1.0), (1.0, 1.0),   &
+                            (1.0, -1.0), (0.0, 0.0), (0.0, 0.0),   &
+                            (-1.0, 1.0), (-1.0, 1.0), (0.0, 0.0) /)
+
+        end subroutine init_twod_maps
 
 !------------------------------------------------------------------------
 ! @brief Initialize variables in the namelist sse 
@@ -1051,6 +1105,14 @@
           write(*,*) 'Matmul is used in the propagation.'
           Fopt='non'
        endif 
+       select case (twod)
+           case ('yes','Yes','YES')
+               write(*,*) "Calculation to calculate a 2D map is active ", &
+                       "performing",ndelay,"steps, varying the delay time by ", &
+                       de_delay," a.u., starting from step ", dstart
+           case ('no','No','NO')
+               write(*,*) "Calculation with 2D flag deactivated"
+         end select
        write(*,*) ''
 
        return
@@ -1114,6 +1176,19 @@
         case ('cir','Cir','CIR')
          write(*,*) 'Circular polarization'
        end select
+      select case (gauge) ! Added by Manuel Sanchez 2026-04-21
+       case ('lg','LG','Lg','lG') ! Added by Manuel Sanchez 2026-04-21
+        gauge='lg' ! Added by Manuel Sanchez 2026-04-21
+       case ('vg','VG','Vg','vG') ! Added by Manuel Sanchez 2026-04-21
+        gauge='vg' ! Added by Manuel Sanchez 2026-04-21
+       case default ! Added by Manuel Sanchez 2026-04-21
+        write(*,*) 'ERROR: gauge must be ''lg'' or ''vg''' ! Added by Manuel Sanchez 2026-04-21
+#ifdef MPI
+        call mpi_finalize(ierr_mpi) ! Added by Manuel Sanchez 2026-04-21
+#endif
+        stop ! Added by Manuel Sanchez 2026-04-21
+      end select ! Added by Manuel Sanchez 2026-04-21
+      write(*,*) 'Gauge for interaction:', gauge ! Added by Manuel Sanchez 2026-04-21
        write(*,*) ''
 
        write (*,*) "Time shape of the perturbing field",Ffld
@@ -1152,7 +1227,6 @@
        if (medium.ne.'vac') then 
           nspectra=2
        endif
-
        write(*,*) 'Starting point for FT calculation', start
        write(*,*) 'Artificial damping', (tau(i),i=1,nspectra)
        !write(*,*) 'Direction along which the field is oriented', dir_ft
@@ -1166,7 +1240,7 @@
 ! @brief Write variables in the namelist sse and put conditions 
 !
 ! @date Created   : E. Coccia 11 May 2017
-! Modified  :
+! Modified  : Manuel Sanchez 02/04/2026
 ! @param dissipative,idep,dis_prop,prop_type,nrnd,tdis,nr_typ,krnd 
 !------------------------------------------------------------------------
       subroutine write_nml_sse()
@@ -1200,17 +1274,32 @@
                 write(*,*) 'Euler-Maruyama algorithm'
                 Fdis="mar-EuMar"
               case (1)
-                write(*,*) 'Leimkuhler-Matthews algorithm'
-                Fdis="mar-LeiMa"
+                write(*,*) 'Runge-Kutta 4th order (deterministic) + EM noise'
+                Fdis="mar-RuKu4"
+              case (2)
+                write(*,*) 'HeuSt: Heun-type drift + averaged stochastic increment'
+                Fdis="mar-HeuSt"
              end select
           end select
           select case (nr_typ)
            case (0)
             Fdis_rel="dip"
             write(*,*) 'Internal conversion relaxation via dipole'
+            write(*,*) 'Values in nr_rate.inp multiplicative factors'
            case (1)
             Fdis_rel="mat"
             write(*,*) 'Internal conversion relaxation via given matrix'
+           case (2)
+            Fdis_rel="ene"
+            write(*,*) 'Only |q+1> -> |q> relaxation'
+            write(*,*) 'Gamma_q prop to (E_q+1 - E_q)^-1'
+            write(*,*) 'Values in nr_rate.inp multiplicative factors'
+           case (3)
+            Fdis_rel="egl"
+            write(*,*) 'Only |q+1> -> |q> relaxation'
+            write(*,*) 'Gamma_q prop to exp[-(E_q+1 - E_q)/hbar w_max]'
+            write(*,*) 'Values in nr_rate.inp multiplicative factors'
+            write(*,*) 'w_max frequency of the highest-frequency normal mode'
           end select
         case ('nma', 'NMa', 'NMA', 'Nma')
           write(*,*) 'NonMarkovian dissipation'
@@ -1336,7 +1425,7 @@
 ! @brief MPI broadcast of input variables 
 !
 ! @date Created   : E. Coccia 20 Apr 2018
-! Modified  :
+! Modified  : Manuel Sanchez 03/05/2026 (MPI bcast of gauge)
 !------------------------------------------------------------------------
       subroutine mpibcast_readio()
 
@@ -1363,6 +1452,7 @@
 
        call mpi_bcast(dt,        1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(t_mid,     1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(t_ap,      1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(krnd,      1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(start,     1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(tau,       2,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
@@ -1375,6 +1465,7 @@
        call mpi_bcast(fmax,      3*npulsemax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(f0,        1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
 
+       call mpi_bcast(twod,    flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(propa,       flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(lsim,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(medium,      flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
@@ -1398,6 +1489,7 @@
        call mpi_bcast(Fopt,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Fmag,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(Flig,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
+       call mpi_bcast(gauge,       flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) ! Added by Manuel Sanchez 2026-05-03
 #endif
 
        return 
@@ -1433,6 +1525,24 @@
 
       end subroutine mpibcast_e_dip
 
+
+
+!------------------------------------------------------------------------
+! @brief MPI broadcast of SSE relaxation and dephasing rates 
+!
+! @date Created   : G. Dall'Osto 2 Mar 2026
+! Modified  :
+!------------------------------------------------------------------------
+      subroutine mpibcast_twod()
+
+#ifdef MPI
+         call mpi_bcast(ndelay,      1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
+         call mpi_bcast(dstart,      1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) 
+         call mpi_bcast(de_delay,    1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
+#endif
+
+      end subroutine mpibcast_twod
+
 !------------------------------------------------------------------------
 ! @brief MPI broadcast of SSE relaxation and dephasing rates 
 !
@@ -1459,7 +1569,8 @@
           allocate(tmom2(nf))
           allocate(sp_fact(nf))
           allocate(tomega(nf))
-          if (Fful.eq.'Yesf') allocate(ik(nexc,nexc))
+          if (Fful.eq.'Yesf') allocate(ik(nexc,nexc)) ! Added by: Manuel Sanchez on 09/04/2026
+          if (Fful.eq.'Yesf') allocate(irel(nrel,2)) ! Added by: Manuel Sanchez on 09/04/2026
        endif
 
        call mpi_bcast(nr_gam,     nf,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
@@ -1474,7 +1585,8 @@
        call mpi_bcast(sp_fact,    nf,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(tmom2,      nf,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
        call mpi_bcast(tomega,     nf,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) 
-       if (Fful.eq.'Yesf') call mpi_bcast(ik,nexc*nexc,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) 
+       if (Fful.eq.'Yesf') call mpi_bcast(ik,nexc*nexc,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) ! Added by: Manuel Sanchez on 09/04/2026
+       if (Fful.eq.'Yesf') call mpi_bcast(irel,2*nrel,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) ! Added by: Manuel Sanchez on 09/04/2026
 
        call mpi_bcast(Fwrt,       flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
 
@@ -1598,7 +1710,7 @@
 
        return
 
-      end subroutine read_ion_rate
+       end subroutine read_ion_rate
 
 
-    end module readio
+      end module readio

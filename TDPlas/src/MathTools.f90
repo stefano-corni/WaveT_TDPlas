@@ -14,6 +14,8 @@
 
       implicit none
 
+                          ! frequency for restart
+
       save
       private
       public diag_mat,inv,do_pot_from_field,do_field_from_charges,    &
@@ -86,8 +88,6 @@
        return
 
        end subroutine diag_mat_nosym
-
-
 
 !------------------------------------------------------------------------
 ! @brief Compute the modulus of a vector
@@ -306,7 +306,6 @@
 
       end subroutine do_field_from_charges_cmp
 
-
 !------------------------------------------------------------------------
 ! @brief Compute (update previous value) the dipole (mu) of BEM charges
 ! (q)
@@ -339,10 +338,6 @@
        return
 
       end subroutine do_dip_from_charges
-
-
-
-
 
 !------------------------------------------------------------------------
 ! @brief Compute the field at rf produced by a dipole d located at rd

@@ -124,8 +124,11 @@
              global_propagation_init,      &
              global_out_init,              &
              global_quantum_coupling_init, &
-             global_ext_pert_init
-
+             global_ext_pert_init,         &
+             global_sys_Ftest,             &
+             global_prop_Fprop,            &
+             global_prop_Fint,             &
+             global_medium_Fmdm
 
 
 

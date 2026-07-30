@@ -16,6 +16,7 @@
        implicit none
        integer :: st,current,rate
        real(dbl) :: f00(3)
+       integer :: td, tc
 #ifndef MPI 
        myrank=0
 #endif
@@ -44,6 +45,7 @@
        !Send input data to all the processes
        call mpibcast_readio()
        call mpibcast_e_dip()
+       if (twod.eq."yes") call mpibcast_twod()
        if (Fdis.ne."nodis") call mpibcast_sse()
        if (Fres.eq.'Yesr')       call mpibcast_restart()
        if (Fmdm.ne.'vac')        call mpi_bcast(nspectra,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi)
@@ -69,22 +71,45 @@
          if (myrank.eq.0) call read_medium_input()
       endif
 #ifdef MPI 
-      !> Send input data to all the processes
-      call mpibcast_read_medium()
+          !> Send input data to all the processes
+          call mpibcast_read_medium()
 #endif
        !> Create the field 
        call init_spectra
-       !> Create the field 
-       call create_field(f00)
 #ifndef MPI 
        call system_clock(current)
        write(6,'("Done reading input & setting up the field, took", &
              F10.3,"s")') real(current-st)/real(rate)
 #endif
-       !> Initialize system wavefunction and Hilbert space
-       call init_Hspace(f00)      
-       !> Propagate wavefunction 
-       call prop
+       if (twod.eq.'yes') then
+          call print_time
+          do td=dstart,ndelay
+              do tc=1,12
+                 pshift(1)=map_phase(tc,1)
+                 pshift(2)=map_phase(tc,2)
+                 pshift(3)=map_phase(tc,3)
+                 tdelay(1)=de_delay*td
+                 n_f=td
+                 nmap=tc
+                 ! HOW TO CHANGE THIS -- SILVIO BRANCH CONFLICT
+                 call create_field(f00)
+                 !> Initialize system wavefunction and Hilbert space
+                 call init_Hspace(f00)
+                 call prop
+              enddo
+              call create_2d_map
+          enddo
+       else
+          !> Create the field
+          ! HOW TO CHANGE THIS -- SILVIO BRANCH CONFLICT
+          call create_field(f00)
+          !> Create vector potential from electric field (velocity gauge only)
+          if (gauge.eq.'vg') call create_vector_potential ! Added by Manuel Sanchez 2026-04-21
+          !> Initialize system wavefunction and Hilbert space
+          call init_Hspace(f00)
+          !> Propagate wavefunction
+          call prop
+       endif
        ! SP 10/07/17: commented the following, do_spectra gives errors 
        !call do_spectra
 #ifndef MPI 

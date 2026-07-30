@@ -193,12 +193,12 @@
        ! c_tmp now has value equal 1 only for the new eigenvector that
        ! is most similar to the old one
        do i=1,n_ci
-          c_new(i)=complex(c_tmp(i),0.d0)
+          c_new(i)=cmplx(c_tmp(i),0.d0)
        enddo
        ! c_tmp below is the new state on the basis of the old states  
        c_tmp=matmul(eigt,c_tmp)
        do i=1,n_ci
-          c_old(i)=complex(c_tmp(i),0.d0)
+          c_old(i)=cmplx(c_tmp(i),0.d0)
        enddo
        ! write the state
        if(this_Fwrite.eq."high") then

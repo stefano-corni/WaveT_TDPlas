@@ -1,7 +1,0 @@
-Mon 21 Sep 09:42:22 CEST 2020
-Running test in /home/silvio/Work/Codes/WaveTTDPlas_250620/WaveT/tests/NP_RF_LiCN/DIP-Spheroid
-++ Test type: tdplas
-++ Arguments: 
-using binary  /home/silvio/Work/Codes/WaveTTDPlas_250620/WaveT/bin/WaveT-serial.x
-running compare.sh
-  DONE: TEST PASSED!
