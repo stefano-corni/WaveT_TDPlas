@@ -25,13 +25,13 @@ program read_adf
   use KF 
   
   implicit none
-  real*8, allocatable :: dipmatx(:,:) , dipmaty(:,:) ,dipmatz(:,:), potmat(:,:,:)
-  real*8, allocatable :: lmatx(:,:) , lmaty(:,:) , lmatz(:,:) 
-  integer, allocatable :: nsymdav(:), ialpha(:)
-  real*8, allocatable :: transmag(:,:)
-  real*8, allocatable :: eigvks(:) , exciten(:), tddfteig(:,:,:), tddfteigl(:,:,:)!,&
+  real*8, allocatable :: dipmatx(:,:) , dipmaty(:,:) ,dipmatz(:,:), potmat(:,:,:),potmat_nuc(:,:,:)
+  real*8, allocatable :: lmatx(:,:) , lmaty(:,:) , lmatz(:,:) , coord_nuc(:,:),Znuc(:), coord_tess(:,:)
+  integer, allocatable :: nsymdav(:), ialpha(:), nsymdav2(:)
+  real*8, allocatable :: transmag(:,:), sqrtepsdiff(:,:), output(:,:,:)
+  real*8, allocatable :: eigvks(:) , exciten(:), exciten1(:), tddfteig1(:,:,:), tddfteig(:,:,:), tddfteigl(:,:,:), tddfteig_c(:,:,:), tddfteig1_c(:,:,:) !,&
 !                         tddfteigli(:,:,:)
-  real*8, allocatable :: frocin(:), frocfi(:)
+  real*8, allocatable :: frocin(:), frocfi(:), tddfteig1_tot(:,:,:), tddfteig_tot(:,:,:)
   real*8, allocatable :: smat(:,:), smat_tri(:), mllkn_pop(:,:),buff(:)
   integer, parameter :: lbas =  13000, lnst = 3000, lnsym = 32
   integer, parameter :: larray = (lbas*(lbas+1))/2
@@ -42,25 +42,26 @@ program read_adf
   real*8, parameter :: zero = 0.d0
   integer, parameter :: lstidat = 3000
   integer, parameter :: lntyp =30, lnnuc = 2000
-  integer :: ia, ib, ieff_sym, nnuc, ntyp, lenty, lennu, lenini, lenfin
+  integer :: ia, ib, ieff_sym, nnuc, ntyp, lenty, lennu, lenini, lenfin, nuc, itot
   integer :: i_test, ityp, lalo, lahi, i, ii, iii, j, jj, jjj, k, kk, idx, kocc, kvirt, nocc, nunocc, ipair, mu, nu
-  integer :: iinsy, ntotmo, nmo_in, indmoi, iinst, ipun
-  integer :: indmoj, koccf, kvirtf, ifisy, naos, naosx, iu21, iu15, ifist, nmo
-  integer :: ntoten, itoten, nener, isym, ios, lqtch, nsym
-  integer :: ndimvx, iener, ispin, ints, nts
+  integer :: iinsy, ntotmo, nmo_in, indmoi, iinst, ipun, m
+  integer :: tda_n, hybrid_n, cdspectrum_n, NP_n
+  integer :: indmoj, koccf, kvirtf, ifisy, naos, naosx, iu21, iu15, ifist, nmo, ntot, isym2, iu22
+  integer :: ntoten, itoten, nener, isym, ios, lqtch, nsym, nsym2, ntoten1, nener1, itoten1 
+  integer :: ndimvx, iener, ispin, ints, nts, ndimvx2
   integer :: nalloccd
-  real*8 :: epsin, epsfi, dipx, dipy, dipz, exce, fvalue
+  real*8 :: epsin, epsfi, dipx, dipy, dipz, exce, fvalue, xi, yi, zi
   real*8 :: lx,ly,lz
   real*8 :: sig
-  real*8, allocatable :: dip(:,:),eigin(:),eigfi(:),vectx(:),vecty(:),lm(:,:), pot(:,:), ppot(:), pot_nuc(:)
-  real*8, allocatable :: vectz(:),xyznuc(:,:),e0(:),lvectx(:),lvecty(:),lvectz(:), potvect(:,:)
+  real*8, allocatable :: dip(:,:),eigin(:),eigfi(:),vectx(:),vecty(:),lm(:,:), pot(:,:), ppot(:), pot_nuc(:),ppot_nuc(:)
+  real*8, allocatable :: vectz(:),xyznuc(:,:),e0(:),lvectx(:),lvecty(:),lvectz(:), potvect(:,:),potvect_nuc(:,:)
   !real*8 :: dip ( larray , 3 )
   !real*8 :: eigin ( lbas )
   !real*8 :: eigfi ( lbas )
   !real*8 :: vectx ( lbas ) , vecty ( lbas ) , vectz ( lbas )
   !real*8 :: xyznuc(3,lnnuc), dip_nuc(3)
   real*8 :: dip_nuc(3)
-  real*8, allocatable :: qtch(:)
+  real*8, allocatable :: qtch(:), qeff(:)
   integer, allocatable :: npartin(:), npartfi(:)
   integer, allocatable :: insy(:), inst(:), insp(:)
   !integer :: npartin ( lbas ) , npartfi ( lbas )
@@ -68,14 +69,14 @@ program read_adf
   !integer :: insy(lnst), inst(lnst), insp(lnst)
   integer :: jsymf(lnsym)
   integer :: nfitpt(lntyp), nqptr(lntyp), nbptr(lntyp)
-  character*160 :: symrep(lnsym), secname, section, ieigstr
+  character*160 :: symrep(lnsym), secname, section, ieigstr,dummy, symrep2(lnsym), secname2, ieigstr1 
   !character*160, allocatable :: lab(:)
   character*11  :: eigspin
   character*5   :: eivspin, base_name
   character*5   :: excnr
-  character*15 :: file_name
-  logical :: locc,loccf
-  logical, allocatable :: lrep2do(:)
+  character*15 :: file_name, filename
+  logical :: locc,loccf,core_excited
+  logical, allocatable :: lrep2do(:), lrep2do2(:)
   logical :: hybrid,tda,cdspectrum,NP,mNP
   character(5000) :: tessera_attuale
   !character(5000) :: stringa
@@ -91,7 +92,7 @@ program read_adf
   allocate (dip(larray, 3), eigin(lbas), eigfi(lbas), vectx(lbas), &
            vecty (lbas) , vectz(lbas), xyznuc(3,lnnuc), e0(lnst))
   allocate (npartin(lbas), npartfi(lbas), insy(lnst), inst(lnst), insp(lnst))
-!  open(17, file='/home/biancorosso/TEST/test_readadf/start.inp',status='old')
+!  open(17, file='start.inp',status='old')
 !  write(*,*) 'TDA calculation, with or without HYBRID XC (true=1, false=0)'
 !  read(17,*) tda_n
 !  write(*,*) tda_n
@@ -101,7 +102,7 @@ program read_adf
 !  write(*,*) 'ADF calculation with CD spectrum'
 !  read(17,*) cdspectrum_n
 !  write(*,*) cdspectrum_n
-  !logical for NP PIER_e_LEO
+ !logical for NP PIER_e_LEO
 !  write(*,*) 'ADF calculation with NP'
 !  read(17,*) NP_n
 !  write(*,*) NP_n
@@ -109,29 +110,29 @@ program read_adf
 !  write(*,*) 'il numero di tessere'
 !  read(17,*) nts
 !  endif
-!  close(17)  
-  
+!  close(17)
+
 !  if (tda_n.eq.1) then
 !     tda = .true.
-!  else 
+!  else
 !     tda = .false.
 !  endif
 
 !  if (hybrid_n.eq.1) then
 !     hybrid = .true.
-!  else 
+!  else
 !     hybrid = .false.
 !  endif
-   
+
 !  if (cdspectrum_n.eq.1) then
 !     cdspectrum = .true.
-!  else 
+!  else
 !     cdspectrum = .false.
 !  endif
-  
+
 !  if (NP_n.eq.1) then
 !     NP = .true.
-!  else 
+!  else
 !     NP = .false.
 !  endif
       
@@ -140,12 +141,26 @@ program read_adf
   call kfread (iu15, 'General%Hybrid', hybrid)  
   call kfread (iu15, 'General%CDSpectrum', cdspectrum)
   call kfread (iu15, 'General%NP', NP)
-  
+
+  filename='t21c'
+  core_excited= .FALSE.
+  INQUIRE(FILE=filename, EXIST=core_excited)
+
+  write(*,*) "this is core excited", core_excited  
+
+
+  if (tda.and.hybrid) then
+     hybrid = .false.
+  endif
+ 
+  open(unit=14, file='info_qm.dat')
+  write(14,*) tda, hybrid, cdspectrum, NP 
+  close(14)
+   
   if (NP) then
   call kfread (iu15, 'General%Num_tessere', nts)
-  endif
   call kfclfl(iu15)
-   
+  endif 
   if (cdspectrum) then
      allocate (lvectx(lbas),lvecty(lbas),lvectz(lbas))
      allocate(lm(larray,3))
@@ -166,6 +181,9 @@ program read_adf
    endif
 
    if (NP) then
+  !    allocate (potvect_nuc(naos,nts))
+  !    allocate (ppot_nuc(nts))
+  !    allocate (pot_nuc(naosx,nts))
       allocate (pot_nuc(nts))
    endif
 
@@ -174,6 +192,10 @@ program read_adf
   !open the kf-file fname and return the kf-unit number
   !the file should already exist
   call KFOPFL  (iu21, 'TAPE21')
+ 
+  if (core_excited) then
+    call KFOPFL  (iu22, 't21c')
+  endif
   !Makes an existing variable the current variable
   call KFOPVR  (iu21, 'Symmetry%nsym')
   !Read the variable
@@ -208,18 +230,21 @@ program read_adf
   call KFREAD ( iu21 ,         'nnuc' , nnuc   )
   call KFRDNI ( iu21,'nqptr', nqptr, lenty, 1 )
   call KFREAD ( iu21,'ntyp', ntyp )
+  allocate(qeff(ntyp))
+  call kfread (iu15, 'Geometry%qeff', qeff) 
   call KFRDNR ( iu21 ,         'qtch' , qtch   , lqtch , 1 )
   !call KFRDNS ( iu21 ,       'nuclab' , lab    , lqtch , 1 )
   call KFRDNI ( iu21 , 'Basis%nbptr', nbptr, lenty, 1 )
   !nuc. contribution to dipole moment
   do ityp = 1, ntyp
      write(*,*) ' ityp: ', ityp, ' qtch(ityp): ', qtch(ityp)  
+     write(*,*) ' ityp: ', ityp, ' qeff(ityp): ', qeff(ityp)  
      do j = nqptr(ityp), nqptr(ityp+1) - 1
-        !write(*,*) ' j: ', j, ' X: ', xyznuc(1,j), &
-        !   & ' Y: ', xyznuc(2,j), ' Z: ', xyznuc(3,j)
-        dip_nuc(1) = dip_nuc(1) + qtch(ityp) * xyznuc(1,j)
-        dip_nuc(2) = dip_nuc(2) + qtch(ityp) * xyznuc(2,j)
-        dip_nuc(3) = dip_nuc(3) + qtch(ityp) * xyznuc(3,j)
+        write(*,*) ' j: ', j, ' X: ', xyznuc(1,j)/1.8897259886, &
+           & ' Y: ', xyznuc(2,j)/1.8897259886, ' Z: ', xyznuc(3,j)/1.8897259886, 'qeff', qeff(ityp)
+        dip_nuc(1) = dip_nuc(1) + qeff(ityp) * xyznuc(1,j)
+        dip_nuc(2) = dip_nuc(2) + qeff(ityp) * xyznuc(2,j)
+        dip_nuc(3) = dip_nuc(3) + qeff(ityp) * xyznuc(3,j)
       end do
   end do 
 
@@ -269,20 +294,55 @@ program read_adf
      enddo
   endif
 
- if (NP) then
-     do ints=1,nts
-        if (ints.lt.10) then
-           write(tessera_attuale, '(i1.1)') ints
-        elseif (ints.ge.10.and.ints.lt.100) then
-           write(tessera_attuale, '(i2.2)') ints
-        elseif (ints.ge.100.and.ints.lt.1000) then
-           write(tessera_attuale, '(i3.3)') ints
-        elseif (ints.ge.1000.and.ints.lt.10000) then
-           write(tessera_attuale, '(i4.4)') ints
-        endif
-        call KFRDNR (iu15, 'Matrices%potential_nuc'//trim(tessera_attuale), pot_nuc(ints), 1, 1)
-     enddo
-  endif
+ !if (NP) then
+ !    do ints=1,nts
+ !       if (ints.lt.10) then
+ !          write(tessera_attuale, '(i1.1)') ints
+ !       elseif (ints.ge.10.and.ints.lt.100) then
+ !          write(tessera_attuale, '(i2.2)') ints
+ !       elseif (ints.ge.100.and.ints.lt.1000) then
+ !          write(tessera_attuale, '(i3.3)') ints
+ !       elseif (ints.ge.1000.and.ints.lt.10000) then
+ !          write(tessera_attuale, '(i4.4)') ints
+ !       endif
+ !       call KFRDNR (iu15, 'Matrices%potential_nuc'//trim(tessera_attuale), pot_nuc(ints), 1, 1)
+ !    enddo
+ ! endif
+
+ !LB: calculation of nuclear potential
+
+if (NP) then
+ call kfread (iu15, 'Nuc Coord%nnuc', nuc)
+ 
+ allocate(Znuc(nuc))
+ allocate(coord_nuc(3,nuc))
+ allocate(coord_tess(3,nts))
+ 
+ call kfrdnr (iu15, 'Nuc Coord%atomic charge', Znuc,nuc,1)
+ call kfrdnr (iu15, 'Nuc Coord%coord_nuc',coord_nuc,3*nuc,1)
+
+ do i=1,nuc
+    write(*,*) "Questa è Znuc,", Znuc(i), "Mentre questa è coord nuc,", coord_nuc(1,i), coord_nuc(2,i), coord_nuc(3,i)
+ enddo
+
+ open(90, file='nano.xyz')
+ read(90,*)
+ read(90,*)
+ do i=1,nts
+   read(90,*) dummy, coord_tess(1,i), coord_tess(2,i), coord_tess(3,i)
+ enddo 
+ close(90)
+ 
+ pot_nuc=0.d0
+
+ do i=1,nts
+    do j=1,nuc
+     pot_nuc(i) =  pot_nuc(i) + Znuc(j)/(abs(sqrt((coord_tess(1,i)-coord_nuc(1,j))**2 + (coord_tess(2,i)-coord_nuc(2,j))**2 + (coord_tess(3,i)-coord_nuc(3,j))**2)))
+    enddo
+ enddo
+endif
+
+ 
 
   !start loop over initial states
   eigspin = 'Eigen-Bas_A'
@@ -459,7 +519,7 @@ program read_adf
            call KFCLSC  (iu21)
            if (NP) then
               potvect=0.d0
-           !   potvect_nuc=0.d0
+              potvect_nuc=0.d0
            endif
            do j = 1 , lenfin
               vectx(j) = 0.0
@@ -499,15 +559,15 @@ program read_adf
 
                  if (NP) then
                     do ints = 1, nts
-                       potvect(j,ints) = potvect(j,ints) + eigin (i)*pot (k,ints)
+                       potvect(j,ints) = potvect(j,ints) + eigin (i)*pot(k,ints)
                     enddo
                  endif
-
-                 !if (NP) then
-                 !   do ints = 1, nts
-                 !      potvect_nuc(j,ints) = potvect_nuc(j,ints) + eigin (i)*pot_nuc (k,ints)
-                 !   enddo
-                 !endif
+!LEO
+              !   if (NP) then
+              !      do ints = 1, nts
+              !         potvect_nuc(j,ints) = potvect_nuc(j,ints) + eigin (i)*pot_nuc(k,ints)
+              !      enddo
+              !   endif
 
                  if (cdspectrum) then
                     lvectx(j) = lvectx(j) +  eigin ( i ) * lm ( k , 1 ) * sig
@@ -569,12 +629,12 @@ program read_adf
                        ppot(ints) = ppot(ints) + eigfi(j)*potvect(j,ints)
                     enddo
                  endif
-
-                 !if (NP) then
-                 !   do ints= 1,nts
-                 !      ppot_nuc(ints) = ppot_nuc(ints) + eigfi(j)*potvect_nuc(j,ints)
-                 !   enddo
-                 !endif
+             
+             !    if (NP) then
+             !       do ints= 1,nts
+             !          ppot_nuc(ints) = ppot_nuc(ints) + eigfi(j)*potvect_nuc(j,ints)
+             !       enddo
+             !    endif
 
                  if (cdspectrum) then
                     lx = lx + eigfi(j)*lvectx(j)
@@ -592,11 +652,9 @@ program read_adf
               if (NP) then
                  do ints=1,nts
                     potmat(indmoi,indmoj,ints) = ppot(ints)
-                     write(98,*) 'potmat(',indmoi,',',indmoj,',',ints,') =', potmat(indmoi,indmoj,ints) 
                     potmat(indmoj,indmoi,ints) = ppot(ints)
                  enddo
               endif
-
               !if (NP) then
               !   do ints=1,nts
               !      potmat_nuc(indmoi,indmoj,ints) = ppot_nuc(ints)
@@ -669,6 +727,7 @@ program read_adf
   write(*,*) '  lrep2do  = ', lrep2do 
   section = 'SS '
   ntoten = 0
+  ntoten1 = 0
   do isym = 1 , nsym
      if (.not.lrep2do(isym)) cycle
      write (secname,'(A12,A2,1x,A)') 'Excitations ', trim(section), trim(symrep(isym))
@@ -678,13 +737,65 @@ program read_adf
      ntoten = ntoten + nener
   end do
   write(*,*) ' ntoten ' , ntoten
-  allocate(tddfteig(kvirt, kocc, ntoten)) 
+  allocate(tddfteig(kvirt, kocc, ntoten))
+
+  allocate(tddfteig1(kvirt,kocc,ntoten))
+
+
+  if (core_excited) then
+    nsym2 = 0
+    call KFOPVR  (iu22, 'Symmetry%nsym excitations')
+    call KFREAD  (iu22, 'Symmetry%nsym excitations', nsym2)
+    call KFOPVR  (iu22, 'symlab excitations')
+    call KFRDNS  (iu22, 'symlab excitations', symrep2, nsym2, 1)
+    call KFOPVR  (iu22, 'vecdimension excitations')
+    call KFREAD  (iu22, 'vecdimension excitations', ndimvx2)
+    allocate(nsymdav2(nsym2))
+    allocate(lrep2do2(nsym2))
+    call KFOPVR  (iu22, 'nsymdav excitations')
+    call KFRDNI  (iu22, 'nsymdav excitations', nsymdav2, nsym2, 1)
+    call KFOPVR  (iu22, 'lrep2do excitations')
+    !read logical
+    call kfrdnl (iu22, 'lrep2do excitations', lrep2do2, nsym2, 1)
+    section = 'SS '
+    ntoten1 = 0
+    do isym2 = 1 , nsym2
+     if (.not.lrep2do2(isym2)) cycle
+     write (secname2,'(A12,A2,1x,A)') 'Excitations ', trim(section), trim(symrep2(isym2))
+     secname2 = trim(secname2)
+     call KFOPSC  (iu22, secname2)
+     call KFREAD  (iu22, 'nr of excenergies', nener1 )
+     ntoten1 = ntoten1 + nener1
+     call KFCLSC (iu22)
+    end do
+    
+    write(*,*) "this is the number of energies of the second calculation", ntoten1
+ 
+  allocate(tddfteig_c(kvirt, kocc, ntoten1))
+ 
+  allocate(tddfteig1_c(kvirt,kocc,ntoten1))
+  allocate(exciten1(ntoten1))
+ endif
+
+
   if(cdspectrum) allocate(tddfteigl(kvirt, kocc, ntoten))!, &
            !tddfteigli(kvirt, kocc,ntoten))
   allocate(exciten(ntoten))
-  open(80,file='eig.dat', form='unformatted')
+  allocate (sqrtepsdiff(kvirt,kocc))
+  call kfopfl (iu15, 'TAPE15')
+  call kfread (iu15, 'Matrices%std_epsilons', sqrtepsdiff)
+  call kfclfl (iu15)
+  sqrtepsdiff = sqrt(abs(sqrtepsdiff))
+  open(13, file='std_epsilons.dat')
+  write(13,*) sqrtepsdiff
+  close(13)
+  
+ ! open(80,file='eig.dat', form='unformatted')
+  open(80,file='eig.dat')
   open(81,file='eig_l.dat')
-!  open(82,file='eig_rpa.dat')
+  if (hybrid) then
+    open(82,file='eig_hybrid.dat', form='unformatted')
+  endif
   open(60,file='tddft_info.dat')
   ieff_sym=0
   do isym =1,nsym
@@ -692,15 +803,17 @@ program read_adf
      ieff_sym=ieff_sym+1
   end do
   !add NP PIER_e_LEO
-  write(80) ieff_sym,kocc,kvirt,ntoten,ntotmo,cdspectrum,NP
+  ntot=ntoten+ntoten1
+  write(80,*) ieff_sym,kocc,kvirt,ntot,ntotmo,cdspectrum,NP
   if (NP) then 
-  write(80) nts
+  write(80,*) nts
   endif
 !  write(81,*) ieff_sym,kocc,kvirt,ntoten,ntotmo,cdspectrum
-  write(60,*) ntoten
+  write(60,*) ntot
   close(60)
   itoten = 0
   base_name = 'o-cfc'
+
   do isym = 1 , nsym
      if (.not.lrep2do(isym)) cycle 
      !write(*,*) symrep(isym)
@@ -714,57 +827,170 @@ program read_adf
      call KFREAD  (iu21, 'nr of excenergies', nener )
      write(*,*) ' symm nener', secname,nener
      call KFRDNR(iu21,'excenergies',exciten(itoten+1),nener,1)
-     write(80) nener
+     write(80,*) ntot
+     if (hybrid) write(82) ntot
 !    write(81,*) nener
      do iener= 1, nener
         itoten = itoten + 1
-        write(*,*) ' itoten: ', itoten
         ieigstr = ' '
         call csputi(ieigstr, iener)
-        !v. 2018
-        call KFRDNR(iu21,'eigenveceps '//trim(ieigstr),tddfteig(1,1,itoten),ndimvx,1)
-        if(cdspectrum) then
-          if(.not.hybrid.and..not.tda) then 
-            call KFRDNR(iu21,'eigenveceps_mag '//trim(ieigstr),tddfteigl(1,1,itoten),ndimvx,1)
-          elseif(hybrid) then
-            call KFRDNR(iu21,'left eigenvector '//trim(ieigstr),tddfteigl(1,1,itoten),ndimvx,1)
-          endif
+        write(*,*)' ndimvx', ndimvx
+        call KFRDNR(iu21,'eigenvector '//trim(ieigstr),tddfteig(1,1,itoten),ndimvx,1) !AGGIUNTA PER TEST
+        if (hybrid) then
+            call KFRDNR(iu21,'left eigenvector '//trim(ieigstr),tddfteig1(1,1,itoten),ndimvx,1) 
         endif
-        !write(*,*) 'eigenveceps_mag '// trim(ieigstr)
-        !call KFRDNR(iu21,'eigenvector '//trim(ieigstr),tddfteig(1,1,itoten),ndimvx,1)
-        !write(*,*) 'eigenvector '// trim(ieigstr)
+     enddo
+  enddo
+  call KFCLSC (iu21)
+
+  allocate(tddfteig_tot(kvirt,kocc,ntot))
+
+  if (hybrid) then 
+    allocate(tddfteig1_tot(kvirt,kocc,ntot))
+  endif
+
+
+if (core_excited) then
+  itoten1=0
+  exciten1=0
+  tddfteig_c=0.d0
+  tddfteig1_c=0.d0
+  do isym2 = 1 , nsym2
+     write(*,*) "sono qui1"
+     if (.not.lrep2do2(isym2)) cycle 
+     !write(*,*) symrep(isym)
+     !write(*,*) trim(symrep(isym) )
+     write (secname2,'(A12,A2,1x,A)') 'Excitations ',trim(section),trim(symrep(isym2)) 
+     !write (secname,'(A12,A2,1x,A)') 'Excitations ', trim(section)
+     !write(*,*) secname
+     secname2 = trim(secname2)  
+     write(*,*) secname2
+     call KFOPSC  (iu22, secname2)
+     call KFREAD  (iu22, 'nr of excenergies', nener1 )
+     write(*,*) "nener1", nener1
+     call KFRDNR(iu22,'excenergies',exciten1(itoten1+1),nener1,1)
+     write(*,*) "nener", nener
+     do iener= 1, nener1
+        itoten1 = itoten1 + 1
+        ieigstr1 = ' '
+        write(*,*) ' itoten: ', itoten1
+        call csputi(ieigstr1, iener)
+        write(*,*)' ndimvx2', ndimvx2
+        call KFRDNR(iu22,'eigenvector '//trim(ieigstr1),tddfteig_c(1,1,itoten1),ndimvx2,1) !AGGIUNTA PER TEST
+        if (hybrid) then
+            call KFRDNR(iu22,'left eigenvector '//trim(ieigstr1),tddfteig1_c(1,1,itoten1),ndimvx2,1) 
+        endif
+    enddo
+  enddo
+
+
+
+
+  do itot=1,nener
+   do i=1,kvirt
+     do j=1,kocc
+       tddfteig_tot(i,j,itot) = tddfteig(i,j,itot)
+     enddo
+   enddo
+  enddo
+
+    
+    m=0
+    do itot=nener+1,ntot
+     m=m+1
+     do i=1,kvirt
+       do j=1,kocc
+         tddfteig_tot(i,j,itot) = tddfteig_c(i,j,m)
+       enddo
+     enddo
+    enddo
+  
+  if (hybrid) then 
+   do itot=1,nener
+    do i=1,kvirt
+      do j=1,kocc
+        tddfteig1_tot(i,j,itot) = tddfteig1(i,j,itot)
+      enddo
+    enddo
+   enddo
+
+
+    m=0
+    do itot=nener+1,ntot
+     m=m+1
+     do i=1,kvirt
+       do j=1,kocc
+         tddfteig1_tot(i,j,itot) = tddfteig1_c(i,j,m)
+       enddo
+     enddo
+    enddo
+   endif
+
+endif  
+
+!   deallocate(tddfteig)
+!   if (hybrid) then
+!     deallocate(tddfteig1)
+!   endif
+
+!   allocate(tddfteig(kvirt,kocc,ntot))
+
+!   if (hybrid) then 
+!     allocate(tddfteig1(kvirt,kocc,ntot))
+!   endif
+   
+!   tddfteig=0
+!   tddfteig1=0
+
+
+!   tddfteig=tddfteig_tot
+!   if (hybrid) then
+!      tddfteig1=tddfteig1_tot
+!   endif
+
+
+itoten=0
+  
+
+if (.not. core_excited) then
+   write(*,*) "sono qui"
+  tddfteig_tot=0
+  tddfteig1_tot=0
+   tddfteig_tot=tddfteig
+  if (hybrid) then
+   tddfteig1_tot=tddfteig1
+  endif
+endif
+
+
+
+  do isym = 1 , nsym
+     do iener= 1, ntot
+        itoten = itoten + 1
+        write(*,*) "itoteeeeen", itoten
         write(excnr,'(i5.5)') itoten
         write(file_name,*) adjustl(trim(base_name)), adjustl(trim(excnr)),".dat"
         write(*,*) ' file_name: ', file_name
-        if (ntoten.gt.1000) then     
+        if (ntot.gt.1000) then     
         open(41, file=file_name, form='unformatted', iostat=ios)
         write(41) ' #from ADF'
         write(41) ' #starting   #final  #ispin   Cij '
         ispin = 1 
         do i=1,kocc
            do j=1,kvirt
-              ! jochen: if we do not use RPA, the transition dipole
-              ! expressions
-              ! have factors of excen**(+/- 1/2), that we need to take care
-              ! of here:
-            if(cdspectrum) then
-              if(tda) then
-                 tddfteigl(j,i,itoten)=tddfteig(j,i,itoten)
-              elseif(hybrid) then
-                 tddfteigl(j,i,itoten)=tddfteigl(j,i,itoten)*dsqrt(2.d0)
-              else
-                 tddfteig(j,i,itoten)=tddfteig(j,i,itoten)/dsqrt(exciten(itoten))
-                 tddfteigl(j,i,itoten)=tddfteigl(j,i,itoten)*dsqrt(exciten(itoten))
+              if (.not.tda.and..not.hybrid) then
+!                 tddfteig(j,i,itoten)=tddfteig(j,i,itoten)*sqrtepsdiff(j,i)/dsqrt(exciten(itoten))               
+                 tddfteig_tot(j,i,itoten)=tddfteig_tot(j,i,itoten)*sqrtepsdiff(j,i)/dsqrt(exciten(itoten))               
               endif
-            else
-                 if (.not.tda.and..not.hybrid) then
-                  tddfteig(j,i,itoten)=tddfteig(j,i,itoten)/dsqrt(exciten(itoten))
-                 endif
+!              write(80,*) tddfteig(j,i,itoten)
+              write(80,*) tddfteig_tot(j,i,itoten)
+            if (hybrid) then
+!              write(82) tddfteig1(j,i,itoten)
+              write(82) tddfteig1_tot(j,i,itoten)
             endif
-              write(80) tddfteig(j,i,itoten)
-              if(cdspectrum) write(81,*) tddfteigl(j,i,itoten)
               write(41) i, kocc+j, ispin, &
-                   tddfteig(j,i,itoten)
+                   tddfteig_tot(j,i,itoten)
+!                   tddfteig(j,i,itoten)
            end do
         end do
         close(41)
@@ -775,44 +1001,46 @@ program read_adf
         ispin = 1 
         do i=1,kocc
            do j=1,kvirt
-              ! jochen: if we do not use RPA, the transition dipole
-              ! expressions
-              ! have factors of excen**(+/- 1/2), that we need to take care
-              ! of here:
-            if(cdspectrum) then
-              if(tda) then
-                 tddfteigl(j,i,itoten)=tddfteig(j,i,itoten)
-              elseif(hybrid) then
-                 tddfteigl(j,i,itoten)=tddfteigl(j,i,itoten)*dsqrt(2.d0)
-              else
-                 tddfteig(j,i,itoten)=tddfteig(j,i,itoten)/dsqrt(exciten(itoten))
-                 tddfteigl(j,i,itoten)=tddfteigl(j,i,itoten)*dsqrt(exciten(itoten))
+              if (.not.tda.and..not.hybrid) then
+!                 tddfteig(j,i,itoten)=tddfteig(j,i,itoten)*sqrtepsdiff(j,i)/dsqrt(exciten(itoten))               
+                 tddfteig_tot(j,i,itoten)=tddfteig_tot(j,i,itoten)*sqrtepsdiff(j,i)/dsqrt(exciten(itoten))               
               endif
-            else
-                 if (.not.tda.and..not.hybrid) then
-                  tddfteig(j,i,itoten)=tddfteig(j,i,itoten)/dsqrt(exciten(itoten))
-                 endif
+!              write(80,*) tddfteig(j,i,itoten)
+              write(80,*) tddfteig_tot(j,i,itoten)
+            if (hybrid) then
+!              write(82) tddfteig1(j,i,itoten)
+              write(82) tddfteig1_tot(j,i,itoten)
             endif
-              write(80) tddfteig(j,i,itoten)
-              if(cdspectrum) write(81,*) tddfteigl(j,i,itoten)
               write(41,*) i, kocc+j, ispin, &
-                   tddfteig(j,i,itoten)
+                   tddfteig_tot(j,i,itoten)
+!                   tddfteig(j,i,itoten)
            end do
         end do
-        
-        endif
+        close(41)
+      endif
      enddo
   enddo
+
   write(*,*) ' kocc kvirt ' , kocc, kvirt, nocc
-  write(*,*) ' excit ener ',exciten
+  write(*,*) ' excit ener ', exciten
+  if (core_excited) then
+    write(*,*) ' excit ener ', exciten1
+  endif
   close(80)
   close(81)
+  close(82)
   open(70,file='ene.dat')
   do i=1,ntoten
      write(70,*) exciten(i)
   enddo
-  close(70)
 
+  if (core_excited) then
+    open(70,file='ene.dat')
+    do i=1,ntoten1
+       write(70,*) exciten1(i)
+    enddo
+    close(70)
+  endif
   !EC: npmat.dat LEO_e_PIER
   open(90,file='dipmat.dat')
   !add nuc. contribution
@@ -843,11 +1071,7 @@ program read_adf
      open(93,file='potmat_nuc.dat')
      ints=0
    do ints=1,nts
-     !do i=1,ntotmo
-     !   do j=1,ntotmo
-              write(93,*) pot_nuc(ints)
-     !   enddo
-     !enddo
+        write(93,*) pot_nuc(ints)
     enddo
      close(93)
   endif
@@ -867,6 +1091,10 @@ program read_adf
   deallocate (dip,eigin,eigfi,vectx,vecty,vectz,xyznuc,e0)
   deallocate (npartin, npartfi, insy, inst, insp)
   deallocate(tddfteig)
+  deallocate(tddfteig1)
+  deallocate(tddfteig_c)
+  deallocate(tddfteig1_c)
+  deallocate(sqrtepsdiff)
   deallocate(dipmatx)
   deallocate(dipmaty)
   deallocate(dipmatz)
@@ -881,13 +1109,18 @@ program read_adf
   if (NP) then 
      deallocate(pot)
      deallocate(potmat)
+     deallocate(potmat_nuc)
      deallocate(pot_nuc)
      deallocate(potvect)
+     deallocate(potvect_nuc)
      deallocate(ppot)
+     deallocate(ppot_nuc)
   endif  
   deallocate(eigvks)
   deallocate(nsymdav)
   deallocate(lrep2do)
+  deallocate(nsymdav2)
+  deallocate(lrep2do2)
   deallocate(qtch)
   deallocate(mllkn_pop, buff, ialpha)
   write(*,98) ' ************************************ '
