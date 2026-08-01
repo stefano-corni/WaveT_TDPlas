@@ -5,8 +5,9 @@ module propagate
       use random
       use dissipation
       use scf
-      use interface_tdplas
+      use interface_classic
       use initialise
+      use WTMathTools
 #ifdef OMP
       use omp_lib
 #endif
@@ -61,37 +62,23 @@ module propagate
        complex(cmp), allocatable   :: ccexp(:) !SC 31/10/17: added to store exp(-ui*e(:)*dt), used in propagation
        character(20)               :: name_e,name_c,name_d,name_mu, &
                                       name_m ! MM
-
-       ! GG: 11/03/2019
-       real(dbl), allocatable      :: q_or_f(:) !< reaction field or reaction-field polarization charges
-       real(dbl), allocatable      :: pot_prev(:) 
-
        !MR
        real :: start, finish
 
 ! OPEN FILES
-       if (twod.eq.'no') then
-          write(name_c,'(a4,i0,a4)') "c_t_",n_f,".dat"
-          write(name_e,'(a4,i0,a4)') "e_t_",n_f,".dat"
-          write(name_mu,'(a5,i0,a4)') "mu_t_",n_f,".dat"
-          if (Fmag.eq.'mag') then
-             write(name_m,'(a4,i0,a4)') "m_t_",n_f,".dat"
-          endif
-          if (Fres.eq.'Yesr') then
-             if (Fbin.ne.'bin') then
-                open (file_c,file=name_c,status="unknown",access="append")
-                open (file_e,file=name_e,status="unknown",access="append")
-                open (file_mu,file=name_mu,status="unknown",access="append")
-                if (Fmag.eq.'mag') then !MM
-                 open(file_m,file=name_m,status="unknown",access="append")
-                endif
-             else
-                open (file_c,file=name_c,status="unknown",access="append",form="unformatted")   
-                open (file_e,file=name_e,status="unknown",access="append",form="unformatted")
-                open (file_mu,file=name_mu,status="unknown",access="append",form="unformatted")  
-                if (Fmag.eq.'mag') then !MM
-                 open(file_m,file=name_m,status="unknown",access="append",form="unformatted")
-                endif
+       write(name_c,'(a4,i0,a4)') "c_t_",n_f,".dat"
+       write(name_e,'(a4,i0,a4)') "e_t_",n_f,".dat"
+       write(name_mu,'(a5,i0,a4)') "mu_t_",n_f,".dat"
+       if (Fmag.eq.'mag') then
+          write(name_m,'(a4,i0,a4)') "m_t_",n_f,".dat"
+       endif
+       if (Fres.eq.'Yesr') then
+          if (Fbin.ne.'bin') then
+             open (file_c,file=name_c,status="unknown",access="append")
+             open (file_e,file=name_e,status="unknown",access="append")
+             open (file_mu,file=name_mu,status="unknown",access="append")
+             if (Fmag.eq.'mag') then !MM
+              open(file_m,file=name_m,status="unknown",access="append")
              endif
           elseif (Fres.eq.'Nonr') then
              if (Fbin.ne.'bin') then
@@ -187,51 +174,9 @@ module propagate
        int_rad_int=0.d0
        if(Frad.eq."arl".or.Fdis.ne."nodis") &
                                call seed_random_number_sc(iseed)
+       !> Initialize medium for propagation
        if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") then
-           ! GG: 11/03/2019 begin changes
-           !MR print time
-           call cpu_time(start)
-           call init_medium(c_prev,mu_prev,f_prev,h_int)
-           call cpu_time(finish)
-           write(*,'(a,f6.3,a)') 'Time = ',finish-start,' seconds.'
-           ! SP 18/05/20 the following should go in a init_quantumstate
-           ! module together with the QM_coupling module
-           if(this_Finit_int.eq.'sce') then
-            if(this_Fprop.eq."dip") then
-             ! reaction field                                                 |               ! reaction field
-             allocate(q_or_f(3))        
-             ! mixing iter 1 and 0
-             call preparing_for_scf_in_wavet(this_mix_coef,f_prev,q_or_f)
-            else
-             allocate(pot_prev(this_nts_act))
-             call do_pot_from_coeff(c_prev,pot_prev)
-             ! reaction-field polarization charges                            |               ! reaction-field polarization charges
-             allocate(q_or_f(this_nts_act))
-             ! mixing iter 1 and 0
-             call preparing_for_scf_in_wavet(this_mix_coef,pot_prev,q_or_f)
-            endif
-            ! compute the molecular state in equilibrium with the medium starting from an excited state in the frozen approximation
-            ! onsager model ("dip") or pcm model
-            call do_scf(q_or_f,c_prev)
-            trans_dipoles = mut
-            energies=e_ci 
-            if(Fmag.eq.'mag') then 
-                trans_mag=lt
-            endif
-            ! compute the molecular dipole
-            call do_dip_from_coeff(c_prev,mu_prev,nstates)
-            if(this_Fprop.eq."dip") then
-                    call init_after_scf_in_wavet(mu_prev)
-            else
-                    call do_pot_from_coeff(c_prev,pot_prev)
-                    call init_after_scf_in_wavet(pot_prev)
-            endif
-           end if
-           ! GG: 11/03/2019 end changes
-           if (Fres.eq.'Nonr') then
-              i=1
-              call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-           endif
+           call init_env_prop(c_prev,mu_prev,f_prev,h_int)
        endif
        if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
           if (allocated(trans_p)) deallocate(trans_p) 
@@ -249,6 +194,13 @@ module propagate
           call output(1,c,f_prev,h_int)
        elseif (Fres.eq.'Yesr') then
           if (Fdis.ne."nodis") call random_seq(restart_i)
+       endif
+       ! SP 19/06/26: added call for ropagation at step 1
+       if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") then
+         i=1
+         !write(*,*) "mu_prev ", mu_prev
+         !stop
+         call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
        endif
 ! EC 20/12/16
 ! Dissipation according to the Markovian SSE (eq 25 J. Phys: Condens.
@@ -349,9 +301,10 @@ module propagate
 ! @date Created   : 
 ! Modified  : E. Coccia 16 Jan 2018
 !------------------------------------------------------------------------
-      subroutine create_field 
+      subroutine create_field(f00)
 
        implicit none
+       real(dbl), intent(out) :: f00(3)
 
        integer(i4b) :: i,j,i_max,n_tot
        real(dbl) :: t_a,ti,tf,arg
@@ -613,7 +566,7 @@ module propagate
        
 
         close(7)
- 
+        f00(:)=f(:,1) 
         return
 
       end subroutine create_field
@@ -1436,8 +1389,8 @@ module propagate
           f_prev=f(:,2)
           h_int=zero
           if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") then
-             i=2
-             call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+            i=2
+            call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
           endif
           if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
              call build_h_int_vg(2,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
@@ -1551,6 +1504,7 @@ module propagate
 
             f_prev=f(:,i)
             h_int=zero
+
             if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
             if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
                call build_h_int_vg(i,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
@@ -1559,6 +1513,7 @@ module propagate
             endif ! Added by Manuel Sanchez 2026-05-03
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, & 
                                                mu_prev4,mu_prev5,h_int)
+
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (Fmag.eq.'mag') then ! MM
                call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
@@ -1602,6 +1557,7 @@ module propagate
 
             f_prev=f(:,i)
             h_int=zero
+
             if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
             if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
                call build_h_int_vg(i,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
@@ -1610,6 +1566,7 @@ module propagate
             endif ! Added by Manuel Sanchez 2026-05-03
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
                                                   mu_prev4,mu_prev5,h_int)
+
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
             if (Fmag.eq.'mag') then ! MM
                call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
@@ -1662,6 +1619,7 @@ module propagate
             c=c/sqrt(dot_product(c,c))
             c_prev2=c_prev
             c_prev=c
+
             f_prev=f(:,i)
             h_int=zero
             if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
@@ -1751,6 +1709,7 @@ module propagate
 ! output
           f_prev=f(:,2)
           h_int=zero
+
           if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") then
              i=2
              call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
@@ -1866,6 +1825,7 @@ module propagate
                 c_prev2=c_prev
                 c_prev=c
             endif
+
             f_prev=f(:,i)
             h_int=zero
             if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
@@ -1921,6 +1881,7 @@ module propagate
 
             f_prev=f(:,i)
             h_int=zero
+
             if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
             if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
                call build_h_int_vg(i,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
@@ -1982,6 +1943,7 @@ module propagate
             c=c/sqrt(dot_product(c,c))
             c_prev2=c_prev
             c_prev=c
+
             f_prev=f(:,i)
             h_int=zero
             if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
@@ -2095,5 +2057,3 @@ module propagate
       end subroutine wrt_restart 
 
       end module
-
-

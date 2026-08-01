@@ -1,7 +1,7 @@
       Module scf            
       use constants
       use readio    
-      use interface_tdplas
+      use interface_classic
       use, intrinsic :: iso_c_binding
 
 #ifdef MPI
@@ -11,16 +11,16 @@
       implicit none
 
       real(dbl), allocatable :: Htot(:,:)    !< Hamiltonian matrix in SCF cycle
-      real(dbl), allocatable :: eigt_c(:,:)  !< Eigenvectors of Htot at current cycle
-      real(dbl), allocatable :: eigv_c(:)    !< Eigenvalues of Htot at current cycle
-      real(dbl), allocatable :: eigt_cp(:,:) !< Eigenvectors of Htot at previous cycle
-      real(dbl), allocatable :: eigv_cp(:)   !< Eigenvalues of Htot at previous cycle
+      real(dbl), allocatable :: eigt(:,:)  !< Eigenvectors of Htot at current cycle
+      real(dbl), allocatable :: eigv(:)    !< Eigenvalues of Htot at current cycle
+      real(dbl), allocatable :: eigtp(:,:) !< Eigenvectors of Htot at previous cycle
+      real(dbl), allocatable :: eigvp(:)   !< Eigenvalues of Htot at previous cycle
       real(dbl) :: maxv                      !< Max values if eigenvectors differences wrt previous cycle                   
       real(dbl) :: maxe                      !< Max values if eigenvalues  differences wrt previous cycle       
       ! Working arrays
-      real(dbl) :: mu(3)                    !< Temporary array containing dipole in SCF cycle
-      real(dbl), allocatable :: pot(:)      !< Temporary array containing potential in SCF cycle
-      real(dbl), allocatable :: c_c(:)      !< Temporary array containing coefficients in old basis 
+      complex(cmp), allocatable :: c_old(:)  !< Temporary array containing coefficients in old basis 
+      complex(cmp), allocatable :: c_new(:)  !< Temporary array containing coefficients in old basis 
+       real(dbl) :: e_scf, e_ini                !< GS energies
 
       save
       private
@@ -37,18 +37,17 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-      subroutine do_scf(q_or_f,c_prev)
-
+      subroutine do_scf(n,ene,dip,f0)
        implicit none
-       real(dbl), intent(INOUT):: q_or_f(:)     !< charges or field  
-       complex(cmp), intent(INOUT) :: c_prev(:)  !< basis state coefficients
+       integer(i4b), intent(in) :: n      !< number of states
+       real(dbl), intent(in)    :: f0(3)     !< field at time0  
+       real(dbl), intent(out)   :: dip(3,n,n) !< Transition dipoles              
+       real(dbl), intent(out)   :: ene(n)   !< Energies                        
        integer(i4b) :: ncyc=1                   !< cycle number 
        logical :: docycle=.true.                !< choice on continue cycling
        real(dbl) :: thre,thrv                   !< thresholds
-       real(dbl) :: e_scf, e_ini                !< GS energies
-       real(dbl) :: fld(3)                      !  field from charges
-       integer(i4b):: max_p(1)   
-       integer(i4b):: its 
+       real(dbl) :: f(3)                        !< external field this should be fixed        
+       integer(i4b):: max_p(1),i   
 
 #ifndef MPI
        myrank=0
@@ -60,72 +59,64 @@
        endif
        thrv=10**(-this_thrshld+2)
        thre=10**(-this_thrshld)
-       if (myrank.eq.0) write(6,*) "Threshold ", thrv,thre
-       call init_scf ! Initialize/allocate
+       if (myrank.eq.0) write(6,*) "Thresholds ", thrv,thre
+       ! Initialize/allocate
+       if (myrank.eq.0) write(6,*) "Initialising SCF "
+       call init_scf 
+       if (Fmdm.ne."vac") call update_environment_scf(c_i,f0)
        ! scf cycle
+       if (myrank.eq.0) then 
+         write(6,*) "Starting SCF Cycle"
+         write(6,*) "Cycle, e_scf, e_ini, Max_Diff_Eigenval, " 
+         write(6,*) "     Max_Diff_Eigenvec "
+       endif
        do while (docycle.and.ncyc.le.this_ncycmax) 
-         ! Build the Hamiltonian
-         if(this_Fint.eq."ons") then
-           if(this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then 
-             call do_field_from_charges_in_wavet(q_or_f,fld)
-             call do_htot(fld)
-           endif
-         else
-           call do_htot(q_or_f)
-         endif
+         ! Build the diagonal part of the Hamiltonian 
+         Htot(:,:)=zero
+         call do_htot_ene
+         if(mdl(f0).gt.0.) call do_H_int(Htot,mut,f0,n_ci)
+         if (Fmdm.ne."vac") call do_interaction(Htot)
          ! Diagonalize Hamiltonian           
-         eigt_c=Htot
-         call diag_mat_in_wavet(eigt_c,eigv_c,n_ci)       
-         ! Update charges or field with new coefficients 
+         eigt=Htot
+         call diag_mat_in_wavet(eigt,eigv,n_ci)       
+         ! Transform the new state on the old basis      
          call do_c_oldbasis
-         if(this_Fprop.eq."dip") call do_field(q_or_f)
-         if(this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then
-            call do_charges(q_or_f)
-         endif
-         call do_energies(e_scf,e_ini)
+         ! compute scf and initial energies
+         call update_energies
+         ! Update charges or field with new coefficients, 
+         ! Test
+         !call transform_dipoles
+         !if(Fmdm.ne."vac") call transform_environment_scf(eigt)
+         !if (Fmdm.ne."vac") call update_environment_scf(c_new,f)
+         ! Test
+         if (Fmdm.ne."vac") call update_environment_scf(c_old,f)
          ! Check convergence                                
          if (ncyc.gt.2) then 
            call check_conv(maxe,maxv,n_ci)       
-!           if (maxe.le.thre.and.maxv.le.thrv) docycle=.false.         
-! SC 24/4/2016: check convergence only on egeinvalues:
-!               in case of degeneracy the variation of eigenvector
-!               can be erratic
+           ! If (maxe.le.thre.and.maxv.le.thrv) docycle=.false.         
+           ! SC 24/4/2016: check convergence only on egeinvalues:
+           ! in case of degeneracy the variation of eigenvector
+           ! can be erratic
            if (maxe.le.thre) docycle=.false.         
-           if (myrank.eq.0) write(6,*) "cycle ", ncyc, e_scf, e_ini
          endif
-         eigt_cp=eigt_c
-         eigv_cp=eigv_c
+         if (myrank.eq.0) write(6,*) ncyc, e_scf, e_ini, maxe, maxv
+         eigtp=eigt
+         eigvp=eigv
          ncyc=ncyc+1 
-         if (myrank.eq.0) then
-            write(6,*) "Max Diff on Eigenvalue ", maxe
-            write(6,*) "Max Diff on Eigenvector ", maxv
-         endif
        enddo
        if (myrank.eq.0) write(6,*) "SCF Done"
        ! Write-out integrals/properties in the new basis 
-       if (this_Fprop.eq.'chr-ief'.or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") then
-       ! transform vts to the SCF state basis
-        do its=1,this_nts_act
-         this_vts(its,:,:)=matmul(this_vts(its,:,:),eigt_c)
-         this_vts(its,:,:)=matmul(transpose(eigt_c),this_vts(its,:,:))
-        enddo
-         if (myrank.eq.0) then
-            call out_charges(q_or_f)
-            call out_vts
-         endif
-       endif
+       call transform_dipoles
+       if(Fmdm.ne."vac") call transform_environment_scf(eigt)
        if (myrank.eq.0) then
+          if(Fmdm.ne."vac") call out_environment_scf
           call out_dipoles
           call out_energies
        endif
-       !  find the new eigenvector that is most similar to the old one
-       c_c=abs(matmul(c_i,eigt_c))
-       max_p=maxloc(c_c)
-       if (myrank.eq.0) write(6,*) 'maxloc',max_p(1)
-       c_i=0.d0
-       c_i(max_p(1))=1.d0
-       c_prev=c_i
-
+       ! Update the coefficients and energies
+       !c(:)=c_new(:)
+       ene(:)=eigv(:)
+       dip(:,:,:)=mut(:,:,:)
        return
 
       end subroutine do_scf
@@ -138,12 +129,12 @@
 !------------------------------------------------------------------------
       subroutine init_scf
 
-       allocate(eigv_c(n_ci),eigt_c(n_ci,n_ci))
-       allocate(eigv_cp(n_ci),eigt_cp(n_ci,n_ci))
+       allocate(eigv(n_ci),eigt(n_ci,n_ci))
+       allocate(eigvp(n_ci),eigtp(n_ci,n_ci))
        allocate(Htot(n_ci,n_ci))
-       if(this_Fprop.eq."chr-ief".or.this_Fprop.eq."chr-ied".or.this_Fprop.eq."chr-ons") allocate(pot(this_nts_act))
-       allocate(c_c(n_ci))
-
+       allocate(c_old(n_ci))
+       allocate(c_new(n_ci))
+       eigv=e_ci
        return
 
       end subroutine init_scf
@@ -156,11 +147,11 @@
 !------------------------------------------------------------------------
       subroutine finalize_scf
 
-       deallocate(eigv_c,eigt_c)
-       deallocate(eigv_cp,eigt_cp)
+       deallocate(eigv,eigt)
+       deallocate(eigvp,eigtp)
        deallocate(Htot)
-       if(allocated(pot))deallocate(pot)
-       deallocate(c_c)
+       deallocate(c_old)
+       deallocate(c_new)
 
        return
 
@@ -178,89 +169,52 @@
 !------------------------------------------------------------------------
       subroutine do_c_oldbasis
 
-       implicit none
-
+       implicit none       
        integer(i4b):: max_p(1),i    
-! SP 12/07/17: avoiding use of automatic arrays, especially in cycles   
-       !real(dbl) :: c_c(n_ci)
+       real(dbl), allocatable :: c_tmp(:)     !< coefficients
 
 #ifndef MPI
        myrank=0
 #endif
-
+       allocate(c_tmp(n_ci))
+       c_tmp(:)=real(c_i(:))
        ! find the new eigenvector that is most similar to the old one
-       c_c=abs(matmul(c_i,eigt_c))
-       max_p=maxloc(c_c)
+       c_tmp=abs(matmul(c_tmp,eigt))
+       ! c_tmp here contains the coefficient of the old occupied state
+       ! for each of the new states
+       max_p=maxloc(c_tmp)
+       ! max_p is the position of the maximum value in c_tmp
        if(this_Fwrite.eq."high") then 
           if (myrank.eq.0) write(6,*) 'maxloc',max_p(1)
        endif
-       c_c=0.d0
-       c_c(max_p(1))=1.d0
-       ! This is the new state on the basis of the old states  
-       c_c=matmul(eigt_c,c_c) 
+       if (max_p(1).ne.1) stop
+       c_tmp=0.d0
+       c_tmp(max_p(1))=1.d0
+       ! c_tmp now has value equal 1 only for the new eigenvector that
+       ! is most similar to the old one
+       do i=1,n_ci
+          c_new(i)=cmplx(c_tmp(i),0.d0)
+       enddo
+       ! c_tmp below is the new state on the basis of the old states  
+       c_tmp=matmul(eigt,c_tmp)
+       do i=1,n_ci
+          c_old(i)=cmplx(c_tmp(i),0.d0)
+       enddo
        ! write the state
        if(this_Fwrite.eq."high") then
          if (myrank.eq.0) then
              write(6,*) "State on the basis of original states"
          endif
          do i=1,n_ci
-          if (myrank.eq.0) write(6,*) i, c_c(i)
+          if (myrank.eq.0) write(6,*) i, c_old(i)
          enddo
          write(6,*)
        endif
-
+       deallocate(c_tmp)
        return
 
       end subroutine do_c_oldbasis
 
-
-!------------------------------------------------------------------------
-! @brief Compute field from dipole 
-!
-! @date Created: S. Pipolo
-! Modified:
-!------------------------------------------------------------------------
-      subroutine do_field(f)
-
-       implicit none 
-
-       real(dbl), intent(OUT):: f(3)     
-       integer(i4b)::i    
-
-       do i=1,3
-         mu(i)=dot_product(c_c,matmul(mut(i,:,:),c_c))
-       enddo
-       ! SP 04/0717 matmul for general spheroid orientation
-       f=(1.-this_mix_coef)*f+this_mix_coef*matmul(this_mat_f0,mu)
-
-       return
-
-      end subroutine do_field
-
-!------------------------------------------------------------------------
-! @brief Compute charges from potential 
-!
-! @date Created: S. Pipolo
-! Modified:
-!------------------------------------------------------------------------
-      subroutine do_charges(q)
-
-       implicit none 
-
-       real(dbl), intent(OUT):: q(this_nts_act)     
-       integer(i4b)::i    
-
-       do i=1,this_nts_act
-         pot(i)=dot_product(c_c,matmul(this_vts(i,:,:),c_c))
-       enddo 
-
-       q=(1.-this_mix_coef)*q+this_mix_coef*matmul(this_BEM_Q0,pot)
-! SC 12/8/2016: apparently for NP, charge compensation is needed
-       if (Fmdm.eq.'cnan'.or.Fmdm.eq.'qnan') q=q-sum(q)/this_nts_act
-
-       return
-
-      end subroutine do_charges
 
 !------------------------------------------------------------------------
 ! @brief Compute Hamiltonian with charges or fields 
@@ -268,33 +222,19 @@
 ! @date Created: S. Pipolo
 ! Modified: S.Corni 
 !------------------------------------------------------------------------
-      subroutine do_htot(q_or_f)
-
-       real(dbl), intent(IN):: q_or_f(:)     
+      subroutine do_htot_ene
        integer(4)::i,j,k 
-       if (this_Fint.eq."pcm") then
-          do j=1,n_ci
-             do k=j,n_ci   
-                 Htot(k,j)=dot_product(this_vts(:,k,j),q_or_f(:)-this_q0(:))
-                 Htot(j,k)=Htot(k,j)
-             enddo
-             Htot(j,j)=Htot(j,j)+e_ci(j)
-             if(this_Fwrite.eq."high") write(6,*) j,Htot(j,j)
-          enddo
-       else
-          do j=1,n_ci
-             do k=j,n_ci
-           Htot(k,j)=dot_product(mut(:,k,j),q_or_f(:)-this_fr_0(:))
-           Htot(j,k)=Htot(k,j)
-         enddo
-         Htot(j,j)=Htot(j,j)+e_ci(j)
-         if(this_Fwrite.eq."high") write(6,*) j,Htot(j,j)
+        do j=1,n_ci
+          !Htot(j,j)=Htot(j,j)+eigv(j)
+          !Htot(j,j)=Htot(j,j)+e_ci(j)
+          Htot(j,j)=+e_ci(j)
+          if(this_Fwrite.eq."high") write(6,*) j,Htot(j,j)
         enddo
-       endif
-
        return
 
-      end subroutine do_htot
+      end subroutine do_htot_ene
+
+
 
 
 !------------------------------------------------------------------------
@@ -305,21 +245,19 @@
 !------------------------------------------------------------------------
       subroutine check_conv(mxe,mxv,Mdim)
 
-       real(dbl),intent(inout) :: mxe,mxv
+       real(dbl),intent(out) :: mxe,mxv
        integer(i4b),intent(in) :: Mdim 
        integer(i4b) :: i,j
        real(dbl):: diff               
 
        mxv=zero                
        mxe=zero          
-!       write(6,*)
        do i=1,Mdim   
-         diff=sqrt((eigv_c(i)-eigv_cp(i))**2)
+         diff=sqrt((eigv(i)-eigvp(i))**2)
          if(diff.gt.mxe) mxe=diff
-!         write (6,*) i,eigt_c(i,:)
          do j=1,Mdim   
 ! SC 24/4/2016: changed below, otherwise a change of sign result in non-convergence
-           diff=abs(eigt_c(j,i)**2-eigt_cp(j,i)**2)
+           diff=abs(eigt(j,i)**2-eigtp(j,i)**2)
            if(diff.gt.mxv) mxv=diff
          enddo
        enddo
@@ -335,24 +273,22 @@
 ! @date Created: S. Pipolo
 ! Modified:
 !------------------------------------------------------------------------
-      subroutine do_energies(e_scf,e_ini)
+      subroutine update_energies
 
        implicit none
-
        integer(4) :: i
-       real(8) :: e_scf,e_ini
 
-       e_scf=0.d0
-       e_ini=0.d0
+       e_scf=zero
+       e_ini=zero
 
        do i=1,n_ci
-        e_scf=e_scf+abs(c_i(i))*abs(c_i(i))*eigv_c(i)
-        e_ini=e_ini+abs(c_i(i))*abs(c_i(i))*e_ci(i)
+        e_scf=e_scf+abs(c_new(i))*abs(c_new(i))*eigv(i)
+        e_ini=e_ini+abs(c_new(i))*abs(c_new(i))*e_ci(i)
        enddo
 
        return
 
-      end subroutine do_energies
+      end subroutine update_energies
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -360,47 +296,12 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     
 !------------------------------------------------------------------------
-! @brief Write out the charges in the charges0_scf.dat file 
+! @brief Transform dipole integrals to the new basis  
 !
 ! @date Created: S. Pipolo
-! Modified:
+! Modified: L. Biancorosso 9/23
 !------------------------------------------------------------------------
-      subroutine out_charges(q)
-
-       implicit none
-
-       real(dbl), intent(IN):: q(this_nts_act)     
-       integer(i4b) its
-
-#ifndef MPI
-       myrank=0
-#endif
-
-       open(unit=7,file="charges0_scf.inp",status="unknown", &
-            form="formatted")
-         write (7,*) this_nts_act
-         do its=1,this_nts_act
-          write (7,'(E22.8,F22.10)') q(its)
-         enddo
-       close(unit=7)
-       if (myrank.eq.0) write(6,*) "Written out the SCF charges"
-       ! SP 23/10/16: update the q0 vector to have a consistent correction if a
-       !              propagation is performed after the SCF cycle
-       this_q0(:)=q(:)
-
-       return 
-
-      end subroutine out_charges     
-
-
-!------------------------------------------------------------------------
-! @brief Transform to the new basis and write out potential integrals on
-! tesserae (vts) 
-!
-! @date Created: S. Pipolo
-! Modified: L. Biancorosso
-!------------------------------------------------------------------------
-      subroutine out_vts
+      subroutine transform_dipoles
 
        implicit none
 
@@ -409,72 +310,21 @@
 #ifndef MPI
        myrank=0
 #endif
-
-
-
-       open(unit=7,file="ci_pot_scf.inp",status="unknown", &
-          form="formatted")
-
-       write(7,*) this_nts_act
-       i=0
-       j=0
-       ! V00
-       write(7,*) i,j 
-       do its=1,this_nts_act
-        write(7,*) this_vts(its,1,1)-this_vtsn(its),0.d0,this_vtsn(its)
+       do i=1,3
+        mut(i,:,:)=matmul(mut(i,:,:),eigt)
+        mut(i,:,:)=matmul(transpose(eigt),mut(i,:,:))
        enddo
-
-       do i=2,n_ci
-          write(7,*) 0, i-1
-          do its=1,this_nts_act
-             write(7,*) this_vts(its,1,i) 
+       if (Fmag.eq.'mag') then
+          do i=1,3
+             lt(i,:,:)=matmul(lt(i,:,:),eigt)
+             lt(i,:,:)=matmul(transpose(eigt),lt(i,:,:))
           enddo
-       enddo
-
-       do i=2,n_ci
-           do j=2,i
-              write(7,*)  i-1, j-1
-              do its=1,this_nts_act
-                 if (i.eq.j) then
-                     write(7,*) this_vts(its,i,j)-this_vtsn(its)
-                 else
-                     write(7,*) this_vts(its,i,j) 
-                 endif
-              enddo
-           enddo
-       enddo
-
-!       open(unit=7,file="ci_pot_scf.inp",status="unknown", &
-!          form="formatted")
-!       write (7,*) this_nts_act
-!       write (7,*) "V0  check Vnuc"
-!       do its=1,this_nts_act
-!        write (7,*) this_vts(its,1,1),0.d0,this_vtsn(its)
-!       enddo
-!       do j=2,n_ci
-!         write(7,*) 0,j-1
-!         do its=1,this_nts_act
-!          write(7,*) this_vts(its,1,j)
-!         enddo
-!       enddo
-       !Vij
-!       do i=2,n_ci
-!          do j=i,n_ci   
-!             write(7,*) i-1,j-1
-!             do its=1,this_nts_act
-!                write(7,*) this_vts(its,i,j)             
-!             enddo
-!          enddo
-!       enddo
-!       close(unit=7)
-       if (myrank.eq.0) write(6,*) "Written out the SCF potentials"
-
+       endif
        return 
-
-      end subroutine out_vts      
+      end subroutine transform_dipoles      
 
 !------------------------------------------------------------------------
-! @brief Transform to the new basis and write out dipole integrals (mut)  
+! @brief write out dipole integrals (mut)  
 !
 ! @date Created: S. Pipolo
 ! Modified: L. Biancorosso 9/23
@@ -483,24 +333,11 @@
 
        implicit none
 
-       integer(i4b) :: its,i,j
+       integer(i4b) :: i,j
 
 #ifndef MPI
        myrank=0
 #endif
-
-       do its=1,3
-        mut(its,:,:)=matmul(mut(its,:,:),eigt_c)
-        mut(its,:,:)=matmul(transpose(eigt_c),mut(its,:,:))
-       enddo
-
-       if (Fmag.eq.'mag') then
-          do its=1,3
-             lt(its,:,:)=matmul(lt(its,:,:),eigt_c)
-             lt(its,:,:)=matmul(transpose(eigt_c),lt(its,:,:))
-          enddo
-       endif
-
 
 ! write out the scf dipoles
        open(unit=7,file="ci_mut_scf.inp",status="unknown", &
@@ -552,15 +389,19 @@
        myrank=0
 #endif
 
-       e_ci=eigv_c
        open(unit=7,file="ci_energy_scf.inp",status="unknown", &
            form="formatted")
+       open(unit=8,file="ci_ini_scf.inp",status="unknown", &
+           form="formatted")
+       write(8,'(f15.8)') one 
        do i=2,n_ci
-        e_ci(i)=e_ci(i)-e_ci(1)
-        write(7,'(A,I6,X,A,f15.8)') 'Root',i-1,':',e_ci(i)/ev_to_au
+       eigv(i)=eigv(i)-eigv(1)
+        write(7,'(A,I6,X,A,f15.8)') 'Root',i-1,':',eigv(i)/ev_to_au
+        write(8,'(f15.8)') zero
        enddo
-       e_ci(1)=0.d0
+       eigv(1)=zero
        close(unit=7)
+       close(unit=8)
        if (myrank.eq.0) then
        write(6,*) "Written out the SCF energies,", &
                " GS has been given zero energy!"

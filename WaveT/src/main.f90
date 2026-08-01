@@ -1,12 +1,12 @@
       program tdcis
 
-       use constants, only: myrank,nproc,ierr_mpi,nthreads
+       use constants
        use readio  
        use spectra
        use dissipation 
        use initialise
        use propagate
-       use interface_tdplas, only: read_medium_input,mpibcast_read_medium,set_global_tdplas_in_wavet
+       use interface_classic, only: read_medium_input,mpibcast_read_medium,set_global_tdplas_in_wavet
 #ifdef OMP
        use omp_lib
 #endif
@@ -15,7 +15,8 @@
 #endif
        implicit none
        integer :: st,current,rate
-       integer :: tc,td
+       real(dbl) :: f00(3)
+       integer :: td, tc
 #ifndef MPI 
        myrank=0
 #endif
@@ -62,17 +63,17 @@
        endif 
 #endif
        ! Fmdm(1:3) means the first three letters of the char flag Fmdm 
-       if (Fmdm.ne."vac") then
-             call set_global_tdplas_in_wavet(dt,Fmdm,mol_cc,n_ci,n_ci_read,c_i, &
-                                             e_ci,mut,fmax,omega,Ffld,n_out,n_f, &
-                                             tdelay,pshift,Fbin,Fopt,&
-                                             restart,n_restart)
-             if (myrank.eq.0) call read_medium_input()
+      if (Fmdm.ne."vac") then
+         call set_global_tdplas_in_wavet(dt,Fmdm,mol_cc,n_ci,n_ci_read,c_i, &
+                                         e_ci,fmax,omega,Ffld,n_out,n_f, &
+                                         tdelay,pshift,Fbin,Fopt,&
+                                         restart,n_restart)
+         if (myrank.eq.0) call read_medium_input()
+      endif
 #ifdef MPI 
           !> Send input data to all the processes
           call mpibcast_read_medium()
 #endif
-       endif
        !> Create the field 
        call init_spectra
 #ifndef MPI 
@@ -81,7 +82,6 @@
              F10.3,"s")') real(current-st)/real(rate)
 #endif
        if (twod.eq.'yes') then
-          call init_propagation
           call print_time
           do td=dstart,ndelay
               do tc=1,12
@@ -91,18 +91,22 @@
                  tdelay(1)=de_delay*td
                  n_f=td
                  nmap=tc
-                 call create_field
+                 ! HOW TO CHANGE THIS -- SILVIO BRANCH CONFLICT
+                 call create_field(f00)
+                 !> Initialize system wavefunction and Hilbert space
+                 call init_Hspace(f00)
                  call prop
               enddo
               call create_2d_map
           enddo
        else
           !> Create the field
-          call create_field
+          ! HOW TO CHANGE THIS -- SILVIO BRANCH CONFLICT
+          call create_field(f00)
           !> Create vector potential from electric field (velocity gauge only)
           if (gauge.eq.'vg') call create_vector_potential ! Added by Manuel Sanchez 2026-04-21
           !> Initialize system wavefunction and Hilbert space
-          call init_propagation
+          call init_Hspace(f00)
           !> Propagate wavefunction
           call prop
        endif

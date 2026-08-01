@@ -19,6 +19,7 @@
         type(dict_entry)  :: dict_Fshape
         type(dict_entry)  :: dict_Finv
         type(dict_entry)  :: dict_Ffind
+        type(dict_entry)  :: dict_Fdum
 
         !MEDIUM
         !namelist
@@ -64,7 +65,7 @@
 
 
         public   dict_Ftest, dict_Fdeb, dict_Fwrite,                                                            &
-                 dict_Fsurf, dict_Fcav, dict_Fshape, dict_Finv, dict_Ffind,                                     &
+                 dict_Fsurf, dict_Fcav, dict_Fshape, dict_Finv, dict_Ffind, dict_Fdum,                          &
                  dict_Fmdm,  dict_Finit, dict_Fpol, dict_Fbem, dict_read_write, dict_Fnorm, dict_bem_sym,       &
                  dict_Feps, dict_typ_prop,                                                                      &
                  dict_Fsoft, dict_Fprop, dict_Fint, dict_Finit_int, dict_Floc, dict_Fmdm_relax, dict_Fmdm_res,  &
@@ -98,10 +99,10 @@
 
 
 
-      call  dict_entry_init(dict_Fmdm, 5,                                                      &
+      call  dict_entry_init(dict_Fmdm, 6,                                                      &
                  [Character(flg) :: "medium_type", "global_medium_Fmdm"],                      &
-                 [Character(flg) :: "nanop", "sol", "quantum_nanop", "quantum_sol", "non"],    &
-                 [Character(flg) :: "cnan", "csol", "qnan", "qsol", "non"])
+                 [Character(flg) :: "nanop", "sol", "nano+sol", "quantum_nanop", "quantum_sol", "non"],    &
+                 [Character(flg) :: "cnan", "csol", "cmix", "qnan", "qsol", "non"])
 
       call  dict_entry_init(dict_Finit, 4,                                              &
                 [Character(flg) :: "medium_init0", "global_medium_Finit"],              &
@@ -113,10 +114,10 @@
                  [Character(flg) :: "charge", "dipole", "non"],                         &
                  [Character(flg) :: "chr", "dip", "non"])
 
-      call  dict_entry_init(dict_Fbem, 3,                                               &
+      call  dict_entry_init(dict_Fbem, 4,                                               &
                  [Character(flg) :: "bem_type", "global_medium_Fbem"],                  &
-                 [Character(flg) :: "diagonal", "standard", "non"],                     &
-                 [Character(flg) :: "diag", "stan", "non"])
+                 [Character(flg) :: "diagonal", "standard", "cpcm", "non"],             &
+                 [Character(flg) :: "diag", "stan", "cpcm", "non"])
 
       call  dict_entry_init(dict_read_write, 3,                                         &
                  [Character(flg) :: "bem_read_write", "global_medium_read_write"],      &
@@ -169,7 +170,10 @@
                  [Character(flg) :: "sphere", "spheroid", "non"],                     &
                  [Character(flg) :: "sphe", "spho", "non"])
 
-
+      call  dict_entry_init(dict_Fdum, 2,                                              &
+                 [Character(flg) :: "dummy_surface", "pedra_surf_Fdum"],              &
+                 [Character(flg) :: "yes", "no"],                        &
+                 [Character(flg) :: "yes", "no"])
 
        !EPS
       call  dict_entry_init(dict_Feps, 5,                                                    &
@@ -182,6 +186,7 @@
                  [Character(flg) :: "propagation_pole", "typ_prop"],                              &
                  [Character(flg) :: "velocity-verlet", "first-order", "second-order", "inversion"],  &
                  [Character(flg) :: "0", "1", "2", "3"])
+
 
 
 

@@ -1,0 +1,12 @@
+CalculationMode = gs
+UnitsOutput = eV_Angstrom
+
+XYZCoordinates = 'H.xyz'
+
+radius = 10.0*angstrom
+spacing = 0.23*angstrom
+
+PCMCalculation = yes
+PCMTDPlasBinding = yes
+
+FromScratch = yes

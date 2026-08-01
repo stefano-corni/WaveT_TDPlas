@@ -38,6 +38,15 @@
 
         end subroutine
 
+        subroutine octopus_error(key)
+          character(*), intent(in)  :: key
+          write(6,*) "ERROR: ", key," value is wrong, not all tdplas values are allowed in octopus calculations"
+#ifdef MPI
+               call mpi_finalize(tp_ierr_mpi)
+#endif
+          stop
+
+        end subroutine
 
         subroutine tdplas_couple_error(key1,key2)
           character(*), intent(in)  :: key1, key2

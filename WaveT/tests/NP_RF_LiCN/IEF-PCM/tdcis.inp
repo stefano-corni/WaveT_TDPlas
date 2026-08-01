@@ -4,8 +4,8 @@ n_ci_read=10
 mol_cc= 0. 0. 0.
 medium='nan'
 n_f=1
-dt=0.2
-n_step=5000 
+dt=0.20
+n_step=5    
 n_out=1
 / 
 

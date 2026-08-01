@@ -9,7 +9,6 @@
 
         use user_input_read_namelist
 
-        use global_quantum, only: quantum_Ffld   !serve per i test
 
         implicit none
 
@@ -88,7 +87,6 @@
         !set local_field. No warning for inconsistency because test!
             if (any(user_input%test_type.eq.test_type_loc)) then
                 user_input%local_field = "local"
-                !quantum_Ffld = 'snd'   ! se non è stato chiamatol'init di interface_qmcode questa var non esiste
             elseif(any(user_input%test_type.eq.test_type_nonloc)) then
                 user_input%local_field = "non"
             end if

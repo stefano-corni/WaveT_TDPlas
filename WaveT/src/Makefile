@@ -1,10 +1,15 @@
-#FC = mpiifort
-FC = gfortran
+FC = mpiifort
+#FC = gfortran
 # open mp flags
  # comment first line and uncommment the second for ifort
 
- OMP= -fopenmp -DOMP
- #OMP= -qopenmp -DOMP
+# Lyra library locations.
+# Environment values override these defaults when exported before make.
+MKL_ROOT ?= /unimore/prod84/SPACK/install/v1.0.2/linux-cascadelake/intel-oneapi-mkl-2022.1.0-ewlaoafkd6gmveta4it3yb4zoem4hu5j/mkl/2022.1.0
+FFTW_ROOT ?= /unimore/prod84/SPACK/install/v1.0.2/linux-cascadelake/fftw-3.3.10-67i4y4carbgguxjesm33o4blzyp4vbya
+
+ #OMP= -fopenmp -DOMP
+ OMP= -qopenmp -DOMP
 
  # mpi flags
 
@@ -16,14 +21,16 @@ FC = gfortran
 
  # actual flags used in the compilation
  #FFLAGS= -O3 ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
- FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+ ###########FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
+ #FFLAGS= -Og -g -Wall -Wextra -pedantic -fimplicit-none -fcheck=all -fbacktrace ${OMP} 
  #FFLAGS= -O3 -ftz -align all ${OMP} ${MPI} -heap-arrays 1024 -check bounds 
+ FFLAGS = -O0 -g -warn all -stand f18 -implicitnone -check all -traceback $(OMP)
 
- # preprocessor flag
+# preprocessor flag
  # comment the first and uncomment the second if compiler is ifort
 
- CPP= -cpp
-#CPP= -fpp
+#CPP= -cpp
+CPP= -fpp
 
 #LIBS = -qmkl -lfftw3 -lm
 #INC = -I/home/coccia/Libs/fftw-3.3.8
@@ -33,7 +40,25 @@ FC = gfortran
 #INC =  -I/usr/include #FOR PADOVA
 
 INC = -I/usr/include/x86_64-linux-gnu
-LIBS = -L/usr/lib/x86_64-linux-gnu -llapack -lblas -lfftw3
+#LIBS = -L/usr/lib/x86_64-linux-gnu -llapack -lblas -lfftw3
+
+#LIBS = \
+#-L$(MKL_ROOT)/lib/intel64 \
+#-Wl,--start-group \
+#-lmkl_intel_lp64 \
+#-lmkl_sequential \
+#-lmkl_core \
+#-Wl,--end-group
+#WAVET_LIBS = -L$(MKL_ROOT)/lib/intel64 -qmkl=sequential -L$(FFTW_ROOT)/lib -lfftw3 -lpthread -lm -ldl
+
+MATMUL_DIR = /unimore/prod84/SPACK/install/v1.0.2/linux-cascadelake/intel-oneapi-compilers-2022.1.0-zo47tclpnbuy6dzylce424b3gff4zux5/compiler/2022.1.0/linux/compiler/lib/intel64_lin
+
+WAVET_LIBS = -L$(MATMUL_DIR) -lmatmul \
+             -L$(MKL_ROOT)/lib/intel64 \
+             -qmkl=sequential \
+             -L$(FFTW_ROOT)/lib \
+             -lfftw3 -lpthread -lm -ldl
+
 LIBSPAR= #-L/opt/scali/lib64 -lfmpi -lmpi
 INCPAR= #-I/opt/scali/include64 -I/local/home/corni/emanuele/fftw-3.3.4/include/
 
@@ -44,7 +69,7 @@ TOOLSPATH=tools
 
 # objects
 
-WAVETOBJ = random.o constants.o readio.o spectra.o interface_tdplas.o scf.o QM_coupling.o dissipation.o initialise.o propagate.o
+WAVETOBJ = random.o constants.o readio.o spectra.o  WTMathTools.o interface_classic.o scf.o QM_coupling.o dissipation.o initialise.o propagate.o
 OBJ= $(WAVETOBJ) main.o
 OBJ_SPECTRA= $(WAVETOBJ) main_spectra.o
 OBJ_VIB= random.o constants.o readio.o $(TOOLSPATH)/vib.o $(TOOLSPATH)/vib_tool.o
@@ -65,7 +90,7 @@ ifeq ($(TDPLASLINK),YES)
 
 # tdplas directory
 
-TDPLAS= ../../TDPlas/src/
+TDPLAS= ../../TDPlas/src
 
 # tdplas library file
 
@@ -91,28 +116,28 @@ $(BINPATH):
 	mkdir $(BINPATH)
 
 $(BINPATH)/make_spectra.x: main_spectra.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_SPECTRA) $(TDPLASLIB) $(LIB_CURIE) $(LIBS) $(LIBSF)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_SPECTRA) $(TDPLASLIB) $(LIB_CURIE) $(WAVET_LIBS) $(LIBSF)
 
 $(BINPATH)/WaveT-serial.x: main.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(TDPLASLIB) $(WAVET_LIBS) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/WaveT-parallel.x: main.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(INCPAR) $(TDPLASLIB) $(LIBS) $(LIBSPAR) $(LIBSF) $(LIB_CURIE)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(INCPAR) $(TDPLASLIB) $(WAVET_LIBS) $(LIBSPAR) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/make_vib.x: $(OBJ_VIB)
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_VIB)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_VIB) $(WAVET_LIBS)
 
 $(BINPATH)/make_coherence.x: $(OBJ_COH)
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_COH)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_COH) $(WAVET_LIBS)
 
 $(BINPATH)/make_2dfft.x: $(OBJ_FFT)
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_FFT) $(LIBS) $(LIBSF) $(LIB_CURIE)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_FFT) $(WAVET_LIBS) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/make_pop_coh.x: $(OBJ_POP_COH)
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_POP_COH)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_POP_COH) $(WAVET_LIBS)
 
 $(BINPATH)/make_nucl_wavep.x: $(OBJ_NUCL)
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_NUCL)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_NUCL) $(WAVET_LIBS)
 
 clean:
 	rm -f *.o *.mod *.il *.optrpt $(BINPATH)/*.x $(TOOLSPATH)/*.o $(TOOLSPATH)/*.mod $(TOOLSPATH)/*.il $(TOOLSPATH)/*.optrpt
@@ -126,7 +151,7 @@ random.o: random.f90
 constants.o: constants.f90
 	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
-interface_tdplas.o: interface_tdplas.f90
+interface_classic.o: interface_classic.f90
 	$(FC) $(CPP) $(TDPLASPP) $(FFLAGS) $(INC) $(TDPLASINC) -c $< -o $@
 
 readio.o: readio.f90
@@ -174,31 +199,36 @@ main.o: main.f90
 main_spectra.o: main_spectra.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
+WTMathTools.o: WTMathTools.f90
+	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
+
 # dependencies
 
 random.o:
 
 constants.o:
 
-interface_tdplas.o: constants.o
+WTMathTools.o: readio.o constants.o
+
+interface_classic.o: constants.o WTMathTools.o
 
 readio.o: random.o
 
 spectra.o: readio.o
 
-QM_coupling.o: constants.o interface_tdplas.o 
+QM_coupling.o: constants.o readio.o interface_classic.o 
 
-scf.o: constants.o readio.o interface_tdplas.o 
+scf.o: constants.o readio.o interface_classic.o 
 
-initialise.o: constants.o readio.o interface_tdplas.o scf.o QM_coupling.o
+initialise.o: constants.o readio.o QM_coupling.o scf.o 
 
-dissipation.o: random.o constants.o readio.o interface_tdplas.o
+dissipation.o: random.o constants.o readio.o interface_classic.o
 
-propagate.o: random.o spectra.o dissipation.o interface_tdplas.o initialise.o
+propagate.o: random.o spectra.o dissipation.o interface_classic.o initialise.o
 
-main_spectra.o: readio.o spectra.o interface_tdplas.o
+main_spectra.o: readio.o spectra.o interface_classic.o
 
-main.o: constants.o readio.o spectra.o initialise.o dissipation.o propagate.o interface_tdplas.o
+main.o: constants.o readio.o spectra.o initialise.o dissipation.o propagate.o interface_classic.o
 
 vib.o: readio.o
 

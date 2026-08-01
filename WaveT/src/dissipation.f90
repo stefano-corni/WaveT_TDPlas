@@ -2,7 +2,7 @@ module dissipation
   use constants   
   use readio
   use random
-  use interface_tdplas, only: set_q0charges,this_Fmdm_relax
+  use interface_classic, only: set_q0charges,this_Fmdm_relax
 #ifdef MPI
       use mpi
 #endif
@@ -72,7 +72,7 @@ module dissipation
       do i=2,nci
          if (Fdis_rel.eq."dip") then
             rate = nr_gam(i-1)*tmom2(i-1)
-         elseif (Fdis_rel.eq."mat") then
+         else
             rate = nr_gam(i-1)
          endif
          h_dis(i) = h_dis(i) + rate
@@ -83,7 +83,7 @@ module dissipation
             k=k+1
             if (Fdis_rel.eq."dip") then
                rate = nr_gam(k)*tmom2(k)
-            elseif (Fdis_rel.eq."mat") then
+            else 
                rate = nr_gam(k)
             endif
             h_dis(i) = h_dis(i) + rate
@@ -110,7 +110,7 @@ module dissipation
 ! S_alpha = sqrt(nr_gam_alpha) d_(alpha,0)  |Phi_0> <Phi_alpha|
          if (Fdis_rel.eq."dip") then
             rate = nr_gam(i-1)*tmom2(i-1)
-         elseif (Fdis_rel.eq."mat") then
+         else 
             rate = nr_gam(i-1)
          endif
          h_dis(i) = h_dis(i) + rate
@@ -238,7 +238,7 @@ module dissipation
             dnr = dnr + nr_gam(i)*weight
             pjump(i+nf) = nr_gam(i)*weight
 !      elseif (nr_typ.eq.1) then
-         elseif (Fdis_rel.eq."mat") then
+         else
             dnr = dnr + nr_gam(i)*tmp**2
             pjump(i+nf) = nr_gam(i)*tmp**2
          endif
@@ -259,7 +259,7 @@ module dissipation
                    dnr = dnr + nr_gam(ik(j,i))*weight
                    pjump(ik(j,i)+nf) = nr_gam(ik(j,i))*weight
 !      elseif (nr_typ.eq.1) then
-               elseif (Fdis_rel.eq."mat") then
+               else
                    !dnr = dnr + nr_gam(k)*tmp**2
                    !pjump(k+nf) = nr_gam(k)*tmp**2
                    dnr = dnr + nr_gam(ik(j,i))*tmp**2
@@ -281,7 +281,7 @@ module dissipation
                    dnr = dnr + nr_gam(ik(j,i))*weight
                    pjump(ik(j,i)+nf) = nr_gam(ik(j,i))*weight
 !      elseif (nr_typ.eq.1) then
-               elseif (Fdis_rel.eq."mat") then
+               else
                    !dnr = dnr + nr_gam(k)*tmp**2
                    !pjump(k+nf) = nr_gam(k)*tmp**2
                    dnr = dnr + nr_gam(ik(j,i))*tmp**2
@@ -342,7 +342,7 @@ module dissipation
          if (Fdis_rel.eq."dip") then
             dnr = dnr + nr_gam(i)*weight
 !      elseif (nr_typ.eq.1) then
-         elseif (Fdis_rel.eq."mat") then
+         else
             dnr = dnr + nr_gam(i)*tmp**2
          endif
          pjump(i) = sp_gam(i)*weight
@@ -350,7 +350,7 @@ module dissipation
          if (Fdis_rel.eq."dip") then
             pjump(i+nexc) = nr_gam(i)*weight
 !      elseif (nr_typ.eq.1) then
-         elseif (Fdis_rel.eq."mat") then
+         else
             pjump(i+nexc) = nr_gam(i)*tmp**2
          endif
       enddo

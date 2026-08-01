@@ -16,12 +16,12 @@ module interface_tdplas
                         do_field_from_charges,out_gcharges,get_qr_fr,&
 ! used in scf
                         BEM_W2,global_sys_Ftest,drudel_eps_w0,drudel_eps_A,BEM_Modes,pedra_surf_spheres,&
-                        do_BEM_quant,do_vts_from_dip,deallocate_BEM_public,global_qmodes_nmodes,&
+                        do_BEM_quant,deallocate_BEM_public,global_qmodes_nmodes,&
                         global_qmodes_qmmodes,&
 ! used by QM_coupling 
                         q0,quantum_vts,pedra_surf_n_tessere,global_prop_Fprop,global_prop_Fint,&
                         pedra_surf_tessere,global_prop_Finit_int,pedra_surf_n_spheres,global_medium_Fbem,&
-                        global_sys_Fdeb 
+                        global_sys_Fdeb, set_mu_tp
 ! used only here in interface_tdplas
                         
 #endif
@@ -89,7 +89,7 @@ module interface_tdplas
              do_BEM_quant_in_wavet,do_vts_from_dip_in_wavet,&
              this_Fmop,this_imod,this_nprint,this_max_mod_todiag,deallocate_BEM_public_in_wavet,&
              this_qmmodes,this_nmodes
-! used by QM_coupling 
+! used by QM_coupling
       contains
   
       ! begin - wrapper subroutines
@@ -126,14 +126,13 @@ module interface_tdplas
         return
       end subroutine get_medium_dip
      
- 
 !------------------------------------------------------------------------
 ! @brief Read medium input 
 !
 ! @date Created   : S. Pipolo 27/9/17 
 ! Modified  :  E. Coccia 22/11/17
 !------------------------------------------------------------------------
-      subroutine read_medium_input
+            subroutine read_medium_input
 
         implicit none
         integer :: ii,shap(3), nthr
@@ -198,7 +197,6 @@ module interface_tdplas
 #endif
         return
       end subroutine read_medium_input
-      
       
 !------------------------------------------------------------------------
 ! @brief Get energies 
@@ -306,6 +304,9 @@ module interface_tdplas
         integer(i4b), intent(in) :: i
 
 #ifdef TDPLAS
+
+        ! SP 230916: added to perform tests on the local/reaction field
+        if(global_sys_Ftest.eq."s-r".or.global_sys_Ftest.eq."n-r") call set_mu_in_wavet(mut(:,1,1)) !Only for debug purposes
         if(this_Fprop.eq."dip") then
          ! propagating medium with molecular dipole and external field
          call prop_mdm(i, mu_t = mu, f_tp = f, h_int = h)
@@ -347,8 +348,17 @@ module interface_tdplas
         return
 
       end subroutine prop_medium
-      
-     
+
+      subroutine set_mu_in_wavet(mu)
+
+      real(dbl),intent(in) :: mu(3)
+
+      call set_mu_tp(mu)
+
+      return 
+
+      end subroutine set_mu_in_wavet
+           
 !------------------------------------------------------------------------
 ! @brief Finalize medium 
 !
@@ -396,9 +406,8 @@ module interface_tdplas
 ! Modified  :  
 !------------------------------------------------------------------------
       subroutine set_global_tdplas_in_wavet(this_dt,this_mdm,this_mol_cc,this_n_ci,this_n_ci_read,this_c_i,this_e_ci,this_mut,&
-				                                    this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
+	                                    this_fmax,this_omega,this_Ffld,this_n_out,this_n_f,this_tdelay,this_pshift,&
                                             this_Fbin,this_Fopt,this_res,this_n_res)
-
         implicit none
 
         real(dbl)     , intent(in) :: this_dt				         ! time step
@@ -495,6 +504,7 @@ module interface_tdplas
       subroutine do_vts_from_dip_in_wavet
 
        implicit none
+
 #ifdef TDPLAS
        call do_vts_from_dip
        this_vts=quantum_vts
@@ -503,6 +513,37 @@ module interface_tdplas
 #endif
 
       end subroutine do_vts_from_dip_in_wavet
+
+!------------------------------------------------------------------------
+! @brief Compute (transition) BEM potentials from dipoles
+!
+! @date Created: S. Pipolo
+! Modified:
+!------------------------------------------------------------------------
+      subroutine do_vts_from_dip
+
+       implicit none
+
+       integer(4) :: i,j,its
+       real(dbl)  :: diff(3),dist,vts_dip
+
+       do its=1,this_nts_act
+          diff(1)=(mol_cc(1)-this_cts_act(its)%x)
+          diff(2)=(mol_cc(2)-this_cts_act(its)%y)
+          diff(3)=(mol_cc(3)-this_cts_act(its)%z)
+          dist=sqrt(dot_product(diff,diff))
+          do i=1,n_ci
+             do j=i,n_ci
+                vts_dip=-dot_product(mut(:,j,i),diff)/dist**3
+                this_vts(its,j,i)=vts_dip
+                this_vts(its,j,i)=vts_dip
+             enddo
+          enddo
+       enddo
+
+       return
+
+      end subroutine do_vts_from_dip
 
       subroutine preparing_for_scf_in_wavet(mix,pot_or_mu,q_or_f)
 
