@@ -7,7 +7,6 @@
             use check_global
             use write_header_out_tdplas
             use user_input_and_flags_dictionary
-            use readfile_freq
 
             implicit none
 

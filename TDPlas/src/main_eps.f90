@@ -1,5 +1,8 @@
       program main_eps
       use tdplas
+      use global_tdplas
+      use dielectric_function
+      use readio_tdplas_mod
       implicit none
       integer :: st,current,rate,i
       complex(cmp) :: eps

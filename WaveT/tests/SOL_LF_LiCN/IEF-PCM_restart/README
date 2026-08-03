@@ -1,3 +1,6 @@
-Here we need to write a proper script compare.sh and remove unused files
+In order to run this correctly and compare, copy the rest of the input files from the ./input folder than run the code, e.g.:
 
-SPipolo 21/09/2020
+cp input/* .
+
+../../../bin/WaveT-serial.x < tdcis.inp
+

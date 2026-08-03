@@ -80,10 +80,12 @@ module tdplas
 
   use global_quantum, only: &
        quantum_init, &
-#ifdef QMCODE_wt
+#if QMCODE == wt
        readio_and_init_tdplas_for_wt
-#else
+#elif QMCODE == octopus
        readio_and_init_tdplas_for_octopus
+#elif QMCODE == ocpy   
+       readio_and_init_tdplas_for_ocpy   
 #endif
 
   use MathTools, only: &

@@ -2,7 +2,6 @@
       use tdplas_constants
       use global_tdplas
       use pedra_friends
-      use readfile_freq
       use global_quantum
 #ifdef OMP
       use omp_lib

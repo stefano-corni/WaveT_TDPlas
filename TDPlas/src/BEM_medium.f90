@@ -3,7 +3,7 @@
       use cavity_types
       use global_tdplas
       use global_quantum
-      use readfile_freq
+      use interface_quantum
 
       use pedra_friends
       use sphe_surface
@@ -84,6 +84,9 @@
       real(dbl), allocatable :: BEM_Sm1_dum(:,:)
       real(dbl), allocatable :: BEM_Sdum_act(:,:)       !< Calderon D matrix bridging actual and dummy surface
       real(dbl), allocatable :: BEM_Z(:,:)              !< BEM matrix to translate actual to dummy charges
+
+      real(dbl), allocatable :: mu_trans(:)             !< A molecular transition dipole moment
+      real(dbl)              :: tomega                  !< Energy of a molecular state         
 
       save
       private
@@ -268,28 +271,27 @@
          endif
        elseif (global_ext_pert_Ftyp.eq."from_cipot") then
                 call read_molecule_file
-                ! SP 12/06/26 need to read this from file
                 ! call read_gau_out_medium(global_ext_pert_n_ci+1)
+                call get_potential(1,global_ext_pert_nstate+1,pot)
                 !pot=quantum_vts(:,1,global_ext_pert_nstate+1)
-!Silvio commento questo solo per poter compilare e provare, ma bisogna risolvere il conflitto
-!<<<<<<< HEAD
-!=======
-!       elseif (global_ext_pert_Ftyp.eq."raman") then
-!            call read_molecule_file
+       elseif (global_ext_pert_Ftyp.eq."raman") then
+            call read_molecule_file
 !            call read_gau_out_medium(global_ext_pert_n_ci+1)
 !            pot=quantum_vts(:,1,global_ext_pert_nstate+1)
-!            ramanid=70
-!            open(ramanid,file="dipole_max.dat",status="unknown")
-!               do estate=0,global_ext_pert_n_ci
-!                  do istate=0,estate
-!                    pot=quantum_vts(:,istate+1,estate+1)
-!                    call do_charge_freq(pot,pot2,mu_omega,istate,estate,ramanid)
-!                  enddo
-!               enddo
-!            close(ramanid)
-!>>>>>>> interfacing_octopus
+            call get_potential(1,global_ext_pert_n_ci+1,pot)
+            ramanid=70
+            open(ramanid,file="dipole_max.dat",status="unknown")
+               do estate=0,global_ext_pert_n_ci
+                  do istate=0,estate
+                    pot=quantum_vts(:,istate+1,estate+1)
+                    call do_charge_freq(pot,pot2,mu_omega,istate,estate,ramanid)
+                  enddo
+               enddo
+            close(ramanid)
        elseif (global_ext_pert_Ftyp.eq."dipole") then
             call read_molecule_file
+            call get_dipole(1,global_ext_pert_nstate+1,mu_trans)
+            write(*,*) "Transition dipole_moment considered", mu_trans
             call do_pot_from_dip(mu_trans,pot)
 
        endif
@@ -382,6 +384,7 @@
          allocate(BEM_ADtm1(pedra_surf_n_tessere,pedra_surf_n_tessere))
          call read_pole_file
        endif
+       allocate(mu_trans(3))
        if (tp_myrank.eq.0) write(6,*) "BEM correctly initialized"
 
        return
@@ -1782,6 +1785,7 @@
             endif      
             if (global_ext_pert_Ftyp.eq."from_cipot".or.global_ext_pert_Ftyp.eq."dipole") then
               if (global_ext_pert_pl_type.eq."from_cienergy") then
+                call get_energy(global_ext_pert_nstate+1,tomega)
                 if (dielectric_func_omegas(i).gt.(tomega-0.0002).and.dielectric_func_omegas(i).lt.(tomega+0.0002)) then
                   mu_ind_abs= mu_omega
                   mu_ind_emi= mu_omega
@@ -2825,6 +2829,9 @@
          nstate=global_ext_pert_nstate+1
          mu_vac=global_ext_pert_mu_vac
 
+         call get_dipole(1,global_ext_pert_nstate+1,mu_trans)
+         call get_energy(global_ext_pert_nstate+1,tomega)
+         write (6,*) "Energy of the chosen state", tomega
          mu_tot(1) = mu_trans(1)+mu_ind_emi(1)
          mu_tot(2) = mu_trans(2)+mu_ind_emi(2)
          mu_tot(3) = mu_trans(3)+mu_ind_emi(3)

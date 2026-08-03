@@ -9,7 +9,7 @@
       use debye_epsilon
       use MathTools
       use BEM_medium
-      use readfile_freq
+      use interface_quantum
       !xxx just for a test use scf
       use global_quantum
 #ifdef OMP
@@ -783,8 +783,9 @@
          ! same for the local field
          if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z,qx0)
        else
-         qr=q0
-         if(global_medium_Floc.eq."loc") qx=qx0         
+!      Silvio to Gabriel
+         !qr=q0
+         !if(global_medium_Floc.eq."loc") qx=qx0         
        endif
 
        center=zero
@@ -795,13 +796,17 @@
        enddo
        center=center/pedra_surf_n_tessere
 
-       allocate(qx_dip(1:25000,3))
-       qx_dip(1,1)=dot_product(qx_t(:),(pedra_surf_tessere(:)%x-center(1)))
-       if( tp_myrank == 0 ) open(777,file='qx_dipole_x.dat')
-       qx_dip(1,2)=dot_product(qx_t(:),(pedra_surf_tessere(:)%y-center(2)))
-       if( tp_myrank == 0 ) open(776,file='qx_dipole_y.dat')
-       qx_dip(1,3)=dot_product(qx_t(:),(pedra_surf_tessere(:)%z-center(3)))
-       if( tp_myrank == 0 ) open(775,file='qx_dipole_z.dat')
+!      Silvio to Gabriel
+
+       if(global_medium_Floc.eq."loc") then           
+         allocate(qx_dip(1:25000,3))
+         qx_dip(1,1)=dot_product(qx_t(:),(pedra_surf_tessere(:)%x-center(1)))
+         if( tp_myrank == 0 ) open(777,file='qx_dipole_x.dat')
+         qx_dip(1,2)=dot_product(qx_t(:),(pedra_surf_tessere(:)%y-center(2)))
+         if( tp_myrank == 0 ) open(776,file='qx_dipole_y.dat')
+         qx_dip(1,3)=dot_product(qx_t(:),(pedra_surf_tessere(:)%z-center(3)))
+         if( tp_myrank == 0 ) open(775,file='qx_dipole_z.dat')
+       endif
 
        allocate(qr_dip(1:25000,3))
        qr_dip(1,1)=dot_product(qr_t(:),(pedra_surf_tessere(:)%x-center(1)))
@@ -1502,12 +1507,14 @@
          if(global_medium_Floc.eq."loc") qx = qx_tp
        endif
 
-       qx_dip(step,1)=dot_product(qx_tp(:),(pedra_surf_tessere(:)%x-center(1)))
-       qr_dip(step,1)=dot_product(qr_tp(:),(pedra_surf_tessere(:)%x-center(1)))
-       qx_dip(step,2)=dot_product(qx_tp(:),(pedra_surf_tessere(:)%y-center(2)))
-       qr_dip(step,2)=dot_product(qr_tp(:),(pedra_surf_tessere(:)%y-center(2)))
-       qx_dip(step,3)=dot_product(qx_tp(:),(pedra_surf_tessere(:)%z-center(3)))
-       qr_dip(step,3)=dot_product(qr_tp(:),(pedra_surf_tessere(:)%z-center(3)))
+       if(global_medium_Floc.eq."loc") then      
+         qx_dip(step,1)=dot_product(qx_tp(:),(pedra_surf_tessere(:)%x-center(1)))
+         qr_dip(step,1)=dot_product(qr_tp(:),(pedra_surf_tessere(:)%x-center(1)))
+         qx_dip(step,2)=dot_product(qx_tp(:),(pedra_surf_tessere(:)%y-center(2)))
+         qr_dip(step,2)=dot_product(qr_tp(:),(pedra_surf_tessere(:)%y-center(2)))
+         qx_dip(step,3)=dot_product(qx_tp(:),(pedra_surf_tessere(:)%z-center(3)))
+         qr_dip(step,3)=dot_product(qr_tp(:),(pedra_surf_tessere(:)%z-center(3)))
+       endif
 
        if( tp_myrank == 0 .and. mod(step,5000) == 0 ) then
 
@@ -1802,9 +1809,10 @@
        qr_t=qr_tp+f1*dqr_t+f2*fqr_t
        fqr_tp=fqr_t
        dqr_tp=dqr_t
-       write(*,*) 'fqr_t', sum(fqr_t)
-       write(*,*) 'dqr_t', sum(dqr_t)
-       write(*,*) 'qr_t', sum(qr_t)
+       ! Silvio to Gabriel
+       !write(*,*) 'fqr_t', sum(fqr_t)
+       !write(*,*) 'dqr_t', sum(dqr_t)
+       !write(*,*) 'qr_t', sum(qr_t)
 
       ! Local Field
        if(global_medium_Floc.eq."loc") then

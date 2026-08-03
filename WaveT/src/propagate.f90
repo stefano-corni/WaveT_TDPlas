@@ -80,7 +80,15 @@ module propagate
              if (Fmag.eq.'mag') then !MM
               open(file_m,file=name_m,status="unknown",access="append")
              endif
-          elseif (Fres.eq.'Nonr') then
+          else
+             open (file_c,file=name_c,status="unknown",access="append",form="unformatted")   
+             open (file_e,file=name_e,status="unknown",access="append",form="unformatted")
+             open (file_mu,file=name_mu,status="unknown",access="append",form="unformatted")  
+             if (Fmag.eq.'mag') then !MM
+              open(file_m,file=name_m,status="unknown",access="append",form="unformatted")
+             endif
+          endif
+       elseif (Fres.eq.'Nonr') then
              if (Fbin.ne.'bin') then
                 open (file_c,file=name_c,status="unknown")
                 open (file_e,file=name_e,status="unknown")
@@ -96,7 +104,6 @@ module propagate
                    open(file_m,file=name_m,status="unknown",form="unformatted")
                 endif
              endif
-          endif
        else
           !write(name_c,'(a9,i0,a1,i0,a4)') "mu_t_esa_",nmap,"_",n_f,".dat"
           write(name_mu,'(a5,i0,a1,i0,a4)') "mu_t_",nmap,"_",n_f,".dat"
@@ -196,11 +203,13 @@ module propagate
           if (Fdis.ne."nodis") call random_seq(restart_i)
        endif
        ! SP 19/06/26: added call for ropagation at step 1
-       if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") then
-         i=1
-         !write(*,*) "mu_prev ", mu_prev
-         !stop
-         call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+       if (Fres.ne.'Yesr') then
+         if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") then
+           i=1
+           !write(*,*) "mu_prev ", mu_prev
+           !stop
+           call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
+         endif
        endif
 ! EC 20/12/16
 ! Dissipation according to the Markovian SSE (eq 25 J. Phys: Condens.

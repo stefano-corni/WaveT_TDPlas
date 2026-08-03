@@ -1,15 +1,16 @@
-FC = mpiifort
-#FC = gfortran
+#FC = mpiifort
+FC = gfortran
 # open mp flags
  # comment first line and uncommment the second for ifort
 
 # Lyra library locations.
 # Environment values override these defaults when exported before make.
-MKL_ROOT ?= /unimore/prod84/SPACK/install/v1.0.2/linux-cascadelake/intel-oneapi-mkl-2022.1.0-ewlaoafkd6gmveta4it3yb4zoem4hu5j/mkl/2022.1.0
-FFTW_ROOT ?= /unimore/prod84/SPACK/install/v1.0.2/linux-cascadelake/fftw-3.3.10-67i4y4carbgguxjesm33o4blzyp4vbya
+#MKL_ROOT ?= /unimore/prod84/SPACK/install/v1.0.2/linux-cascadelake/intel-oneapi-mkl-2022.1.0-ewlaoafkd6gmveta4it3yb4zoem4hu5j/mkl/2022.1.0
+#FFTW_ROOT ?= /unimore/prod84/SPACK/install/v1.0.2/linux-cascadelake/fftw-3.3.10-67i4y4carbgguxjesm33o4blzyp4vbya
 
- #OMP= -fopenmp -DOMP
- OMP= -qopenmp -DOMP
+ OMP= -fopenmp -DOMP
+ FFLAGS= -Og -g -Wall -Wextra -pedantic -fimplicit-none -fcheck=all -fbacktrace -fcheck-array-temporaries ${OMP} -fbounds-check #debug flag list to check coherence of array dimension 
+ #OMP= -qopenmp -DOMP
 
  # mpi flags
 
@@ -24,13 +25,13 @@ FFTW_ROOT ?= /unimore/prod84/SPACK/install/v1.0.2/linux-cascadelake/fftw-3.3.10-
  ###########FFLAGS= -Og -g ${OMP} #$(FFLAGS_HYD_PAR) -fpp #$(OMP) -pg
  #FFLAGS= -Og -g -Wall -Wextra -pedantic -fimplicit-none -fcheck=all -fbacktrace ${OMP} 
  #FFLAGS= -O3 -ftz -align all ${OMP} ${MPI} -heap-arrays 1024 -check bounds 
- FFLAGS = -O0 -g -warn all -stand f18 -implicitnone -check all -traceback $(OMP)
+ #FFLAGS = -O0 -g -warn all -stand f18 -implicitnone -check all -traceback $(OMP)
 
 # preprocessor flag
  # comment the first and uncomment the second if compiler is ifort
 
-#CPP= -cpp
-CPP= -fpp
+CPP= -cpp
+#CPP= -fpp
 
 #LIBS = -qmkl -lfftw3 -lm
 #INC = -I/home/coccia/Libs/fftw-3.3.8
@@ -39,7 +40,7 @@ CPP= -fpp
 #LIBS = -L/share/lib64 -llapack -lblas -lpthread -lfftw3 #FOR PADOVA
 #INC =  -I/usr/include #FOR PADOVA
 
-INC = -I/usr/include/x86_64-linux-gnu
+#INC = -I/usr/include/x86_64-linux-gnu
 #LIBS = -L/usr/lib/x86_64-linux-gnu -llapack -lblas -lfftw3
 
 #LIBS = \
@@ -51,16 +52,20 @@ INC = -I/usr/include/x86_64-linux-gnu
 #-Wl,--end-group
 #WAVET_LIBS = -L$(MKL_ROOT)/lib/intel64 -qmkl=sequential -L$(FFTW_ROOT)/lib -lfftw3 -lpthread -lm -ldl
 
-MATMUL_DIR = /unimore/prod84/SPACK/install/v1.0.2/linux-cascadelake/intel-oneapi-compilers-2022.1.0-zo47tclpnbuy6dzylce424b3gff4zux5/compiler/2022.1.0/linux/compiler/lib/intel64_lin
+#MATMUL_DIR = /unimore/prod84/SPACK/install/v1.0.2/linux-cascadelake/intel-oneapi-compilers-2022.1.0-zo47tclpnbuy6dzylce424b3gff4zux5/compiler/2022.1.0/linux/compiler/lib/intel64_lin
 
-WAVET_LIBS = -L$(MATMUL_DIR) -lmatmul \
+#WAVET_LIBS = -L$(MATMUL_DIR) -lmatmul \
              -L$(MKL_ROOT)/lib/intel64 \
              -qmkl=sequential \
              -L$(FFTW_ROOT)/lib \
              -lfftw3 -lpthread -lm -ldl
 
-LIBSPAR= #-L/opt/scali/lib64 -lfmpi -lmpi
-INCPAR= #-I/opt/scali/include64 -I/local/home/corni/emanuele/fftw-3.3.4/include/
+#LIBSPAR= #-L/opt/scali/lib64 -lfmpi -lmpi
+#INCPAR= #-I/opt/scali/include64 -I/local/home/corni/emanuele/fftw-3.3.4/include/
+
+# INC = -I/usr/include/x86_64-linux-gnu -I/usr/include
+INC = -I/usr/lib/x86_64-linux-gnu
+WAVET_LIBS = -L/usr/lib/x86_64-linux-gnu -llapack -lblas -lfftw3
 
 # executable and tools directories
 
@@ -214,7 +219,7 @@ interface_classic.o: constants.o WTMathTools.o
 
 readio.o: random.o
 
-spectra.o: readio.o
+spectra.o: readio.o constants.o
 
 QM_coupling.o: constants.o readio.o interface_classic.o 
 

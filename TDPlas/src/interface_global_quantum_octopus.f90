@@ -8,7 +8,6 @@
             use write_header_out_tdplas
             use user_input_and_flags_dictionary
             use global_tdplas
-            use readfile_freq
 
 #ifdef MPI
 #ifndef SCALI

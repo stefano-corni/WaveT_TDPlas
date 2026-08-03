@@ -2,7 +2,7 @@
 
 #gnuplot plot.gnu
 
-threshold0=0.000000001
+threshold0=0.00001
 threshold1=0.0003
 
 diff0_medium=$(awk '

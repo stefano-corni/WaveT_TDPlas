@@ -1,5 +1,7 @@
       program tdcis
       use tdplas
+      use BEM_medium
+      use readio_tdplas_mod
       implicit none
       integer :: st,current,rate
 
