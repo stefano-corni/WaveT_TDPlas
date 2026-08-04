@@ -72,38 +72,40 @@ module propagate
        if (Fmag.eq.'mag') then
           write(name_m,'(a4,i0,a4)') "m_t_",n_f,".dat"
        endif
-       if (Fres.eq.'Yesr') then
-          if (Fbin.ne.'bin') then
-             open (file_c,file=name_c,status="unknown",access="append")
-             open (file_e,file=name_e,status="unknown",access="append")
-             open (file_mu,file=name_mu,status="unknown",access="append")
-             if (Fmag.eq.'mag') then !MM
-              open(file_m,file=name_m,status="unknown",access="append")
-             endif
-          else
-             open (file_c,file=name_c,status="unknown",access="append",form="unformatted")   
-             open (file_e,file=name_e,status="unknown",access="append",form="unformatted")
-             open (file_mu,file=name_mu,status="unknown",access="append",form="unformatted")  
-             if (Fmag.eq.'mag') then !MM
-              open(file_m,file=name_m,status="unknown",access="append",form="unformatted")
-             endif
-          endif
-       elseif (Fres.eq.'Nonr') then
-             if (Fbin.ne.'bin') then
-                open (file_c,file=name_c,status="unknown")
-                open (file_e,file=name_e,status="unknown")
-                open (file_mu,file=name_mu,status="unknown")
-                if (Fmag.eq.'mag') then !MM
-                 open(file_m,file=name_m,status="unknown")
-                endif
-             else
-                open(file_c,file=name_c,status="unknown",form="unformatted")
-                open(file_e,file=name_e,status="unknown",form="unformatted")
-              open(file_mu,file=name_mu,status="unknown",form="unformatted")
-                if (Fmag.eq.'mag') then !MM
-                   open(file_m,file=name_m,status="unknown",form="unformatted")
-                endif
-             endif
+       if (twod.eq.'no') then
+         if (Fres.eq.'Yesr') then
+            if (Fbin.ne.'bin') then
+               open (file_c,file=name_c,status="unknown",access="append")
+               open (file_e,file=name_e,status="unknown",access="append")
+               open (file_mu,file=name_mu,status="unknown",access="append")
+               if (Fmag.eq.'mag') then !MM
+                open(file_m,file=name_m,status="unknown",access="append")
+               endif
+            else
+               open (file_c,file=name_c,status="unknown",access="append",form="unformatted")   
+               open (file_e,file=name_e,status="unknown",access="append",form="unformatted")
+               open (file_mu,file=name_mu,status="unknown",access="append",form="unformatted")  
+               if (Fmag.eq.'mag') then !MM
+                open(file_m,file=name_m,status="unknown",access="append",form="unformatted")
+               endif
+            endif
+         elseif (Fres.eq.'Nonr') then
+               if (Fbin.ne.'bin') then
+                  open (file_c,file=name_c,status="unknown")
+                  open (file_e,file=name_e,status="unknown")
+                  open (file_mu,file=name_mu,status="unknown")
+                  if (Fmag.eq.'mag') then !MM
+                   open(file_m,file=name_m,status="unknown")
+                  endif
+               else
+                  open(file_c,file=name_c,status="unknown",form="unformatted")
+                  open(file_e,file=name_e,status="unknown",form="unformatted")
+                open(file_mu,file=name_mu,status="unknown",form="unformatted")
+                  if (Fmag.eq.'mag') then !MM
+                     open(file_m,file=name_m,status="unknown",form="unformatted")
+                  endif
+               endif
+         endif
        else
           !write(name_c,'(a9,i0,a1,i0,a4)') "mu_t_esa_",nmap,"_",n_f,".dat"
           write(name_mu,'(a5,i0,a1,i0,a4)') "mu_t_",nmap,"_",n_f,".dat"
