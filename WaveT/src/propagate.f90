@@ -66,13 +66,13 @@ module propagate
        real :: start, finish
 
 ! OPEN FILES
-       write(name_c,'(a4,i0,a4)') "c_t_",n_f,".dat"
-       write(name_e,'(a4,i0,a4)') "e_t_",n_f,".dat"
        write(name_mu,'(a5,i0,a4)') "mu_t_",n_f,".dat"
-       if (Fmag.eq.'mag') then
-          write(name_m,'(a4,i0,a4)') "m_t_",n_f,".dat"
-       endif
        if (twod.eq.'no') then
+         write(name_c,'(a4,i0,a4)') "c_t_",n_f,".dat"
+         write(name_e,'(a4,i0,a4)') "e_t_",n_f,".dat"
+         if (Fmag.eq.'mag') then
+            write(name_m,'(a4,i0,a4)') "m_t_",n_f,".dat"
+         endif
          if (Fres.eq.'Yesr') then
             if (Fbin.ne.'bin') then
                open (file_c,file=name_c,status="unknown",access="append")
