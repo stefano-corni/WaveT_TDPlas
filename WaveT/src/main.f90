@@ -69,11 +69,11 @@
                                          tdelay,pshift,Fbin,Fopt,&
                                          restart,n_restart)
          if (myrank.eq.0) call read_medium_input()
-      endif
 #ifdef MPI 
           !> Send input data to all the processes
           call mpibcast_read_medium()
 #endif
+      endif
        !> Create the field 
        call init_spectra
 #ifndef MPI 
@@ -94,6 +94,7 @@
                  ! HOW TO CHANGE THIS -- SILVIO BRANCH CONFLICT
                  call create_field(f00)
                  !> Initialize system wavefunction and Hilbert space
+                 f00=zero
                  call init_Hspace(f00)
                  call prop
               enddo

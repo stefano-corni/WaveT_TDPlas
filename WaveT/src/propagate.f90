@@ -66,8 +66,8 @@ module propagate
        real :: start, finish
 
 ! OPEN FILES
-       write(name_mu,'(a5,i0,a4)') "mu_t_",n_f,".dat"
        if (twod.eq.'no') then
+         write(name_mu,'(a5,i0,a4)') "mu_t_",n_f,".dat"
          write(name_c,'(a4,i0,a4)') "c_t_",n_f,".dat"
          write(name_e,'(a4,i0,a4)') "e_t_",n_f,".dat"
          if (Fmag.eq.'mag') then
