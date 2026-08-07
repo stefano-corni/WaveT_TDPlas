@@ -2,12 +2,13 @@
 
 #gnuplot plot.gnu
 
-t0=0.000000001
+t0=0.0000000001
 
 d1=$(awk 'BEGIN{d2=0}
          FNR==NR&&FNR>1{a[FNR-1]=$1;next} 
          FNR!=NR&&FNR>1{d2+=($1-a[FNR-1])^2}
          END{print d2/(FNR-1)}' out/np_bem.mat np_bem.mat)
+echo $d1
 
 d2=$(awk 'BEGIN{d2=0}
          FNR==NR&&FNR>1{a[FNR-1]=$1;next} 

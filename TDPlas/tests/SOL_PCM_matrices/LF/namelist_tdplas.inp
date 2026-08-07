@@ -1,4 +1,5 @@
 &SYSTEM
+out_level='high'
 /
 
 &OUT_MATRIX

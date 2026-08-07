@@ -83,6 +83,8 @@
 #endif
        if (twod.eq.'yes') then
           call print_time
+          f00=zero
+          call init_Hspace(f00)
           do td=dstart,ndelay
               do tc=1,12
                  pshift(1)=map_phase(tc,1)
@@ -91,18 +93,14 @@
                  tdelay(1)=de_delay*td
                  n_f=td
                  nmap=tc
-                 ! HOW TO CHANGE THIS -- SILVIO BRANCH CONFLICT
                  call create_field(f00)
                  !> Initialize system wavefunction and Hilbert space
-                 f00=zero
-                 call init_Hspace(f00)
                  call prop
               enddo
               call create_2d_map
           enddo
        else
           !> Create the field
-          ! HOW TO CHANGE THIS -- SILVIO BRANCH CONFLICT
           call create_field(f00)
           !> Create vector potential from electric field (velocity gauge only)
           if (gauge.eq.'vg') call create_vector_potential ! Added by Manuel Sanchez 2026-04-21
