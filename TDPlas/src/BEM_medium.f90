@@ -1128,7 +1128,8 @@
            endif
          else
            K0=zero
-           if((global_medium_Floc.eq.'loc').and.(global_medium_Fmdm.eq.'csol')) K0x=zero
+           if((global_medium_Floc.eq.'loc').and.&
+              (global_medium_Fmdm.eq.'csol')) K0x=zero
          endif
          if(debye_eps_d.ne.one) then
            fac_epsd=(debye_eps_d+one)/(debye_eps_d-one)
@@ -1140,7 +1141,8 @@
            endif
          else
            Kd=zero
-           if((global_medium_Floc.eq.'loc').and.(global_medium_Fmdm.eq.'csol')) Kdx=zero
+           if((global_medium_Floc.eq.'loc').and.&
+              (global_medium_Fmdm.eq.'csol')) Kdx=zero
          endif
          ! SP: Need to check the signs of the second part for a debye medium localized in space
          fact1(:)=((twp-sgn*BEM_L(:))*debye_eps_0+twp+BEM_L(:))/ &
