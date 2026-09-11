@@ -1,0 +1,56 @@
+SFG/DFG tests for WaveT
+=======================
+
+This directory holds regression tests for the SFG/DFG binary
+(`make_sfg_dfg.x`), including multi-angle polarization sampling (`Nangles`).
+
+Contents
+--------
+- `test_Nangles/`  Minimal Nangles smoke test (tiny CI, short trajectory).
+  Designed to run quickly inside the global `make` test suite.
+
+How to run everything
+---------------------
+From the repository's `WaveT/tests` directory:
+
+```bash
+cd WaveT/tests
+export WAVET_PROGRAM_PATH=$(cd ../bin && pwd)
+
+# Compiler modules depend on your cluster; example (Intel MPI):
+module purge
+module load slurm
+module load intel-2024.2.0/intel_Comps-2024.2
+module load intel-2024.2.0/intel_MPI-2024.2
+module load intel-2024.2.0/intel_MKL-2024.2
+export OMP_NUM_THREADS=1
+export I_MPI_FABRICS=shm:ofi
+
+make            # runs all test modules, including SFG_DFG
+```
+
+How to run only SFG/DFG
+-----------------------
+```bash
+cd WaveT/tests/SFG_DFG
+export WAVET_PROGRAM_PATH=$(cd ../../bin && pwd)
+# load the same modules as above
+make
+```
+
+Or a single case:
+```bash
+cd WaveT/tests/SFG_DFG/test_Nangles
+export WAVET_PROGRAM_PATH=$(cd ../../../bin && pwd)
+make
+cat test_report.txt
+```
+
+Notes
+-----
+- The SFG/DFG binary needs a multiple of 4 MPI ranks (four Stokes signs).
+  The harness launches `mpirun -np 4 make_sfg_dfg.x`.
+- Numerical references live in `test_Nangles/ref/` (not only in `out/`),
+  because the binary itself writes into `out/`.
+- Large production runs (big CI, long `n_step`, batch submission) are outside
+  this lightweight suite.

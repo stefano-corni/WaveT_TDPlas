@@ -87,6 +87,14 @@ case "$type" in
 (spectra)
   $mpi $wavet/make_spectra.x < tdcis.inp > out.dat 2> err
   ;;
+(sfgdfg)
+  #### SFG/DFG: four-sign Stokes grid needs a multiple of 4 MPI ranks
+  test -f input_WaveT || {
+  echo "FAILURE: input_WaveT file not present"
+  exit 1
+  }
+  mpirun -np 4 $wavet/make_sfg_dfg.x < input_WaveT > out.dat 2> err
+  ;;
 (*) echo "FAILURE: unknown test type" ; exit 1 ;;
 esac
 exitcode="$?"
