@@ -145,7 +145,7 @@
             !src=1./Foutp(i)
             !absD=aimag(Doutp(i)*src)
             !refD=real(Doutp(i)*src)
-            write(15,'(3e20.10)') (i-1)*dw, absD, refD
+            write(15,'(4e20.10)') (i-1)*dw, absD, refD, (4*pi/clight)*(i-1)*dw*absD
           enddo 
           close(unit=15)
 
@@ -172,7 +172,7 @@
                 !src=im/((i-1)*dw*Foutp(i))
                 !absD=aimag(Moutp(i)*src)
                 !refD=real(Moutp(i)*src)
-                write(15,'(3e20.10)') (i-1)*dw, absD, refD
+            write(15,'(4e20.10)') (i-1)*dw, absD, refD, (4*pi/clight)*(i-1)*dw*absD
              enddo
              close(15)
           endif

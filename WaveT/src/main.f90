@@ -13,6 +13,7 @@
 #ifdef MPI
       use mpi
 #endif
+
        implicit none
        integer :: st,current,rate
        integer :: tc,td
