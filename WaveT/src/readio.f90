@@ -102,12 +102,6 @@
       character(flg) :: all_coh ! flags for the postprocessing input
       character(flg) :: write_bin ! flags for the postprocessing input
       character(flg) :: twod ! flags for activate 2d calculation   
-      real(dbl) :: lambda    ! SFG/DFG field amplitude scale factor ! Created by Manuel Sanchez 2026-07-05
-      integer(i4b) :: N1     ! SFG/DFG input parameter 1 ! Created by Manuel Sanchez 2026-07-05
-      integer(i4b) :: N2     ! SFG/DFG input parameter 2 ! Created by Manuel Sanchez 2026-07-05
-      integer(i4b) :: Nangles ! SFG/DFG spherical polarization grid ! Created by Manuel Sanchez 2026-07-10
-      character(flg) :: Ffullout ! SFG/DFG write all .dat files (yes) or mu_t_* only (no) ! Created by Manuel Sanchez 2026-07-11
-      character(flg) :: Fsfg  ! Flag for SFG/DFG four-run mode ! Created by Manuel Sanchez 2026-07-05
       integer(i4b) :: iseed  ! seed for random number generator
       integer(i4b) :: nexc   ! number of excited states
       integer(i4b) :: nrel   ! number of relaxation channels
@@ -146,7 +140,7 @@
              write_bin,Ip,prop_type,twod,de_delay,ndelay,gauge,&
              Fmag,lt,e_dir,m_i_prev,m_i_prev2,map_phase,t_ap,&
              m_i_prev3,m_i_prev4,m_i_prev5,Flig,f0,pini,pfin,&
-             mpibcast_twod,lambda,N1,N2,Nangles,Ffullout,Fsfg ! Created by Manuel Sanchez 2026-07-05
+             mpibcast_twod 
              
 !
       contains
@@ -170,7 +164,7 @@
        !Molecular parameters 
        namelist /general/n_ci_read,n_ci,mol_cc,n_f,medium,restart,full,& 
                          dt,n_step,n_out,propa,n_restart,lsim,absorber,&
-                         binary,ncit,Ip,twod,de_delay,dstart,ndelay,Fsfg
+                         binary,ncit,Ip,twod,de_delay,dstart,ndelay
        !External field paramaters
       namelist /field/ Ffld,t_mid,sigma,omega,radiative,iseed,fmax, &
                        npulse,tdelay,pshift,Fmag,e_dir,Flig,f0,pini,pfin,t_ap,gauge ! Added by Manuel Sanchez 2026-04-21
@@ -178,8 +172,6 @@
        namelist /sse/ dissipative,idep,dis_prop,prop_type,nrnd,tdis,nr_typ,krnd,out_sse
        !Namelist spectra
        namelist /spectra/ start,tau,dir_ft
-       !Namelist SFG/DFG ! Created by Manuel Sanchez 2026-07-05
-       namelist /sfg_dfg/ lambda,N1,N2,Nangles,Ffullout
        !Namelist for postprocessing
        namelist /pop_coh/ tar,all_pop,all_coh,pop,coh,write_bin
 
@@ -238,11 +230,6 @@
        call init_nml_spectra()
        read(*,nml=spectra) 
        call write_nml_spectra() 
-
-       ! SFG/DFG namelist (optional for standard WaveT runs) ! Created by Manuel Sanchez 2026-07-05
-       call init_nml_sfg_dfg()
-       read(*, nml=sfg_dfg, iostat=i)
-       if (i.eq.0) call write_nml_sfg_dfg()
 
        if (Fdis.ne."nodis") call read_dis_params
 
@@ -846,8 +833,6 @@
        ncit=150
        ! Iionization energy (effective only when absorber='y')
        Ip=0.d0
-       ! SFG/DFG four-run mode ! Added by Manuel Sanchez 2026-07-07
-       Fsfg = 'no'
 
        return
 
@@ -932,25 +917,6 @@
        return
 
       end subroutine init_nml_spectra
-
-!------------------------------------------------------------------------
-! @brief Initialize variables in the namelist SFG/DFG
-!
-! @date Created   : Manuel Sanchez 2026-07-05
-! Modified  :
-! @param lambda,N1,N2,Nangles,Ffullout
-!------------------------------------------------------------------------
-      subroutine init_nml_sfg_dfg()
-
-       lambda = 1.d-3
-       N1 = 3
-       N2 = 3
-       Nangles = 1
-       Ffullout = 'yes'
-
-       return
-
-      end subroutine init_nml_sfg_dfg
 
 !------------------------------------------------------------------------                                                                                                                     
 ! @brief Initialize variables in the namelist for 2D spectra                                                                                                                                  
@@ -1151,12 +1117,6 @@
            case ('no','No','NO')
                write(*,*) "Calculation with 2D flag deactivated"
          end select
-       select case (Fsfg)
-        case ('yes', 'Yes', 'YES')
-           write(*,*) 'SFG/DFG four-run mode enabled'
-        case default
-           write(*,*) 'SFG/DFG four-run mode disabled'
-       end select
        write(*,*) ''
 
        return
@@ -1279,29 +1239,6 @@
        return
 
       end subroutine write_nml_spectra
-
-!------------------------------------------------------------------------
-! @brief Write variables in the namelist SFG/DFG
-!
-! @date Created   : Manuel Sanchez 2026-07-05
-! Modified  :
-! @param lambda,N1,N2
-!------------------------------------------------------------------------
-      subroutine write_nml_sfg_dfg()
-
-       if (Fsfg.eq.'yes') then
-          write(*,*) 'SFG/DFG four-run mode enabled'
-          write(*,'(a,f12.6)') ' lambda = ', lambda
-          write(*,'(a,i8)')    ' N1      = ', N1
-          write(*,'(a,i8)')    ' N2      = ', N2
-          write(*,'(a,i8)')    ' Nangles = ', Nangles
-          write(*,'(a,a)')     ' Ffullout = ', Ffullout
-          write(*,*)
-       endif
-
-       return
-
-      end subroutine write_nml_sfg_dfg
 
 !------------------------------------------------------------------------
 ! @brief Write variables in the namelist sse and put conditions 
@@ -1519,14 +1456,8 @@
        call mpi_bcast(tdelay,    npulsemax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(fmax,      3*npulsemax,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(f0,        1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(lambda,    1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr_mpi) ! Created by Manuel Sanchez 2026-07-05
-       call mpi_bcast(N1,        1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) ! Created by Manuel Sanchez 2026-07-05
-       call mpi_bcast(N2,        1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) ! Created by Manuel Sanchez 2026-07-05
-       call mpi_bcast(Nangles,   1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr_mpi) ! Created by Manuel Sanchez 2026-07-10
-       call mpi_bcast(Ffullout,  flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) ! Created by Manuel Sanchez 2026-07-11
 
        call mpi_bcast(twod,    flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
-       call mpi_bcast(Fsfg,    flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi) ! Created by Manuel Sanchez 2026-07-05
        call mpi_bcast(propa,       flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(lsim,        flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)
        call mpi_bcast(medium,      flg,MPI_CHARACTER,0,MPI_COMM_WORLD,ierr_mpi)

@@ -44,10 +44,9 @@ TOOLSPATH=tools
 
 # objects
 
-WAVETOBJ = random.o constants.o readio.o spectra.o interface_tdplas.o scf.o QM_coupling.o dissipation.o initialise.o sfg_coupling.o propagate.o
+WAVETOBJ = random.o constants.o readio.o spectra.o interface_tdplas.o scf.o QM_coupling.o dissipation.o initialise.o propagate.o
 OBJ= $(WAVETOBJ) main.o
 OBJ_SPECTRA= $(WAVETOBJ) main_spectra.o
-OBJ_SFG= $(filter-out sfg_coupling.o,$(WAVETOBJ)) sfg_dfg.o main_sfg_dfg.o
 OBJ_VIB= random.o constants.o readio.o $(TOOLSPATH)/vib.o $(TOOLSPATH)/vib_tool.o
 OBJ_COH= constants.o $(TOOLSPATH)/coherence_tool.o
 OBJ_FFT= constants.o $(TOOLSPATH)/fft_tool.o
@@ -84,21 +83,15 @@ endif
 
 # compilation and linking rules
 
-serial: $(BINPATH) scf.o $(BINPATH)/WaveT-serial.x $(BINPATH)/make_spectra.x $(BINPATH)/make_sfg_dfg.x $(BINPATH)/make_vib.x $(BINPATH)/make_coherence.x $(BINPATH)/make_2dfft.x $(BINPATH)/make_pop_coh.x $(BINPATH)/make_nucl_wavep.x
+serial: $(BINPATH) scf.o $(BINPATH)/WaveT-serial.x $(BINPATH)/make_spectra.x $(BINPATH)/make_vib.x $(BINPATH)/make_coherence.x $(BINPATH)/make_2dfft.x $(BINPATH)/make_pop_coh.x $(BINPATH)/make_nucl_wavep.x
 
-parallel: $(BINPATH) $(BINPATH)/WaveT-parallel.x $(BINPATH)/make_sfg_dfg-parallel.x
+parallel: $(BINPATH) $(BINPATH)/WaveT-parallel.x
 
 $(BINPATH):
 	mkdir $(BINPATH)
 
 $(BINPATH)/make_spectra.x: main_spectra.o
 	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_SPECTRA) $(TDPLASLIB) $(LIB_CURIE) $(LIBS) $(LIBSF)
-
-$(BINPATH)/make_sfg_dfg.x: main_sfg_dfg.o sfg_dfg.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_SFG) $(TDPLASLIB) $(LIB_CURIE) $(LIBS) $(LIBSF)
-
-$(BINPATH)/make_sfg_dfg-parallel.x: main_sfg_dfg.o sfg_dfg.o
-	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_SFG) $(INCPAR) $(TDPLASLIB) $(LIBS) $(LIBSPAR) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/WaveT-serial.x: main.o
 	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
@@ -181,15 +174,6 @@ main.o: main.f90
 main_spectra.o: main_spectra.f90
 	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
-main_sfg_dfg.o: main_sfg_dfg.f90
-	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
-
-sfg_coupling.o: sfg_dfg.f90
-	$(FC) $(CPP) $(FFLAGS) $(INC) -DSFG_COUPLING_ONLY -c $< -o $@
-
-sfg_dfg.o: sfg_dfg.f90
-	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
-
 # dependencies
 
 random.o:
@@ -210,15 +194,9 @@ initialise.o: constants.o readio.o interface_tdplas.o scf.o QM_coupling.o
 
 dissipation.o: random.o constants.o readio.o interface_tdplas.o
 
-propagate.o: random.o spectra.o dissipation.o interface_tdplas.o initialise.o sfg_coupling.o
+propagate.o: random.o spectra.o dissipation.o interface_tdplas.o initialise.o
 
 main_spectra.o: readio.o spectra.o interface_tdplas.o
-
-main_sfg_dfg.o: readio.o sfg_dfg.o initialise.o dissipation.o propagate.o interface_tdplas.o
-
-sfg_coupling.o: constants.o readio.o initialise.o
-
-sfg_dfg.o: readio.o spectra.o initialise.o propagate.o
 
 main.o: constants.o readio.o spectra.o initialise.o dissipation.o propagate.o interface_tdplas.o
 
