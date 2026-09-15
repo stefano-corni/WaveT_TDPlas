@@ -37,4 +37,8 @@ ADDING A NEW TEST DIRECTORY:
 - create a Makefile pointing to the file ../scripts/module.make:
   $ printf "include ../scripts/module.make" > Makefile
 - follow the section "ADDING A NEW TEST" above to add new tests in this new test directory
+
+SFG/DFG:
+- see directory SFG_DFG/ and its README for the Nangles regression test
+  (type=sfgdfg in test_info; needs mpirun with 4 ranks).
  
