@@ -7,7 +7,6 @@ module propagate
       use scf
       use interface_tdplas
       use initialise
-      use sfg_coupling
 #ifdef OMP
       use omp_lib
 #endif
@@ -45,17 +44,6 @@ module propagate
       public create_field, create_vector_potential, build_trans_p_from_dipoles, build_h_int_vg, prop, create_2d_map, print_time
 !
       contains
-
-!------------------------------------------------------------------------
-! @brief SFG/DFG mu-only output mode (no c_t, e_t, m_t, field, restart files).
-!------------------------------------------------------------------------
-      logical function sfg_mu_only_output()
-
-      sfg_mu_only_output = (Fsfg.eq.'yes' .and. Ffullout.eq.'no')
-
-      return
-      end function sfg_mu_only_output
-
 !
 !------------------------------------------------------------------------
 ! @brief Propogate C(t) using a second
@@ -85,51 +73,39 @@ module propagate
        if (twod.eq.'no') then
           write(name_c,'(a4,i0,a4)') "c_t_",n_f,".dat"
           write(name_e,'(a4,i0,a4)') "e_t_",n_f,".dat"
-          if (Fsfg.eq.'yes') then
-             write(name_mu,'(a5,a,a4)') "mu_t_", trim(sfg_mu_tag), ".dat"
-          else
-             write(name_mu,'(a5,i0,a4)') "mu_t_",n_f,".dat"
-          endif
+          write(name_mu,'(a5,i0,a4)') "mu_t_",n_f,".dat"
           if (Fmag.eq.'mag') then
              write(name_m,'(a4,i0,a4)') "m_t_",n_f,".dat"
           endif
           if (Fres.eq.'Yesr') then
              if (Fbin.ne.'bin') then
-                if (.not. sfg_mu_only_output()) then
-                   open (file_c,file=name_c,status="unknown",access="append")
-                   open (file_e,file=name_e,status="unknown",access="append")
-                endif
+                open (file_c,file=name_c,status="unknown",access="append")
+                open (file_e,file=name_e,status="unknown",access="append")
                 open (file_mu,file=name_mu,status="unknown",access="append")
-                if (Fmag.eq.'mag' .and. .not. sfg_mu_only_output()) then !MM
+                if (Fmag.eq.'mag') then !MM
                  open(file_m,file=name_m,status="unknown",access="append")
                 endif
              else
-                if (.not. sfg_mu_only_output()) then
-                   open (file_c,file=name_c,status="unknown",access="append",form="unformatted")   
-                   open (file_e,file=name_e,status="unknown",access="append",form="unformatted")
-                endif
+                open (file_c,file=name_c,status="unknown",access="append",form="unformatted")   
+                open (file_e,file=name_e,status="unknown",access="append",form="unformatted")
                 open (file_mu,file=name_mu,status="unknown",access="append",form="unformatted")  
-                if (Fmag.eq.'mag' .and. .not. sfg_mu_only_output()) then !MM
+                if (Fmag.eq.'mag') then !MM
                  open(file_m,file=name_m,status="unknown",access="append",form="unformatted")
                 endif
              endif
           elseif (Fres.eq.'Nonr') then
              if (Fbin.ne.'bin') then
-                if (.not. sfg_mu_only_output()) then
-                   open (file_c,file=name_c,status="unknown")
-                   open (file_e,file=name_e,status="unknown")
-                endif
+                open (file_c,file=name_c,status="unknown")
+                open (file_e,file=name_e,status="unknown")
                 open (file_mu,file=name_mu,status="unknown")
-                if (Fmag.eq.'mag' .and. .not. sfg_mu_only_output()) then !MM
+                if (Fmag.eq.'mag') then !MM
                  open(file_m,file=name_m,status="unknown")
                 endif
              else
-                if (.not. sfg_mu_only_output()) then
-                   open(file_c,file=name_c,status="unknown",form="unformatted")
-                   open(file_e,file=name_e,status="unknown",form="unformatted")
-                endif
+                open(file_c,file=name_c,status="unknown",form="unformatted")
+                open(file_e,file=name_e,status="unknown",form="unformatted")
               open(file_mu,file=name_mu,status="unknown",form="unformatted")
-                if (Fmag.eq.'mag' .and. .not. sfg_mu_only_output()) then !MM
+                if (Fmag.eq.'mag') then !MM
                    open(file_m,file=name_m,status="unknown",form="unformatted")
                 endif
              endif
@@ -267,9 +243,7 @@ module propagate
           if (Fmag.eq.'mag') then ! MM
              call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
           endif
-          if (gauge.ne.'vg') then
-             call add_int_vac(f_prev, h_int)
-          endif
+          if (gauge.ne.'vg') call add_int_vac(f_prev,h_int) ! Added by Manuel Sanchez 2026-05-03
 ! SP 16/07/17: added call to output at step 0 to have full output in outfiles
           if (Fbin.ne.'bin'.and.twod.eq.'no') call out_header
           call output(1,c,f_prev,h_int)
@@ -353,12 +327,10 @@ module propagate
 #endif
        endif
        if (twod.eq.'no') then
-         if (.not. sfg_mu_only_output()) then
-            close (file_c)
-            close (file_e)
-            close (file_m)
-         endif
+         close (file_c)
+         close (file_e)
          close (file_mu)
+         close (file_m)
        else
          !close(file_c)
          close(file_mu)
@@ -396,7 +368,7 @@ module propagate
        endif
 
        allocate (f(3,n_tot))
-       if (twod.eq.'no' .and. .not. sfg_mu_only_output()) then
+       if (twod.eq.'no') then
 #ifndef MPI
           myrank=0
           write(name_f,'(a5,i0,a4)') "field",n_f,".dat"
@@ -434,10 +406,7 @@ module propagate
                enddo
            enddo
            case ("mdg")
-        ! Gaussian modulated sinusoid: exp(-(t-t0)^2/s^2) * sin(wt)
-             if (Fsfg.eq.'yes') then
-                call sfg_create_mdg_field(n_tot, f)
-             else
+        ! Gaussian modulated sinusoid: exp(-(t-t0)^2/s^2) * sin(wt) 
              do i=1,n_tot
                 t_a=dt*(i-1)
                 f(:,i) = fmax(:,1)*exp(-pt5*(t_a-t_mid)**2/(sigma(1)**2))* & 
@@ -448,7 +417,6 @@ module propagate
                           sin(omega(j)*t_a+sum(pshift(1:j-1)))
                 enddo 
              enddo
-             endif
             case ("snc")             
         ! Sinc apodized pulse: sin(Tt/2)/(Tt/2) * sin(wt) *
         ! exp(-Gamma*abs(t))         
@@ -627,7 +595,7 @@ module propagate
 
         if (myrank.eq.0) then
         ! write out field 
-          if (twod.eq.'no' .and. .not. sfg_mu_only_output()) then
+          if (twod.eq.'no') then
              if (Fbin.ne.'bin') then
                 do i=1,n_tot
                    t_a=dt*(i-1)
@@ -644,7 +612,7 @@ module propagate
         endif
        
 
-        if (twod.eq.'no' .and. .not. sfg_mu_only_output()) close(7)
+        close(7)
  
         return
 
@@ -683,7 +651,7 @@ module propagate
           avec(:,i)=avec(:,i-1)-pt5*dt*(f(:,i-1)+f(:,i))
        enddo
 
-       if (twod.eq.'no' .and. .not. sfg_mu_only_output()) then
+       if (twod.eq.'no') then
 #ifndef MPI
           myrank=0
           write(name_a,'(a17,i0,a4)') "vector_potential",n_f,".dat"
@@ -1054,48 +1022,42 @@ module propagate
 #endif
 
 ! SC 07/02/16: added printing of g_neq, g_eq 
-         if (.not. sfg_mu_only_output()) then
-            if(Fmdm.ne.'vac') then 
-              g_eq_t=e_a
-              g_neq_t=e_a
-              g_neq2_t=e_a
-              e_vac=e_a
-              call get_energies(e_vac,g_eq_t,g_neq_t,g_neq2_t)
-              if (Fbin.ne.'bin') then
-                 write (file_e,'(i8,f14.4,7e20.8)') i,t,e_a,e_vac, &
-                       g_eq_t,g_neq2_t,g_neq_t,int_rad,int_rad_int
-              else
-                 write (file_e) i,t,e_a,e_vac, &
-                       g_eq_t,g_neq2_t,g_neq_t,int_rad,int_rad_int
-              endif
-            else
-              if (Fbin.ne.'bin') then
-                 write (file_e,'(i8,f14.4,3e22.10)') i,t,e_a,int_rad,int_rad_int
-              else
-                 write (file_e) i,t,e_a,int_rad,int_rad_int
-              endif 
-            endif
-
-            if (Fbin.ne.'bin') then
-               write (fmt_ci,'("(i8,f14.4,",I0,"e17.8E3)")') 2*nstates
-               write (file_c,fmt_ci) i,t,c(:)
-               if (Fmag.eq.'mag') then
-                  write (file_m,'(i8,f14.4,7e22.10)') i,t,dble(m_a(1)),aimag(m_a(1)),&
-                       dble(m_a(2)),aimag(m_a(2)),dble(m_a(3)),aimag(m_a(3)), sm
-               endif
-            else
-               write (file_c) i,t,c(:)
-               if (Fmag.eq.'mag') then
-                   write (file_m) i,t,dble(m_a(1)),aimag(m_a(1)),&
-                       dble(m_a(2)),aimag(m_a(2)),dble(m_a(3)),aimag(m_a(3)),sm
-               endif
-            endif
+         if(Fmdm.ne.'vac') then 
+           g_eq_t=e_a
+           g_neq_t=e_a
+           g_neq2_t=e_a
+           e_vac=e_a
+           call get_energies(e_vac,g_eq_t,g_neq_t,g_neq2_t)
+           if (Fbin.ne.'bin') then
+              write (file_e,'(i8,f14.4,7e20.8)') i,t,e_a,e_vac, &
+                    g_eq_t,g_neq2_t,g_neq_t,int_rad,int_rad_int
+           else
+              write (file_e) i,t,e_a,e_vac, &
+                    g_eq_t,g_neq2_t,g_neq_t,int_rad,int_rad_int
+           endif
+         else
+           if (Fbin.ne.'bin') then
+              write (file_e,'(i8,f14.4,3e22.10)') i,t,e_a,int_rad,int_rad_int
+           else
+              write (file_e) i,t,e_a,int_rad,int_rad_int
+           endif 
          endif
 
          if (Fbin.ne.'bin') then
+            write (fmt_ci,'("(i8,f14.4,",I0,"e17.8E3)")') 2*nstates
+            write (file_c,fmt_ci) i,t,c(:)
             write (file_mu,'(i8,f14.4,3e22.10)') i,t,mu_a(:)
+            if (Fmag.eq.'mag') then
+               write (file_m,'(i8,f14.4,7e22.10)') i,t,dble(m_a(1)),aimag(m_a(1)),&
+                    dble(m_a(2)),aimag(m_a(2)),dble(m_a(3)),aimag(m_a(3)), sm
+            endif
          else
+            write (file_c) i,t,c(:)
             write (file_mu) i,t,mu_a(:)
+            if (Fmag.eq.'mag') then
+                write (file_m) i,t,dble(m_a(1)),aimag(m_a(1)),&
+                    dble(m_a(2)),aimag(m_a(2)),dble(m_a(3)),aimag(m_a(3)),sm
+            endif
          endif
        else
           if (Fbin.ne.'bin') then
@@ -1272,12 +1234,6 @@ module propagate
 
        implicit none
 
-       if (sfg_mu_only_output()) then
-          write(file_mu,'(4a)') '#   istep time (au)',' dipole-x ', &
-                 ' dipole-y ',' dipole-z '
-          return
-       endif
-
        write(file_c,'(2a)')'# istep   time (au)', &
                            '    Re(C_0) Im(C_0), Re(C_1) Im(C_1),...'
 
@@ -1373,22 +1329,16 @@ module propagate
         complex(cmp)                :: cst(nci), c_det(nci)
         real(dbl), parameter       :: one_sixth = 1.d0/6.d0
 
-        complex(cmp)                :: hc(nci)
-
-        call sfg_hint_matmul(h_int, h_int_vg, c_old, hc)
-        k1 = (-ui)*(energies*c_old + hc) &
+        k1 = (-ui)*(energies*c_old + matmul(h_int,c_old)) &
              - 0.5d0*gamma_sum(1:nci)*c_old
         cst = c_old + 0.5d0*dt*k1
-        call sfg_hint_matmul(h_int, h_int_vg, cst, hc)
-        k2 = (-ui)*(energies*cst + hc) &
+        k2 = (-ui)*(energies*cst + matmul(h_int,cst)) &
              - 0.5d0*gamma_sum(1:nci)*cst
         cst = c_old + 0.5d0*dt*k2
-        call sfg_hint_matmul(h_int, h_int_vg, cst, hc)
-        k3 = (-ui)*(energies*cst + hc) &
+        k3 = (-ui)*(energies*cst + matmul(h_int,cst)) &
              - 0.5d0*gamma_sum(1:nci)*cst
         cst = c_old + dt*k3
-        call sfg_hint_matmul(h_int, h_int_vg, cst, hc)
-        k4 = (-ui)*(energies*cst + hc) &
+        k4 = (-ui)*(energies*cst + matmul(h_int,cst)) &
              - 0.5d0*gamma_sum(1:nci)*cst
         c_det = c_old + dt*one_sixth*(k1 + 2*k2 + 2*k3 + k4)
         c_new = c_det - ui*sqrt(dt)*matmul(Rn,c_det)
@@ -1410,16 +1360,12 @@ module propagate
         complex(cmp)                :: k(nci), f1d(nci), f1s(nci)
         complex(cmp)                :: f2d(nci), f2s(nci), ctil(nci)
 
-        complex(cmp)                :: hc(nci)
-
-        call sfg_hint_matmul(h_int, h_int_vg, c_old, hc)
-        k = (-ui)*(energies*c_old + hc) &
+        k = (-ui)*(energies*c_old + matmul(h_int,c_old)) &
             - 0.5d0*gamma_sum(1:nci)*c_old
         f1d = dt * k
         f1s = (-ui)*sqrt(dt)*matmul(Rn,c_old)
         ctil = c_old + f1d + f1s
-        call sfg_hint_matmul(h_int, h_int_vg, ctil, hc)
-        k = (-ui)*(energies*ctil + hc) &
+        k = (-ui)*(energies*ctil + matmul(h_int,ctil)) &
             - 0.5d0*gamma_sum(1:nci)*ctil
         f2d = dt * k
         f2s = (-ui)*sqrt(dt)*matmul(Rn,ctil)
@@ -1444,14 +1390,17 @@ module propagate
 
         integer(i4b)               :: i,j,istart,iend,k
         real(dbl)                  :: t 
-        complex(cmp)               :: dis(nci),ctmp(nci),hc(nci)
+        complex(cmp)               :: dis(nci),ctmp(nci)
 
 ! Initialization only without restart
        if (Fres.eq.'Nonr') then
 ! INITIAL STEP: dpsi/dt=(psi(2)-psi(1))/dt
 ! SC: 31/10/17 modified the propagation with ccexp 
-          call sfg_hint_matmul(h_int, h_int_vg, c_prev, hc)
-          c=ccexp*(c_prev-ui*dt*hc)
+          if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+             c=ccexp*(c_prev-ui*dt*matmul(h_int_vg,c_prev)) ! Added by Manuel Sanchez 2026-04-22
+          else
+             c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev))
+          endif
           if (Fdis.eq."ernd") then
              do j=1,nstates
                 c(j) = c(j) - ccexp(j)*ui*dt*krnd*random_normal()*c_prev(j)
@@ -1463,8 +1412,11 @@ module propagate
              if (Fdis(5:9).eq."EuMar") then
                ! Euler-Maruyama stochastic step
                 call build_rp_random_matrix(Rp,Rn,nstates)
-                call sfg_hint_matmul(h_int, h_int_vg, c_prev, hc)
-                c=c-ui*dt*(energies*c_prev+hc) - 0.5*dt*gamma_sum*c_prev - ui*sqrt(dt)*matmul(Rn,c_prev)
+                if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+                   c=c-ui*dt*(energies*c_prev+matmul(h_int_vg,c_prev)) - 0.5*dt*gamma_sum*c_prev - ui*sqrt(dt)*matmul(Rn,c_prev) ! Added by Manuel Sanchez 2026-04-22
+                else
+                   c=c-ui*dt*(energies*c_prev+matmul(h_int,c_prev)) - 0.5*dt*gamma_sum*c_prev - ui*sqrt(dt)*matmul(Rn,c_prev)               
+                endif
              elseif (Fdis(5:9).eq."RuKu4") then
                 call build_rp_random_matrix(Rp,Rn,nstates)
                 call mar_ruku4_apply(c,c_prev,nci)
@@ -1487,7 +1439,11 @@ module propagate
              i=2
              call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
           endif
-          call update_field_coupling(2)
+          if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+             call build_h_int_vg(2,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
+          else
+             call add_int_vac(f_prev,h_int)
+          endif ! Added by Manuel Sanchez 2026-05-03
           call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
           if (Fmag.eq.'mag') then ! MM
              call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
@@ -1500,7 +1456,11 @@ module propagate
           iend=n_step
        elseif (Fres.eq.'Yesr') then
           istart=restart_i+1
-          call update_field_coupling(restart_i)
+          if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+             call build_h_int_vg(restart_i,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
+          else
+             call add_int_vac(f_prev,h_int)
+          endif ! Added by Manuel Sanchez 2026-05-03
           if (Fsim.eq.'y') then 
              iend=diff_step+restart_i
           elseif (Fsim.eq.'n') then
@@ -1523,11 +1483,17 @@ module propagate
             endif
 #ifndef OMP
             if (i.eq.ijump+1) then
-               call sfg_hint_matmul(h_int, h_int_vg, c_prev, hc)
-               c=ccexp*(c_prev-ui*dt*hc-dt*dis)
+               if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+                  c=ccexp*(c_prev-ui*dt*matmul(h_int_vg,c_prev)-dt*dis) ! Added by Manuel Sanchez 2026-04-22
+               else
+                  c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev)-dt*dis)
+               endif
             else 
-               call sfg_hint_matmul(h_int, h_int_vg, c_prev, hc)
-               c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*hc-2.d0*dt*dis)
+               if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+                  c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int_vg,c_prev)-2.d0*dt*dis) ! Added by Manuel Sanchez 2026-04-22
+               else
+                  c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int,c_prev)-2.d0*dt*dis)
+               endif
             endif 
 #endif
 #ifdef OMP
@@ -1548,11 +1514,17 @@ module propagate
                endif
             else
                if (i.eq.ijump+1) then
-                  call sfg_hint_matmul(h_int, h_int_vg, c_prev, hc)
-                  c=ccexp*(c_prev-ui*dt*hc-dt*dis)
+                  if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+                     c=ccexp*(c_prev-ui*dt*matmul(h_int_vg,c_prev)-dt*dis) ! Added by Manuel Sanchez 2026-04-22
+                  else
+                     c=ccexp*(c_prev-ui*dt*matmul(h_int,c_prev)-dt*dis)
+                  endif
                else
-                  call sfg_hint_matmul(h_int, h_int_vg, c_prev, hc)
-                  c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*hc-2.d0*dt*dis)
+                  if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+                     c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int_vg,c_prev)-2.d0*dt*dis) ! Added by Manuel Sanchez 2026-04-22
+                  else
+                     c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int,c_prev)-2.d0*dt*dis)
+                  endif
                endif
             endif
 #endif
@@ -1580,7 +1552,11 @@ module propagate
             f_prev=f(:,i)
             h_int=zero
             if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-            call update_field_coupling(i)
+            if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+               call build_h_int_vg(i,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
+            else
+               call add_int_vac(f_prev,h_int)
+            endif ! Added by Manuel Sanchez 2026-05-03
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, & 
                                                mu_prev4,mu_prev5,h_int)
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
@@ -1605,8 +1581,11 @@ module propagate
             if (Fdis(5:9).eq."EuMar") then
             call build_rp_random_matrix(Rp,Rn,nstates)
             ! Euler-Maruyama stochastic step
-                call sfg_hint_matmul(h_int, h_int_vg, c_prev, hc)
-                c=c-ui*dt*(energies*c_prev+hc) - 0.5*dt*gamma_sum*c_prev - ui*sqrt(dt)*matmul(Rn,c_prev)
+                if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+                   c=c-ui*dt*(energies*c_prev+matmul(h_int_vg,c_prev)) - 0.5*dt*gamma_sum*c_prev - ui*sqrt(dt)*matmul(Rn,c_prev) ! Added by Manuel Sanchez 2026-04-22
+                else
+                   c=c-ui*dt*(energies*c_prev+matmul(h_int,c_prev)) - 0.5*dt*gamma_sum*c_prev - ui*sqrt(dt)*matmul(Rn,c_prev)
+                endif
             elseif (Fdis(5:9).eq."RuKu4") then
             call build_rp_random_matrix(Rp,Rn,nstates)
                 call mar_ruku4_apply(c,c_prev,nci)
@@ -1624,7 +1603,11 @@ module propagate
             f_prev=f(:,i)
             h_int=zero
             if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-            call update_field_coupling(i)
+            if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+               call build_h_int_vg(i,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
+            else
+               call add_int_vac(f_prev,h_int)
+            endif ! Added by Manuel Sanchez 2026-05-03
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
                                                   mu_prev4,mu_prev5,h_int)
             call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
@@ -1645,8 +1628,11 @@ module propagate
           do i=istart,iend
 ! SC 31/10/17: modified propagation by adding the exp term
 #ifndef OMP
-            call sfg_hint_matmul(h_int, h_int_vg, c_prev, hc)
-            c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*hc)
+            if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+               c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int_vg,c_prev)) ! Added by Manuel Sanchez 2026-04-22
+            else
+               c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int,c_prev))
+            endif
 #endif
 #ifdef OMP
             if (Fopt.eq.'omp') then
@@ -1661,8 +1647,11 @@ module propagate
 !$OMP END PARALLEL
                c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*ctmp)  
             else
-               call sfg_hint_matmul(h_int, h_int_vg, c_prev, hc)
-               c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*hc)
+               if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+                  c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int_vg,c_prev)) ! Added by Manuel Sanchez 2026-04-22
+               else
+                  c=ccexp*(ccexp*c_prev2-2.d0*ui*dt*matmul(h_int,c_prev))
+               endif
             endif
 #endif
             if (Fdis.eq."ernd") then
@@ -1676,7 +1665,11 @@ module propagate
             f_prev=f(:,i)
             h_int=zero
             if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-            call update_field_coupling(i)
+            if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+               call build_h_int_vg(i,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
+            else
+               call add_int_vac(f_prev,h_int)
+            endif ! Added by Manuel Sanchez 2026-05-03
 ! SC field
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
                                                mu_prev4,mu_prev5,h_int)
@@ -1713,13 +1706,16 @@ module propagate
 
         integer(i4b)              :: i,j,istart,iend,k
         real(dbl)                 :: t
-        complex(cmp)              :: dis(nci),ctmp(nci),hc(nci)
+        complex(cmp)              :: dis(nci),ctmp(nci)
 
 !Initialization only without restart
        if (Fres.eq.'Nonr') then
 ! INITIAL STEP: dpsi/dt=(psi(2)-psi(1))/dt
-          call sfg_hint_matmul(h_int, h_int_vg, c_prev, hc)
-          c=c_prev-ui*dt*(energies*c_prev+hc)
+          if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+             c=c_prev-ui*dt*(energies*c_prev+matmul(h_int_vg,c_prev)) ! Added by Manuel Sanchez 2026-04-22
+          else
+             c=c_prev-ui*dt*(energies*c_prev+matmul(h_int,c_prev))
+          endif
           if (Fdis.eq."ernd") then
              do j=1,nstates
                 c(j) = c(j) - ui*dt*krnd*random_normal()*c_prev(j)
@@ -1731,8 +1727,11 @@ module propagate
              if (Fdis(5:9).eq."EuMar") then
          call build_rp_random_matrix(Rp,Rn,nstates)
           ! Euler-Maruyama stochastic step
-                call sfg_hint_matmul(h_int, h_int_vg, c_prev, hc)
-                c=c-ui*dt*(energies*c_prev+hc) - 0.5*dt*gamma_sum*c_prev - ui*sqrt(dt)*matmul(Rn,c_prev)
+                if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+                   c=c-ui*dt*(energies*c_prev+matmul(h_int_vg,c_prev)) - 0.5*dt*gamma_sum*c_prev - ui*sqrt(dt)*matmul(Rn,c_prev) ! Added by Manuel Sanchez 2026-04-22
+                else
+                   c=c-ui*dt*(energies*c_prev+matmul(h_int,c_prev)) - 0.5*dt*gamma_sum*c_prev - ui*sqrt(dt)*matmul(Rn,c_prev)               
+                endif
              elseif (Fdis(5:9).eq."RuKu4") then
          call build_rp_random_matrix(Rp,Rn,nstates)
                 call mar_ruku4_apply(c,c_prev,nci)
@@ -1756,7 +1755,11 @@ module propagate
              i=2
              call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
           endif
-          call update_field_coupling(2)
+          if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+             call build_h_int_vg(2,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
+          else
+             call add_int_vac(f_prev,h_int)
+          endif ! Added by Manuel Sanchez 2026-05-03
           call do_mu(c,mu_prev,mu_prev2,mu_prev3,mu_prev4,mu_prev5)
           if (Fmag.eq.'mag') then ! MM
              call do_m(c,m_prev,m_prev2,m_prev3,m_prev4,m_prev5)
@@ -1769,7 +1772,11 @@ module propagate
           iend=n_step
        elseif (Fres.eq.'Yesr') then
           istart=restart_i+1
-          call update_field_coupling(restart_i)
+          if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+             call build_h_int_vg(restart_i,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
+          else
+             call add_int_vac(f_prev,h_int)
+          endif ! Added by Manuel Sanchez 2026-05-03
           if (Fsim.eq.'y') then 
              iend=diff_step+restart_i
           elseif (Fsim.eq.'n') then
@@ -1792,11 +1799,17 @@ module propagate
             endif
 #ifndef OMP
             if (i.eq.ijump+1) then
-               call sfg_hint_matmul(h_int, h_int_vg, c_prev, hc)
-               c=c_prev-ui*dt*(energies*c_prev+hc)-dt*dis
+               if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+                  c=c_prev-ui*dt*(energies*c_prev+matmul(h_int_vg,c_prev))-dt*dis ! Added by Manuel Sanchez 2026-04-22
+               else
+                  c=c_prev-ui*dt*(energies*c_prev+matmul(h_int,c_prev))-dt*dis
+               endif
             else
-               call sfg_hint_matmul(h_int, h_int_vg, c_prev, hc)
-               c=c_prev2-2.d0*ui*dt*(energies*c_prev+hc)-2.d0*dt*dis
+               if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+                  c=c_prev2-2.d0*ui*dt*(energies*c_prev+matmul(h_int_vg,c_prev))-2.d0*dt*dis ! Added by Manuel Sanchez 2026-04-22
+               else
+                  c=c_prev2-2.d0*ui*dt*(energies*c_prev+matmul(h_int,c_prev))-2.d0*dt*dis
+               endif
             endif
 #endif
 #ifdef OMP
@@ -1817,11 +1830,17 @@ module propagate
                endif
             else
                if (i.eq.ijump+1) then
-                  call sfg_hint_matmul(h_int, h_int_vg, c_prev, hc)
-                  c=c_prev-ui*dt*(energies*c_prev+hc)-dt*dis
+                   if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+                      c=c_prev-ui*dt*(energies*c_prev+matmul(h_int_vg,c_prev))-dt*dis ! Added by Manuel Sanchez 2026-04-22
+                   else
+                      c=c_prev-ui*dt*(energies*c_prev+matmul(h_int,c_prev))-dt*dis
+                   endif
                else
-                  call sfg_hint_matmul(h_int, h_int_vg, c_prev, hc)
-                  c=c_prev2-2.d0*ui*dt*(energies*c_prev+hc)-2.d0*dt*dis
+                   if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+                      c=c_prev2-2.d0*ui*dt*(energies*c_prev+matmul(h_int_vg,c_prev))-2.d0*dt*dis ! Added by Manuel Sanchez 2026-04-22
+                   else
+                      c=c_prev2-2.d0*ui*dt*(energies*c_prev+matmul(h_int,c_prev))-2.d0*dt*dis
+                   endif
                endif
             endif 
 #endif
@@ -1850,7 +1869,11 @@ module propagate
             f_prev=f(:,i)
             h_int=zero
             if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-            call update_field_coupling(i)
+            if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+               call build_h_int_vg(i,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
+            else
+               call add_int_vac(f_prev,h_int)
+            endif ! Added by Manuel Sanchez 2026-05-03
 ! SC field
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
                                                 mu_prev4,mu_prev5,h_int)
@@ -1877,8 +1900,11 @@ module propagate
             if (Fdis(5:9).eq."EuMar") then
             call build_rp_random_matrix(Rp,Rn,nstates)
             ! Euler-Maruyama stochastic step
-              call sfg_hint_matmul(h_int, h_int_vg, c_prev, hc)
-              c=c-ui*dt*(energies*c_prev+hc) - 0.5*dt*gamma_sum*c_prev - ui*sqrt(dt)*matmul(Rn,c_prev)
+              if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+                 c=c-ui*dt*(energies*c_prev+matmul(h_int_vg,c_prev)) - 0.5*dt*gamma_sum*c_prev - ui*sqrt(dt)*matmul(Rn,c_prev) ! Added by Manuel Sanchez 2026-04-22
+              else
+                 c=c-ui*dt*(energies*c_prev+matmul(h_int,c_prev)) - 0.5*dt*gamma_sum*c_prev - ui*sqrt(dt)*matmul(Rn,c_prev)
+              endif
             elseif (Fdis(5:9).eq."RuKu4") then
             call build_rp_random_matrix(Rp,Rn,nstates)
               call mar_ruku4_apply(c,c_prev,nci)
@@ -1896,7 +1922,11 @@ module propagate
             f_prev=f(:,i)
             h_int=zero
             if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-            call update_field_coupling(i)
+            if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+               call build_h_int_vg(i,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
+            else
+               call add_int_vac(f_prev,h_int)
+            endif ! Added by Manuel Sanchez 2026-05-03
 ! SC field
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
                                                 mu_prev4,mu_prev5,h_int)
@@ -1917,8 +1947,11 @@ module propagate
           !do i=3,n_step
           do i=istart,iend
 #ifndef OMP
-            call sfg_hint_matmul(h_int, h_int_vg, c_prev, hc)
-            c=c_prev2-2.d0*ui*dt*(energies*c_prev+hc)
+            if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+               c=c_prev2-2.d0*ui*dt*(energies*c_prev+matmul(h_int_vg,c_prev)) ! Added by Manuel Sanchez 2026-04-22
+            else
+               c=c_prev2-2.d0*ui*dt*(energies*c_prev+matmul(h_int,c_prev))
+            endif
 #endif
 #ifdef OMP
             if (Fopt.eq.'omp') then
@@ -1933,8 +1966,11 @@ module propagate
 !$OMP END PARALLEL
                c=c_prev2-2.d0*ui*dt*(energies*c_prev+ctmp)
             else
-               call sfg_hint_matmul(h_int, h_int_vg, c_prev, hc)
-               c=c_prev2-2.d0*ui*dt*(energies*c_prev+hc)
+               if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+                  c=c_prev2-2.d0*ui*dt*(energies*c_prev+matmul(h_int_vg,c_prev)) ! Added by Manuel Sanchez 2026-04-22
+               else
+                  c=c_prev2-2.d0*ui*dt*(energies*c_prev+matmul(h_int,c_prev))
+               endif
             endif
 #endif
 
@@ -1949,7 +1985,11 @@ module propagate
             f_prev=f(:,i)
             h_int=zero
             if (Fmdm.ne."vac".and.this_Finit_int.ne."qmt") call prop_medium(i,c_prev,mu_prev,f_prev,h_int)
-            call update_field_coupling(i)
+            if (gauge.eq.'vg') then ! Added by Manuel Sanchez 2026-04-22
+               call build_h_int_vg(i,h_int_vg) ! Added by Manuel Sanchez 2026-04-22
+            else
+               call add_int_vac(f_prev,h_int)
+            endif ! Added by Manuel Sanchez 2026-05-03
 ! SC field
             if (Frad.eq."arl".and.i.gt.5) call add_int_rad(mu_prev,mu_prev2,mu_prev3, &
                                                 mu_prev4,mu_prev5,h_int)
@@ -1989,8 +2029,6 @@ module propagate
      
        integer(i4b)               :: j,ii
        character(20)              :: filename
-
-       if (sfg_mu_only_output()) return
 
 #ifndef MPI
        myrank=0
@@ -2055,23 +2093,6 @@ module propagate
        return
 
       end subroutine wrt_restart 
-
-!------------------------------------------------------------------------
-! @brief Build vacuum field coupling for current time step.
-!------------------------------------------------------------------------
-      subroutine update_field_coupling(step_idx)
-
-      implicit none
-      integer(i4b), intent(in) :: step_idx
-
-      if (gauge.eq.'vg') then
-         call build_h_int_vg(step_idx, h_int_vg)
-      else
-         call add_int_vac(f(:, step_idx), h_int)
-      endif
-
-      return
-      end subroutine update_field_coupling
 
       end module
 
