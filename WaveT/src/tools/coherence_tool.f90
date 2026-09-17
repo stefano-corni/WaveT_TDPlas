@@ -133,30 +133,32 @@ program decoherence
     elseif (m.ge.10000.and.m.lt.100000) then
         WRITE(filename,'(a,i5.5,a)') "c_t_",m,".dat"
     endif
-    open(20+m,file=filename)
+    !open(30+m,file=filename)
  enddo
 
  if (read_bin(1:1).ne.'y') then
     do m=1,nrep
-       open (20+m,file=filename,status="unknown")
-       read(20+m,*) dum
+       open (30+m,file=filename,status="unknown")
+       read(30+m,*) dum
        write (fmt_ci,'("(i8,f14.4,",I0,"e17.8E3)")') 2*nstates
        do j=1,nsteps
-          read(20+m,fmt_ci) i(j), t(j), (rc(k), ic(k), k=1,nstates)
+          read(30+m,fmt_ci) i(j), t(j), (rc(k), ic(k), k=1,nstates)
           do k=1,nstates
              c(j,k,m) = dcmplx(rc(k),ic(k))
           enddo
        enddo
-    enddo
+       close(30+m)
+   enddo
  else
     do m=1,nrep
-       open (20+m,file=filename,status="unknown",form="unformatted")
+       open (30+m,file=filename,status="unknown",form="unformatted")
        do j=1,nsteps
-          read(20+m) i(j),t(j),(rc(k),ic(k),k=1,nstates)
+          read(30+m) i(j),t(j),(rc(k),ic(k),k=1,nstates)
           do k=1,nstates
              c(j,k,m) = dcmplx(rc(k),ic(k))
           enddo   
        enddo
+       close(30+m)
     enddo                                                                                       
  endif   
 

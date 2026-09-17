@@ -60,6 +60,7 @@ TDPLASLIB= libtdplas.a
 
 # QM code to be interfaced with TDPlas = wt, ocpy, octopus
 QMCODE= wt
+#QMCODE= octopus
 QMCODE_OK= $(shell echo $(QMCODE) | tr A-Z a-z)
 INTERFACE_MODULE= interface_global_quantum_$(QMCODE_OK)
 

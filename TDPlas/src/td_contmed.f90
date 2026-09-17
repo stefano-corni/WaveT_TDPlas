@@ -784,8 +784,10 @@
          if(global_medium_Floc.eq."loc") qx=matmul(BEM_Z,qx0)
        else
 !      Silvio to Gabriel
+#if QMCODE==octopus                
          !qr=q0
          !if(global_medium_Floc.eq."loc") qx=qx0         
+#endif
        endif
 
        center=zero
@@ -1809,10 +1811,6 @@
        qr_t=qr_tp+f1*dqr_t+f2*fqr_t
        fqr_tp=fqr_t
        dqr_tp=dqr_t
-       ! Silvio to Gabriel
-       !write(*,*) 'fqr_t', sum(fqr_t)
-       !write(*,*) 'dqr_t', sum(dqr_t)
-       !write(*,*) 'qr_t', sum(qr_t)
 
       ! Local Field
        if(global_medium_Floc.eq."loc") then
