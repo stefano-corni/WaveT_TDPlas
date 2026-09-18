@@ -25,9 +25,9 @@ diff_ci=$(awk 'BEGIN{d2=0}
 #echo $diff_ci
 
 awk 'BEGIN{
-      if     ('$diff0_medium'< '$threshold0' && '$diff1_medium'< '$threshold1' && '$diff_ci'< '$threshold0'){print  1}
+      if     ('$diff0_medium'< '$threshold0' && '$diff1_medium'< '$threshold1' && '$diff_ci'< '$threshold1'){print  1}
       else if('$diff0_medium'> '$threshold0'){print -1}
       else if('$diff1_medium'> '$threshold1'){print -1}
-      else if('$diff_ci' > '$threshold0'){print -1}
+      else if('$diff_ci' > '$threshold1'){print -1}
       else                          {print  0}
    }'

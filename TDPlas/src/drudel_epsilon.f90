@@ -13,6 +13,7 @@
             real(dbl)       :: drudel_eps_d
 
 
+
       public    drudel_eps_A,     &
                 drudel_eps_gm,    &
                 drudel_eps_w0,    &
@@ -41,6 +42,7 @@
                 drudel_eps_0       =  1000. !1.+ drudel_eps_A/drudel_eps_w0**2
 
             end subroutine
+
 
 
     end module drudel_epsilon

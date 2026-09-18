@@ -2,7 +2,7 @@
 
 #gnuplot plot.gnu
 
-t0=0.0001
+t0=0.001
 
 d1=$(awk 'BEGIN{d2=0}
          FNR==NR&&FNR>1{a[FNR-1]=$2;next} 

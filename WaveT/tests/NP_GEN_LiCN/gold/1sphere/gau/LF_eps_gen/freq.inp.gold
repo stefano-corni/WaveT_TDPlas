@@ -1,0 +1,22 @@
+&freq
+fmax= 1.  0.  0. 
+n_omega=1000 
+omega_ini=3.6786630443607403E-003
+omega_end=3.674984381
+/
+
+&MEDIUM
+medium_type='nan'
+medium_pol='chr'
+bem_type='diag'
+bem_read_write='rea'
+/
+
+&SURFACE
+input_surface='fil'
+/
+
+&EPS_FUNCTION
+epsilon_omega='gen'
+/
+

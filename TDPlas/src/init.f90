@@ -49,12 +49,18 @@
                     call pedra_surf_init(d_entry_convert_to_internal(dict_Fcav, user_input%input_mesh),    &
                                     d_entry_convert_to_internal(dict_Finv, user_input%inversion),        &
                                     d_entry_convert_to_internal(dict_Ffind, user_input%find_spheres),        &
+                                    d_entry_convert_to_internal(dict_Fdum, user_input%dummy_surface),        &
                                     user_input%particles_number,  &
                                     user_input%spheres_number,    &
                                     user_input%sphere_position_x, &
                                     user_input%sphere_position_y, &
                                     user_input%sphere_position_z, &
-                                    user_input%sphere_radius, &     
+                                    user_input%sphere_radius, & 
+                                    user_input%dum_spheres_number,    &
+                                    user_input%dum_sphere_position_x, &
+                                    user_input%dum_sphere_position_y, &
+                                    user_input%dum_sphere_position_z, &
+                                    user_input%dum_sphere_radius, &    
                                     global_medium_Fmdm)
 
 
@@ -62,6 +68,7 @@
 
            !epsilon
 
+                if(global_medium_Fmdm.ne.'cmix') then
                 select case(global_eps_Feps)
                    case("drl")
                        call drudel_eps_init(user_input%eps_A, user_input%eps_gm, user_input%eps_w0, user_input%f_vel)
@@ -72,6 +79,15 @@
                        if(user_input%eps_0.eq.-1) user_input%eps_0 = 1000.
                        call readf_eps_init(user_input%eps_d, user_input%eps_0)
                 end select
+
+                else
+                  if(user_input%eps_d.eq.-1.) user_input%eps_d = 1.
+                  if(user_input%eps_0.eq.-1) user_input%eps_0 = 1000.
+                  call readf_eps_init(user_input%eps_d, user_input%eps_0)
+                  if(user_input%eps_d_dum.eq.-1.) user_input%eps_d_dum = 1.
+                  if(user_input%eps_0_dum.eq.-1) user_input%eps_0_dum = 1000.
+                  call readf_eps_dum_init(user_input%eps_d_dum, user_input%eps_0_dum)
+                endif
 
 
                 if((calculation_exe.eq."frequency").or.(calculation_exe.eq."epsilon")) then

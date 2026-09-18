@@ -2,7 +2,7 @@
 
 #gnuplot plot.gnu
 
-threshold0=0.000000001
+threshold0=0.0001
 
 diff0_medium=$(awk 'BEGIN{d2=0}
             FNR==NR&&FNR>1&&$2>120{a[FNR-1]=$5;next} 

@@ -13,10 +13,10 @@
 !------------------------------------------------------------------------------
       Module initialise    
       use constants    
-      use interface_tdplas
       use readio       
-      use scf            
-      use QM_coupling
+      use interface_classic
+      use QM_coupling      
+      use scf              
       use, intrinsic :: iso_c_binding
 #ifdef OMP
       use omp_lib
@@ -27,15 +27,15 @@
       implicit none
                                                       !> This description comes first.
       !character(flg) :: FQBEM                        !< Flag driving the QM calculation mode
-      real(dbl), allocatable :: energies(:)           !<Energies of the states     
-      real(dbl), allocatable :: trans_dipoles(:,:,:)  !<Transition dipoles between states
-      real(dbl), allocatable :: trans_mag(:,:,:)      !<Mag. Trans. dipoles between states - MM - test
-      complex(cmp), allocatable :: coeff0(:)          !<Initial coefficients 
-      integer(i4b) :: nstates                         !<Dimension of Hilbert space
+      real(dbl), allocatable :: energies(:)           !< Energies of the states     
+      real(dbl), allocatable :: trans_dipoles(:,:,:)  !< Transition dipoles between states
+      real(dbl), allocatable :: trans_mag(:,:,:)      !< Mag. Trans. dipoles between states - MM - test
+      complex(cmp), allocatable :: coeff0(:)          !< Initial coefficients 
+      integer(i4b) :: nstates                         !< Dimension of Hilbert space
 
       save
       private
-      public init_propagation, & ! subroutines
+      public init_Hspace, & ! subroutines
              energies, trans_dipoles, nstates, coeff0, &   ! variables   
              trans_mag ! MM
 !
@@ -48,28 +48,33 @@
 !>    @author S.Pipolo
 !>    @note 
 !----------------------------------------------------------------------------
-      subroutine init_propagation
+      subroutine init_Hspace(f0)
        implicit none 
+       real(dbl), intent(in) :: f0(3)      !< Initial field 
        integer :: ici
 #ifndef MPI
        myrank=0
 #endif
        call init_initialise  
-       if (this_Finit_int.eq."scf") then
+       if (Fmdm.ne."vac") then
+         write(6,*) "Initializing the environment"
+         call init_environment(c_i,f0)
+       endif
+       if (this_Finit_int.eq."sce") then
          !> SCF initialisation 
-         !call do_scf(nstates,energies,trans_dipoles)
+         call do_scf(nstates,energies,trans_dipoles,f0)
        elseif (this_Finit_int.eq."qmt") then
          !> Quantum Coupling initialisation 
-         call do_QM_coupling(nstates,energies,trans_dipoles)
+         call do_QM_coupling(nstates,energies,trans_dipoles,f0)
        else
+         !> Input initialisation as in ci_*.inp 
          energies=e_ci
          trans_dipoles=mut
          if (Fmag.eq.'mag') then
             trans_mag=lt !MM
          endif
-         !> Input initialisation as in ci_*.inp 
        endif
-       ! The following lines need to be moified in order to initialize
+       ! The following lines need to be modified in order to initialize
        ! the system in plexciton states greater than n_ci
        do ici=1,n_ci
          coeff0(ici)=c_i(ici)
@@ -82,42 +87,41 @@
        !call fin_initialise  
 
       return
-      end subroutine init_propagation
+      end subroutine init_Hspace
 !
 !
 !------------------------------------------------------------------------
 !     @brief Init routine of initialise   
 !     @date Created   : S.Pipolo 02 May 2017
 !     Modified  :
-!     @param Hqm_dim,Hqm,Hqm_evt,Hqm_evl
+!     @param 
 !----------------------------------------------------------------------------
       subroutine init_initialise
        implicit none
        ! The charge mode w=0 is counted in this_nmodes for testing purposes
-       if (this_Finit_int.eq."qmt") call do_BEM_quant_in_wavet
-       if (this_Finit_int.eq."scf") then
-         write(6,*) "System initialised with self-consistent procedure"
-         nstates=n_ci 
-#ifdef TDPLAS         
-       elseif (this_Finit_int.eq."qmt") then
-         write(6,*) "System initialised with Quantum Coupling"
-         if(global_sys_Ftest.eq."qmt") then 
-           this_nmodes=3
-           this_qmmodes(1)=2 
-           this_qmmodes(2)=3 
-           this_qmmodes(3)=4 
+       if (Fmdm.ne."vac") then
+         if (this_Finit_int.eq."sce") then
+           write(6,*)"System initialised with self-consistent procedure"
+           nstates=n_ci 
+         elseif (this_Finit_int.eq."nsc") then
+           write(6,*)"System initialised as from input files"
+           nstates=n_ci 
+         elseif (this_Finit_int.eq."qmt") then
+           write(6,*) "System initialised in plexciton states"
+           nstates=n_ci*(nmodes+1)
+         else
+           write(6,*)"WARNING: No initialisation specified, "
+           write(6,*)"  using input file initialisation. "
+           nstates=n_ci 
          endif
-         nstates=n_ci*(this_nmodes+1)
-#else
-      stop "Error: TDPlas library has not been linked to WaveT"
-#endif
+       ! here one may add a scf initialisation with a static electric
+       ! field
        else
-
-               !write(6,*) "System initialised as in input files"
+         !write(6,*) "System initialised as in input files"
          nstates=n_ci 
          !stop
        endif
-       !write(6,*) "Hilbert Space with ",nstates, " states."
+       write(6,*) "Hilbert Space has ",nstates, " states."
        allocate(energies(nstates))
        allocate(coeff0(nstates))
        allocate(trans_dipoles(3,nstates,nstates))

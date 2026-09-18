@@ -1,5 +1,7 @@
       program main_tdplas
       use tdplas
+      use BEM_medium
+      use readio_tdplas_mod
       implicit none
       integer :: st,current,rate
 !
@@ -20,6 +22,10 @@
             F10.3,"s")') real(current-st)/real(rate)
 
 
+!     Silvio 02/08/2026 added the following, cannot use do_BEM_prop if
+!                       do_BEM is not called
+      call do_BEM
+      if(global_medium_Fmdm.eq."qnan") call do_BEM_quant
 !     diagonalise matrix
       call do_BEM_prop
       call system_clock(current)

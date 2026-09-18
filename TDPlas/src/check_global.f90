@@ -33,7 +33,7 @@
                 if (global_medium_Fpol.eq."chr") then
                     if(global_medium_Fbem.eq."non") then
                         call mpi_error("ERROR: with polarization given by apparent", &
-                                       "charges BEM calculation should be 'diagonal' or 'standard'.", " ")
+                                       "charges BEM calculation should be 'diagonal' or 'standard' or 'cpcm'.", " ")
                     end if
                 elseif (global_medium_Fpol.eq."dip") then
                     if(global_medium_Fbem.ne."non") then

@@ -1,5 +1,7 @@
       program tdcis
       use tdplas
+      use BEM_medium
+      use readio_tdplas_mod
       implicit none
       integer :: st,current,rate
 
@@ -16,14 +18,12 @@
       call readio_tdplas(calculation)
 
       call system_clock(current)
-      write(6,'("Done reading input, took", &
-            F10.3,"s")') real(current-st)/real(rate)
+      write(6,'("Done reading input, took", F10.3,"s")') real(current-st)/real(rate)
 
 !!     diagonalise matrix
       call do_BEM_freq 
       call system_clock(current)
-      write(6,'("Done , total elapsed time", &
-            F10.3,"s")') real(current-st)/real(rate)
+      write(6,'("Done , total elapsed time", F10.3,"s")') real(current-st)/real(rate)
          
 
       stop

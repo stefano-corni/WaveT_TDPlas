@@ -31,7 +31,8 @@
       integer(i4b)              :: diff_step ! effective number of steps for restart
       integer(i4b)              :: restart_seed  ! seed for restart
       !integer(i4b), allocatable :: pop(:) !Array for the postprocessing input
-      integer(i4b)              :: pop(nstmax) 
+      integer(i4b)              :: pop(nstmax)
+      integer(i4b), allocatable :: deg(:)
 
       real(dbl), allocatable    :: mut_np2(:,:) !squared dipole from NP
       real(dbl)                 :: tdelay(npulsemax), pshift(npulsemax)  ! time delay and phase shift with two pulses
@@ -184,12 +185,15 @@
        write(*,*) '**   under external electromagnetic perturbations **'
        write(*,*) '**                                                **'
        write(*,*) '**                     by                         **'
+       write(*,*) '**             Leonardo Biancorosso               **'
        write(*,*) '**               Emanuele Coccia                  **'
        write(*,*) '**                Stefano Corni                   **'
        write(*,*) "**               Giulia Dall'Osto                 **"
        write(*,*) '**                Jacopo Fregoni                  **'
        write(*,*) '**                 Gabriel Gil                    **'
+       write(*,*) '**              Margherita Marsili                **'
        write(*,*) '**                Silvio Pipolo                   **'
+       write(*,*) '**               Marco Romanelli                  **'
        write(*,*) '**                 Marta Rosa                     **'
        write(*,*) '**                                                **'
        write(*,*) '****************************************************'
@@ -231,11 +235,14 @@
        read(*,nml=spectra) 
        call write_nml_spectra() 
 
+       if (Fdis_rel.eq.'ene'.or.Fdis_rel.eq.'egl') full='f'
+
        if (Fdis.ne."nodis") call read_dis_params
 
        if (Fres.eq.'Yesr') call read_restart()
 
-       if (Fdis.ne.'nodis'.or.Fexp.ne.'exp') then 
+       !if (Fdis.ne.'nodis'.or.Fexp.ne.'exp') then 
+       if (Fexp.ne.'exp') then
            Fabs='non'
            write(*,*) 'Absorber switched off with SSE or full Euler'
        endif
@@ -304,15 +311,6 @@
           endif
          enddo
        enddo
-!        open(8,file='test_mut.dat',status='replace')
-!          write(8,*) mut(:,:,:)
-!        close(8)
-!       write(6,*) "mut"
-!       do i=1,n_ci
-!        do j=1,n_ci
-!         write(6,'(2i4,3f8.4)') i,j,mut(:,i,j)
-!        enddo
-!       enddo
        close(7)
 !test
 ! MM 
@@ -499,11 +497,12 @@
       subroutine read_dis_params()
      
        implicit none
-        integer     :: i,j,k,idum,ierr0,ierr1,ierr2,ierr3,ierr4,err,kk   
+        integer     :: i,ii,j,k,idum,ierr0,ierr1,ierr2,ierr3,ierr4,err,kk   
         real(dbl)   :: term   
         real(dbl)   :: rdum
         real(dbl)   :: rx,ry,rz
         real(dbl)   :: ix,iy,iz
+        real(dbl)   :: tmp
 
        open(8,file='nr_rate.inp',status="old",iostat=ierr0,err=100)
        open(9,file='de_rate.inp',status="old",iostat=ierr1,err=101)
@@ -537,8 +536,8 @@
           stop
        endif
 
-       if (nr_typ.ne.0.and.nr_typ.ne.1) then
-          write(*,*) 'Invalid value for nr_typ, must be 0 or 1'
+       if (nr_typ.ne.0.and.nr_typ.ne.1.and.nr_typ.ne.2.and.nr_typ.ne.3) then
+          write(*,*) 'Invalid value for nr_typ, must be 0, 1, 2 or 3'
 #ifdef MPI
           call mpi_finalize(ierr_mpi)
 #endif
@@ -1289,9 +1288,21 @@
            case (0)
             Fdis_rel="dip"
             write(*,*) 'Internal conversion relaxation via dipole'
+            write(*,*) 'Values in nr_rate.inp multiplicative factors'
            case (1)
             Fdis_rel="mat"
             write(*,*) 'Internal conversion relaxation via given matrix'
+           case (2)
+            Fdis_rel="ene"
+            write(*,*) 'Only |q+1> -> |q> relaxation'
+            write(*,*) 'Gamma_q prop to (E_q+1 - E_q)^-1'
+            write(*,*) 'Values in nr_rate.inp multiplicative factors'
+           case (3)
+            Fdis_rel="egl"
+            write(*,*) 'Only |q+1> -> |q> relaxation'
+            write(*,*) 'Gamma_q prop to exp[-(E_q+1 - E_q)/hbar w_max]'
+            write(*,*) 'Values in nr_rate.inp multiplicative factors'
+            write(*,*) 'w_max frequency of the highest-frequency normal mode'
           end select
         case ('nma', 'NMa', 'NMA', 'Nma')
           write(*,*) 'NonMarkovian dissipation'
@@ -1394,7 +1405,7 @@
 
         implicit none
 
-        character*12,   intent(in)  :: filename
+        character(12),   intent(in)  :: filename
         integer(i4b),  intent(in)  :: channel   
         logical                    :: exist
 
@@ -1702,7 +1713,7 @@
 
        return
 
-      end subroutine read_ion_rate
+       end subroutine read_ion_rate
 
 
-    end module readio
+      end module readio
