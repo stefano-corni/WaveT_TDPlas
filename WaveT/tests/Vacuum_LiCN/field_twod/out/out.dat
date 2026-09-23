@@ -1,0 +1,85 @@
+ 
+ ****************************************************
+ ****************************************************
+ **                                                **
+ **                    WaveT                       **
+ **     Evolution of molecular wavefunctions       **
+ **   under external electromagnetic perturbations **
+ **                                                **
+ **                     by                         **
+ **             Leonardo Biancorosso               **
+ **               Emanuele Coccia                  **
+ **                Stefano Corni                   **
+ **               Giulia Dall'Osto                 **
+ **                Jacopo Fregoni                  **
+ **                 Gabriel Gil                    **
+ **              Margherita Marsili                **
+ **                Silvio Pipolo                   **
+ **               Marco Romanelli                  **
+ **                 Marta Rosa                     **
+ **                                                **
+ ****************************************************
+ ****************************************************
+ 
+ Number to append to dat file           0
+ Number of CIS states to be read          17
+ Number of CIS states to be used           5
+ Molecular center of charge
+   0.0000000000000000        0.0000000000000000        0.0000000000000000     
+ 
+ Time step (in au), number of steps, stride   1.0000000000000000              500           1
+ 
+ No external medium, vacuum calculation
+ No restart
+ Only |k> -> |0> relaxation
+ Energy term is propagated analytically
+ Matmul is used in the propagation.
+ Calculation to calculate a 2D map is active performing           1 steps, varying the delay time by    20.226046373632723       a.u., starting from step            0
+ 
+ Only electric dipole
+ Pulse no.           2
+ Frequency (au) =  0.20091658961000000     
+ Sigma pulse =   82.682750997339994     
+ Time delay (au) between pulse           1 and pulse           2 =   0.0000000000000000     
+ Phase shift between pulse           1 and pulse           2 =   0.0000000000000000     
+ 
+ Pulse no.           3
+ Frequency (au) =  0.20091658961000000     
+ Sigma pulse =   82.682750997339994     
+ Time delay (au) between pulse           2 and pulse           3 =   0.0000000000000000     
+ Phase shift between pulse           2 and pulse           3 =   0.0000000000000000     
+ 
+ Linear polarization
+ Gauge for interaction:lg        
+ 
+ Time shape of the perturbing fieldtdg       
+ time at the center of the pulse (au):   2000.0000000000000     
+ Width of the pulse (time au):   82.682750997339994     
+ Frequency (au):  0.20091658961000000     
+ Maximum E field (au)   3.7796447300999999E-004   3.7796447300999999E-004   3.7796447300999999E-004
+ Maximum E field (V/m)   194357144.81197423        194357144.81197423        194357144.81197423     
+ Maximum intensity (W/cm^2)   5014285714.3062181        5014285714.3062181        5014285714.3062181     
+ 
+ No dissipation
+ SSE quantum jumps not written
+ 
+ Excitation energies read from input, in Hartree
+           1  0.18237207427248359     
+           2  0.21019129408150911     
+           3  0.21173476466536520     
+           4  0.21482538076303898     
+           5  0.21791599686071278     
+
+ Starting point for FT calculation   0.0000000000000000     
+ Artificial damping   2.0000000000000000     
+ 
+ *************OMP*****************
+
+ OMP parallelization on
+The number of processors available =       10
+The number of threads available    =       10
+
+ *************OMP*****************
+Done reading input & setting up the field, took     0.001s
+ Hilbert Space has            6  states.
+Done , total elapsed time     0.126s
