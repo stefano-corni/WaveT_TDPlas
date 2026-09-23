@@ -477,6 +477,7 @@ module interface_classic
       subroutine do_int_tdplas
         implicit none
         real(dbl), allocatable      :: qorf(:) !< (1:pedra_surf_n_tessere)     - charges or field  
+#ifdef TDPLAS
         if(this_Fprop.eq."dip") then
           !> allocate and initialise arrays and prepare for calls
           allocate(qorf(3))
@@ -490,6 +491,9 @@ module interface_classic
         call do_interaction_cont(qorf,h_mdm)
         deallocate(qorf)
         return
+#else   
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
       end subroutine do_int_tdplas
 
 
@@ -525,8 +529,12 @@ module interface_classic
      subroutine prepare_mdm_for_scf
         implicit none
           allocate(this_BEM_Q0(nts,nts))
+#ifdef TDPlas
           this_BEM_Q0=BEM_Q0
         return
+#else   
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif 
       end subroutine prepare_mdm_for_scf
 
 
@@ -615,7 +623,8 @@ module interface_classic
        real(dbl), intent(in) :: mu(3)         !< (1:3)      - molecular dipole
        real(dbl), intent(in)  :: f(:)         !< (1:3)      - field                               
        real(dbl), allocatable :: mf(:)        !< (1:3)      - field                               
-       ! SP 180226 the following should stay in tdplas     
+#ifdef TDPLAS 
+      ! SP 180226 the following should stay in tdplas     
        allocate(mf(3))
        call set_qorf_pot(mu,f)
        call get_qorf(mf)
@@ -623,6 +632,9 @@ module interface_classic
        deallocate(mf)
        call set_qorf(this_fr0)
        return
+#else   
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
       end subroutine update_BEM_field
 
 !------------------------------------------------------------------------
@@ -640,7 +652,8 @@ module interface_classic
        real(dbl), allocatable   :: pot(:)   !< (1:pedra_surf_n_tessere)     - molecular potential
        real(dbl), allocatable   :: potf(:)  !< (1:pedra_surf_n_tessere)     - field potential
        real(dbl), allocatable   :: q(:)     !< (1:pedra_surf_n_tessere)     - charges
-       integer(i4b)::i    
+       integer(i4b)::i  
+#ifdef TDPLAS  
        allocate(pot(nts))
        allocate(potf(nts))
        allocate(q(nts))
@@ -658,6 +671,9 @@ module interface_classic
        !endif
        call set_qorf(this_q0)
        return
+#else   
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
       end subroutine update_BEM_charges
 
 
@@ -677,6 +693,7 @@ module interface_classic
        real(dbl)   , allocatable:: fld(:,:) !< (3,1:n_atoms)  - field on fqfw atoms
        real(dbl)   , allocatable:: q(:)     !< (1:n_atoms)    - charges on fqfw atoms
        real(dbl)   , allocatable:: m(:,:)   !< (3,1:n_atoms)  - dipoles on fqfw atoms
+#ifdef TDPLAS
        allocate(pot(n_atoms))
        allocate(potf(n_atoms))
        allocate(fld(3,n_atoms))
@@ -692,6 +709,9 @@ module interface_classic
        mx0_fqfm=(1.-this_mix_coef)*mx0_fqfm+this_mix_coef*m
        deallocate(pot,potf,q,fld,m) 
        return
+#else
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif
       end subroutine update_fqfm_char_and_dip
 
 
@@ -793,13 +813,13 @@ module interface_classic
         integer(i4b), intent(in) :: i
          ! To be more efficient this if should go in the propagate of waveT
          ! Propagate medium only every global_prop_n_q timesteps
+#ifdef TDPlas
           if(mod(i,global_prop_n_q).ne.0) then
             ! Build the interaction Hamiltonian Reaction/Local with previous charges
             ! Update the interaction Hamiltonian
             call do_interaction(h)
             return
           endif
-#ifdef TDPLAS
           if(this_Fprop.eq."dip") then
            ! propagating medium with molecular dipole and external field
            ! Get charges from external codes 
@@ -990,14 +1010,16 @@ module interface_classic
       subroutine get_vts_from_dip
        implicit none
        real(dbl),allocatable :: pos(:,:)
-
+#ifdef TDPLAS
        allocate(pos(nts,3))
        pos(:,1)=pedra_surf_tessere(:)%x
        pos(:,2)=pedra_surf_tessere(:)%y
        pos(:,3)=pedra_surf_tessere(:)%z
        call do_vts_from_dip(quantum_vts,pos,mut,mol_cc,nts,n_ci)
        deallocate(pos)
-
+#else   
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif 
       end subroutine get_vts_from_dip
 
 !
@@ -1080,6 +1102,7 @@ module interface_classic
 #ifndef MPI
        myrank=0
 #endif
+#ifdef TDPlas
        do i=1,nmodes  
          omega_p(i)=sqrt(BEM_W2(qmmodes(i))) 
          we(i)=sqrt((omega_p(i)**2-this_eps_w0**2)/(two*omega_p(i)))
@@ -1088,6 +1111,9 @@ module interface_classic
        call out_gcharges
        wwe=we
       return
+#else   
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif 
       end subroutine
 !
 !
@@ -1104,6 +1130,8 @@ module interface_classic
        real(dbl),intent(out) :: plexd(3,n*nmodes,n*nmodes)
        integer(4)::i,j,k,p,s !< indices    
        real(dbl), allocatable:: gF(:) !< semiclassical particle-field couplings
+
+#ifdef TDPlas
        allocate(gF(3)) 
        !> Building \f$ \mathcal{H}_{\text{MF}} \f$ block
        do j=1,n
@@ -1132,6 +1160,10 @@ module interface_classic
        enddo
        deallocate(gF) 
       return
+#else   
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif 
+
       end subroutine
 
 
@@ -1227,6 +1259,7 @@ module interface_classic
 #ifndef MPI
        myrank=0
 #endif
+#ifdef TDPlas
        if (global_prop_Fint.eq.'ons') then
          h(:,:)=h(:,:)-mut(1,:,:)*qorf(1)-mut(2,:,:)*qorf(2)-mut(3,:,:)*qorf(3)
        elseif(global_prop_Fint.eq.'pcm') then
@@ -1244,6 +1277,9 @@ module interface_classic
          stop
        endif
        return
+#else   
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif 
       end subroutine do_interaction_cont
 
 !------------------------------------------------------------------------
@@ -1256,17 +1292,17 @@ module interface_classic
        implicit none
        real(dbl), intent(out) :: m_or_v(:)
        ! CHECK THIS if one starts from a different quantum state.
+#ifdef TDPLAS
        if(global_prop_Fprop.eq."dip") then
          m_or_v(:)=mut(:,1,1)
        else
          m_or_v(:)=quantum_vts(:,1,1)
        endif
        return
+#else   
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif 
       end subroutine get_m_or_v 
-!
-!
-
-
 
 
 !------------------------------------------------------------------------
@@ -1355,6 +1391,7 @@ module interface_classic
       subroutine grep_sphere_parameters(r,d,sp,wl)
        real(dbl), intent(out)  :: r,d,wl
        real(dbl), intent(out)  :: sp(3)
+#ifdef TDPLAS
        wl=sqrt(drudel_eps_A/3)
        sp(1)=pedra_surf_spheres(1)%x 
        sp(2)=pedra_surf_spheres(1)%y 
@@ -1362,6 +1399,9 @@ module interface_classic
        r=cts(1)%rsfe
        d=sqrt(dot_product(sp,sp))
        return
+#else   
+        stop "Error: TDPlas library has not been linked to WaveT!"
+#endif 
       end subroutine grep_sphere_parameters
 
 
