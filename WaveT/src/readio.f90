@@ -832,7 +832,14 @@
        ncit=150
        ! Iionization energy (effective only when absorber='y')
        Ip=0.d0
-
+       ! 2D calculation
+       twod='no' 
+       ! Variation of first delay time
+       de_delay=0.0
+       ! Number of delay time considered
+       ndelay=1
+       ! Starting number of first delay time scan
+       dstart=0
        return
 
       end subroutine init_nml_general
@@ -884,14 +891,6 @@
        pfin=20
        ! Apodization for sinc pulse
        t_ap = 99999.d0
-               ! 2D calculation
-       twod='no'
-       ! Variation of first delay time
-       de_delay=0.0
-       ! Number of delay time considered
-       ndelay=1
-       ! Starting number of first delay time scan
-       dstart=0
 
        return
 
