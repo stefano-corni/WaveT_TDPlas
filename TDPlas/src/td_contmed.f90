@@ -281,7 +281,7 @@
          call do_ref
        end if
        ! SP 24/02/16  Write output
-       if (mod(i,quantum_n_out).eq.0.or.i.eq.1) then
+       if (mod(i-1,quantum_n_out).eq.0.or.i.eq.1) then
          if (quantum_Fbin.eq.'bin') then
            call out_mdm_bin(i)
          else
