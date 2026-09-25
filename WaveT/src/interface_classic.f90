@@ -813,7 +813,7 @@ module interface_classic
         integer(i4b), intent(in) :: i
          ! To be more efficient this if should go in the propagate of waveT
          ! Propagate medium only every global_prop_n_q timesteps
-#ifdef TDPlas
+#ifdef TDPLAS
           if(mod(i,global_prop_n_q).ne.0) then
             ! Build the interaction Hamiltonian Reaction/Local with previous charges
             ! Update the interaction Hamiltonian
@@ -1102,7 +1102,7 @@ module interface_classic
 #ifndef MPI
        myrank=0
 #endif
-#ifdef TDPlas
+#ifdef TDPLAS
        do i=1,nmodes  
          omega_p(i)=sqrt(BEM_W2(qmmodes(i))) 
          we(i)=sqrt((omega_p(i)**2-this_eps_w0**2)/(two*omega_p(i)))
@@ -1131,7 +1131,7 @@ module interface_classic
        integer(4)::i,j,k,p,s !< indices    
        real(dbl), allocatable:: gF(:) !< semiclassical particle-field couplings
 
-#ifdef TDPlas
+#ifdef TDPLAS
        allocate(gF(3)) 
        !> Building \f$ \mathcal{H}_{\text{MF}} \f$ block
        do j=1,n
@@ -1259,7 +1259,7 @@ module interface_classic
 #ifndef MPI
        myrank=0
 #endif
-#ifdef TDPlas
+#ifdef TDPLAS
        if (global_prop_Fint.eq.'ons') then
          h(:,:)=h(:,:)-mut(1,:,:)*qorf(1)-mut(2,:,:)*qorf(2)-mut(3,:,:)*qorf(3)
        elseif(global_prop_Fint.eq.'pcm') then
