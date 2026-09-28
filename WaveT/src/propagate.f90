@@ -1441,9 +1441,9 @@ module propagate
 ! Quantum jump (spontaneous or nonradiative relaxation, pure dephasing)
 ! Algorithm from J. Opt. Soc. Am. B. vol. 10 (1993) 524
             if (prop_type.eq."mix") then
-              dis=disp(h_dis,c_prev2,nci)
-            elseif (prop_type.eq."full") then
               dis=disp(h_dis,c_prev,nci)
+            elseif (prop_type.eq."full") then
+              dis=disp(h_dis,c_prev2,nci)
             endif
 #ifndef OMP
             if (i.eq.ijump+1) then
@@ -1763,9 +1763,9 @@ module propagate
 ! Quantum jump (spontaneous or nonradiative relaxation, pure dephasing)
 ! Algorithm from J. Opt. Soc. Am. B. vol. 10 (1993) 524
             if (prop_type.eq."mix") then
-              dis=disp(h_dis,c_prev2,nci)
-            elseif (prop_type.eq."full") then
               dis=disp(h_dis,c_prev,nci)
+            elseif (prop_type.eq."full") then
+              dis=disp(h_dis,c_prev2,nci)
             endif
 #ifndef OMP
             if (i.eq.ijump+1) then

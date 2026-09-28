@@ -1,0 +1,63 @@
+&general 
+n_ci=5,
+n_ci_read=17
+mol_cc= 0.0 0.0 0.0
+n_f=0,
+medium='vac'
+full='n'
+dt=1
+n_step=500 
+n_out=1
+binary='n'
+twod='yes'
+de_delay=20.2260463736327217306
+dstart=0
+ndelay=1
+/ 
+
+&field Ffld='tdg',
+       omega(1)= 0.20091658961
+       omega(2)= 0.20091658961
+       omega(3)= 0.20091658961
+       sigma(1)= 82.68275099734  ! 5 fs
+       sigma(2)= 82.68275099734  ! 5 fs
+       sigma(3)= 82.68275099734 
+       t_mid= 2000,
+       radiative='non',
+       npulse=3
+       tdelay(1)= 0
+       tdelay(2)= 0
+       pshift(1)= 0
+       pshift(2)= 0
+       pshift(3)= 0
+fmax(1,1)=0.00037796447301
+fmax(2,1)=0.00037796447301
+fmax(3,1)=0.00037796447301
+fmax(1,2)=0.00037796447301
+fmax(2,2)=0.00037796447301
+fmax(3,2)=0.00037796447301
+fmax(1,3)=0.00037796447301
+fmax(2,3)=0.00037796447301
+fmax(3,3)=0.00037796447301
+/
+
+
+&sse 
+dissipative='non',
+/
+
+&spectra start=0, 
+
+tau=
+2.0
+0.0
+
+dir_ft=
+1.0
+0.0
+0.0 
+/
+
+$pop_coh
+/
+
