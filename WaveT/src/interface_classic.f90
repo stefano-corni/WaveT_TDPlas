@@ -529,7 +529,7 @@ module interface_classic
      subroutine prepare_mdm_for_scf
         implicit none
           allocate(this_BEM_Q0(nts,nts))
-#ifdef TDPlas
+#ifdef TDPLAS
           this_BEM_Q0=BEM_Q0
         return
 #else   
