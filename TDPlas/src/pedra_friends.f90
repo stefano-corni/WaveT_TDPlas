@@ -1,5 +1,5 @@
         Module pedra_friends
-! Modulo copiato spudoratamente da GAMESS
+
             use tdplas_constants
             use cavity_types
             use global_tdplas
