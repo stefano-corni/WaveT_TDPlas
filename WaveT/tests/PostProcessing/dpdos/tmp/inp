@@ -1,0 +1,14 @@
+&general
+nstates=11
+nsteps=124025
+nfreq=2000
+nfrag=2
+sigma=0.001
+emin=-1.0
+emax=1.0
+np=2000
+ehomo=-0.34601954168213
+tcm1='n'
+/
+1 ,3 !adf groups
+2 !adf groups

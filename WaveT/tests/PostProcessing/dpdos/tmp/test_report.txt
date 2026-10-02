@@ -1,0 +1,2 @@
+Fri Oct  2 11:35:18 CEST 2026
+Running test in /home/coccia/Codes/tests_WaveT/WaveT/WaveT/tests/PostProcessing/dpdos
