@@ -84,100 +84,100 @@ serial: $(BINPATH) scf.o $(BINPATH)/WaveT-serial.x $(BINPATH)/make_spectra.x $(B
 parallel: $(BINPATH) $(BINPATH)/WaveT-parallel.x
 
 $(BINPATH):
-        mkdir $(BINPATH)
+	mkdir $(BINPATH)
 
 $(BINPATH)/make_spectra.x: main_spectra.o
-        $(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_SPECTRA) $(TDPLASLIB) $(LIB_CURIE) $(LIBS) $(LIBSF)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_SPECTRA) $(TDPLASLIB) $(LIB_CURIE) $(LIBS) $(LIBSF)
 
 $(BINPATH)/WaveT-serial.x: main.o
-        $(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(TDPLASLIB) $(LIBS) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/WaveT-parallel.x: main.o
-        $(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(INCPAR) $(TDPLASLIB) $(LIBS) $(LIBSPAR) $(LIBSF) $(LIB_CURIE)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ) $(INCPAR) $(TDPLASLIB) $(LIBS) $(LIBSPAR) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/make_vib.x: $(OBJ_VIB)
-        $(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_VIB)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_VIB)
 
 $(BINPATH)/make_coherence.x: $(OBJ_COH)
-        $(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_COH)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_COH)
 
 $(BINPATH)/make_2dfft.x: $(OBJ_FFT)
-        $(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_FFT) $(LIBS) $(LIBSF) $(LIB_CURIE)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_FFT) $(LIBS) $(LIBSF) $(LIB_CURIE)
 
 $(BINPATH)/make_pop_coh.x: $(OBJ_POP_COH)
-        $(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_POP_COH)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_POP_COH)
 
 $(BINPATH)/make_nucl_wavep.x: $(OBJ_NUCL)
-        $(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_NUCL)
+	$(FC) $(CPP) $(FFLAGS) -o $@ $(OBJ_NUCL)
 
 $(BINPATH)/td-pdos.x: $(TOOLSPATH)/mod_td-pdos.f90 $(TOOLSPATH)/td-pdos.f90
-        $(FC) -o $@ $^
+	$(FC) -o $@ $^
 
 $(BINPATH)/mean_SSE.x: $(TOOLSPATH)/mean_SSE.f90
-        $(FC) -o $@ $<
+	$(FC) -o $@ $<
 
 clean:
-        rm -f *.o *.mod *.il *.optrpt $(BINPATH)/*.x $(TOOLSPATH)/*.o $(TOOLSPATH)/*.mod $(TOOLSPATH)/*.il $(TOOLSPATH)/*.optrpt
+	rm -f *.o *.mod *.il *.optrpt $(BINPATH)/*.x $(TOOLSPATH)/*.o $(TOOLSPATH)/*.mod $(TOOLSPATH)/*.il $(TOOLSPATH)/*.optrpt
 
 clean_obj:
-        rm -f *.o *.mod *.il *.optrpt $(TOOLSPATH)/*.o $(TOOLSPATH)/*.mod $(TOOLSPATH)/*.il $(TOOLSPATH)/*.optrpt
+	rm -f *.o *.mod *.il *.optrpt $(TOOLSPATH)/*.o $(TOOLSPATH)/*.mod $(TOOLSPATH)/*.il $(TOOLSPATH)/*.optrpt
 
 random.o: random.f90
-        $(FC) $(CPP) $(FFLAGS) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 constants.o: constants.f90
-        $(FC) $(CPP) $(FFLAGS) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 interface_classic.o: interface_classic.f90
-        $(FC) $(CPP) $(TDPLASPP) $(FFLAGS) $(INC) $(TDPLASINC) -c $< -o $@
+	$(FC) $(CPP) $(TDPLASPP) $(FFLAGS) $(INC) $(TDPLASINC) -c $< -o $@
 
 readio.o: readio.f90
-        $(FC) $(CPP) $(FFLAGS) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 spectra.o: spectra.f90
-        $(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
 WTMathTools.o: WTMathTools.f90
-        $(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
 QM_coupling.o: QM_coupling.f90
-        $(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
 scf.o: scf.f90
-        $(FC) $(CPP) $(FFLAGS) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 initialise.o: initialise.f90
-        $(FC) $(CPP) $(FFLAGS) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 dissipation.o: dissipation.f90
-        $(FC) $(CPP) $(FFLAGS) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 propagate.o: propagate.f90
-        $(FC) $(CPP) $(FFLAGS) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 $(TOOLSPATH)/coherence_tool.o: $(TOOLSPATH)/coherence_tool.f90
-        $(FC) $(CPP) $(FFLAGS) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 $(TOOLSPATH)/fft_tool.o: $(TOOLSPATH)/fft_tool.f90
-        $(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
 $(TOOLSPATH)/vib.o: $(TOOLSPATH)/vib.f90
-        $(FC) $(CPP) $(FFLAGS) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 $(TOOLSPATH)/vib_tool.o: $(TOOLSPATH)/vib_tool.f90
-        $(FC) $(CPP) $(FFLAGS) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 $(TOOLSPATH)/pop_coh_tool.o: $(TOOLSPATH)/pop_coh_tool.f90
-        $(FC) $(CPP) $(FFLAGS) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 $(TOOLSPATH)/nucl_wavep_tool.o: $(TOOLSPATH)/nucl_wavep_tool.f90
-        $(FC) $(CPP) $(FFLAGS) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) -c $< -o $@
 
 main.o: main.f90
-        $(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
 main_spectra.o: main_spectra.f90
-        $(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
+	$(FC) $(CPP) $(FFLAGS) $(INC) -c $< -o $@
 
 # dependencies
 

@@ -87,6 +87,9 @@ case "$type" in
 (spectra)
   $mpi $wavet/make_spectra.x < tdcis.inp > out.dat 2> err
   ;;
+(dpdos)
+  $mpi $wavet/td-pdos.x < inp > out.dat 2> err
+  ;;    	
 (*) echo "FAILURE: unknown test type" ; exit 1 ;;
 esac
 exitcode="$?"
